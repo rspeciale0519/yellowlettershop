@@ -10,7 +10,7 @@ Yellow Letter Shop is a comprehensive direct mail automation platform designed t
 
 - **Template Library**: Browse and use professionally designed direct mail templates
 - **Custom Design Upload**: Upload your own designs for printing and mailing
-- **Mailing List Management**: Create, import, and manage recipient lists
+- **Mailing List Management**: Create, import, and manage recipient mailing lists
 - **List Building Tools**: Generate targeted mailing lists based on specific criteria
 - **Campaign Dashboard**: Track and analyze the performance of your direct mail campaigns
 - **User Authentication**: Secure login and account management
