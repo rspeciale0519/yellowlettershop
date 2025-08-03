@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { User, CreditCard, Settings, LogOut, Menu } from "lucide-react"
+import { User, CreditCard, Settings, LogOut, Menu, List, Users, FileText, DollarSign } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { ThemeToggle } from "@/components/theme/theme-toggle"
 import { LoginModal } from "@/components/auth/login-modal"
@@ -23,11 +23,10 @@ export function Header() {
   const [isLoading, setIsLoading] = useState(true)
 
   const navLinks = [
-    { href: "/dashboard", label: "Home" },
-    { href: "/build-lists", label: "Build a List" },
-    { href: "/mailing-lists", label: "Mailing List Manager" }, // New navigation item
-    { href: "/templates", label: "Templates" },
-    { href: "#pricing", label: "Pricing" },
+    { href: "/build-lists", label: "Build a List", icon: List },
+    { href: "/mailing-lists", label: "Mailing List Manager", icon: Users },
+    { href: "/templates", label: "Templates", icon: FileText },
+    { href: "#pricing", label: "Pricing", icon: DollarSign },
   ]
 
   // Check for existing user session on component mount
@@ -77,23 +76,27 @@ export function Header() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="transition-colors hover:text-yellow-500"
-              onClick={
-                link.href === "#pricing"
-                  ? (e) => {
-                      e.preventDefault()
-                      document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })
-                    }
-                  : undefined
-              }
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const IconComponent = link.icon
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="flex items-center gap-2 transition-all duration-200 ease-in-out hover:text-yellow-500 group"
+                onClick={
+                  link.href === "#pricing"
+                    ? (e) => {
+                        e.preventDefault()
+                        document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })
+                      }
+                    : undefined
+                }
+              >
+                <IconComponent className="h-4 w-4 transition-all duration-200 ease-in-out text-inherit" />
+                <span className="transition-all duration-200 ease-in-out text-inherit">{link.label}</span>
+              </Link>
+            )
+          })}
         </nav>
 
         <div className="flex items-center gap-4">
@@ -166,15 +169,19 @@ export function Header() {
               </SheetTrigger>
               <SheetContent side="right">
                 <div className="grid gap-4 py-6">
-                  {navLinks.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      className="flex w-full items-center py-2 text-lg font-semibold"
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
+                  {navLinks.map((link) => {
+                    const IconComponent = link.icon
+                    return (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        className="flex w-full items-center gap-3 py-2 text-lg font-semibold"
+                      >
+                        <IconComponent className="h-5 w-5" />
+                        {link.label}
+                      </Link>
+                    )
+                  })}
                   {!isLoading && !user && (
                     <>
                       <LoginModal onLoginSuccess={handleLoginSuccess}>
