@@ -90,32 +90,32 @@ export default function TemplatesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="container mx-auto px-4 py-8">
-        {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50 mb-2">Template Gallery</h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Choose from our professionally designed templates to kickstart your direct mail campaign
-          </p>
-        </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 w-full">
+      {/* Page Header */}
+      <div className="mb-8 px-4 pt-8 lg:px-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50 mb-2">Template Gallery</h1>
+        <p className="text-gray-600 dark:text-gray-400">
+          Choose from our professionally designed templates to kickstart your direct mail campaign
+        </p>
+      </div>
 
-        {/* Search and Filters */}
-        <div className="mb-6 space-y-4 lg:space-y-0 lg:flex lg:items-center lg:justify-between">
-          <div className="flex-1 max-w-md">
-            <TemplateSearch searchQuery={searchQuery} onSearchChange={setSearchQuery} />
-          </div>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <TemplateFilters
-              sortBy={sortBy}
-              filterBy={filterBy}
-              onSortChange={setSortBy}
-              onFilterChange={setFilterBy}
-            />
-          </div>
+      {/* Search and Filters */}
+      <div className="mb-6 space-y-4 lg:space-y-0 lg:flex lg:items-center lg:justify-between px-4 lg:px-8">
+        <div className="flex-1 max-w-md">
+          <TemplateSearch searchQuery={searchQuery} onSearchChange={setSearchQuery} />
         </div>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <TemplateFilters
+            sortBy={sortBy}
+            filterBy={filterBy}
+            onSortChange={setSortBy}
+            onFilterChange={setFilterBy}
+          />
+        </div>
+      </div>
 
-        {/* Main Layout */}
+      {/* Main Layout */}
+      <div className="w-full px-0 lg:px-8">
         <TemplatesLayout
           sidebar={
             <CategoryAccordion

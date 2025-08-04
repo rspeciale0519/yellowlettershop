@@ -308,55 +308,53 @@ export default function BuildListsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
-      <div className="container mx-auto px-4 py-8">
-        {/* Page Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50 mb-2">Build Your Mailing List</h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Use our powerful filters to create a perfectly targeted mailing list for your campaign.
-          </p>
-        </div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 w-full">
+      {/* Page Header */}
+      <div className="mb-8 px-4 pt-8 lg:px-8">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50 mb-2">Build Your Mailing List</h1>
+        <p className="text-gray-600 dark:text-gray-400">
+          Use our powerful filters to create a perfectly targeted mailing list for your campaign.
+        </p>
+      </div>
 
-        {/* Main Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
-          {/* Sidebar */}
-          <aside className="lg:col-span-1 space-y-6 sticky top-24">
-            <CriteriaAccordion activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
-            <ListSummary
-              listName={listName}
-              onNameChange={setListName}
-              recordCount={recordCount}
-              totalCost={totalCost}
-            />
-            <Button variant="outline" onClick={clearAllCriteria} className="w-full bg-transparent">
-              <Trash2 className="h-4 w-4 mr-2" />
-              Clear All Criteria
-            </Button>
-          </aside>
+      {/* Main Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start px-4 lg:px-8">
+        {/* Sidebar */}
+        <aside className="lg:col-span-1 space-y-6 sticky top-24">
+          <CriteriaAccordion activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
+          <ListSummary
+            listName={listName}
+            onNameChange={setListName}
+            recordCount={recordCount}
+            totalCost={totalCost}
+          />
+          <Button variant="outline" onClick={clearAllCriteria} className="w-full bg-transparent">
+            <Trash2 className="h-4 w-4 mr-2" />
+            Clear All Criteria
+          </Button>
+        </aside>
 
-          {/* Main Content */}
-          <main className="lg:col-span-3 space-y-6">{renderFilterPanel()}</main>
-        </div>
+        {/* Main Content */}
+        <main className="lg:col-span-3 space-y-6">{renderFilterPanel()}</main>
+      </div>
 
-        {/* Floating Action Bar */}
-        <div className="sticky bottom-0 left-0 right-0 mt-8 p-4 bg-background/80 backdrop-blur-sm border-t border-border">
-          <div className="container mx-auto flex items-center justify-end gap-4">
-            <div className="text-right">
-              <p className="font-bold text-lg">{recordCount.toLocaleString()} Records</p>
-              <p className="text-yellow-600 dark:text-yellow-400 font-semibold text-xl">
-                ${totalCost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </p>
-            </div>
-            <Button variant="outline" size="lg" className="bg-transparent">
-              <Save className="h-4 w-4 mr-2" />
-              Save Criteria
-            </Button>
-            <Button size="lg" className="bg-yellow-500 hover:bg-yellow-600 text-gray-900">
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              Purchase List
-            </Button>
+      {/* Floating Action Bar */}
+      <div className="sticky bottom-0 left-0 right-0 mt-8 p-4 bg-background/80 backdrop-blur-sm border-t border-border">
+        <div className="flex items-center justify-end gap-4 px-4 lg:px-8">
+          <div className="text-right">
+            <p className="font-bold text-lg">{recordCount.toLocaleString()} Records</p>
+            <p className="text-yellow-600 dark:text-yellow-400 font-semibold text-xl">
+              ${totalCost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
           </div>
+          <Button variant="outline" size="lg" className="bg-transparent">
+            <Save className="h-4 w-4 mr-2" />
+            Save Criteria
+          </Button>
+          <Button size="lg" className="bg-yellow-500 hover:bg-yellow-600 text-gray-900">
+            <ShoppingCart className="h-4 w-4 mr-2" />
+            Purchase List
+          </Button>
         </div>
       </div>
     </div>
