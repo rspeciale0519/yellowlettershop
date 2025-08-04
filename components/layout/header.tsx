@@ -32,12 +32,28 @@ import { useState, useEffect } from 'react';
 export function Header() {
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAtTop, setIsAtTop] = useState(true);
+
+  useEffect(() => {
+    const handleScroll = () => setIsAtTop(window.scrollY < 8);
+    window.addEventListener('scroll', handleScroll);
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const navLinks = [
     { href: '/design/customize', label: 'New Design', icon: Palette },
     { href: '/templates', label: 'Templates', icon: FileText },
-    { href: '/mailing-services/build-lists', label: 'Build a List', icon: List },
-    { href: '/mailing-services/mailing-list-manager', label: 'Mailing List Manager', icon: Users },
+    {
+      href: '/mailing-services/build-lists',
+      label: 'Build a List',
+      icon: List,
+    },
+    {
+      href: '/mailing-services/mailing-list-manager',
+      label: 'Mailing List Manager',
+      icon: Users,
+    },
     { href: '/#pricing', label: 'Pricing', icon: DollarSign },
   ];
 
@@ -76,7 +92,10 @@ export function Header() {
   };
 
   return (
-    <header className='sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
+    <header
+      className={`sticky top-0 z-50 w-full transition-all duration-300 ${isAtTop ? 'bg-transparent border-none' : 'border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60'}`}
+      style={isAtTop ? {background: 'transparent', border: 'none', boxShadow: 'none', backdropFilter: 'none', WebkitBackdropFilter: 'none'} : {}}
+    >
       <div className='flex h-16 items-center justify-between px-4 md:px-6 py-0 my-2.5 w-full'>
         <Link href='/' className='flex items-center gap-2'>
           <Image
