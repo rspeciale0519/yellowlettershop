@@ -7,15 +7,12 @@ import {
 } from '@/components/ui/card';
 import { UploadCloud, PaletteIcon, ArrowRight } from 'lucide-react';
 import { PricingSection } from '@/components/pricing/pricing-section';
+import { AmbientBackground } from '@/components/ambient-background';
 
 export default function HomePage() {
   return (
     <div className='relative flex flex-col min-h-screen'>
-      {/* Background effect layer */}
-      <div
-        className="pointer-events-none fixed inset-0 -z-10 w-full h-full bg-[linear-gradient(180deg,_rgba(255,251,235,1)_0px,_rgba(255,251,235,0.85)_400px,_rgba(255,255,255,1)_1200px,_rgba(255,255,255,1)_1800px)] dark:bg-[linear-gradient(180deg,_rgba(17,24,39,1)_0%,_rgba(255,255,255,0.04)_90%)]"
-        aria-hidden="true"
-      />
+      <AmbientBackground />
       <main className='relative flex-1'>
         <section className='w-full py-20 md:py-32 lg:py-40'>
           <div className='container px-4 md:px-6'>
@@ -78,7 +75,7 @@ export default function HomePage() {
           </div>
         </section>
         <div className='relative z-10 -mt-16'>
-          <div className='bg-gradient-to-b from-white/0 via-white/60 to-white dark:from-transparent dark:via-yellow-900/10 dark:to-gray-950/80 pt-16 pb-0'>
+          <div className='pt-16 pb-0'>
             <PricingSection />
           </div>
         </div>

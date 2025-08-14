@@ -26,7 +26,7 @@ export default function RootLayout({
       <head>
         <ThemeScript />
       </head>
-      <body className={inter.className}>
+      <body className={inter.className} suppressHydrationWarning>
         <ThemeProvider
           attribute='class'
           defaultTheme='system'
@@ -34,7 +34,7 @@ export default function RootLayout({
           disableTransitionOnChange={false}
           storageKey='yls-theme'
         >
-          <div className='flex flex-col min-h-screen bg-[linear-gradient(180deg,_rgba(255,251,235,1)_0%,_rgba(255,255,255,1)_90%)] dark:bg-[linear-gradient(180deg,_rgba(17,24,39,1)_0%,_rgba(255,255,255,0.04)_90%)]'>
+          <div className='flex flex-col min-h-screen'>
             <Header />
             <main className='flex-1'>{children}</main>
             <Footer />

@@ -151,6 +151,245 @@ html {
 .theme-accent {
   background-color: hsl(var(--theme-accent));
 }
+ 
+/* Ambient background styles */
+.ambient-bg {
+  position: fixed;
+  inset: 0;
+  isolation: isolate;
+}
+
+.ambient-base {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  /* Layered gradients: two large, subtle radials over a base linear gradient */
+  /* Solid light-yellow primary background */
+  background: linear-gradient(180deg, #FEF3C7 0%, #FEF3C7 100%);
+  background-repeat: no-repeat;
+  background-position: 0% 0%;
+  background-size: 100% 100%;
+  background-blend-mode: normal;
+  
+  /* Base is static in light mode; motion comes from blobs */
+  animation: none;
+  will-change: background-position, background-size;
+}
+
+.dark .ambient-base {
+  background:
+    radial-gradient(1200px 800px at 18% 6%, rgba(234, 179, 8, 0.18), rgba(234, 179, 8, 0) 60%),
+    radial-gradient(1200px 900px at 82% 14%, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0) 58%),
+    linear-gradient(
+      180deg,
+      rgba(17, 24, 39, 1) 0%,
+      rgba(255, 255, 255, 0.04) 90%
+    );
+  background-repeat: no-repeat;
+  background-position: 0% 50%, 100% 50%, 0% 0%;
+  background-size: 150% 150%, 150% 150%, 100% 100%;
+  background-blend-mode: soft-light, soft-light, normal;
+  animation: ocean-waves 15s ease-in-out infinite;
+
+  will-change: background-position, background-size;
+}
+
+.blob {
+  position: absolute;
+  width: var(--size, 520px);
+  height: var(--size, 520px);
+  z-index: 1;
+  will-change: transform;
+  /* Center-anchor so wander translations are relative to viewport center */
+  left: 50%;
+  top: 50%;
+  margin-left: calc(var(--size, 520px) / -2);
+  margin-top: calc(var(--size, 520px) / -2);
+}
+
+/* Inner core to allow independent pulse scaling */
+.blob-core {
+  position: absolute;
+  inset: 0;
+  border-radius: 45% 55% 50% 50% / 60% 40% 60% 40%;
+  filter: blur(110px);
+  opacity: 0.98;
+  mix-blend-mode: screen;
+  /* White blob with stronger core for visibility on light yellow */
+  background: radial-gradient(
+    circle at 40% 40%,
+    rgba(255, 255, 255, 1.0) 0%,
+    rgba(255, 255, 255, 0.85) 35%,
+    rgba(255, 255, 255, 0.50) 55%,
+    rgba(255, 255, 255, 0.00) 78%
+  );
+  will-change: transform;
+  animation: blob-pulse 12s ease-in-out infinite;
+}
+
+.dark .blob-core {
+  opacity: 0.95;
+  mix-blend-mode: screen;
+  /* Light yellow blobs in dark mode */
+  background: radial-gradient(
+    circle at 40% 40%,
+    rgba(250, 204, 21, 0.85),
+    rgba(234, 179, 8, 0.55) 45%,
+    rgba(250, 204, 21, 0.20) 70%,
+    rgba(250, 204, 21, 0.00) 80%
+  );
+}
+
+.blob-1 {
+  --size: 760px;
+  --dur: 48s;
+  animation: blob-wander-1 var(--dur) linear infinite;
+  animation-fill-mode: both;
+}
+
+.blob-2 {
+  --size: 680px;
+  --dur: 62s;
+  animation: blob-wander-2 var(--dur) linear infinite;
+  animation-fill-mode: both;
+}
+
+.blob-3 {
+  --size: 620px;
+  --dur: 56s;
+  animation: blob-wander-3 var(--dur) linear infinite;
+  animation-fill-mode: both;
+}
+
+.blob-4 {
+  --size: 780px;
+  --dur: 52s;
+  animation: blob-wander-4 var(--dur) linear infinite;
+  animation-fill-mode: both;
+}
+
+/* Pulse timing offsets and per-blob durations for variety (stronger throbbing) */
+.blob-1 .blob-core { animation-delay: -1s; animation-duration: 11s; --pulse-min: 0.975; --pulse-max: 1.055; }
+.blob-2 .blob-core { animation-delay: -4s; animation-duration: 12s; --pulse-min: 0.970; --pulse-max: 1.060; }
+.blob-3 .blob-core { animation-delay: -2s; animation-duration: 10s; --pulse-min: 0.975; --pulse-max: 1.060; }
+.blob-4 .blob-core { animation-delay: -6s; animation-duration: 13s; --pulse-min: 0.965; --pulse-max: 1.070; }
+
+@keyframes blob-drift-1 {
+  0% { transform: translate3d(-35vw, -12vh, 0) scale(0.95) rotate(0deg); }
+  50% { transform: translate3d(25vw, 10vh, 0) scale(1.10) rotate(14deg); }
+  100% { transform: translate3d(-35vw, -12vh, 0) scale(0.95) rotate(0deg); }
+}
+
+@keyframes blob-drift-2 {
+  0% { transform: translate3d(20vw, 12vh, 0) scale(1.06) rotate(0deg); }
+  50% { transform: translate3d(-30vw, -15vh, 0) scale(0.92) rotate(-12deg); }
+  100% { transform: translate3d(20vw, 12vh, 0) scale(1.06) rotate(0deg); }
+}
+
+@keyframes blob-drift-3 {
+  0% { transform: translate3d(-15vw, 20vh, 0) scale(1.00) rotate(0deg); }
+  50% { transform: translate3d(30vw, -10vh, 0) scale(1.14) rotate(18deg); }
+  100% { transform: translate3d(-15vw, 20vh, 0) scale(1.00) rotate(0deg); }
+}
+/* Free-floating multi-stop wander paths */
+@keyframes blob-wander-1 {
+  /* Top origin -> roam -> return top */
+  0%    { transform: translate3d(0vw,  -55vh, 0) rotate(0deg); }
+  12.5% { transform: translate3d(35vw, -45vh, 0) rotate(9deg); }
+  25%   { transform: translate3d(58vw, -15vh, 0) rotate(21deg); }
+  37.5% { transform: translate3d(42vw,  25vh, 0) rotate(34deg); }
+  50%   { transform: translate3d(0vw,   55vh, 0) rotate(47deg); }
+  62.5% { transform: translate3d(-38vw, 45vh, 0) rotate(61deg); }
+  75%   { transform: translate3d(-60vw, 10vh, 0) rotate(76deg); }
+  87.5% { transform: translate3d(-40vw,-25vh, 0) rotate(90deg); }
+  100%  { transform: translate3d(0vw,  -55vh, 0) rotate(104deg); }
+}
+
+@keyframes blob-wander-2 {
+  /* Right origin -> roam -> return right */
+  0%    { transform: translate3d(55vw,  0vh,  0) rotate(0deg); }
+  12.5% { transform: translate3d(45vw,  35vh, 0) rotate(11deg); }
+  25%   { transform: translate3d(15vw,  58vh, 0) rotate(22deg); }
+  37.5% { transform: translate3d(-25vw, 42vh, 0) rotate(35deg); }
+  50%   { transform: translate3d(-55vw,  0vh, 0) rotate(48deg); }
+  62.5% { transform: translate3d(-45vw,-38vh, 0) rotate(63deg); }
+  75%   { transform: translate3d(-10vw,-60vh, 0) rotate(78deg); }
+  87.5% { transform: translate3d(25vw, -40vh, 0) rotate(92deg); }
+  100%  { transform: translate3d(55vw,   0vh, 0) rotate(106deg); }
+}
+
+@keyframes blob-wander-3 {
+  /* Bottom origin -> roam -> return bottom */
+  0%    { transform: translate3d(0vw,   55vh, 0) rotate(0deg); }
+  12.5% { transform: translate3d(-35vw, 45vh, 0) rotate(12deg); }
+  25%   { transform: translate3d(-58vw, 15vh, 0) rotate(25deg); }
+  37.5% { transform: translate3d(-42vw,-25vh, 0) rotate(38deg); }
+  50%   { transform: translate3d(0vw,  -55vh, 0) rotate(52deg); }
+  62.5% { transform: translate3d(38vw, -45vh, 0) rotate(66deg); }
+  75%   { transform: translate3d(60vw, -10vh, 0) rotate(80deg); }
+  87.5% { transform: translate3d(40vw,  25vh, 0) rotate(94deg); }
+  100%  { transform: translate3d(0vw,   55vh, 0) rotate(108deg); }
+}
+
+@keyframes blob-wander-4 {
+  /* Left origin -> roam -> return left */
+  0%    { transform: translate3d(-55vw,  0vh, 0) rotate(0deg); }
+  12.5% { transform: translate3d(-45vw, -35vh, 0) rotate(13deg); }
+  25%   { transform: translate3d(-15vw, -58vh, 0) rotate(27deg); }
+  37.5% { transform: translate3d(25vw,  -42vh, 0) rotate(41deg); }
+  50%   { transform: translate3d(55vw,    0vh, 0) rotate(56deg); }
+  62.5% { transform: translate3d(45vw,   38vh, 0) rotate(71deg); }
+  75%   { transform: translate3d(10vw,   60vh, 0) rotate(86deg); }
+  87.5% { transform: translate3d(-25vw,  40vh, 0) rotate(100deg); }
+  100%  { transform: translate3d(-55vw,   0vh, 0) rotate(115deg); }
+}
+
+/* Gentle size fluctuation (amplitude configurable via CSS variables) */
+@keyframes blob-pulse {
+  0%   { transform: scale(var(--pulse-min, 0.97)); }
+  50%  { transform: scale(var(--pulse-max, 1.05)); }
+  100% { transform: scale(var(--pulse-min, 0.97)); }
+}
+
+/* Ocean wave-like animation for the ambient background */
+@keyframes ocean-waves {
+  0% {
+    background-position: 0% 50%, 100% 50%, 0% 0%;
+    background-size: 150% 150%, 150% 150%, 100% 100%;
+  }
+  25% {
+    background-position: 25% 25%, 75% 75%, 0% 0%;
+    background-size: 200% 120%, 120% 200%, 100% 100%;
+  }
+  50% {
+    background-position: 50% 0%, 50% 100%, 0% 0%;
+    background-size: 120% 200%, 200% 120%, 100% 100%;
+  }
+  75% {
+    background-position: 75% 75%, 25% 25%, 0% 0%;
+    background-size: 180% 140%, 140% 180%, 100% 100%;
+  }
+  100% {
+    background-position: 100% 50%, 0% 50%, 0% 0%;
+    background-size: 150% 150%, 150% 150%, 100% 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-bg {
+    transition: none !important;
+    transform: none !important;
+  }
+  .blob {
+    animation: none !important;
+  }
+  .blob-core {
+    animation: none !important;
+  }
+  .ambient-base {
+    animation: none !important;
+  }
+}
 
 /* Enhanced focus styles for theme toggle */
 [data-theme-toggle] {
