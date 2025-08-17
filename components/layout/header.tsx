@@ -26,13 +26,16 @@ import {
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
-import { LoginModal } from '@/components/auth/login-modal';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/utils/supabase/client';
 
 export function Header() {
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAtTop, setIsAtTop] = useState(true);
+  const supabase = createClient();
+  const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => setIsAtTop(window.scrollY < 8);
@@ -59,36 +62,52 @@ export function Header() {
 
   // Check for existing user session on component mount
   useEffect(() => {
-    const checkUserSession = () => {
+    const init = async () => {
       try {
-        const storedUser =
-          localStorage.getItem('yls_user') ||
-          sessionStorage.getItem('yls_user');
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
-        }
+        const { data: { user } } = await supabase.auth.getUser();
+        setUser(user ?? null);
       } catch (error) {
-        console.error('Error checking user session:', error);
+        console.error('Error fetching auth user:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    checkUserSession();
-  }, []);
+    init();
+
+    // Subscribe to auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   // Handle successful login
   const handleLoginSuccess = (userData: any) => {
     setUser(userData);
   };
 
+  // Open global auth modal with desired mode
+  const openAuth = (mode: 'login' | 'signup' | 'forgot' | 'reset' | 'verify' | 'change') => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('auth', mode);
+    router.replace(url.pathname + '?' + url.searchParams.toString(), { scroll: false });
+  };
+
   // Handle logout
   const handleLogout = () => {
-    localStorage.removeItem('yls_user');
-    sessionStorage.removeItem('yls_user');
-    setUser(null);
-    // Optionally redirect to home page
-    window.location.href = '/';
+    supabase.auth
+      .signOut()
+      .then(() => {
+        setUser(null);
+        window.location.href = '/';
+      })
+      .catch((error) => {
+        console.error('Error during sign out:', error);
+      });
   };
 
   return (
@@ -162,8 +181,8 @@ export function Header() {
                       >
                         <Avatar className='h-10 w-10'>
                           <AvatarImage
-                            src={user.avatar || '/placeholder-user.jpg'}
-                            alt={user.name || 'User'}
+                            src={(user.user_metadata?.avatar_url as string) || '/placeholder-user.jpg'}
+                            alt={(user.user_metadata?.name as string) || (user.email as string) || 'User'}
                           />
                           <AvatarFallback>
                             <User className='h-6 w-6' />
@@ -179,10 +198,10 @@ export function Header() {
                       <DropdownMenuLabel className='font-normal'>
                         <div className='flex flex-col space-y-1'>
                           <p className='text-sm font-medium leading-none'>
-                            {user.name || 'User'}
+                            {(user.user_metadata?.name as string) || 'User'}
                           </p>
                           <p className='text-xs leading-none text-muted-foreground'>
-                            {user.email}
+                            {user.email as string}
                           </p>
                         </div>
                       </DropdownMenuLabel>
@@ -206,19 +225,18 @@ export function Header() {
               ) : (
                 <>
                   <ThemeToggle />
-                  <LoginModal onLoginSuccess={handleLoginSuccess}>
-                    <Button
-                      variant='outline'
-                      className='hidden sm:inline-flex bg-transparent'
-                    >
-                      Sign In
-                    </Button>
-                  </LoginModal>
                   <Button
-                    asChild
-                    className='hidden sm:inline-flex bg-yellow-500 hover:bg-yellow-600 text-gray-900'
+                    variant='outline'
+                    className='hidden sm:inline-flex bg-transparent'
+                    onClick={() => openAuth('login')}
                   >
-                    <Link href='/signup'>Get Started</Link>
+                    Sign In
+                  </Button>
+                  <Button
+                    className='hidden sm:inline-flex bg-yellow-500 hover:bg-yellow-600 text-gray-900'
+                    onClick={() => openAuth('signup')}
+                  >
+                    Get Started
                   </Button>
                 </>
               )}
@@ -250,19 +268,18 @@ export function Header() {
                   })}
                   {!isLoading && !user && (
                     <>
-                      <LoginModal onLoginSuccess={handleLoginSuccess}>
-                        <Button
-                          variant='outline'
-                          className='w-full bg-transparent'
-                        >
-                          Sign In
-                        </Button>
-                      </LoginModal>
                       <Button
-                        asChild
-                        className='w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900'
+                        variant='outline'
+                        className='w-full bg-transparent'
+                        onClick={() => openAuth('login')}
                       >
-                        <Link href='/signup'>Get Started</Link>
+                        Sign In
+                      </Button>
+                      <Button
+                        className='w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900'
+                        onClick={() => openAuth('signup')}
+                      >
+                        Get Started
                       </Button>
                     </>
                   )}

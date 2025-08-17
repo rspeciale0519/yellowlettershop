@@ -1,199 +1,318 @@
-# Product Requirements Document (PRD)
+# **Product Requirements Document (PRD) — Yellow Letter Shop (YLS)**
 
 *Last Updated: April 2025*
 
-## Project: Yellow Letter Shop (YLS) Web Platform
+## **1. Project Overview**
 
-Yellow Letter Shop (YLS) is a SaaS platform designed to help real estate investors, agencies, and small businesses manage direct mail campaigns. The platform includes mailing list upload and validation, deduplication, proof-based order approvals, AI personalization, payment authorization, vendor routing, analytics dashboards, team collaboration, per-field record history, short link engagement tracking, webhook logs, scheduled reports, and saved payment method management.
+### **Platform Purpose**
 
----
+Yellow Letter Shop (YLS) is a comprehensive SaaS platform that enables users to create, personalize, and deliver direct mail campaigns with speed and precision. It targets real estate professionals, local businesses, agencies, and marketers who require efficient tools to generate and fulfill marketing mail at scale or on-demand. The platform includes dynamic mail piece design, mailing list management, address validation, automation options, real-time status tracking, and advanced analytics—all optimized for mobile use.
 
-## 1. Target Audience
+### **Target Audience**
 
-- Real estate investors
-- Real estate agents
-- Direct mail agencies
-- Small to medium businesses targeting prospects by mail
+The primary target audience for YLS includes:
 
----
+* Real estate investors, agents, wholesalers, and construction companies
+* Insurance agents and mortgage companies  
+* Small to medium-sized business owners
+* Marketing agencies and sales professionals
+* Direct mail agencies
 
-## 2. Problem Statement
+### **Problem Statement**
 
-Sending personalized direct mail at scale is complicated, often involving multiple systems for validation, design, printing, payment, approval, and tracking. Teams need a way to collaboratively manage these processes, track engagement, handle feedback, and route data intelligently without vendor lock-in.
+Manually managing, designing, skip tracing, and sending personalized direct mail is **time-consuming, error-prone, and lacks scalable automation**. Businesses currently lack an integrated, no-code tool to manage mailing lists, customize templates, validate addresses, place print orders, track campaign performance, perform skip tracing, manage external vendors effectively, track engagement, generate reports, manage contact information, reverse bulk changes, handle user feedback, share resources with teams, and route data intelligently without vendor lock-in.
 
----
+## **2. Core Objectives**
 
-## 3. Core Objectives
+The YLS platform aims to achieve the following core objectives:
 
-- Upload mailing lists and validate via AccuZIP
-- Deduplicate records with per-user preference
-- Store per-field record history for rollback and auditing
-- Customize print templates with tokenized variables
-- Approve proofs and annotations before payment is finalized
-- Authorize (but do not capture) payment until proof approval
-- Cancel orders before approval to release payment holds
-- Store and manage payment methods per user account
-- Assign and route orders to vendors manually or by fallback logic
-- Track user engagement via per-recipient short links
-- Generate reports and schedule recurring exports
-- Capture user feedback post-order (NPS + comments)
-- Provide full role-based team collaboration with shared asset access
-- Enforce rollback, auditing, webhook tracking, and system-wide logging
+* **Provide a frictionless end-to-end direct mail workflow**
+* **Upload and validate mailing lists** with address deduplication and configurable defaults
+* **Enable professional-grade mailer customization** without requiring design skills
+* **Customize direct mail templates** with dynamic personalization
+* **Process payments and manage orders** with status tracking and manual capture workflow
+* **Ensure production accuracy** with user-approved proofs and list integrity
+* **Support single recipient mailing and high-volume batch campaigns**
+* **Offer automation tools** for recurring and split campaigns
+* **Enable skip tracing on-demand** with order lifecycle support
+* **Provide performance tracking, history logging, and data segmentation tools**
+* **Support admin oversight, impersonation, team collaboration**, and role-based access
+* **Expose internal and external APIs** with webhook support for CRM integration
+* **Enable a seamless third-party print and skip tracing fulfillment workflow**
 
----
+## **3. Functional Requirements**
 
-## 4. Major Features
+### **3.1 User Account and Identity Management**
 
-### 4.1 Mailing List Upload & Management
-- Upload via CSV/XLSX
-- Auto-map fields and allow manual mapping
-- AccuZIP API for address validation
-- User preference for deduplication toggle
-- Per-field change tracking (e.g., owner_name updated from John → Jonathan)
-- Ability to rollback changes by record, list, or tag
+* **Authentication**: Supabase Auth with NextAuth.js integration
+* **OAuth Support**: Google OAuth as primary method
+* **Role-based Access Control**: Admin, manager, user, client roles with distinct permissions
+* **Identity Cards**: Saved sender profiles for contact info reuse and multi-brand account support
+* **Team Management**: Multi-user collaboration with invite flows and shared resource access
 
-### 4.2 Contact Cards
-- Create and manage contact cards
-- Limit based on plan tier (e.g., Pro: 2 cards, Team: 1 per user)
-- Required for every campaign
-- Injected into live template previews
+### **3.2 Mailing List Manager (MLM)**
 
-### 4.3 Design & Template Editor
-- Fancy Product Designer integration for drag-and-drop layouts
-- Token insertion from mailing list and contact card fields
-- AI-generated personalization options (OpenAI or Claude)
-- Render preview per recipient or as placeholder sample
+* **File Upload**: CSV/XLSX upload with drag-and-drop interface, header mapping, validation, and preview
+* **Deduplication**: Toggle-based deduplication during upload with user-level default settings
+* **Address Validation**: AccuZIP integration for CASS-certified validation and deliverability scoring
+* **List Management**: 
+  * Custom and system column mapping with field exclusion before import
+  * Bulk and single-record entry support with manual record addition
+  * Tagging system for segmentation with advanced search and filtering
+  * Field-level change tracking and full record history with audit trails
+  * Response tagging (converted, called, etc.) for CRM-style tracking
+* **Data Processing**: 
+  * Record-level delivery history and performance tracking
+  * Deduplication, parsing, vacant filtering capabilities
+  * Export options with tag filters and bulk export functionality
+* **Archival**: Automatic archival of inactive lists after 12 months
 
-### 4.4 Proof Review & Approval
-- User reviews generated proofs
-- Annotate with thread-based comments
-- Admin/vendor uploads new revision
-- User clicks "Approve" to finalize
-- Approval triggers final payment capture
-- User may cancel before approval to void authorization
+### **3.3 Contact Cards**
 
-### 4.5 Payment Authorization & Capture
-- Stripe `payment_intent` created with `manual` capture method
-- Funds are authorized at checkout but not captured
-- Approval screen triggers payment capture
-- Canceling the order voids the payment hold
-- Checkout includes message: "Funds will not be charged until you approve all design proofs"
+* **Required Fields**: First name, Last name, Street address, Suite/Unit/Apt, City, State, Zip code, Email address, Company name, Phone number
+* **Plan-based Limits**:
+  * Pro plan: maximum of 2 contact cards
+  * Team and Enterprise plans: limit based on number of users in the account
+* **Campaign Integration**: One contact card must be selected for every campaign
+* **Order Process**: Prompt to select existing or create new card during order wizard
+* **Design Preview**: Contact card info displayed on design preview and injected into live previews
 
-### 4.6 Stored Payment Methods
-- User may store one or more payment methods in Account Settings
-- Stripe-managed (PCI-compliant)
-- Options to add, remove, or set a default card
-- Checkout pre-fills default card for faster ordering
+### **3.4 Template Management & Design Tool**
 
-### 4.7 Order Wizard
-1. Select template
-2. Upload mailing list
-3. Map fields & deduplicate
-4. Validate addresses
-5. Choose contact card
-6. Customize template
-7. Select mailing options
-8. Configure campaign schedule
-9. Final screen: disclaimer acknowledgment
-10. Submit order (authorize payment)
+* **Design Engine**: Fancy Product Designer (FPD) integration with drag-and-drop WYSIWYG editor
+* **Template Features**:
+  * Browse pre-made industry templates with categorized, ready-to-use designs
+  * Template marketplace for public & private templates with favorites and reuse capability
+  * Variable tag fields support (e.g., {{FirstName}}, {{PropertyAddress}})
+  * Templates include compatible variable tags from mailing list and contact card fields
+* **Design Capabilities**:
+  * Real-time canvas editor with image uploads and backgrounds
+  * Font, color, and layout control with professional customization options
+  * Auto-fill preview mode using sample mailing list data and contact card information
+  * Save drafts and reusable templates with template versioning
+  * Support for letters, postcards, and envelopes
 
-### 4.8 Campaign Options
-- Full service, print + ship, or print only
-- Split drop (e.g., 1,000 records over 4 weeks)
-- Repeat campaign logic
-- Visual campaign calendar UI
+### **3.5 Order Processing Workflow**
 
-### 4.9 Skip Tracing
-- Select records to trace
-- Send batch to vendor
-- Enriched file returned by email
-- Auto-import enrichment into records
-- Store audit trail of all status transitions
+* **Multi-step Order Wizard**:
+  1. Template selection
+  2. Mailing list upload with deduplication toggle
+  3. Field mapping and validation
+  4. Design customization with live preview
+  5. Contact card selection (mandatory)
+  6. Mailing options configuration
+  7. Campaign options setup
+  8. Final review with design lock confirmation + no refund disclaimer
+  9. Stripe checkout with payment authorization
 
-### 4.10 Vendor Management
-- Vendor profiles (print, skip trace, enrichment)
-- Manual assignment or fallback routing
-- SLA enforcement, quality scoring, turnaround metrics
-- Audit logs for each routing event
+* **Design Approval Flow**:
+  * Required double-approval modal before checkout with explicit design lock warning
+  * "By clicking Continue, you approve your design for printing. No changes can be made afterward."
+  * No external proofing or human review step for standard flow
 
-### 4.11 Team Collaboration
-- Invite users to a shared workspace
-- Set roles (admin, manager, user, client)
-- Share access to lists, templates, reports, contact cards
-- Enforce role-based UI and action permissions
+* **Payment Integration**:
+  * Stripe integration with payment authorization on checkout
+  * **Manual Capture Workflow**: Funds authorized but not captured until proof approval
+  * Final capture after design approval, with fund release if order abandoned
+  * Support for stored payment methods and default card selection
 
-### 4.12 Short Link Tracking
-- Each record has a short link (e.g., `yls.to/abc123`)
-- Tracks timestamp, IP, user agent
-- Aggregates click data per campaign
-- Heatmap and chart support in analytics module
+### **3.6 Mailing Options**
 
-### 4.13 Webhook Management
-- Register webhook endpoints
-- Subscribe to events (proof approved, order created, etc.)
-- View delivery status, retry failed events
-- Export logs
+Configurable during order wizard with dynamic pricing:
 
-### 4.14 Reporting & Analytics
-- Dashboards for users and admins
-- Scheduled reports (CSV, PDF, Excel)
-- Saved report templates
-- Admin feedback summary reports
-- Audit trail export support
+* **Option A**: Full mailing service (postage type + stamp/indicia selection)
+* **Option B**: Print, process, and ship to user (with or without postage - First Class live stamps only)
+* **Option C**: Print only and ship unprocessed/unpostaged to user
+* **Postage Rules**: 
+  * First Class (Forever): no minimum quantity
+  * First Class (Discounted): 500-piece minimum
+  * Standard Class: 200-piece minimum
+* **Dynamic Filtering**: System automatically shows only eligible postage types based on validated list count
+* **Shipping**: Shipping and handling fees apply to Options B & C based on weight
 
-### 4.15 Feedback Collection
-- NPS prompt after proof approval or report delivery
-- Comments optional
-- Scores < 6 trigger alert to support
-- Stored in `feedback` table with timestamps
+### **3.7 Campaign Options**
 
-### 4.16 Rollback & Change Logs
-- Track all updates with before/after snapshots
-- Support per-field rollback
-- Record type: created, updated, deleted
-- Visible in audit log and change viewer
+* **Split Campaign Configuration**: User selects number of drops and weekly interval (e.g., 4 drops, 1 per week)
+* **Repeat Campaign Options**:
+  * If split selected: specify how many times to repeat the full campaign
+  * If not split: specify frequency and number of repetitions
+* **Campaign Management**: Locked templates and contact cards for consistent sequencing with visual campaign calendar UI
 
----
+### **3.8 Vendor Management System**
 
-## 5. Role Definitions
+* **Multi-type Vendor Framework**: Support for print, skip_tracing, data_enrichment, and other vendor types
+* **Vendor Directory**: Unified admin-accessible directory with filtering by vendor_type
+* **Vendor Data Management**:
+  * Store vendor name, contact details, services offered, and pricing tiers
+  * Record wholesale pricing per service/product with tiered pricing structure
+  * Track turnaround time, shipping costs, minimum order quantity, quality rating, and error incidents
+  * Maintain historical pricing records and contract terms
+* **Performance Tracking**: Monitor delivery performance with on-time delivery rates, quality scores, and error incident logging
+* **Fulfillment Integration**: Used in routing for both print and skip tracing orders with manual vendor selection and fallback logic
 
-| Role   | Description                          |
-|--------|--------------------------------------|
-| Admin  | Full access to app + impersonation   |
-| Manager| Team-level edit + routing controls   |
-| User   | Core order, upload, proof features   |
+### **3.9 Skip Tracing System**
 
----
+* **Record Selection**: User can select one, multiple, or all records for skip tracing
+* **Order Management**: Skip tracing order creation with associated pricing and Stripe payment enforcement
+* **Vendor Integration**:
+  * Export selected records (limited fields) for external processing
+  * Email dispatch to selected skip tracing vendor with attached CSV
+  * Inbound email parsing and enriched data import via webhook
+* **Lifecycle Tracking**: Complete audit logging of skip trace actions with status tracking (not_requested, pending, enriched, failed)
+* **Notification System**: In-app and email notifications upon completion
 
-## 6. Plan Tiers
+### **3.10 Proof Review & Annotation System**
 
-| Plan       | Monthly Price | Users | Notes                          |
-|------------|---------------|--------|--------------------------------|
-| Free       | $0            | 1      | Limited features               |
-| Pro        | $49           | 1      | All standard features          |
-| Team       | $99           | 3      | Shared access, invite support |
-| Enterprise | $499          | 10     | Webhook control, reporting     |
+* **PDF Viewer Integration**: Embedded PDF viewer (PDF.js) with clickable annotation support
+* **Annotation Features**:
+  * Location-aware annotations with X/Y coordinates and page tracking
+  * Threaded comment replies with timestamp tracking
+  * Sidebar display of full comment list with resolution capability
+* **Approval Workflow**:
+  * Customer review of generated proofs with annotation capability
+  * Approve/Request Changes/Cancel options
+  * Approval triggers final payment capture; cancellation voids authorization
+* **Admin Integration**: Admin and support team can reply to or resolve comment threads
 
-Add-ons:
-- $29/user for additional seats (Team or Enterprise)
+### **3.11 AI Features**
 
----
+* **AI Personalization**: Toggle-enabled AI-generated message content using OpenAI/Claude with subscription tier usage limits
+* **Contextual Help**: Embedded AI-based tips and guidance by page/task with indexed documentation links
+* **Prompt System**: Template-based prompt system with token support and generated output history
 
-## 7. KPIs and Success Metrics
+### **3.12 Short URL Tracking System**
 
-- Proof approval time (average)
-- Short link engagement rate
-- Feedback NPS trends
-- Scheduled report delivery success
-- Webhook delivery success/retry rate
-- Skip trace enrichment rate
-- Vendor SLA compliance
-- Average rollback usage per month
+* **Link Generation**: Unique short codes per recipient/record (e.g., yls.to/xyz123)
+* **Analytics Tracking**: Log timestamp, IP, user agent, and record ID for each click
+* **Campaign Metrics**: Aggregate analytics per campaign with heatmap and time series views
+* **Smart Redirects**: Optional custom landing page redirection capability
 
----
+### **3.13 Rollback & Change Management**
 
-## Contact
+* **Change Tracking**: Track all modifications to mailing list records with before/after snapshots
+* **Rollback Options**: Support for individual record, entire list, or tag segment rollback
+* **Visual Interface**: UI for visual diff comparison with field-level change history
+* **Audit Logging**: All rollback actions logged to audit table with user attribution
 
-For product questions or feature clarifications:  
-support@yellowlettershop.com
+### **3.14 Analytics & Reporting Module**
 
+* **User Dashboard**: Login landing page with KPI tiles, charts, short link activity, and recent orders
+* **Admin Dashboard**: Platform-wide KPIs, revenue trends, vendor performance, and user activity charts
+* **Report Builder**: Full-featured interface with:
+  * Report type selection and timeframe filters
+  * Export formats (CSV, PDF, Excel)
+  * One-time download or email delivery options
+  * Scheduling engine for recurring delivery (daily, weekly, monthly)
+* **Saved Reports**: User and admin report templates with recurring report management
+* **Analytics Tracking**: Mailing volume, spend, engagement rates, validation success, skip tracing metrics, and short link performance
+
+### **3.15 Team Collaboration**
+
+* **Role-based Permissions**: Distinct access levels for admin, manager, user, and client roles
+* **Team Management**: Invitation flows with pending acceptance and plan limit enforcement
+* **Shared Resources**: Access to shared mailing lists, templates, reports, and contact cards
+* **Activity Tracking**: Team usage monitoring and collaborative workflow support
+
+### **3.16 Feedback & Support Systems**
+
+* **Feedback Collection**: NPS prompts post-order or post-proof with comment capability
+* **Support Integration**: Internal ticketing system with user submission and admin triage
+* **Alert System**: Automated alerts for NPS < 6 and critical system events
+* **Analytics Integration**: Feedback data included in admin reporting dashboards
+
+### **3.17 Webhooks & API Integration**
+
+* **Webhook Management**: User-defined webhook URLs per event type with comprehensive logging
+* **Event Types**: Support for proof approval, order creation, skip trace completion, and short link engagement
+* **Retry Logic**: Failed webhook retry capability with status tracking and manual retry options
+* **API Access**: REST endpoints for external system integration and CRM connectivity
+
+## **4. Technical Requirements**
+
+### **Technology Stack**
+* **Frontend**: Next.js, React, TypeScript, Tailwind CSS
+* **Backend**: Supabase (Auth, DB, Storage), Next.js API routes
+* **Database**: PostgreSQL with Row-Level Security (RLS)
+* **ORM**: Prisma for type-safe database access
+* **Payment Processing**: Stripe with manual capture workflow
+* **File Storage**: AWS S3 via Supabase Storage
+* **Design Engine**: Fancy Product Designer (FPD)
+* **Address Validation**: AccuZIP REST API
+* **Email Services**: SendGrid/Mailgun for transactional and inbound email
+* **AI Services**: OpenAI/Anthropic for optional personalization
+* **Charts & Analytics**: Recharts for dashboard visualizations
+
+### **Security & Compliance**
+* **Authentication**: JWT-based with Supabase Auth and NextAuth.js
+* **Authorization**: Supabase RLS for tenant isolation and data protection
+* **Data Handling**: GDPR-compliant with user data export and deletion capabilities
+* **Payment Security**: PCI compliance through Stripe integration
+* **Audit Logging**: Comprehensive activity tracking for compliance and debugging
+
+### **Performance & Scalability**
+* **Responsive Design**: Mobile-first, fully responsive interface
+* **Accessibility**: WCAG 2.1 compliant design standards
+* **CI/CD**: GitHub Actions with automated testing and deployment
+* **Monitoring**: Sentry error tracking, Vercel logs, and Supabase observability
+
+## **5. User Roles & Plan Tiers**
+
+### **User Roles**
+| Role | Description | Scope |
+|------|-------------|-------|
+| **Admin** | Full system access, impersonation, global oversight | System-wide |
+| **Manager** | Team management, order oversight, vendor routing | Team-level |
+| **User** | Core functionality: upload, order, design, proof review | Individual |
+| **Client** | View-only access to assigned assets | Restricted |
+
+### **Subscription Plans**
+| Plan | Monthly Price | Users | Key Features |
+|------|---------------|-------|--------------|
+| **Free** | $0 | 1 | Limited features, basic functionality |
+| **Pro** | $49 | 1 | All standard features, full access |
+| **Team** | $99 | 3 | Shared access, collaboration, team management |
+| **Enterprise** | $499 | 10 | Advanced reporting, webhook control, priority support |
+
+**Add-ons**: $29/user for additional seats on Team or Enterprise plans
+
+## **6. Success Metrics**
+
+### **Core KPIs**
+* **Design approval rate before payment**: >98%
+* **Address validation success rate**: >95% deliverable after AccuZIP processing
+* **Customer retention**: >50% reorder rate among returning customers
+* **Support efficiency**: <5 support tickets per 100 orders
+* **Operational reliability**: 90% on-time print and delivery rate
+
+### **Advanced Metrics**
+* **Proof review efficiency**: Minimal admin intervention required
+* **Vendor performance**: Cost-effective routing and quality maintenance
+* **User engagement**: AI help usage, short link engagement, and feature adoption
+* **System reliability**: Webhook delivery success, scheduled report accuracy
+* **Team collaboration**: Multi-user plan adoption and team feature utilization
+
+## **7. Development Phases**
+
+### **Phase 1: Foundation & MVP (Month 1-2)**
+* User authentication, identity cards, MLM, design tool, basic order flow, payment integration
+
+### **Phase 2: Feature Expansion (Month 3-4)**  
+* Analytics dashboard, reorder functionality, response tagging, advanced MLM features
+
+### **Phase 3: Internal Tools & Admin Panel (Month 5)**
+* Admin dashboard, user management, impersonation, pricing controls, vendor management
+
+### **Phase 4: Collaboration & Automation (Month 6-7)**
+* Team features, campaign scheduling, subscription tiers, skip tracing system
+
+### **Phase 5: Advanced Features (Month 8+)**
+* AI personalization, contextual help, short link tracking, rollback system, feedback collection
+
+### **Phase 6: Ecosystem Growth (Future)**
+* Template marketplace, mobile app, advanced automation, external API access
+
+## **8. Contact**
+
+For questions related to this PRD, feature clarifications, or product strategy:
+
+**Email:** support@yellowlettershop.com

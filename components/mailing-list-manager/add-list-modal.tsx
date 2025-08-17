@@ -292,13 +292,14 @@ export function AddListModal({ open, onOpenChange, onSuccess }: AddListModalProp
         <div className="space-y-6 py-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="list-name">List Name</Label>
+              <Label htmlFor="listName">List Name</Label>
               <Input
-                id="list-name"
+                id="listName"
+                placeholder="Enter list name"
                 value={listName}
                 onChange={(e) => setListName(e.target.value)}
-                placeholder="e.g., NY Leads 2025"
-                className="mt-1"
+                className="col-span-3"
+                data-testid="list-name-input"
               />
             </div>
 
@@ -499,7 +500,6 @@ export function AddListModal({ open, onOpenChange, onSuccess }: AddListModalProp
                                       value={customFieldNames[header] || ""}
                                       onChange={(e) => handleCustomFieldNameChange(header, e.target.value)}
                                       placeholder="Enter custom field name"
-                                      size="sm"
                                     />
                                   </div>
                                 )}

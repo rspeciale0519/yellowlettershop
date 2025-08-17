@@ -1,98 +1,74 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-
-interface User {
-  id: string
-  email: string
-  name: string
-  avatar?: string
-  loginMethod: "email" | "google"
-}
+import { createClient } from "@/utils/supabase/client"
+import type { User as SupabaseUser } from "@supabase/supabase-js"
 
 interface AuthState {
-  user: User | null
+  user: SupabaseUser | null
   isLoading: boolean
   isAuthenticated: boolean
 }
 
 export function useAuth() {
+  const supabase = createClient()
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     isLoading: true,
     isAuthenticated: false,
   })
 
-  // Check for existing user session
-  const checkSession = useCallback(() => {
+  // Check for existing Supabase session
+  const checkSession = useCallback(async () => {
     try {
-      const storedUser = localStorage.getItem("yls_user") || sessionStorage.getItem("yls_user")
-      if (storedUser) {
-        const user = JSON.parse(storedUser)
-        setAuthState({
-          user,
-          isLoading: false,
-          isAuthenticated: true,
-        })
-      } else {
-        setAuthState({
-          user: null,
-          isLoading: false,
-          isAuthenticated: false,
-        })
-      }
-    } catch (error) {
-      console.error("Error checking user session:", error)
+      const { data, error } = await supabase.auth.getUser()
+      if (error) throw error
+      const user = data.user ?? null
       setAuthState({
-        user: null,
+        user,
         isLoading: false,
-        isAuthenticated: false,
+        isAuthenticated: !!user,
       })
+    } catch (error) {
+      console.error("Error checking Supabase session:", error)
+      setAuthState({ user: null, isLoading: false, isAuthenticated: false })
     }
-  }, [])
+  }, [supabase])
 
-  // Login function
-  const login = useCallback((user: User, rememberMe = false) => {
-    const storage = rememberMe ? localStorage : sessionStorage
-    storage.setItem("yls_user", JSON.stringify(user))
-    setAuthState({
-      user,
-      isLoading: false,
-      isAuthenticated: true,
-    })
-  }, [])
+  // Login with email/password helper (optional)
+  const loginWithPassword = useCallback(
+    async (email: string, password: string) => {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error) throw error
+      setAuthState({ user: data.user, isLoading: false, isAuthenticated: true })
+      return data
+    },
+    [supabase]
+  )
 
-  // Logout function
-  const logout = useCallback(() => {
-    localStorage.removeItem("yls_user")
-    sessionStorage.removeItem("yls_user")
-    setAuthState({
-      user: null,
-      isLoading: false,
-      isAuthenticated: false,
-    })
-  }, [])
+  // Logout via Supabase
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut()
+    setAuthState({ user: null, isLoading: false, isAuthenticated: false })
+  }, [supabase])
 
-  // Initialize auth state on mount
+  // Initialize auth state and subscribe to changes
   useEffect(() => {
     checkSession()
-  }, [checkSession])
 
-  // Listen for storage changes (for multi-tab support)
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "yls_user") {
-        checkSession()
-      }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const u = session?.user ?? null
+      setAuthState({ user: u, isLoading: false, isAuthenticated: !!u })
+    })
+
+    return () => {
+      subscription.unsubscribe()
     }
-
-    window.addEventListener("storage", handleStorageChange)
-    return () => window.removeEventListener("storage", handleStorageChange)
-  }, [checkSession])
+  }, [checkSession, supabase])
 
   return {
     ...authState,
-    login,
+    loginWithPassword,
     logout,
     checkSession,
   }

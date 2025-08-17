@@ -15,17 +15,23 @@ interface DeleteConfirmModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onConfirm: () => void
+  title: string
+  description: string
 }
 
-export function DeleteConfirmModal({ open, onOpenChange, onConfirm }: DeleteConfirmModalProps) {
+export function DeleteConfirmModal({
+  open,
+  onOpenChange,
+  onConfirm,
+  title,
+  description,
+}: DeleteConfirmModalProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete Mailing List</AlertDialogTitle>
-          <AlertDialogDescription>
-            Are you sure you want to delete this mailing list? This action cannot be undone.
-          </AlertDialogDescription>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>

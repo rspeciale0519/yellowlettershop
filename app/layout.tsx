@@ -6,6 +6,7 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ThemeScript } from '@/components/theme/theme-script';
+import { AuthFlowModalController } from '@/components/auth/auth-flow-modal';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -39,6 +40,8 @@ export default function RootLayout({
             <main className='flex-1'>{children}</main>
             <Footer />
           </div>
+          {/* Global auth modal controller, reacts to `?auth=` query param */}
+          <AuthFlowModalController />
         </ThemeProvider>
       </body>
     </html>

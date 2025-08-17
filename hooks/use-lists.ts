@@ -2,32 +2,46 @@
 
 import { useEffect } from "react"
 import useSWR from "swr"
+import { getMailingLists } from "@/lib/supabase/mailing-lists"
+import { createClient } from "@/utils/supabase/client"
 
-// In a real implementation, this would fetch from an API
 const fetcher = async () => {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 1000))
-  return [] // Return empty array instead of mock data
+  try {
+    const data = await getMailingLists()
+    return data || []
+  } catch (error) {
+    console.error('Error fetching mailing lists:', error)
+    return []
+  }
 }
 
 export function useLists() {
   const { data, error, mutate } = useSWR("mailing-lists", fetcher)
 
-  // In a real implementation, this would use Supabase subscriptions
   useEffect(() => {
-    // Set up subscription
-    const subscription = {
-      unsubscribe: () => {},
-    }
+    const supabase = createClient()
+    
+    // Set up real-time subscription for mailing lists
+    const channel = supabase
+      .channel('mailing-lists-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'mailing_lists' },
+        () => {
+          // Revalidate data when changes occur
+          mutate()
+        }
+      )
+      .subscribe()
 
     // Clean up subscription
     return () => {
-      subscription.unsubscribe()
+      supabase.removeChannel(channel)
     }
-  }, [])
+  }, [mutate])
 
   return {
-    lists: data || [], // Provide empty array as fallback
+    lists: data || [],
     isLoading: !error && !data,
     error,
     mutate,

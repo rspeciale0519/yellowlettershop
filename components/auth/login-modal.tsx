@@ -20,6 +20,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Eye, EyeOff, Mail, Lock, AlertCircle, Loader2 } from "lucide-react"
 import { GoogleIcon } from "@/components/icons/google-icon"
+import { createClient } from "@/utils/supabase/client"
 
 interface LoginModalProps {
   children: React.ReactNode
@@ -49,6 +50,7 @@ export function LoginModal({ children, onLoginSuccess }: LoginModalProps) {
   const [errors, setErrors] = useState<LoginError[]>([])
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const router = useRouter()
+  const supabase = createClient()
 
   // Clear errors when modal opens/closes
   useEffect(() => {
@@ -100,37 +102,23 @@ export function LoginModal({ children, onLoginSuccess }: LoginModalProps) {
     setErrors([])
 
     try {
-      // Simulate API call delay
-      await new Promise((resolve) => setTimeout(resolve, 1500))
-
-      // TODO: Replace with actual authentication API call
-      // For testing purposes, accept any email/password combination
-      console.log("🔐 [DEV MODE] Login attempt:", {
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
-        password: "***hidden***",
-        rememberMe: formData.rememberMe,
+        password: formData.password,
       })
 
-      // Simulate successful login
-      const mockUser = {
-        id: "user_123",
-        email: formData.email,
-        name: formData.email.split("@")[0],
-        avatar: null,
-        loginMethod: "email",
+      if (error) {
+        setErrors([
+          {
+            type: "general",
+            message: error.message || "Login failed. Please check your credentials and try again.",
+          },
+        ])
+        return
       }
 
-      // Store user session (in production, this would be handled by your auth provider)
-      if (formData.rememberMe) {
-        localStorage.setItem("yls_user", JSON.stringify(mockUser))
-      } else {
-        sessionStorage.setItem("yls_user", JSON.stringify(mockUser))
-      }
-
-      // Call success callback
-      onLoginSuccess?.(mockUser)
-
-      // Close modal and redirect
+      // Notify parent and navigate
+      onLoginSuccess?.(data.user)
       setIsOpen(false)
       router.push("/dashboard")
     } catch (error) {
@@ -152,31 +140,21 @@ export function LoginModal({ children, onLoginSuccess }: LoginModalProps) {
     setErrors([])
 
     try {
-      // TODO: Implement actual Google OAuth integration
-      // This is a placeholder for Google 1-Click Login
-      console.log("🔐 [DEV MODE] Google login initiated")
-
-      // Simulate Google OAuth flow
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-
-      // Simulate successful Google login
-      const mockGoogleUser = {
-        id: "google_user_456",
-        email: "user@gmail.com",
-        name: "John Doe",
-        avatar: "https://lh3.googleusercontent.com/a/default-user=s96-c",
-        loginMethod: "google",
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`,
+        },
+      })
+      if (error) {
+        setErrors([
+          {
+            type: "google",
+            message: error.message || "Google login failed. Please try again.",
+          },
+        ])
       }
-
-      // Store user session
-      localStorage.setItem("yls_user", JSON.stringify(mockGoogleUser))
-
-      // Call success callback
-      onLoginSuccess?.(mockGoogleUser)
-
-      // Close modal and redirect
-      setIsOpen(false)
-      router.push("/dashboard")
+      // On success, Supabase will redirect to Google; no further action here
     } catch (error) {
       console.error("Google login error:", error)
       setErrors([
@@ -356,6 +334,10 @@ export function LoginModal({ children, onLoginSuccess }: LoginModalProps) {
                 variant="link"
                 className="p-0 h-auto text-sm text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300"
                 disabled={isLoading}
+                onClick={() => {
+                  setIsOpen(false)
+                  router.push('/forgot-password')
+                }}
               >
                 Forgot password?
               </Button>
@@ -386,19 +368,15 @@ export function LoginModal({ children, onLoginSuccess }: LoginModalProps) {
                 type="button"
                 variant="link"
                 className="p-0 h-auto text-sm text-yellow-600 hover:text-yellow-700 dark:text-yellow-400 dark:hover:text-yellow-300 font-semibold"
+                onClick={() => {
+                  setIsOpen(false)
+                  router.push('/signup')
+                }}
               >
                 Create Account
               </Button>
             </p>
           </div>
-
-          {/* Development Notice */}
-          <Alert className="border-yellow-200 bg-yellow-50 dark:bg-yellow-950/20">
-            <AlertCircle className="h-4 w-4 text-yellow-600" />
-            <AlertDescription className="text-yellow-800 dark:text-yellow-200">
-              <strong>Development Mode:</strong> Any email/password combination will work for testing purposes.
-            </AlertDescription>
-          </Alert>
         </div>
       </DialogContent>
     </Dialog>

@@ -8,7 +8,7 @@ import { Edit, Trash, X, ChevronUp, ChevronDown } from "lucide-react"
 import { TagsDropdown } from "./tags-dropdown"
 import { CampaignUsageTooltip } from "./campaign-usage-tooltip"
 import { CustomizableTable, type ColumnDef } from "./customizable-table"
-import { formatDate } from "@/lib/utils"
+import { formatDate } from "@/lib/dashboard-utils"
 import { useLocalStorage } from "@/hooks/use-local-storage"
 import { useEffect, useMemo } from "react"
 
@@ -21,6 +21,7 @@ interface ListsTableProps {
   sortBy: { column: string; direction: "asc" | "desc" }
   onSort: (column: string) => void
   onEdit: (id: string) => void
+  onViewRecords: (id: string) => void
   onDelete: (id: string) => void
   onNameEdit: (id: string, name: string) => void
   onAddTag: (listId: string, tagId: string) => void
@@ -32,15 +33,12 @@ interface ListsTableProps {
   onOpenCampaignModal: (campaigns: any[], title: string) => void
 }
 
-export function ListsTable({
+export const ListsTable = ({
   lists,
-  selectedRecords,
-  onCheckboxToggle,
-  selectAll,
-  onSelectAllChange,
   sortBy,
   onSort,
   onEdit,
+  onViewRecords,
   onDelete,
   onNameEdit,
   onAddTag,
@@ -50,7 +48,11 @@ export function ListsTable({
   saveNameEdit,
   setEditingName,
   onOpenCampaignModal,
-}: ListsTableProps) {
+  selectedRecords,
+  onCheckboxToggle,
+  selectAll,
+  onSelectAllChange,
+}: ListsTableProps) => {
   // Add this at the top of the ListsTable component function
   useEffect(() => {
     // Cleanup function to ensure any ResizeObserver is disconnected
@@ -92,7 +94,7 @@ export function ListsTable({
       {
         id: "rowNumber",
         header: "Row",
-        cell: (list, index) => index + 1,
+                cell: (list, index) => (index !== undefined ? index + 1 : ""),
         enableSorting: false,
         minWidth: 60,
         maxWidth: 60,
@@ -226,7 +228,7 @@ export function ListsTable({
               className="max-w-[200px]"
             />
           ) : (
-            <div className="cursor-pointer hover:underline" onClick={() => onNameEdit(list.id, list.name)}>
+            <div className="cursor-pointer hover:underline" onClick={() => onViewRecords(list.id)} onDoubleClick={() => onNameEdit(list.id, list.name)}>
               {list.name}
             </div>
           ),

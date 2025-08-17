@@ -30,7 +30,7 @@ interface RecordsTableProps {
   onRecordFieldEdit: (id: string, field: string, value: string) => void
   editingRecord: { id: string; field: string; value: string } | null
   saveRecordFieldEdit: () => void
-  setEditingRecord: React.Dispatch<React.SetStateAction<{ id: string; field: string; value: string } | null>>
+  setEditingRecord: (value: { id: string; field: string; value: any; } | null) => void
   availableTags: { id: string; name: string }[]
   onOpenCampaignModal: (campaigns: any[], title: string) => void
   onCreateCampaignList?: () => void // Add this new prop

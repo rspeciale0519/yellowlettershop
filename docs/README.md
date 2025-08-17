@@ -1,112 +1,97 @@
-# Yellow Letter Shop (YLS)
+# **Yellow Letter Shop (YLS) Software Development Document**
 
 **Version:** v1.5  
 **Maintainer:** support@yellowlettershop.com
 
-Yellow Letter Shop (YLS) is a full-stack SaaS platform designed to help real estate investors, marketers, and agencies launch, automate, and optimize direct mail campaigns. The system includes mailing list validation, print template customization, vendor routing, AI personalization, annotation workflows, webhook integrations, campaign scheduling, short link tracking, analytics dashboards, feedback collection, team collaboration, rollback tooling, and recurring report generation.
+Yellow Letter Shop (YLS) is a **modern, full-stack SaaS platform** designed for real estate investors, marketers, and agencies. It facilitates the launch, automation, and optimization of **end-to-end personalized direct mail campaigns at scale**.
 
----
+## **Overview**
 
-## Overview
+YLS offers a complete direct mail automation pipeline. It enables users to:
 
-YLS enables users to:
-- Upload and validate mailing lists (AccuZIP integration)
-- Customize print templates using Fancy Product Designer (FPD)
-- Personalize mail using dynamic tokens and contact cards
-- Configure split and repeat campaigns
-- Track mail engagement via short links
-- Annotate and approve proofs
-- Automate skip tracing
-- Route orders to third-party vendors
-- Manage user roles, teams, and permissions
-- Trigger and view webhook events
-- Submit and analyze feedback (NPS)
-- View dashboards with exportable KPIs and analytics
-- Schedule recurring reports and monitor delivery logs
-- Roll back record changes with version history and audit logs
+* **Upload and validate mailing lists** with deduplication and **AccuZIP address validation**
+* **Create and customize personalized print marketing materials** using the **Fancy Product Designer (FPD)** with dynamic token injection
+* **Personalize mail** using dynamic tokens and contact cards, which are required per campaign and previewed in the design
+* Select **multi-vendor fulfillment options** and manage vendors with pricing tiers and performance tracking
+* **Automate campaign delivery** and configure split or repeat campaigns with **CRON management**
+* Review proofs with a **PDF viewer and threaded comments** for annotation workflows
+* Utilize **built-in AI features** for message personalization and contextual help, providing embedded AI-based tips by page/task
+* **Track mail engagement** via **short link generation** with recipient-level tracking analytics and redirection logs
+* Automate **skip tracing** with record-level lifecycle tracking and CSV ingestion
+* Manage **user roles, teams, and permissions** (admin, manager, user, client) with user role-based access
+* Integrate with **internal and external API access** and trigger/view **webhook events** with a retry queue
+* Submit and analyze **feedback** via NPS prompts after proofs or reports
+* Access **analytics reporting**, including visual KPI dashboards, scheduled and on-demand report generation with export options (CSV, PDF, Excel), filters, saved templates, and a recurring report delivery engine
+* Utilize a **rollback engine** with visual diff, version history, and audit logging to restore overwritten records per list, record, or tag
+* Access **admin tools** for impersonation, approvals, override workflows, and routing
+* Manage **subscription billing** with plan-based limits via **Stripe**
 
----
+The system supports team collaboration.
 
-## Core Technologies
+## **Core Technologies**
 
-| Area        | Technology                         |
-|-------------|-------------------------------------|
-| Frontend    | Next.js, React, Tailwind CSS       |
-| Backend     | Supabase (PostgreSQL, Auth, Storage), Prisma |
-| Design Tool | Fancy Product Designer (FPD)       |
-| AI Services | OpenAI or Claude                   |
-| Validation  | AccuZIP (address verification)     |
-| Payments    | Stripe                             |
-| File Storage| AWS S3 (via Supabase)              |
-| CI/CD       | GitHub Actions + Vercel            |
-| Monitoring  | Sentry, Vercel Logs, Supabase Logs |
-| Reports     | CRON-based schedule, export engine |
+YLS is built using a modern technology stack with full CI/CD and observability pipelines.
 
----
+| Area | Technology |
+|------|------------|
+| **Frontend** | **Next.js** (App Router), **React** 18+, **Tailwind CSS**, **TypeScript** |
+| **Backend** | **Supabase** (PostgreSQL, RLS-secured data models, Auth, Storage), **Next.js API Routes**, **Prisma** |
+| **Authentication** | **Supabase Auth**, **NextAuth.js** with JWT and OAuth |
+| **APIs & Services** | **REST API** (Next.js routes), **AccuZIP** (address validation), **Stripe** (payment processing), **Fancy Product Designer (FPD)**, **OpenAI/Claude** (AI Services), **SendGrid/Mailgun** |
+| **File Storage** | **AWS S3** via Supabase Storage/Buckets |
+| **CI/CD** | **GitHub Actions** + **Vercel** (PR previews, staging, production) |
+| **Monitoring** | **Sentry**, **Vercel Logs**, **Supabase Logs**, **Stripe Webhooks/Dashboard** |
+| **Reporting Engine** | **CRON-based schedule**, export engine |
 
-## Getting Started
+## **Key Features / Project Modules**
 
-```bash
-# Clone the repository
-$ git clone https://github.com/your-org/yellow-letter-shop.git
-$ cd yellow-letter-shop
+The YLS platform is structured around several key modules and features:
 
-# Copy environment template and install dependencies
-$ cp .env.example .env.local
-$ npm install
+* **Order Wizard**: Manages the complete process from upload to checkout, including deduplication, mapping, validation, customization, and confirmation
+* **Mailing List Management**: Supports upload with a deduplication toggle and **AccuZIP address validation**
+* **Template Editor**: Powered by **Fancy Product Designer (FPD)** with token injection capabilities
+* **Contact Card System**: Required per campaign and previewed in design, with plan-based enforcement
+* **Campaign Configuration**: Full support for a multi-step print order wizard and campaign configuration
+* **AI-powered Personalization**: Message personalization and contextual help
+* **Vendor Management**: Add/edit vendors, define pricing tiers, and track service performance
+* **Proof Review**: PDF annotation system with threaded comments
+* **Skip Tracing**: Includes record-level lifecycle tracking and CSV ingestion
+* **Short Link Tracking**: Generates short links and provides recipient-level tracking analytics and redirect logs
+* **Rollback System**: Engine with visual diff and audit logging to restore overwritten records per list, record, or tag
+* **Admin Tools**: Functionality for impersonation, approvals, override workflows, and routing
+* **Subscription Billing**: Manages plan-based limits via **Stripe**
+* **Analytics & Reporting Module**:
+  * **Visual KPI dashboards** for users and admins
+  * **Scheduled and on-demand report generation** with export options (CSV, PDF, Excel)
+  * Filters for timeframes, campaign performance, vendor stats, and fulfillment logs
+  * Saved report templates and a recurring report delivery engine
+* **Contextual Help**: Embedded AI-based tips by page/task
+* **Feedback Engine**: NPS + comment prompt after proofs or reports
+* **Webhook Logs**: Custom event routing with retry queue
+* **Team Collaboration**: Supports multi-user plans, invite flows, and permission enforcement
+* **Role-based User Permissions**: Admin, manager, user, client roles supported
 
-# Run the dev server
-$ npm run dev
-```
+## **Getting Started**
 
-Requires Node.js v18+ and npm v8+.
+To get started with development, **Node.js v18+ and npm v8+ are required**.
 
----
+## **Documentation Index**
 
-## Project Modules
+The following documents provide detailed information for developers:
 
-- **Order Wizard** — Upload, deduplicate, map, validate, customize, confirm, checkout
-- **Contact Cards** — Required per campaign, previewed in design
-- **Vendor Management** — Add/edit vendors, pricing tiers, service tracking
-- **Proof Review** — PDF annotation system with threaded comments
-- **Campaign Scheduler** — Split drops or repeat intervals with CRON management
-- **Short Link Tracking** — Per-recipient redirect logs and analytics
-- **Rollback System** — Restore overwritten records per list, record, or tag
-- **Contextual Help** — Embedded AI-based tips by page/task
-- **Feedback Engine** — NPS + comment prompt after proofs or reports
-- **Webhook Logs** — Custom event routing with retry queue
-- **Scheduled Reports** — Recurring exports (CSV, PDF, Excel) with delivery tracking
-- **Team Collaboration** — Multi-user plans, invite flow, permission enforcement
+| Document | Description |
+|----------|-------------|
+| **PRD.md** | Product goals, user personas, and comprehensive feature overview |
+| **TECHNICAL_ARCHITECTURE.md** | System architecture, technology stack, infrastructure, and security |
+| **API_AND_DATA.md** | Internal and third-party API documentation, database schema, and integrations |
+| **FEATURES_AND_ADMIN.md** | Complete feature specifications, admin tools, pricing, roles, and analytics |
+| **DEVELOPMENT_GUIDE.md** | Development workflow, testing strategy, deployment, and contribution guidelines |
+| **UI_PATTERNS_AND_ROADMAP.md** | UI/UX patterns, interface specifications, and detailed product roadmap |
 
----
+## **Developer Contact**
 
-## Documentation Index
+For all development questions, technical support, API documentation, feature clarification, DevOps assistance, QA support, or any other development-related inquiries:
 
-| File                             | Description                                      |
-|----------------------------------|--------------------------------------------------|
-| [`PRD.md`](./PRD.md)             | Product Requirements                            |
-| [`TECH_STACK.md`](./TECH_STACK.md) | Frameworks and Tools Overview               |
-| [`DEVELOPMENT_TODO.md`](./DEVELOPMENT_TODO.md) | Build Tasks Checklist         |
-| [`ARCHITECTURE.md`](./ARCHITECTURE.md) | App Structure and Flow                 |
-| [`DATA_MODELS.md`](./DATA_MODELS.md) | Database Tables and Relationships          |
-| [`API_REFERENCE.md`](./API_REFERENCE.md) | Internal & External API Docs           |
-| [`DEPLOYMENT.md`](./DEPLOYMENT.md) | CI/CD, Rollbacks, Secrets, Monitoring      |
-| [`TESTING.md`](./TESTING.md)     | QA Strategy and E2E Coverage                    |
-| [`SECURITY.md`](./SECURITY.md)   | Auth, RLS, Audit Logs, Privacy Controls         |
-| [`CHANGELOG.md`](./CHANGELOG.md) | Version History and Feature Updates             |
-| [`CONTRIBUTING.md`](./CONTRIBUTING.md) | Development Process Guidelines          |
-| [`ANALYTICS_AND_REPORTING.md`](./ANALYTICS_AND_REPORTING.md) | Dashboards, Reports, Scheduling |
+**Email:** support@yellowlettershop.com
 
----
-
-## Developer Contacts
-
-| Area                        | Email                          |
-|-----------------------------|---------------------------------|
-| DevOps & CI/CD              | support@yellowlettershop.com   |
-| API or Webhooks             | support@yellowlettershop.com   |
-| AI Features & Help Layer    | support@yellowlettershop.com   |
-| QA & Testing Coverage       | support@yellowlettershop.com   |
-| Vendor Routing, Admin Tools| admin@yellowlettershop.com     |
-| Feedback & NPS Responses    | support@yellowlettershop.com   |
-
+For all contributors, refer to the DEVELOPMENT_GUIDE.md for contribution and PR standards documentation.
