@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
-import { toast } from "@/hooks/use-toast"
+import { useToast } from "@/components/ui/use-toast"
 import { deduplicateList } from '@/lib/supabase/mailing-lists-extended'
 import { Loader2, AlertCircle, CheckCircle, Users, UserX } from "lucide-react"
 
@@ -29,6 +29,7 @@ export function DeduplicationModal({
   recordCount,
   onDeduplicationComplete 
 }: DeduplicationModalProps) {
+  const { toast } = useToast()
   const [isProcessing, setIsProcessing] = useState(false)
   const [deduplicationField, setDeduplicationField] = useState<'address' | 'name' | 'phone' | 'email'>('address')
   const [matchingStrategy, setMatchingStrategy] = useState<'exact' | 'fuzzy'>('exact')

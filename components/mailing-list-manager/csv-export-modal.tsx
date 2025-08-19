@@ -7,8 +7,8 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { toast } from "@/hooks/use-toast"
-import { exportListToCSV } from '@/lib/supabase/mailing-lists'
+import { useToast } from "@/components/ui/use-toast"
+import { getMailingListRecords } from '@/lib/supabase/mailing-lists'
 import { Download, FileText, AlertCircle, Loader2 } from "lucide-react"
 
 interface CSVExportModalProps {
@@ -57,6 +57,7 @@ export function CSVExportModal({
   listName,
   recordCount 
 }: CSVExportModalProps) {
+  const { toast } = useToast()
   const [isExporting, setIsExporting] = useState(false)
   const [exportFormat, setExportFormat] = useState<'standard' | 'custom'>('standard')
   const [selectedFieldGroups, setSelectedFieldGroups] = useState<string[]>(['basic', 'address'])
@@ -105,7 +106,7 @@ export function CSVExportModal({
       const limit = limitRecords ? recordLimit : undefined
       
       // Get records from database
-      const records = await exportListToCSV(listId, fields, limit)
+      const { data: records } = await getMailingListRecords(listId, { limit })
       
       if (!records || records.length === 0) {
         throw new Error("No records found to export")
@@ -123,7 +124,7 @@ export function CSVExportModal({
       }
 
       // Add data rows
-      records.forEach(record => {
+      records.forEach((record: Record<string, any>) => {
         const row = fields.map(field => {
           const value = record[field]
           if (value === null || value === undefined) return ''

@@ -1,0 +1,18 @@
+{
+  "require": [
+    "tests/setup/register-ts-node.cjs",
+    "tests/setup/jsdom.js",
+    "tests/setup/mock-lucide-react.js"
+  ],
+  "spec": [
+    "tests/**/*.test.ts",
+    "tests/**/*.test.tsx"
+  ],
+  "extension": [
+    "ts",
+    "tsx"
+  ],
+  "reporter": "spec",
+  "timeout": 5000,
+  "color": true
+}

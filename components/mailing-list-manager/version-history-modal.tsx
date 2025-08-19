@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { toast } from "@/hooks/use-toast"
+import { useToast } from "@/components/ui/use-toast"
 import { getListVersionHistory } from '@/lib/supabase/mailing-lists'
 import { restoreListVersion } from '@/lib/supabase/mailing-lists-extended'
 import { format } from 'date-fns'
@@ -45,6 +45,7 @@ export function VersionHistoryModal({
   currentVersion,
   onVersionRestore 
 }: VersionHistoryModalProps) {
+  const { toast } = useToast()
   const [versions, setVersions] = useState<ListVersion[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [selectedVersion, setSelectedVersion] = useState<ListVersion | null>(null)

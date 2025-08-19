@@ -73,7 +73,7 @@ export interface MortgageCriteria {
   loanToValue: { min: number; max: number } | null
   mortgageOriginationDate: { from: string; to: string } | null
   maturityDate: { from: string; to: string } | null
-  mortgageTerm: string[]
+  mortgageTerm: { terms: number[] } | null
   primaryLoanType: string[]
   lenderOrigination: string[]
   lenderAssigned: string[]

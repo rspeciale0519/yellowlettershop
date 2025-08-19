@@ -21,11 +21,15 @@ interface TableViewProps {
   selectedRecords: string[]
   onCheckboxToggle: (id: string) => void
   selectAll: boolean
-  onSelectAllChange: () => void
+  onSelectAllChange: (checked: boolean | "indeterminate") => void
   editingName: { id: string; value: string } | null
   onNameEdit: (id: string, name: string) => void
   saveNameEdit: () => void
   setEditingName: (value: { id: string; value: string } | null) => void
+  // Modal open handlers
+  onOpenCSVImport: (id: string) => void
+  onOpenDeduplication: (id: string) => void
+  onOpenVersionHistory: (id: string) => void
   // RecordsTable props
   onUpdateRecord: (recordId: string, updates: Partial<MailingListRecord>) => void
   onAddTagToRecord: (recordId: string, tagId: string) => void
@@ -60,6 +64,9 @@ export const TableView = (props: TableViewProps) => {
           onNameEdit={props.onNameEdit}
           saveNameEdit={props.saveNameEdit}
           setEditingName={props.setEditingName}
+          onOpenCSVImport={props.onOpenCSVImport}
+          onOpenDeduplication={props.onOpenDeduplication}
+          onOpenVersionHistory={props.onOpenVersionHistory}
         />
       ) : (
         <RecordsTable
@@ -85,3 +92,4 @@ export const TableView = (props: TableViewProps) => {
     </div>
   )
 }
+

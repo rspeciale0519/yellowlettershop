@@ -1,7 +1,7 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,97 +9,112 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
   DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu"
-import { Type, FileText, Edit, Wand2, Database, Copy } from "lucide-react"
-import { FormatDataModal } from "./format-data-modal"
-import { FillDataModal } from "./fill-data-modal"
-import { ReplaceDataModal } from "./replace-data-modal"
-import { ParseDataModal } from "./parse-data-modal"
-import { DuplicateManagementModal } from "./duplicate-management-modal"
-import { useToast } from "@/components/ui/use-toast"
-import type { ColumnDef } from "./customizable-table"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+} from '@/components/ui/dropdown-menu';
+import { Type, FileText, Edit, Wand2, Database, Copy } from 'lucide-react';
+import { FormatDataModal } from './format-data-modal';
+import { FillDataModal } from './fill-data-modal';
+import { ReplaceDataModal } from './replace-data-modal';
+import { ParseDataModal } from './parse-data-modal';
+import { DeduplicationModal } from './deduplication-modal';
+import { useToast } from '@/components/ui/use-toast';
+import type { ColumnDef } from './customizable-table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface DataOperationsDropdownProps {
-  columns: ColumnDef[]
-  records?: any[]
+  columns: ColumnDef[];
+  records?: any[];
 }
 
-export function DataOperationsDropdown({ columns, records = [] }: DataOperationsDropdownProps) {
-  const { toast } = useToast()
-  const [formatModalOpen, setFormatModalOpen] = useState(false)
-  const [fillModalOpen, setFillModalOpen] = useState(false)
-  const [replaceModalOpen, setReplaceModalOpen] = useState(false)
-  const [parseModalOpen, setParseModalOpen] = useState(false)
-  const [duplicateModalOpen, setDuplicateModalOpen] = useState(false)
+export function DataOperationsDropdown({
+  columns,
+  records = [],
+}: DataOperationsDropdownProps) {
+  const { toast } = useToast();
+  const [formatModalOpen, setFormatModalOpen] = useState(false);
+  const [fillModalOpen, setFillModalOpen] = useState(false);
+  const [replaceModalOpen, setReplaceModalOpen] = useState(false);
+  const [parseModalOpen, setParseModalOpen] = useState(false);
+  const [duplicateModalOpen, setDuplicateModalOpen] = useState(false);
+
+  // Infer list context from provided records (if any)
+  const inferredListId = records.length > 0 ? records[0]?.listId ?? '' : '';
+  const inferredListName =
+    records.length > 0
+      ? records[0]?.listName ?? 'Current List'
+      : 'Current List';
 
   // Handle format data application
   const handleApplyFormat = (options: any) => {
-    const { columns: selectedColumns, formatOption } = options
+    const { columns: selectedColumns, formatOption } = options;
 
     toast({
-      title: "Format applied",
+      title: 'Format applied',
       description: `Applied ${formatOption} formatting to ${selectedColumns.length} column(s)`,
-    })
+    });
 
-    console.log("Format options:", options)
-  }
+    console.log('Format options:', options);
+  };
 
   // Handle fill data application
   const handleApplyFill = (options: any) => {
-    const { columns: selectedColumns, fillValue } = options
+    const { columns: selectedColumns, fillValue } = options;
 
     toast({
-      title: "Fill operation applied",
+      title: 'Fill operation applied',
       description: `Filled ${selectedColumns.length} column(s) with "${fillValue}"`,
-    })
+    });
 
-    console.log("Fill options:", options)
-  }
+    console.log('Fill options:', options);
+  };
 
   // Handle replace data application
   const handleApplyReplace = (options: any) => {
-    const { columns: selectedColumns, searchText, replaceText } = options
+    const { columns: selectedColumns, searchText, replaceText } = options;
 
     toast({
-      title: "Replace operation applied",
+      title: 'Replace operation applied',
       description: `Replaced "${searchText}" with "${replaceText}" in ${selectedColumns.length} column(s)`,
-    })
+    });
 
-    console.log("Replace options:", options)
-  }
+    console.log('Replace options:', options);
+  };
 
   // Handle parse data application
   const handleApplyParse = (options: any) => {
-    const { sourceColumn, parseType } = options
+    const { sourceColumn, parseType } = options;
 
     toast({
-      title: "Parse operation applied",
+      title: 'Parse operation applied',
       description: `Parsed data from ${sourceColumn} using ${parseType} pattern`,
-    })
+    });
 
-    console.log("Parse options:", options)
-  }
+    console.log('Parse options:', options);
+  };
 
   // Handle merge duplicates
   const handleMergeDuplicates = (duplicateGroups: any[]) => {
     toast({
-      title: "Duplicates merged",
+      title: 'Duplicates merged',
       description: `Successfully merged ${duplicateGroups.length} groups of duplicate records.`,
-    })
+    });
 
-    console.log("Merged duplicate groups:", duplicateGroups)
-  }
+    console.log('Merged duplicate groups:', duplicateGroups);
+  };
 
   // Handle delete duplicates
   const handleDeleteDuplicates = (recordIds: string[]) => {
     toast({
-      title: "Duplicates deleted",
+      title: 'Duplicates deleted',
       description: `Successfully deleted ${recordIds.length} duplicate records.`,
-    })
+    });
 
-    console.log("Deleted duplicate records:", recordIds)
-  }
+    console.log('Deleted duplicate records:', recordIds);
+  };
 
   return (
     <>
@@ -108,8 +123,12 @@ export function DataOperationsDropdown({ columns, records = [] }: DataOperations
           <Tooltip>
             <TooltipTrigger asChild>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="yellow-hover-button">
-                  <Database className="h-4 w-4 mr-2" />
+                <Button
+                  variant='outline'
+                  size='sm'
+                  className='yellow-hover-button'
+                >
+                  <Database className='h-4 w-4 mr-2' />
                   Data Operations
                 </Button>
               </DropdownMenuTrigger>
@@ -119,28 +138,31 @@ export function DataOperationsDropdown({ columns, records = [] }: DataOperations
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        <DropdownMenuContent align="center" className="w-56">
+        <DropdownMenuContent align='center' className='w-56'>
           <DropdownMenuLabel>Data Operations</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setFormatModalOpen(true)}>
-            <Type className="h-4 w-4 mr-2" />
+            <Type className='h-4 w-4 mr-2' />
             Format Data
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setFillModalOpen(true)}>
-            <FileText className="h-4 w-4 mr-2" />
+            <FileText className='h-4 w-4 mr-2' />
             Fill
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setReplaceModalOpen(true)}>
-            <Edit className="h-4 w-4 mr-2" />
+            <Edit className='h-4 w-4 mr-2' />
             Replace
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setParseModalOpen(true)}>
-            <Wand2 className="h-4 w-4 mr-2" />
+            <Wand2 className='h-4 w-4 mr-2' />
             Parse
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => setDuplicateModalOpen(true)} data-duplicate-modal>
-            <Copy className="h-4 w-4 mr-2" />
+          <DropdownMenuItem
+            onClick={() => setDuplicateModalOpen(true)}
+            data-duplicate-modal
+          >
+            <Copy className='h-4 w-4 mr-2' />
             Manage Duplicates
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -178,14 +200,15 @@ export function DataOperationsDropdown({ columns, records = [] }: DataOperations
         onApplyParse={handleApplyParse}
       />
 
-      {/* Duplicate Management Modal */}
-      <DuplicateManagementModal
-        open={duplicateModalOpen}
-        onOpenChange={setDuplicateModalOpen}
-        records={records}
-        onMergeDuplicates={handleMergeDuplicates}
-        onDeleteDuplicates={handleDeleteDuplicates}
+      {/* Deduplication Modal (list-level) */}
+      <DeduplicationModal
+        isOpen={duplicateModalOpen}
+        onClose={() => setDuplicateModalOpen(false)}
+        listId={inferredListId}
+        listName={inferredListName}
+        recordCount={records.length}
+        onDeduplicationComplete={() => setDuplicateModalOpen(false)}
       />
     </>
-  )
+  );
 }

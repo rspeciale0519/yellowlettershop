@@ -325,6 +325,34 @@ All bugs must be logged with:
 * **Environment and browser information**
 * **Severity classification** and priority assessment
 
+### **5.7 Unit & Component Test Harness (Mocha + ts-node + RTL)**
+
+YLS uses a Mocha-based harness for unit and component tests with TypeScript and React Testing Library. The setup is cross-platform (Windows/Ubuntu) and avoids ESM/CJS loader pitfalls.
+
+**Key files:**
+* `.mocharc.json` — Single source of truth for test config. Loads setup files via `require` in order and discovers specs by glob.
+* `tests/setup/register-ts-node.cjs` — Registers `ts-node` with `tests/tsconfig.mocha.json` and enables `tsconfig-paths` for `@/*` imports.
+* `tests/setup/jsdom.js` — Initializes JSDOM and attaches DOM globals (`window`, `document`, events, `requestAnimationFrame`).
+* `tests/setup/mock-lucide-react.js` — Resolver-based redirect to a local CJS stub for `lucide-react`.
+* `tests/setup/lucide-react-cjs-stub.js` — Tiny React SVG proxy used by the mock above.
+* `tests/tsconfig.mocha.json` — TypeScript config for tests.
+
+**How to run:**
+* Local/CI: `npm test`
+* Single spec (example):
+  ```bash
+  npx mocha tests/lender-filters.test.tsx
+  ```
+
+**Conventions & tips:**
+* Keep setup order in `.mocharc.json` (ts-node → jsdom → mocks) to ensure a stable environment.
+* For ESM-only libraries in tests, add a small resolver-based redirect in `tests/setup/` (patterned after `mock-lucide-react.js`) instead of global monkeypatching.
+* Component tests should use React Testing Library and user-event for interactions.
+* Keep test files focused and under ~200–300 LOC; split when they grow large.
+
+**Version notes:**
+* Tests pin `jsdom` to a CommonJS-friendly version and use `date-fns@2.30.0` to avoid ESM-only breakage in the CJS harness.
+
 ## **6. Deployment & DevOps**
 
 ### **6.1 Deployment Environments**

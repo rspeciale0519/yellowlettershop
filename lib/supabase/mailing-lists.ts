@@ -26,8 +26,7 @@ export async function getMailingLists(): Promise<MailingList[]> {
     .from('mailing_lists')
     .select(`
       *,
-      tags:mailing_list_tags(tag:tags(*)),
-      campaigns:campaigns(*, orders:orders(*))
+      tags:mailing_list_tags(tag:tags(*))
     `)
     .order('created_at', { ascending: false })
 
@@ -42,7 +41,6 @@ export async function getMailingList(id: string): Promise<MailingList> {
     .select(`
       *,
       tags:mailing_list_tags(tag:tags(*)),
-      campaigns:campaigns(*, orders:orders(*)),
       records:mailing_list_records(*)
     `)
     .eq('id', id)
@@ -227,6 +225,35 @@ export async function removeTagFromList(listId: string, tagId: string): Promise<
   const supabase = createClient()
   const { error } = await supabase.from('mailing_list_tags').delete().match({ mailing_list_id: listId, tag_id: tagId })
   if (error) throw error
+}
+
+// =================================================================================
+// Version History Functions
+// =================================================================================
+
+export type MailingListVersion = {
+  id: string
+  mailing_list_id: string
+  version_number: number
+  name: string
+  description?: string
+  record_count: number
+  criteria?: any
+  metadata?: any
+  change_description?: string
+  created_at: string
+}
+
+export async function getListVersionHistory(listId: string): Promise<MailingListVersion[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('mailing_list_versions')
+    .select('*')
+    .eq('mailing_list_id', listId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return (data as MailingListVersion[]) || []
 }
 
 // =================================================================================

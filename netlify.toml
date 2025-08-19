@@ -1,0 +1,13 @@
+# Netlify configuration for Next.js app
+
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+# Ensure a modern Node.js runtime compatible with Next.js 15
+[build.environment]
+  NODE_VERSION = "20"
+
+# Use Netlify's Next.js Runtime for SSR, Middleware, and API routes
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

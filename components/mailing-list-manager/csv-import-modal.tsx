@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { toast } from "@/hooks/use-toast"
+import { useToast } from "@/components/ui/use-toast"
 import { bulkImportRecords } from '@/lib/supabase/mailing-lists-extended'
 import { Upload, FileText, AlertCircle, CheckCircle, Loader2 } from "lucide-react"
 
@@ -28,6 +28,7 @@ export function CSVImportModal({
   listName,
   onImportComplete 
 }: CSVImportModalProps) {
+  const { toast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
   const [isImporting, setIsImporting] = useState(false)

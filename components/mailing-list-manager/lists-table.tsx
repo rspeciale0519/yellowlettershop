@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Edit, Trash, X, ChevronUp, ChevronDown } from "lucide-react"
+import { Edit, Trash, X, ChevronUp, ChevronDown, Upload, UserX, RotateCcw } from "lucide-react"
 import { TagsDropdown } from "./tags-dropdown"
 import { CampaignUsageTooltip } from "./campaign-usage-tooltip"
 import { CustomizableTable, type ColumnDef } from "./customizable-table"
@@ -17,7 +17,7 @@ interface ListsTableProps {
   selectedRecords: string[]
   onCheckboxToggle: (id: string) => void
   selectAll: boolean
-  onSelectAllChange: (checked: boolean) => void
+  onSelectAllChange: (checked: boolean | "indeterminate") => void
   sortBy: { column: string; direction: "asc" | "desc" }
   onSort: (column: string) => void
   onEdit: (id: string) => void
@@ -31,6 +31,9 @@ interface ListsTableProps {
   saveNameEdit: () => void
   setEditingName: (value: { id: string; value: string } | null) => void
   onOpenCampaignModal: (campaigns: any[], title: string) => void
+  onOpenCSVImport: (id: string) => void
+  onOpenDeduplication: (id: string) => void
+  onOpenVersionHistory: (id: string) => void
 }
 
 export const ListsTable = ({
@@ -52,6 +55,9 @@ export const ListsTable = ({
   onCheckboxToggle,
   selectAll,
   onSelectAllChange,
+  onOpenCSVImport,
+  onOpenDeduplication,
+  onOpenVersionHistory,
 }: ListsTableProps) => {
   // Add this at the top of the ListsTable component function
   useEffect(() => {
@@ -132,10 +138,52 @@ export const ListsTable = ({
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="sm" onClick={() => onOpenCSVImport(list.id)}>
+                    <Upload className="h-4 w-4" />
+                    <span className="sr-only">Import CSV</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Import CSV</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="sm" onClick={() => onOpenDeduplication(list.id)}>
+                    <UserX className="h-4 w-4" />
+                    <span className="sr-only">Deduplicate</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Deduplicate</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="sm" onClick={() => onOpenVersionHistory(list.id)}>
+                    <RotateCcw className="h-4 w-4" />
+                    <span className="sr-only">Version History</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Version History</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         ),
         enableSorting: false,
-        minWidth: 140,
+        minWidth: 240,
       },
       {
         id: "tags",
@@ -340,6 +388,9 @@ export const ListsTable = ({
       onAddTag,
       onRemoveTag,
       onOpenCampaignModal,
+      onOpenCSVImport,
+      onOpenDeduplication,
+      onOpenVersionHistory,
     ],
   )
 
@@ -369,7 +420,7 @@ export const ListsTable = ({
                     : column.id === "id"
                       ? "100px"
                       : column.id === "actions"
-                        ? "140px"
+                        ? "240px"
                         : `${columnStates[column.id]?.width || column.minWidth || 150}px`,
                 minWidth: column.minWidth || "auto",
                 left:

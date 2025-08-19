@@ -20,7 +20,7 @@ interface RecordsTableProps {
   selectedRecords: string[]
   onCheckboxToggle: (id: string) => void
   selectAll: boolean
-  onSelectAllChange: (checked: boolean) => void
+  onSelectAllChange: (checked: boolean | "indeterminate") => void
   sortBy: { column: string; direction: "asc" | "desc" }
   onSort: (column: string) => void
   onDelete: (id: string) => void
@@ -110,7 +110,7 @@ export function RecordsTable({
       {
         id: "rowNumber",
         header: "Row",
-        cell: (record, index) => index + 1,
+        cell: (record, index) => (index !== undefined ? index + 1 : ""),
         enableSorting: false,
         minWidth: 60,
         maxWidth: 60,
@@ -173,7 +173,7 @@ export function RecordsTable({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onDelete(record.listId)}
+                    onClick={() => onDelete(record.id)}
                     className="yellow-hover-button"
                   >
                     <Trash className="h-4 w-4" />
