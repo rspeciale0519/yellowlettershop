@@ -2,9 +2,14 @@
 
 Purpose: Provide small, composable UI primitives used across all list-builder filters so each domain file can be split into sections/fields without duplicating logic.
 
-## Components (planned)
+## Components
+- DraggableSlider — implemented
+  - Props: `label`, `value: number[]`, `min`, `max`, `step`, `formatValue: (n) => string`, `onChange: (range) => void`, `ariaLabel`, `icon?`, `tooltip?`
+  - Usage: Controlled 2-handle range slider used for fields like age, household size, etc.
+- MultiSelect — implemented
+  - Props: `label`, `options: {value,label}[]`, `selected: string[]`, `onChange: (values) => void`, `icon?`, `tooltip?`, `placeholder?`
+  - Usage: Controlled checklist dropdown with selected chips and clear/remove per chip.
 - NumericRange (min/max, inclusive/exclusive, empty handling)
-- MultiSelect (searchable, virtualized options, clear-all)
 - TagSelector (chips, any/all modes)
 - ThreeOptionToggle (Yes/No/Any) — unify with existing `components/list-builder/mortgage-filters/components/three-option-toggle.tsx`
 - CheckboxGroup (indeterminate, select-all)
