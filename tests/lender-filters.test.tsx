@@ -44,7 +44,7 @@ function makeCriteria(overrides: Partial<MortgageCriteria> = {}): MortgageCriter
 }
 
 function renderWithState(
-  Component: (props: { criteria: MortgageCriteria; onUpdate: (patch: Partial<MortgageCriteria>) => void }) => JSX.Element,
+  Component: (props: { criteria: MortgageCriteria; onUpdate: (patch: Partial<MortgageCriteria>) => void }) => React.ReactElement,
   initial: MortgageCriteria = makeCriteria(),
 ) {
   const calls: Partial<MortgageCriteria>[] = []

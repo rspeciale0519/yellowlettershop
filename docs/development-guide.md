@@ -44,10 +44,14 @@ Environment variables are managed through specific `.env` files:
 
 **Critical Environment Variables:**
 * `DATABASE_URL` - Supabase database connection string
-* `SUPABASE_URL` and `SUPABASE_ANON_KEY` - Supabase project configuration
-* `SUPABASE_SERVICE_ROLE` - Server-side database operations
-* `STRIPE_SECRET_KEY` and `STRIPE_PUBLISHABLE_KEY` - Payment processing
 * `NEXT_PUBLIC_SUPABASE_URL` - Client-side Supabase configuration
+* `SUPABASE_ANON_KEY` - Supabase anonymous key for client operations
+* `SUPABASE_SERVICE_ROLE_KEY` - Server-side database operations
+* `STRIPE_SECRET_KEY` - Stripe secret key for payment processing
+* `STRIPE_PUBLISHABLE_KEY` - Stripe publishable key for client-side operations
+* `ACCUZIP_API_KEY` - AccuZIP API key for address validation
+* `MAILGUN_API_KEY` - Mailgun API key for email services
+* `OPENAI_API_KEY` - OpenAI API key for AI features
 
 ## **2. Development Workflow**
 
@@ -132,12 +136,16 @@ The YLS platform uses **Supabase Auth** integrated with **NextAuth.js** for comp
 ### **3.2 Role Management System**
 
 #### **User Roles**
-The platform implements hierarchical role-based access control:
+The platform implements hierarchical role-based access control with eight distinct user roles:
 
-* **Admin**: Full system access with impersonation capabilities
-* **Manager**: Team-level management and order oversight
-* **User**: Core functionality access (upload, order, design, proof review)
-* **Client**: View-only access to assigned assets
+* **Free User**: Single user on free plan with limited features
+* **Pro User**: Single user on paid plan with full feature access  
+* **Team Member**: Part of a team with shared assets and collaboration
+* **Team Manager**: Manages team members and team-wide activities
+* **Enterprise Member**: Team member with enterprise features and higher limits
+* **Enterprise Manager**: Manages enterprise team with advanced features
+* **Admin**: Full platform access regardless of plan or team
+* **Super Admin**: All Admin powers plus ability to manage Admin permissions
 
 #### **Implementation Details**
 * **Roles stored in `user_profiles.role`** with database-level enforcement
@@ -190,9 +198,9 @@ DATABASE_URL="postgresql://postgres:<password>@db.<project>.supabase.co:5432/yls
 ```json
 {
   "scripts": {
-    "test:prepare": "dotenv -f .env.test -- pnpm prisma migrate deploy && dotenv -f .env.test -- node ./prisma/seed.js",
-    "test": "dotenv -f .env.test -- pnpm vitest run",
-    "test:all": "pnpm test:prepare && pnpm test"
+    "test:prepare": "dotenv -f .env.test -- npm run prisma migrate deploy && dotenv -f .env.test -- node ./prisma/seed.js",
+    "test": "dotenv -f .env.test -- npm run vitest run",
+    "test:all": "npm run test:prepare && npm run test"
   }
 }
 ```
@@ -208,7 +216,7 @@ DATABASE_URL="postgresql://postgres:<password>@db.<project>.supabase.co:5432/yls
 #### **Running Tests**
 ```bash
 # Prepare and run all tests
-pnpm test:all
+npm run test:all
 
 # Manual seeding if needed
 dotenv -f .env.test -- node ./prisma/seed.js
@@ -392,7 +400,7 @@ Code Push → Lint → TypeCheck → Unit Tests → E2E Tests → Build → Depl
 Environment variables are managed through **Vercel and GitHub repository settings**:
 
 **Required Secrets:**
-* **Supabase Configuration**: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE`
+* **Supabase Configuration**: `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 * **Stripe Integration**: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`
 * **External APIs**: `ACCUZIP_API_KEY`, `MAILGUN_API_KEY`, `OPENAI_API_KEY`
 * **FPD Configuration**: `FPD_CONFIG_URL` and related settings

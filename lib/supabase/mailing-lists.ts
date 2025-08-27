@@ -8,6 +8,7 @@ import type {
 
 // Re-exporting ListCriteria for now, but this could be moved to a more specific file.
 import type { ListCriteria } from '@/types/list-builder';
+export type { ListCriteria } from '@/types/list-builder';
 
 // Payload types for creating and updating records.
 // These provide a clear API for the functions below.

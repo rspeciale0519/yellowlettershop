@@ -1,7 +1,5 @@
 import type { ListCriteria } from '@/lib/supabase/mailing-lists'
 import { fetchRecords, estimateRecordCount, criteriaToAccuZIPParams } from './accuzip'
-import { createMailingList } from '@/lib/supabase/mailing-lists'
-import { bulkImportRecords } from '@/lib/supabase/mailing-lists-extended'
 
 /**
  * Create a mailing list from AccuZIP criteria
@@ -14,6 +12,10 @@ export async function createListFromAccuZIPCriteria(
     deduplicationField?: string
     description?: string
     fetchLimit?: number
+  },
+  deps?: {
+    createMailingList?: (list: any) => Promise<any>
+    bulkImportRecords?: (listId: string, records: any[], deduplicationField?: string) => Promise<{ success: number; failed: number; duplicates: number }>
   }
 ): Promise<{ 
   listId: string
@@ -27,7 +29,10 @@ export async function createListFromAccuZIPCriteria(
     const estimatedTotal = await estimateRecordCount(criteria)
     
     // Create the list in the database
-    const list = await createMailingList({
+    const createMailingListFn = deps?.createMailingList 
+      || (await import('@/lib/supabase/mailing-lists')).createMailingList
+
+    const list = await createMailingListFn({
       name,
       description: options?.description || `List created from AccuZIP criteria (Est. ${estimatedTotal.toLocaleString()} records)`,
       criteria,
@@ -51,7 +56,10 @@ export async function createListFromAccuZIPCriteria(
     
     if (records && records.length > 0) {
       // Import records to the list with deduplication
-      const importResult = await bulkImportRecords(
+      const bulkImportRecordsFn = deps?.bulkImportRecords 
+        || (await import('@/lib/supabase/mailing-lists-extended')).bulkImportRecords
+
+      const importResult = await bulkImportRecordsFn(
         list.id,
         records,
         options?.deduplicationField
@@ -109,6 +117,8 @@ export async function fetchMoreRecordsForList(
     const { records, hasMore } = await fetchRecords(criteria, limit, offset)
     
     if (records && records.length > 0) {
+      // Dynamically import bulkImportRecords to avoid hard client/server coupling
+      const { bulkImportRecords } = await import('@/lib/supabase/mailing-lists-extended')
       // Import the additional records
       const importResult = await bulkImportRecords(
         listId,

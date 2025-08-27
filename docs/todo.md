@@ -11,7 +11,7 @@ This document serves as the comprehensive development checklist for building the
 ### **Core Platform Setup**
 - [ ] Provision Supabase project with PostgreSQL, Auth, Storage, and Edge Functions
 - [ ] Configure AWS S3 buckets via Supabase Storage with organized structure
-- [ ] Set up Next.js 14+ with App Router, TypeScript, and Tailwind CSS
+- [ ] Set up Next.js 14+ with App Router, TypeScript 5+, and Tailwind CSS
 - [ ] Implement comprehensive environment configuration (.env.local, .env.test, .env.staging)
 - [ ] Configure GitHub Actions CI/CD pipeline with automated testing
 - [ ] Set up Vercel deployment with preview environments
@@ -30,7 +30,7 @@ This document serves as the comprehensive development checklist for building the
 ### **Authentication & Authorization**
 - [ ] Integrate Supabase Auth with NextAuth.js middleware
 - [ ] Implement Google OAuth as primary authentication method
-- [ ] Create role-based access control (Admin, Manager, User, Client)
+- [ ] Create role-based access control (Free User, Pro User, Team Member, Team Manager, Enterprise Member, Enterprise Manager, Admin, Super Admin)
 - [ ] Build JWT token management with HttpOnly cookies
 - [ ] Implement session validation middleware for all protected routes
 - [ ] Create user profile management with extended metadata

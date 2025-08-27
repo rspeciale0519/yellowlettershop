@@ -48,7 +48,7 @@ export const FilterBar = ({
           selectedFilter={quickFilter}
           onFilterChange={onQuickFilterChange}
         />
-        <SortByDropdown sortBy={sortBy} onSort={onSortByChange} />
+        <SortByDropdown sortBy={sortBy} onSortChange={onSortByChange} />
         <Button
           variant={showAdvancedSearch ? 'secondary' : 'outline'}
           onClick={onToggleAdvancedSearch}

@@ -71,8 +71,9 @@ The YLS platform aims to achieve the following core objectives:
 
 * **Required Fields**: First name, Last name, Street address, Suite/Unit/Apt, City, State, Zip code, Email address, Company name, Phone number
 * **Plan-based Limits**:
+  * Free plan: maximum of 1 contact card
   * Pro plan: maximum of 2 contact cards
-  * Team and Enterprise plans: limit based on number of users in the account
+  * Team/Enterprise plans: maximum of 1 contact card per team member
 * **Campaign Integration**: One contact card must be selected for every campaign
 * **Order Process**: Prompt to select existing or create new card during order wizard
 * **Design Preview**: Contact card info displayed on design preview and injected into live previews

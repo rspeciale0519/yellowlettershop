@@ -34,7 +34,7 @@ YLS is built using a modern technology stack with full CI/CD and observability p
 
 | Area | Technology |
 |------|------------|
-| **Frontend** | **Next.js** (App Router), **React** 18+, **Tailwind CSS**, **TypeScript** |
+| **Frontend** | **Next.js 14+** (App Router), **React 18+**, **Tailwind CSS**, **TypeScript 5+** |
 | **Backend** | **Supabase** (PostgreSQL, RLS-secured data models, Auth, Storage), **Next.js API Routes**, **Prisma** |
 | **Authentication** | **Supabase Auth**, **NextAuth.js** with JWT and OAuth |
 | **APIs & Services** | **REST API** (Next.js routes), **AccuZIP** (address validation), **Stripe** (payment processing), **Fancy Product Designer (FPD)**, **OpenAI/Claude** (AI Services), **SendGrid/Mailgun** |

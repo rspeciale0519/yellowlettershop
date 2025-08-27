@@ -10,7 +10,6 @@ import { Progress } from "@/components/ui/progress"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/components/ui/use-toast"
-import { bulkImportRecords } from '@/lib/supabase/mailing-lists-extended'
 import { Upload, FileText, AlertCircle, CheckCircle, Loader2 } from "lucide-react"
 
 interface CSVImportModalProps {
@@ -159,29 +158,45 @@ export function CSVImportModal({
       setImportStatus('importing')
 
       // Import records with deduplication if enabled
-      const result = await bulkImportRecords(
-        listId,
-        records,
-        skipDuplicates ? deduplicationField : undefined
-      )
+      const response = await fetch('/api/mailing-lists/csv-import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          listId,
+          records,
+          deduplicationField: skipDuplicates ? deduplicationField : undefined,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to import records')
+      }
+
+      const result = await response.json()
+
+      if (!result.success) {
+        throw new Error(result.error || 'Import failed')
+      }
 
       setImportProgress(100)
       setImportStatus('complete')
       
       setImportResults({
         total: records.length,
-        imported: result.success,
+        imported: result.imported,
         failed: result.failed,
         duplicates: result.duplicates
       })
 
       toast({
         title: "Import complete",
-        description: `Successfully imported ${result.success} records.`
+        description: `Successfully imported ${result.imported} records.`
       })
 
       if (onImportComplete) {
-        onImportComplete(result.success)
+        onImportComplete(result.imported)
       }
 
       // Close modal after delay if successful

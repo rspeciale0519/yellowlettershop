@@ -7,8 +7,6 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/components/ui/use-toast"
-import { getListVersionHistory } from '@/lib/supabase/mailing-lists'
-import { restoreListVersion } from '@/lib/supabase/mailing-lists-extended'
 import { format } from 'date-fns'
 import { Clock, RotateCcw, User, FileText, AlertCircle, Loader2 } from "lucide-react"
 
@@ -61,8 +59,19 @@ export function VersionHistoryModal({
   const loadVersionHistory = async () => {
     setIsLoading(true)
     try {
-      const history = await getListVersionHistory(listId)
-      setVersions(history)
+      const response = await fetch(`/api/mailing-lists/version-history?listId=${listId}`)
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch version history')
+      }
+
+      const result = await response.json()
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to fetch version history')
+      }
+
+      setVersions(result.versions)
     } catch (error) {
       console.error('Failed to load version history:', error)
       toast({
@@ -80,8 +89,27 @@ export function VersionHistoryModal({
 
     setIsRestoring(true)
     try {
-      await restoreListVersion(listId, selectedVersion.version_number)
-      
+      const response = await fetch('/api/mailing-lists/restore-version', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          listId,
+          versionId: selectedVersion.version_number
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to restore version')
+      }
+
+      const result = await response.json()
+
+      if (!result.success) {
+        throw new Error(result.error || 'Restore failed')
+      }
+
       toast({
         title: "Version restored",
         description: `List has been restored to version ${selectedVersion.version_number}.`

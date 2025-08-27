@@ -28,7 +28,7 @@ Yellow Letter Shop represents a transformative approach to direct mail marketing
 
 ### **1.2 Authentication & User Management**
 - **Multi-provider authentication** (Google OAuth, email/password)
-- **Role-based access control** (Admin, Manager, User, Client roles)
+- **Role-based access control** (8-tier role system: Free User, Pro User, Team Member, Team Manager, Enterprise Member, Enterprise Manager, Admin, Super Admin)
 - **Team collaboration framework** with invitation system
 - **Subscription plan enforcement** (Free, Pro, Team, Enterprise tiers)
 - **Impersonation system** for admin support with audit logging

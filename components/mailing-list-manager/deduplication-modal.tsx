@@ -9,7 +9,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
 import { useToast } from "@/components/ui/use-toast"
-import { deduplicateList } from '@/lib/supabase/mailing-lists-extended'
 import { Loader2, AlertCircle, CheckCircle, Users, UserX } from "lucide-react"
 
 interface DeduplicationModalProps {
@@ -58,15 +57,31 @@ export function DeduplicationModal({
 
       // Perform deduplication
       setStatus('removing')
-      const result = await deduplicateList(
-        listId,
-        deduplicationField,
-        {
-          matchingStrategy,
-          keepStrategy,
-          createBackup
-        }
-      )
+      const response = await fetch('/api/mailing-lists/deduplicate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          listId,
+          deduplicationField,
+          options: {
+            matchingStrategy,
+            keepStrategy,
+            createBackup
+          }
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to deduplicate list')
+      }
+
+      const result = await response.json()
+
+      if (!result.success) {
+        throw new Error(result.error || 'Deduplication failed')
+      }
 
       clearInterval(progressInterval)
       setProgress(100)

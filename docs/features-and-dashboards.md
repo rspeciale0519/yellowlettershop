@@ -134,8 +134,10 @@ The YLS platform offers intuitive entry points based on user needs:
 - Company name and business information
 
 #### **Plan-Based Limits**
+- **Free Plan**: Maximum of 1 contact card
 - **Pro Plan**: Maximum of 2 contact cards
-- **Team/Enterprise Plans**: Limit based on number of users in account (1 per user)
+- **Team Plans**: Maximum of 1 contact card per team member
+- **Enterprise Plans**: Maximum of 1 contact card per team member
 - **Enforcement**: System prevents creation beyond limits with upgrade prompts
 
 ### **2.3 Pre-Design Form Intake**
@@ -151,56 +153,270 @@ The YLS platform offers intuitive entry points based on user needs:
 - Streamlines template customization process
 - Reduces errors in final mail pieces
 
-### **2.4 Mailing List Management System**
+### **2.4 Advanced Mailing List Management System**
 
-#### **Upload Options**
-- **"Upload Your List"**
-  - Drag-and-drop CSV/XLSX uploader
-  - Automatic column mapping to standard fields
-  - Custom field support with manual mapping
-  - Optional column exclusion before import
-  - **Deduplication toggle** during upload process
-  - **User-level default settings** for deduplication preferences
+The YLS platform includes a sophisticated mailing list builder interface inspired by industry-leading tools like ListSource, providing comprehensive targeting capabilities for property-based marketing campaigns.
 
-- **"Purchase a List"**
-  - Built-in demographic filtering interface
-  - Real-time quote estimation and lead count
-  - Direct integration with third-party list providers
-  - Custom targeting options
+#### **System Architecture and Implementation**
 
-- **"No Mailing List Yet?"**
-  - Design-first workflow option
-  - Shipping-only delivery selection
-  - Template customization without immediate list requirement
+##### **Database Schema and Integration**
+The mailing list system is built on a robust database foundation:
 
-#### **Advanced List Management Features**
+**Core Tables:**
+- `mailing_lists` - Main lists storage with metadata
+- `mailing_list_records` - Individual record storage with JSONB flexibility
+- `mailing_list_templates` - Saved criteria templates for reuse
+- `mailing_list_versions` - Version history tracking and rollback capability
+- `user_profiles` - Extended user data and preferences
 
-##### **Core Functionality**
-- Unlimited mailing list storage and management
-- Comprehensive version history with change tracking
-- Per-contact mail history and delivery tracking
-- Advanced column mapping and field management
-- Manual and bulk record entry capabilities
-- Sophisticated tagging and segmentation system
+**Integration Features:**
+- Full Supabase integration with Row-Level Security (RLS) policies
+- AccuZIP API integration for address validation and data enrichment
+- Real-time updates and collaborative editing capabilities
+- Comprehensive audit logging for all list operations
 
-##### **Data Processing**
-- **Address Validation**: AccuZIP integration for CASS-certified validation
-- **Deduplication**: Configurable duplicate detection and removal
-- **Skip Tracing**: On-demand contact enrichment services
-- **List Parsing**: Automated address formatting and standardization
-- **Vacant Filtering**: Identification and removal of vacant properties
+##### **Core Backend Functions**
+**Primary Operations:**
+- Complete CRUD operations for mailing lists and records
+- Advanced record management (add, update, delete, search)
+- List merging and splitting capabilities
+- Multiple deduplication strategies with user preference controls
+- Template management for saved criteria configurations
+- Real-time statistics and analytics generation
 
-##### **Analytics and Tracking**
-- Delivery success rates and analytics
-- Response tracking (calls, conversions, opt-outs)
-- Campaign performance analysis
-- Engagement metrics and ROI calculation
+**Extended Functionality:**
+- Version history tracking with snapshot creation and restoration
+- Enhanced deduplication with multiple matching strategies:
+  - Exact vs fuzzy matching algorithms
+  - Keep first/last/most complete record options
+  - Automatic backup creation before deduplication
+- Bulk import processing with integrated deduplication
+- Advanced CSV parsing and export utilities with custom formatting
 
-##### **CRM Integration Features**
-- Response tagging system (called, converted, opted out)
-- Contact interaction history
-- Lead scoring and qualification tracking
-- Custom field management for business-specific data
+##### **AccuZIP API Integration**
+**Comprehensive Data Processing:**
+- Full criteria-to-API parameter conversion for complex queries
+- Automated record fetching and validation workflows
+- Address standardization and CASS certification
+- Batch validation processing for large datasets
+- Automatic record import to database with conflict resolution
+- Preview functionality for data quality assessment
+
+#### **List Builder Interface Design**
+
+The YLS list builder follows a wizard-style interface organized around major criteria categories, enabling users to construct highly targeted property mailing lists through an intuitive tabbed interface.
+
+##### **Overall Interface Structure**
+- **Tabbed Navigation**: Horizontally displayed tabs for each major criteria category
+- **Current List Panel**: Fixed-position sidebar showing selected criteria and real-time record counts
+- **Main Work Area**: Dynamic content area displaying filter configuration forms
+- **Action Controls**: Bottom bar with count display and action buttons (Save, Preview, Purchase)
+
+##### **Geography Tab - Property Location Targeting**
+
+The Geography tab defines the territorial scope of the mailing list through comprehensive location-based filters:
+
+**Core Geographic Controls:**
+- **State Selector**: Multi-state selection with exclusion capabilities
+- **County and City Filters**: Cascading selection with available/selected dual lists
+- **ZIP Code Targeting**: Individual ZIP codes, ranges, and ZIP+radius combinations
+- **Map Integration**: Interactive map interface for custom polygon and radius selection
+
+**Advanced Geographic Criteria:**
+
+| Criterion | Functionality |
+|-----------|---------------|
+| **Area Code** | Target properties by telephone area codes with state-based filtering |
+| **Census Tract** | Federal census tract targeting with manual entry and selection lists |
+| **FIPS Code** | Federal Information Processing Standard code targeting |
+| **MSA (Metropolitan Statistical Area)** | Metropolitan area targeting for urban focus |
+| **Municipality/Township** | Local government boundary targeting |
+| **Parcel ID Range** | Specific parcel identification for precise targeting |
+| **SCF (Sectional Center Facility)** | First three digits of ZIP codes for postal routing areas |
+| **Street Name** | Precise street-level targeting with house number ranges |
+| **Subdivision** | Neighborhood-level targeting by subdivision name |
+| **Tax Rate Area** | Property tax jurisdiction targeting |
+| **Township-Range-Section (TRS)** | Public Land Survey System coordinates for rural areas |
+
+##### **Mortgage Tab - Loan and Financing Filters**
+
+**Primary Mortgage Controls:**
+- **Lien Position Selection**: All Mortgages, First Mortgages, or Junior Mortgages
+- **Comprehensive Mortgage Criteria**: Loan amount, interest rate, lender information, loan-to-value ratios
+
+**Adjustable Rate Rider (ARM) Detailed Criteria:**
+
+| ARM Sub-Criterion | Description and Options |
+|-------------------|------------------------|
+| **Interest Only** | Filter for interest-only mortgage products |
+| **Interest Rate % Change Limit** | Rate adjustment limitations during adjustment periods |
+| **Interest Rate Change %** | Actual percentage changes in rate adjustments |
+| **Interest Rate Change Date** | Scheduled adjustment dates with initial/next change options |
+| **Interest Rate Change Frequency** | Adjustment frequency (monthly, quarterly, annually) |
+| **Interest Rate Index Type** | Index types (LIBOR, Prime, Treasury, FNMA, etc.) |
+| **Interest Rate Maximum % (Lifetime Cap)** | Maximum allowable interest rate over loan life |
+| **Negative Amortization** | Loans allowing unpaid interest addition to principal |
+| **Payment Option** | Monthly adjusting ARM payment options |
+| **Prepayment Penalty** | Presence and expiration dates of prepayment penalties |
+
+##### **Property Tab - Physical and Valuation Filters**
+
+**Comprehensive Property Characteristics:**
+
+| Property Criterion | Functionality |
+|--------------------|---------------|
+| **Last Market Sale Price** | Sale price ranges with custom range entry |
+| **Equity ($ and %)** | Dollar and percentage equity calculations including negative equity |
+| **Current Home Value** | Estimated property value ranges |
+| **Homestead Property** | Tax exemption status filtering |
+| **Bathrooms/Bedrooms** | Numeric range selectors for property size |
+| **Above Grade/Basement Area** | Square footage targeting for living spaces |
+| **Building Count** | Multi-structure property identification |
+| **Land Use Codes** | County and state land use classifications |
+| **Property Improvements** | Improvement value ratios and assessments |
+| **Sale History** | Recording dates, deed types, and transaction history |
+| **Residence Length** | Owner occupancy duration categories |
+| **Lot Area** | Property size in square feet or acres |
+| **Parking and Pool** | Amenity-based filtering options |
+| **Property Type and Style** | Architectural and structural classifications |
+| **Assessment Values** | Tax assessment and reduction calculations |
+
+##### **Demographics Tab - Occupant Characteristics**
+
+**Owner and Occupant Data Filters:**
+
+| Demographic Criterion | Available Options |
+|----------------------|-------------------|
+| **Age Ranges** | Predefined age brackets with custom range entry |
+| **Education Level** | Highest education achievement categories |
+| **Income Estimation** | Household income ranges with custom brackets |
+| **Marital Status** | Married, single, or no preference options |
+| **Language** | Comprehensive language preference listings |
+| **Interests and Lifestyle** | Hobby and interest-based targeting categories |
+| **Credit Profile** | Credit card ownership and type indicators |
+| **Year of Birth** | Birth year ranges for demographic targeting |
+
+##### **Foreclosure Tab - Distressed Property Targeting**
+
+**Foreclosure Stage Selection:**
+- Default (Pre-foreclosure) Initiated
+- Pending Auction Sale
+- Bank-Owned (REO) properties
+
+**Detailed Foreclosure Criteria:**
+
+| Foreclosure Criterion | Description |
+|-----------------------|-------------|
+| **Recent Added Date** | Timeline of foreclosure information updates |
+| **Default Amount** | Outstanding debt ranges triggering foreclosure |
+| **Foreclosure Effective Date** | Official foreclosure filing dates |
+| **Lender Information** | Current and original lender identification |
+| **Original Mortgage Amount** | Initial loan amounts for foreclosed properties |
+| **Unpaid Balance** | Remaining debt amounts and judgment values |
+
+##### **Predictive Analytics Tab - Behavioral Scoring**
+
+**Proprietary Predictive Models:**
+YLS incorporates advanced predictive scoring with five likelihood categories:
+- **Very Low [1-370]**
+- **Low [371-480]** 
+- **Moderate [481-600]**
+- **High [601-795]**
+- **Very High [796-999]**
+
+**Available Predictive Scores:**
+1. **Likelihood to apply for a HELOC** (home equity line of credit)
+2. **Likelihood to apply for a purchase mortgage**
+3. **Likelihood to refinance** existing mortgage
+4. **Likelihood to list their home for rent**
+5. **Likelihood to list their home for sale**
+
+##### **Options Tab - List Quality Controls**
+
+**Address and Ownership Quality Filters:**
+
+| Option Category | Available Choices |
+|-----------------|-------------------|
+| **Owner Occupied Status** | Owner Occupied, Absentee Owner, No Preference |
+| **Trustee-Owned Properties** | Only, Exclude, No Preference |
+| **Corporate-Owned Properties** | Only, Exclude, No Preference |
+| **Address Completeness** | Various completeness requirements including ZIP+4 |
+
+#### **Interface Implementation Guidelines**
+
+##### **Technical Architecture Requirements**
+- **Framework**: React or Next.js for component-based architecture
+- **Styling**: TailwindCSS for utility-first responsive design
+- **State Management**: Redux, Zustand, or React Context for complex state
+- **Data Binding**: Real-time updates with debounced live count previewing
+
+##### **Component Specifications**
+
+**Input Types and Behaviors:**
+- **Range Selectors**: Dual numeric inputs with min/max validation
+- **Date Pickers**: Calendar widgets with from/to date selection
+- **Dropdown Lists**: Single-select and multi-select with search capability
+- **Checklists**: Scrollable checkbox lists for extensive options
+- **Typeahead Fields**: Auto-complete text inputs for lenders, cities, locations
+- **Multi-Select Chips**: Visual chip components for selected criteria
+
+**UI Interaction Patterns:**
+- **Dual List Boxes**: Available vs Selected with Add/Remove transfer buttons
+- **Manual Entry Fields**: Text inputs for codes, ranges, and custom values
+- **Radio Button Groups**: Binary and tri-state options (Only/Exclude/No Preference)
+- **Interactive Mapping**: Google Maps integration for polygon and radius selection
+
+##### **Search and Filter Logic Implementation**
+- **Unified Query Model**: Each tab contributes to consolidated search parameters
+- **AND Combination**: All criteria combined with AND logic across tabs
+- **OR Filtering**: Selective OR logic for predictive scores and categories
+- **Input Validation**: Range validation, format checking, and conflict prevention
+- **Dependency Enforcement**: Geographic requirement before other tab activation
+
+##### **State Management Architecture**
+- **Global State Maintenance**: Persistent state across tab navigation
+- **Query Object Binding**: All filter values bound to unified query structure
+- **Session Persistence**: State preservation during user session
+- **Real-Time Updates**: Live sidebar updates as criteria are modified
+
+##### **User Experience Considerations**
+- **Responsive Design**: Full tablet and mobile support with touch optimization
+- **Progressive Disclosure**: Collapsible panels and expandable sections
+- **Contextual Help**: Hover tooltips and inline explanations
+- **Error Prevention**: Input validation with immediate feedback
+- **Performance Optimization**: Debounced API calls and efficient rendering
+
+#### **Export, Count, and Purchase Features**
+
+##### **Core List Management Actions**
+- **View Count**: Real-time record count estimation with criteria preview
+- **Save Criteria**: Template storage for reusable search configurations
+- **Purchase List**: Integrated checkout flow with Stripe payment processing
+- **Export Options**: CSV and XLSX format support with custom field selection
+
+##### **Advanced Features**
+- **List Versioning**: Snapshot creation and rollback capability
+- **Deduplication Tools**: Multiple matching strategies with preview options
+- **Bulk Operations**: Mass editing, deletion, and record management
+- **Analytics Integration**: Performance tracking and ROI calculation
+- **Template Sharing**: Saved criteria templates for team collaboration
+
+#### **Integration and API Endpoints**
+
+##### **AccuZIP Integration Endpoints**
+- `/search` - Record fetching by comprehensive criteria
+- `/count` - Real-time record count estimation
+- `/validate/address` - Individual address validation
+- `/validate/batch` - Bulk address validation processing
+
+##### **Internal API Structure**
+- **List Management**: CRUD operations for lists and records
+- **Template System**: Saved criteria management and sharing
+- **Version Control**: Snapshot creation and restoration
+- **Export Processing**: Format conversion and delivery
+- **Analytics Engine**: Performance metrics and reporting
+
+This comprehensive mailing list management system provides users with professional-grade targeting capabilities while maintaining an intuitive user experience suitable for both novice and expert marketers.
 
 ### **2.5 Mail Piece Design Tool**
 
