@@ -33,21 +33,28 @@ export function useCustomizableTable(columns: ColumnDef[], data: any[]) {
     const autoResizeColumns = () => {
       if (data.length === 0 || columns.length === 0) return;
 
-      const measureTextWidth = (text: string, font: string) => {
-        if (!text) return 0;
-        try {
-          const canvas = document.createElement('canvas');
-          const context = canvas.getContext('2d');
-          if (!context) return 0;
-          context.font = font;
-          const metrics = context.measureText(text);
-          return metrics.width;
-        } catch (error) {
-          console.error('Error measuring text width:', error);
-          return 0;
-        }
-      };
+      const autoResizeColumns = () => {
+        if (data.length === 0 || columns.length === 0) return;
 
+        // Create and cache the canvas/context once
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+
+        const measureTextWidth = (text: string, font: string) => {
+          if (!text) return 0;
+          try {
+            if (!context) return 0;
+            context.font = font;
+            const metrics = context.measureText(text);
+            return metrics.width;
+          } catch (error) {
+            console.error('Error measuring text width:', error);
+            return 0;
+          }
+        };
+
+        // ... rest of autoResizeColumns logic ...
+      };
       const getTableFont = () => {
         const tableElement = document.querySelector('table');
         if (!tableElement) return '14px system-ui';
@@ -56,67 +63,60 @@ export function useCustomizableTable(columns: ColumnDef[], data: any[]) {
       };
 
       const font = getTableFont();
-      const newColumnStates = { ...columnStates };
-      let updated = false;
 
-      columns.forEach((column) => {
-        if (column.id === 'select' || column.id === 'actions') return;
+      // Use functional update to avoid stale columnStates and remove it from deps
+      setColumnStates((currentStates) => {
+        const newColumnStates = { ...currentStates };
+        let updated = false;
 
-        const currentState = newColumnStates[column.id];
-        if (currentState && currentState.width) return;
+        columns.forEach((column) => {
+          if (column.id === 'select' || column.id === 'actions') return;
 
-        let maxWidth = measureTextWidth(column.header, font) + 60;
-
-        const sampleSize = Math.min(data.length, 20);
-        for (let i = 0; i < sampleSize; i++) {
-          const record = data[i];
-          try {
-            const cellContent = column.cell(record);
-            let textContent = '';
-
+          const currentState = newColumnStates[column.id];
+          if (currentState && currentState.width) return;
             if (typeof cellContent === 'string') {
               textContent = cellContent;
             } else if (typeof cellContent === 'number') {
               textContent = cellContent.toString();
             } else if (cellContent && typeof cellContent === 'object' && 'props' in cellContent) {
               const element = cellContent as any;
-              if (element.props && element.props.children) {
-                textContent = element.props.children.toString();
+              // Note: This is a simplified text extraction that may not handle complex React structures
+              // Consider passing a textExtractor function as part of ColumnDef for complex cells
+              if (element.props?.children) {
+                const children = element.props.children;
+                textContent = typeof children === 'string'  ? children
+                            : typeof children === 'number'  ? children.toString()
+                            : ''; // Default for complex nested structures
               }
+            }              if (typeof cellContent === 'string') {
+                textContent = cellContent;
+              } else if (typeof cellContent === 'number') {
+                textContent = cellContent.toString();
+              } else if (
+                cellContent &&
+                typeof cellContent === 'object' &&
+                'props' in cellContent
+              ) {
+                const element = cellContent as any;
+                if (element.props && element.props.children) {
+                  textContent = element.props.children.toString();
+                }
+              }
+
+              const cellWidth = measureTextWidth(textContent, font) + 40;
+              maxWidth = Math.max(maxWidth, cellWidth);
+            } catch (error) {
+              console.warn(
+                `Error processing cell content for column ${column.id}:`,
+                error
+              );
             }
-
-            const cellWidth = measureTextWidth(textContent, font) + 40;
-            maxWidth = Math.max(maxWidth, cellWidth);
-          } catch (error) {
-            console.warn(`Error processing cell content for column ${column.id}:`, error);
           }
-        }
 
-        const finalWidth = Math.max(
-          Math.min(maxWidth, 300),
-          column.minWidth || 80
-        );
-
-        if (!currentState || currentState.width !== finalWidth) {
-          newColumnStates[column.id] = {
-            ...currentState,
-            visible: currentState?.visible ?? true,
-            width: finalWidth,
-            order: currentState?.order ?? columns.indexOf(column),
-          };
-          updated = true;
-        }
-      });
-
-      if (updated) {
-        setColumnStates(newColumnStates);
-      }
-    };
-
-    const timeoutId = setTimeout(autoResizeColumns, 100);
-    return () => clearTimeout(timeoutId);
-  }, [data, columns, columnStates, setColumnStates]);
-
+          const finalWidth = Math.max(
+            Math.min(maxWidth, 300),
+            column.minWidth || 80
+          );
   const toggleColumnVisibility = useCallback((columnId: string) => {
     if (columnId === 'select') return;
 
@@ -126,10 +126,36 @@ export function useCustomizableTable(columns: ColumnDef[], data: any[]) {
         ...prev[columnId],
         visible: !(prev[columnId]?.visible ?? true),
         width: prev[columnId]?.width,
-        order: prev[columnId]?.order ?? columns.findIndex(c => c.id === columnId),
+        order: prev[columnId]?.order ?? Object.keys(prev).length,
       },
     }));
-  }, [columns, setColumnStates]);
+  }, [setColumnStates]);          return newColumnStates;
+        }
+        return currentStates;
+      });
+    };
+
+    const timeoutId = setTimeout(autoResizeColumns, 100);
+    return () => clearTimeout(timeoutId);
+  }, [data, columns]); // eslint-disable-line react-hooks/exhaustive-deps
+  const toggleColumnVisibility = useCallback(
+    (columnId: string) => {
+      if (columnId === 'select') return;
+
+      setColumnStates((prev) => ({
+        ...prev,
+        [columnId]: {
+          ...prev[columnId],
+          visible: !(prev[columnId]?.visible ?? true),
+          width: prev[columnId]?.width,
+          order:
+            prev[columnId]?.order ??
+            columns.findIndex((c) => c.id === columnId),
+        },
+      }));
+    },
+    [columns, setColumnStates]
+  );
 
   const resetColumnOrder = useCallback(() => {
     setColumnStates((prev) => {
@@ -181,49 +207,70 @@ export function useCustomizableTable(columns: ColumnDef[], data: any[]) {
     );
   }, []);
 
-  const handleDragStart = useCallback((columnId: string) => {
-    if (!isColumnDraggable(columnId)) return;
-    setDraggedColumn(columnId);
-  }, [isColumnDraggable]);
+  const handleDragStart = useCallback(
+    (columnId: string) => {
+      if (!isColumnDraggable(columnId)) return;
+      setDraggedColumn(columnId);
+    },
+    [isColumnDraggable]
+  );
 
-  const handleDragOver = useCallback((e: React.DragEvent, columnId: string) => {
-    e.preventDefault();
-    if (!draggedColumn || !isColumnDraggable(columnId) || draggedColumn === columnId) {
-      return;
-    }
-  }, [draggedColumn, isColumnDraggable]);
-
-  const handleDrop = useCallback((targetColumnId: string) => {
-    if (!draggedColumn || !isColumnDraggable(targetColumnId) || draggedColumn === targetColumnId) {
-      return;
-    }
-
-    setColumnStates((prev) => {
-      const newStates = { ...prev };
-      const draggedOrder = newStates[draggedColumn]?.order ?? columns.findIndex(c => c.id === draggedColumn);
-      const targetOrder = newStates[targetColumnId]?.order ?? columns.findIndex(c => c.id === targetColumnId);
-
-      if (!newStates[draggedColumn]) {
-        newStates[draggedColumn] = {
-          visible: true,
-          order: draggedOrder,
-        };
+  const handleDragOver = useCallback(
+    (e: React.DragEvent, columnId: string) => {
+      e.preventDefault();
+      if (
+        !draggedColumn ||
+        !isColumnDraggable(columnId) ||
+        draggedColumn === columnId
+      ) {
+        return;
       }
-      if (!newStates[targetColumnId]) {
-        newStates[targetColumnId] = {
-          visible: true,
-          order: targetOrder,
-        };
+    },
+    [draggedColumn, isColumnDraggable]
+  );
+
+  const handleDrop = useCallback(
+    (targetColumnId: string) => {
+      if (
+        !draggedColumn ||
+        !isColumnDraggable(targetColumnId) ||
+        draggedColumn === targetColumnId
+      ) {
+        return;
       }
 
-      newStates[draggedColumn].order = targetOrder;
-      newStates[targetColumnId].order = draggedOrder;
+      setColumnStates((prev) => {
+        const newStates = { ...prev };
+        const draggedOrder =
+          newStates[draggedColumn]?.order ??
+          columns.findIndex((c) => c.id === draggedColumn);
+        const targetOrder =
+          newStates[targetColumnId]?.order ??
+          columns.findIndex((c) => c.id === targetColumnId);
 
-      return newStates;
-    });
+        if (!newStates[draggedColumn]) {
+          newStates[draggedColumn] = {
+            visible: true,
+            order: draggedOrder,
+          };
+        }
+        if (!newStates[targetColumnId]) {
+          newStates[targetColumnId] = {
+            visible: true,
+            order: targetOrder,
+          };
+        }
 
-    setDraggedColumn(null);
-  }, [draggedColumn, isColumnDraggable, columns, setColumnStates]);
+        newStates[draggedColumn].order = targetOrder;
+        newStates[targetColumnId].order = draggedOrder;
+
+        return newStates;
+      });
+
+      setDraggedColumn(null);
+    },
+    [draggedColumn, isColumnDraggable, columns, setColumnStates]
+  );
 
   const handleDragEnd = useCallback(() => {
     setDraggedColumn(null);
@@ -231,10 +278,12 @@ export function useCustomizableTable(columns: ColumnDef[], data: any[]) {
 
   const getVisibleColumns = useCallback(() => {
     return columns
-      .filter(column => columnStates[column.id]?.visible !== false)
+      .filter((column) => columnStates[column.id]?.visible !== false)
       .sort((a, b) => {
-        const aOrder = columnStates[a.id]?.order ?? columns.findIndex(c => c.id === a.id);
-        const bOrder = columnStates[b.id]?.order ?? columns.findIndex(c => c.id === b.id);
+        const aOrder =
+          columnStates[a.id]?.order ?? columns.findIndex((c) => c.id === a.id);
+        const bOrder =
+          columnStates[b.id]?.order ?? columns.findIndex((c) => c.id === b.id);
         return aOrder - bOrder;
       });
   }, [columns, columnStates]);

@@ -11,9 +11,27 @@ export async function createServerClient() {
 
   const cookieStore = await cookies()
   return createSSRServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
+export const supabase = createClient(
+    (() => {
+      const v = process.env.NEXT_PUBLIC_SUPABASE_URL
+      if (!v) throw new Error('Missing env: NEXT_PUBLIC_SUPABASE_URL')
+      return v
+    })(),
+    (() => {
+        set(name: string, value: string, options: CookieOptions) {
+          try {
+            cookieStore.set({ name, value, ...options })
+          } catch {
+            // ignore when cookies are read-only (e.g., RSC)
+          }
+        },
+        remove(name: string, options: CookieOptions) {
+          try {
+            cookieStore.set({ name, value: '', ...options, maxAge: 0 })
+          } catch {
+            // ignore when cookies are read-only (e.g., RSC)
+          }
+        },
       cookies: {
         get(name: string) {
           return cookieStore.get(name)?.value

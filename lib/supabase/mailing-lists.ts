@@ -228,6 +228,18 @@ export async function removeTagFromList(listId: string, tagId: string): Promise<
   if (error) throw error
 }
 
+export async function addTagToRecord(recordId: string, tagId: string): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase.from('record_tags').insert({ mailing_list_record_id: recordId, tag_id: tagId })
+  if (error) throw error
+}
+
+export async function removeTagFromRecord(recordId: string, tagId: string): Promise<void> {
+  const supabase = createClient()
+  const { error } = await supabase.from('record_tags').delete().match({ mailing_list_record_id: recordId, tag_id: tagId })
+  if (error) throw error
+}
+
 // =================================================================================
 // Version History Functions
 // =================================================================================

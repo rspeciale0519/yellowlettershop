@@ -1,35 +1,45 @@
-"use client"
+'use client';
 
-import type React from "react"
-import { Baby } from "lucide-react"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
-import type { DemographicsCriteria } from "@/types/list-builder"
-import { CHILDREN_AGE_RANGES } from "@/data/demographics"
-import { DemographicsGroup } from "./DemographicsGroup"
-import { MultiSelectField } from "./MultiSelectField"
-import { RangeSliderField } from "./RangeSliderField"
-
+import type React from 'react';
+import { useId } from 'react';
+import { Baby } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import type { DemographicsCriteria } from '@/types/list-builder';
+import { CHILDREN_AGE_RANGES } from '@/data/demographics';
+import { DemographicsGroup } from './DemographicsGroup';
+import { MultiSelectField } from './MultiSelectField';
+import { RangeSliderField } from './RangeSliderField';
 interface FamilyDemographicsProps {
-  criteria: DemographicsCriteria
-  expanded: boolean
-  onToggle: () => void
-  onUpdate: (values: Partial<DemographicsCriteria>) => void
+  criteria: DemographicsCriteria;
+  expanded: boolean;
+  onToggle: () => void;
+  onUpdate: (values: Partial<DemographicsCriteria>) => void;
+  idPrefix?: string;
 }
 
-export function FamilyDemographics({ criteria, expanded, onToggle, onUpdate }: FamilyDemographicsProps) {
+export function FamilyDemographics({ criteria, expanded, onToggle, onUpdate, idPrefix }: FamilyDemographicsProps) {
+  const generatedId = useId()
+  const idBase = idPrefix || generatedId
+
   return (
     <DemographicsGroup
       title="Family Demographics"
       icon={<Baby className="h-5 w-5 text-pink-600" />}
       expanded={expanded}
       onToggle={onToggle}
+    >      title='Family Demographics'
+      icon={<Baby className='h-5 w-5 text-pink-600' />}
+      expanded={expanded}
+      onToggle={onToggle}
     >
-      <div className="space-y-4">
-        <Label className="text-sm font-medium">Has Children</Label>
+      <div className='space-y-4'>
+        <Label id={`${idBase}-children-label`} className='text-sm font-medium'>
+          Has Children
+        </Label>
         <RadioGroup
-          value={criteria.childrenInHousehold.hasChildren}
-          onValueChange={(value) =>
+          value={criteria.childrenInHousehold?.hasChildren ?? 'any'}
+          onValueChange={(value: 'any' | 'yes' | 'no') =>
             onUpdate({
               childrenInHousehold: {
                 ...criteria.childrenInHousehold,
@@ -37,27 +47,28 @@ export function FamilyDemographics({ criteria, expanded, onToggle, onUpdate }: F
               },
             })
           }
-          className="flex space-x-4"
+          aria-labelledby={`${idBase}-children-label`}
+          className='flex space-x-4'
         >
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="any" id="children-any" />
-            <Label htmlFor="children-any">Any</Label>
+          <div className='flex items-center space-x-2'>
+            <RadioGroupItem value='any' id={`${idBase}-children-any`} />
+            <Label htmlFor={`${idBase}-children-any`}>Any</Label>
           </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="yes" id="children-yes" />
-            <Label htmlFor="children-yes">Yes</Label>
+          <div className='flex items-center space-x-2'>
+            <RadioGroupItem value='yes' id={`${idBase}-children-yes`} />
+            <Label htmlFor={`${idBase}-children-yes`}>Yes</Label>
           </div>
-          <div className="flex items-center space-x-2">
-            <RadioGroupItem value="no" id="children-no" />
-            <Label htmlFor="children-no">No</Label>
+          <div className='flex items-center space-x-2'>
+            <RadioGroupItem value='no' id={`${idBase}-children-no`} />
+            <Label htmlFor={`${idBase}-children-no`}>No</Label>
           </div>
         </RadioGroup>
       </div>
 
-      {criteria.childrenInHousehold.hasChildren === "yes" && (
+      {(criteria.childrenInHousehold?.hasChildren ?? 'any') === 'yes' && (
         <>
           <MultiSelectField
-            label="Children Age Ranges"
+            label='Children Age Ranges'
             options={CHILDREN_AGE_RANGES}
             values={criteria.childrenInHousehold.ageRanges}
             onChange={(values) =>
@@ -68,15 +79,15 @@ export function FamilyDemographics({ criteria, expanded, onToggle, onUpdate }: F
                 },
               })
             }
-            icon={<Baby className="h-4 w-4 text-pink-600" />}
-            tooltip="Age ranges of children in household"
+            icon={<Baby className='h-4 w-4 text-pink-600' />}
+            tooltip='Age ranges of children in household'
           />
 
           <RangeSliderField
-            label="Number of Children"
+            label='Number of Children'
             value={[
               criteria.childrenInHousehold.numberOfChildren[0],
-              criteria.childrenInHousehold.numberOfChildren[1]
+              criteria.childrenInHousehold.numberOfChildren[1],
             ]}
             min={0}
             max={5}
@@ -88,13 +99,15 @@ export function FamilyDemographics({ criteria, expanded, onToggle, onUpdate }: F
                 },
               })
             }
-            formatValue={(value) => `${value} ${value === 1 ? "child" : "children"}`}
-            icon={<Baby className="h-4 w-4 text-pink-600" />}
-            tooltip="Total number of children in household"
-            ariaLabel="Number of children selector"
+            formatValue={(value) =>
+              `${value} ${value === 1 ? 'child' : 'children'}`
+            }
+            icon={<Baby className='h-4 w-4 text-pink-600' />}
+            tooltip='Total number of children in household'
+            ariaLabel='Number of children selector'
           />
         </>
       )}
     </DemographicsGroup>
-  )
+  );
 }

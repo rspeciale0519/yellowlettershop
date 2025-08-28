@@ -323,7 +323,7 @@ Before processing the list, you must configure the mail piece parameters and pos
 
 * **URL:** `https://cloud2.iaccutrace.com/servoy-service/rest_ws/ws_360/v2_0/job/<guid>/QUOTE`  
 * **Method:** `PUT`  
-* **Header Parameters (Required):** `Accept: application/json` or `application/xml`
+* **Header Parameters (Required):** `Accept: application/json` or `application/xml`; `Content-Type: application/json`
 
 **Important Settings for Mail Processing:**
 
@@ -333,10 +333,9 @@ Before processing the list, you must configure the mail piece parameters and pos
 **JSON Configuration Example:**
 
 {  
-  "presort\_class": "STANDARD MAIL",  
+  "presort\_class": "STANDARD MAIL"  // also supports "USPS Marketing Mail (formerly Standard Mail)"  
   "mail\_piece\_size": "LETTER"  
 }
-
 **For EDDM mailings, you must set:**
 
 {  
@@ -410,14 +409,13 @@ Once the filtering and processing are complete, you can download the print-ready
 * `presort.json`: A JSON file specific to presort data
 
 **Success Response:** The raw content of the CSV file will be streamed directly. This file will contain only the addresses that passed your specified filters, ready to be attached to the order.
+**Success Response:** The raw content of the CSV file will be streamed directly. This file will contain only the addresses that passed your specified filters, ready to be attached to the order.
 
 **Error Response Examples:**
 
 * `HTTP 500 – INTERNAL_SERVER_ERROR`  
-* `HTTP 500 – BAD REQUEST`  
+* `HTTP 400 – BAD REQUEST`  
 * `HTTP 200 – OK` with error message: `{"success":false,"message":"File with specified extension does NOT exist"}`
-
-## **6\. Individual Processing Steps (Alternative Approach)**
 
 For applications requiring more granular control over the processing pipeline, you can execute individual processing steps:
 
@@ -520,13 +518,12 @@ The API provides endpoints to retrieve processed records for customer review:
 
 ### **Replace All Data**
 
+### **Replace All Data**
+
 * **URL:** `https://cloud2.iaccutrace.com/servoy-service/rest_ws/ws_360/v2_0/job/<guid>`  
 * **Method:** `PUT`  
 * **Purpose:** Write back modified records to the cloud after customer review and edits  
-* **Header Parameters:** `Accept: application/json` or `application/xml`
-
-## **8\. EDDM (Every Door Direct Mail) Support**
-
+* **Header Parameters:** `Accept: application/json` or `application/xml`; `Content-Type: application/json`; `Idempotency-Key: <uuid>`
 For EDDM campaigns, AccuZIP supports uploading ZIP code ranges instead of address lists:
 
 ### **EDDM File Requirements**

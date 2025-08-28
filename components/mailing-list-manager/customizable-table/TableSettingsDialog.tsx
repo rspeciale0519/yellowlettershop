@@ -1,9 +1,11 @@
 'use client';
 
 import type React from 'react';
+import { useId } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import {
   Dialog,
   DialogContent,
@@ -11,13 +13,12 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
-} from '@/components/ui/dialog';
-
-interface ColumnDef {
+export interface AppColumnDef {
   id: string;
-  header: string;
+  header: React.ReactNode;
   minWidth?: number;
-  cell: (row: any) => React.ReactNode;
+  cell: (row: unknown) => React.ReactNode;
+}  cell: (row: any) => React.ReactNode;
 }
 
 interface ColumnState {
@@ -53,7 +54,7 @@ export function TableSettingsDialog({
 }: TableSettingsDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md md:max-w-lg">
+      <DialogContent className='sm:max-w-md md:max-w-lg'>
         <DialogHeader>
           <DialogTitle>Table Settings</DialogTitle>
           <DialogDescription>
@@ -61,11 +62,11 @@ export function TableSettingsDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-6 py-4">
+        <div className='grid gap-6 py-4'>
           {/* Column Visibility Section */}
           <div>
-            <h3 className="text-lg font-medium mb-3">Column Visibility</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <h3 className='text-lg font-medium mb-3'>Column Visibility</h3>
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-2'>
               {columns.map((column) => {
                 // Skip columns that should always be visible
                 if (column.id === 'select') {
@@ -82,20 +83,15 @@ export function TableSettingsDialog({
                     : column.id.charAt(0).toUpperCase() + column.id.slice(1);
 
                 return (
-                  <div
-                    key={column.id}
-                    className="flex items-center space-x-2"
-                  >
+                  <div key={column.id} className='flex items-center space-x-2'>
                     <Checkbox
                       id={`visibility-${column.id}`}
                       checked={columnStates[column.id]?.visible !== false}
-                      onCheckedChange={() =>
-                        toggleColumnVisibility(column.id)
-                      }
+                      onCheckedChange={() => toggleColumnVisibility(column.id)}
                     />
                     <Label
                       htmlFor={`visibility-${column.id}`}
-                      className="cursor-pointer"
+                      className='cursor-pointer'
                     >
                       {columnName}
                     </Label>
@@ -108,60 +104,61 @@ export function TableSettingsDialog({
           {/* Name Format Section */}
           {columns.some((col) => col.id === 'name') && (
             <div>
+              <h3 className='text-lg font-medium mb-3'>Name Format</h3>
+          {/* Name Format Section */}
+          {columns.some((col) => col.id === 'name') && (
+            <div>
               <h3 className="text-lg font-medium mb-3">Name Format</h3>
-              <div className="space-y-2">
+              <RadioGroup
+                value={nameFormat}
+                onValueChange={(val: NameFormat) => setNameFormat(val)}
+                className="space-y-2"
+              >
                 <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="name-format-last-first"
-                    checked={nameFormat === 'lastFirst'}
-                    onCheckedChange={() => setNameFormat('lastFirst')}
+                  <RadioGroupItem
+                    id={`${baseId}-name-format-lastFirst`}
+                    value="lastFirst"
                   />
                   <Label
-                    htmlFor="name-format-last-first"
+                    htmlFor={`${baseId}-name-format-lastFirst`}
                     className="cursor-pointer"
                   >
                     Last, First
                   </Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="name-format-first-last"
-                    checked={nameFormat === 'firstLast'}
-                    onCheckedChange={() => setNameFormat('firstLast')}
+                  <RadioGroupItem
+                    id={`${baseId}-name-format-firstLast`}
+                    value="firstLast"
                   />
                   <Label
-                    htmlFor="name-format-first-last"
+                    htmlFor={`${baseId}-name-format-firstLast`}
                     className="cursor-pointer"
                   >
                     First Last
                   </Label>
                 </div>
-              </div>
+              </RadioGroup>
             </div>
-          )}
-
-          {/* Reset Options Section */}
-          <div>
-            <h3 className="text-lg font-medium mb-3">Reset Options</h3>
-            <div className="space-y-2">
+          )}            <div className='space-y-2'>
               <Button
-                variant="outline"
+                variant='outline'
                 onClick={resetColumnOrder}
-                className="w-full justify-start"
+                className='w-full justify-start'
               >
                 Reset Column Order
               </Button>
               <Button
-                variant="outline"
+                variant='outline'
                 onClick={resetColumnVisibility}
-                className="w-full justify-start"
+                className='w-full justify-start'
               >
                 Show All Columns
               </Button>
               <Button
-                variant="outline"
+                variant='outline'
                 onClick={handleResetColumnWidths}
-                className="w-full justify-start"
+                className='w-full justify-start'
               >
                 Reset Column Widths
               </Button>

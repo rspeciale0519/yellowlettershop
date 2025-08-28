@@ -73,6 +73,7 @@ export default function MailingListManagerContent() {
     editingName,
     setEditingName,
     editingRecord,
+    setEditingRecord,
 
     // Event handlers
     clearFilters,
@@ -90,6 +91,8 @@ export default function MailingListManagerContent() {
     handleUpdateRecord,
     addTagToList,
     removeTagFromList,
+    addTagToRecord,
+    removeTagFromRecord,
 
     // Functions
     getMailingListRecords,
@@ -107,14 +110,42 @@ export default function MailingListManagerContent() {
   } = useMailingListManager();
 
   // Cleanup effect
+  // Cleanup effect
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
     };
-  }, [isMountedRef]);
+  }, []);
+
+  // Helper function to refresh current list records
+  const refreshCurrentListRecords = async () => {
+    if (!selectedList?.id || !isMountedRef.current) return;
+    
+    const result = await getMailingListRecords(selectedList.id, {
+      limit: itemsPerPage,
+      offset: (currentPage - 1) * itemsPerPage,
+      search: searchQuery,
+      status: statusFilter !== 'all' ? statusFilter : undefined,
+      tags: tagFilters.length > 0 ? tagFilters : undefined,
+    });
+    
+    if (isMountedRef.current) {
+      setRecords(result.data || []);
+      setTotalRecords(result.count || 0);
+    }
+  };
+
+  // Compute CampaignUsageModal subject context
+  const campaignSubjectName = (campaignModalTitle || '').replace(/^Campaign Usage:\s*/, '');
+  const subjectList = (lists || []).find((l) => l.name === campaignSubjectName);
+  const isListSubject = viewMode === 'lists' || !!subjectList;
+  const computedRecordCount = isListSubject
+    ? (subjectList?.record_count ?? selectedList?.record_count ?? 0)
+    : 0;
 
   return (
-    <div className="p-4 md:p-6 lg:p-8 space-y-4">
+    <div className='p-4 md:p-6 lg:p-8 space-y-4'>
       <ManagerHeader
         viewMode={viewMode}
         onViewModeChange={() =>
@@ -142,7 +173,7 @@ export default function MailingListManagerContent() {
       />
 
       {advancedSearchOpen && (
-        <div className="mt-4 p-4 border rounded-md bg-muted/50">
+        <div className='mt-4 p-4 border rounded-md bg-muted/50'>
           <AdvancedSearch
             criteria={advancedSearchCriteria}
             onCriteriaChange={setAdvancedSearchCriteria}
@@ -188,11 +219,15 @@ export default function MailingListManagerContent() {
         selectAll={selectAll}
         onSelectAllChange={handleSelectAllChange}
         editingName={editingName}
-        onNameEdit={(id, name) => setEditingName({ id, value: name })}
         saveNameEdit={async () => {
           if (editingName) {
-            await handleUpdateList(editingName.id, { name: editingName.value });
-            setEditingName(null);
+            try {
+              await handleUpdateList(editingName.id, { name: editingName.value });
+              setEditingName(null);
+            } catch (error) {
+              console.error('Failed to update list name:', error);
+              // Consider showing a toast or error message to the user
+            }
           }
         }}
         setEditingName={setEditingName}
@@ -200,19 +235,23 @@ export default function MailingListManagerContent() {
         onOpenDeduplication={handleOpenDeduplication}
         onOpenVersionHistory={handleOpenVersionHistory}
         onUpdateRecord={handleUpdateRecord}
-        onAddTagToRecord={(recordId, tagId) => {
-          /* Implement */
-        }}
-        onRemoveTagFromRecord={(recordId, tagId) => {
-          /* Implement */
-        }}
-        onUpdateRecordStatus={(recordId, status) =>
+        onUpdateRecordStatus={(recordId: string, status: string) =>
           handleUpdateRecord(recordId, { status: status as any })
         }
-        onRecordFieldEdit={(id, field, value) => {
+        onRecordFieldEdit={(id: string, field: string, value: any) => {
           setEditingRecord({ id, field, value });
         }}
         editingRecord={editingRecord}
+        saveRecordFieldEdit={async () => {
+          if (editingRecord) {
+            try {
+              await handleUpdateRecord(editingRecord.id, { [editingRecord.field]: editingRecord.value } as any);
+            } finally {
+              setEditingRecord(null);
+            }
+          }
+        }}
+        setEditingRecord={setEditingRecord}
       />
 
       {/* Modals */}
@@ -228,29 +267,18 @@ export default function MailingListManagerContent() {
         isOpen={addRecordOpen}
         onClose={() => setAddRecordOpen(false)}
         listId={selectedList?.id ?? ''}
-        onAdd={async () => {
-          if (selectedList?.id) {
-            const result = await getMailingListRecords(selectedList.id, {
-              limit: itemsPerPage,
-              offset: (currentPage - 1) * itemsPerPage,
-              search: searchQuery,
-              status: statusFilter !== 'all' ? statusFilter : undefined,
-              tags: tagFilters.length > 0 ? tagFilters : undefined,
-            });
-            if (isMountedRef.current) {
-              setRecords(result.data || []);
-              setTotalRecords(result.count || 0);
-            }
-          }
-        }}
+        onAdd={refreshCurrentListRecords}
       />
 
       <EditListModal
         isOpen={editListId !== null}
         onClose={() => setEditListId(null)}
-        listId={editListId}
+        listId={editListId ?? ''}
         onUpdate={async () => {
           await mutateLists();
+          if (viewMode === 'records') {
+            await refreshCurrentListRecords();
+          }
         }}
       />
 
@@ -259,33 +287,34 @@ export default function MailingListManagerContent() {
         onClose={() => setDeleteId(null)}
         onConfirm={async () => {
           if (deleteId) {
-            if (deleteType === 'list') {
-              await deleteMailingList(deleteId);
-              await mutateLists();
-            } else {
-              await deleteMailingListRecord(deleteId);
-              if (selectedList?.id) {
-                const result = await getMailingListRecords(selectedList.id, {
-                  limit: itemsPerPage,
-                  offset: (currentPage - 1) * itemsPerPage,
-                  search: searchQuery,
-                  status: statusFilter !== 'all' ? statusFilter : undefined,
-                  tags: tagFilters.length > 0 ? tagFilters : undefined,
-                });
-                if (isMountedRef.current) {
-                  setRecords(result.data || []);
-                  setTotalRecords(result.count || 0);
+            try {
+              if (deleteType === 'list') {
+                await deleteMailingList(deleteId);
+                await mutateLists();
+              } else {
+                await deleteMailingListRecord(deleteId);
+                if (selectedList?.id) {
+                  const result = await getMailingListRecords(selectedList.id, {
+                    limit: itemsPerPage,
+                    offset: (currentPage - 1) * itemsPerPage,
+                    search: searchQuery,
+                    status: statusFilter !== 'all' ? statusFilter : undefined,
+                    tags: tagFilters.length > 0 ? tagFilters : undefined,
+                  });
+                  if (isMountedRef.current) {
+                    setRecords(result.data || []);
+                    setTotalRecords(result.count || 0);
+                  }
                 }
               }
+              setDeleteId(null);
+            } catch (error) {
+              console.error(`Failed to delete ${deleteType}:`, error);
+              // Consider showing an error toast to the user
+              setDeleteId(null);
             }
-            setDeleteId(null);
           }
         }}
-        itemName={
-          deleteType === 'list'
-            ? lists?.find((l) => l.id === deleteId)?.name ?? 'Unknown'
-            : 'record'
-        }
         itemType={deleteType}
       />
 
@@ -293,20 +322,11 @@ export default function MailingListManagerContent() {
         isOpen={csvImportOpen}
         onClose={() => setCsvImportOpen(false)}
         listId={selectedList?.id ?? ''}
+        listName={selectedList?.name ?? ''}
         onImportComplete={async () => {
           await mutateLists();
-          if (viewMode === 'records' && selectedList?.id) {
-            const result = await getMailingListRecords(selectedList.id, {
-              limit: itemsPerPage,
-              offset: (currentPage - 1) * itemsPerPage,
-              search: searchQuery,
-              status: statusFilter !== 'all' ? statusFilter : undefined,
-              tags: tagFilters.length > 0 ? tagFilters : undefined,
-            });
-            if (isMountedRef.current) {
-              setRecords(result.data || []);
-              setTotalRecords(result.count || 0);
-            }
+          if (viewMode === 'records') {
+            await refreshCurrentListRecords();
           }
         }}
       />
@@ -319,18 +339,8 @@ export default function MailingListManagerContent() {
         recordCount={selectedList?.record_count ?? 0}
         onDeduplicationComplete={async (removed) => {
           await mutateLists();
-          if (viewMode === 'records' && selectedList?.id) {
-            const result = await getMailingListRecords(selectedList.id, {
-              limit: itemsPerPage,
-              offset: (currentPage - 1) * itemsPerPage,
-              search: searchQuery,
-              status: statusFilter !== 'all' ? statusFilter : undefined,
-              tags: tagFilters.length > 0 ? tagFilters : undefined,
-            });
-            if (isMountedRef.current) {
-              setRecords(result.data || []);
-              setTotalRecords(result.count || 0);
-            }
+          if (viewMode === 'records') {
+            await refreshCurrentListRecords();
           }
         }}
       />
@@ -351,8 +361,8 @@ export default function MailingListManagerContent() {
         onOpenChange={setCampaignModalOpen}
         campaigns={selectedCampaigns}
         title={campaignModalTitle}
-        isList={false}
-        recordCount={0}
+        isList={isListSubject}
+        recordCount={computedRecordCount}
       />
     </div>
   );

@@ -14,6 +14,8 @@ import {
   bulkImportRecords,
   addTagToList,
   removeTagFromList,
+  addTagToRecord,
+  removeTagFromRecord,
 } from "@/lib/supabase/mailing-lists"
 
 export function useMailingListFunctions() {
@@ -30,5 +32,7 @@ export function useMailingListFunctions() {
     bulkImportRecords: useCallback(bulkImportRecords, []),
     addTagToList: useCallback(addTagToList, []),
     removeTagFromList: useCallback(removeTagFromList, []),
+    addTagToRecord: useCallback(addTagToRecord, []),
+    removeTagFromRecord: useCallback(removeTagFromRecord, []),
   }
 }

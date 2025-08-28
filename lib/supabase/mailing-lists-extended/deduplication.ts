@@ -1,19 +1,30 @@
 // Mailing list deduplication utilities
 import { createClient } from '@/utils/supabase/client'
+import { createServerClient } from '@/utils/supabase/server'
 
-// Enhanced deduplication with more options
+/**
+ * Deduplicate records in a mailing list by a specific column.
+ * The column must be one of the whitelisted database column names.
+ */
 export async function deduplicateList(
   listId: string,
-  field: 'address' | 'name' | 'phone' | 'email',
+  field: 'address_line1' | 'full_name' | 'phone' | 'email' | 'external_id',
   options?: {
     matchingStrategy?: 'exact' | 'fuzzy'
     keepStrategy?: 'first' | 'last' | 'most_complete'
     createBackup?: boolean
   }
 ): Promise<{ duplicatesFound: number; removed: number }> {
-  const supabase = createClient()
-  const { 
-    matchingStrategy = 'exact', 
+  const supabase = typeof window === 'undefined' ? await createServerClient() : createClient()
+  
+  // Runtime whitelist (defense-in-depth)
+  const allowedColumns = ['address_line1', 'full_name', 'phone', 'email', 'external_id'] as const
+  if (!allowedColumns.includes(field)) {
+    throw new Error(`Invalid field: ${field}`)
+  }
+
+  const {
+    matchingStrategy = 'exact',
     keepStrategy = 'most_complete', 
     createBackup = true 
   } = options || {}
@@ -24,22 +35,8 @@ export async function deduplicateList(
     await createListVersion(listId, 'Backup before deduplication')
   }
   
-  // Get the field to deduplicate by
-  let dedupeField: string
-  switch (field) {
-    case 'address':
-      dedupeField = 'address_line1'
-      break
-    case 'name':
-      dedupeField = 'full_name'
-      break
-    case 'phone':
-      dedupeField = 'phone'
-      break
-    case 'email':
-      dedupeField = 'email'
-      break
-  }
+  // Use whitelisted column name directly
+  const dedupeField = field
   
   // Get all records for this list
   const { data: records, error } = await supabase
@@ -55,11 +52,17 @@ export async function deduplicateList(
   
   // Group records by the dedupe field
   const groups = new Map<string, any[]>()
+  
   for (const record of records) {
-    const key = matchingStrategy === 'fuzzy' 
-      ? record[dedupeField].toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/gi, '')
-      : record[dedupeField]
-    
+-    const key = matchingStrategy === 'fuzzy' 
+-      ? (record[dedupeField] || '').toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/gi, '')
+    const val = String(record[dedupeField] ?? '')
+    const key = matchingStrategy === 'fuzzy'
+      ? val.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/gi, '')
+      : val.trim()
+    if (!key) continue
+
+    // …rest of loop logic…
     if (!groups.has(key)) {
       groups.set(key, [])
     }
@@ -106,15 +109,24 @@ export async function deduplicateList(
     if (deleteError) throw deleteError
     
     // Update record count
-    const { count } = await supabase
+    const { count, error: countError } = await supabase
       .from('mailing_list_records')
       .select('*', { count: 'exact', head: true })
       .eq('mailing_list_id', listId)
     
-    await supabase
-      .from('mailing_lists')
-      .update({ record_count: count || 0 })
-      .eq('id', listId)
+    if (countError) {
+      console.error('Failed to get updated record count:', countError)
+      // Continue anyway, as the deduplication was successful
+    } else {
+      const { error: updateError } = await supabase
+        .from('mailing_lists')
+        .update({ record_count: count || 0 })
+        .eq('id', listId)
+      
+      if (updateError) {
+        console.error('Failed to update record count:', updateError)
+      }
+    }
   }
   
   return {

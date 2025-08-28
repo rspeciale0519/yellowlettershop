@@ -588,25 +588,15 @@ function validateCoordinateParameters(params, constraints) {
 }
 
 function validateStateFormatParameters(params, constraints) {
+  const param = params.ctyst || params.cntyst || params.town || '';
 
-  const param \= params.ctyst || params.cntyst || params.town;
-
-  
-
-  if (constraints.format && \!constraints.format.test(param)) {
-
+  if (constraints.format && !constraints.format.test(param)) {
     throw new Error('Invalid format. Use "STATE;Location" with 2-letter state code and semicolon delimiter');
-
   }
 
-  
-
-  if (constraints.multipleFormat && param.includes(',') && \!constraints.multipleFormat.test(param)) {
-
+  if (constraints.multipleFormat && param.includes(',') && !constraints.multipleFormat.test(param)) {
     throw new Error('Invalid multiple location format. Use "STATE;Location,STATE;Location" pattern');
-
   }
-
 }
 
 ---
@@ -2241,89 +2231,51 @@ class PropertyListBuilder {
 
         headers: {
 
+  async executeWithRetry(url, options = {}, attempt = 1) {
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: {
           'Accept': 'application/json',
-
           ...options.headers
-
         }
-
       });
 
-      
-
       // Handle rate limiting specifically
-
-      if (response.status \=== 429\) {
-
-        if (attempt \<= this.api.config.retryAttempts) {
-
-          const delayMs \= this.api.config.retryDelayMs \* Math.pow(2, attempt \- 1);
-
-          console.warn(\`Rate limited, retrying in ${delayMs}ms (attempt ${attempt})\`);
-
-          await new Promise(resolve \=\> setTimeout(resolve, delayMs));
-
-          return this.executeWithRetry(url, options, attempt \+ 1);
-
+      if (response.status === 429) {
+        const maxAttempts = this.api.config.get('performance.maxRetryAttempts', 3);
+        const baseDelay = this.api.config.get('performance.retryDelayMs', 1000);
+        if (attempt <= maxAttempts) {
+          const delayMs = baseDelay * Math.pow(2, attempt - 1);
+          console.warn(`Rate limited, retrying in ${delayMs}ms (attempt ${attempt})`);
+          await new Promise(resolve => setTimeout(resolve, delayMs));
+          return this.executeWithRetry(url, options, attempt + 1);
         }
-
         throw new RateLimitError('Too many requests, please try again later');
-
       }
-
-      
 
       // Handle authentication errors
-
-      if (response.status \=== 401\) {
-
+      if (response.status === 401) {
         throw new AuthenticationError('Invalid license key or credentials');
-
       }
 
-      
-
-      if (\!response.ok) {
-
-        throw new Error(\`HTTP ${response.status}: ${response.statusText}\`);
-
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
-
-      
 
       return response;
-
-      
-
     } catch (error) {
-
-      if (attempt \<= this.api.config.retryAttempts && this.isRetryableError(error)) {
-
-        const delayMs \= this.api.config.retryDelayMs \* attempt;
-
-        console.warn(\`Request failed, retrying in ${delayMs}ms (attempt ${attempt}):\`, error.message);
-
-        await new Promise(resolve \=\> setTimeout(resolve, delayMs));
-
-        return this.executeWithRetry(url, options, attempt \+ 1);
-
+      const maxAttempts = this.api.config.get('performance.maxRetryAttempts', 3);
+      const baseDelay = this.api.config.get('performance.retryDelayMs', 1000);
+      if (attempt <= maxAttempts && this.isRetryableError(error)) {
+        const delayMs = baseDelay * attempt;
+        console.warn(`Request failed, retrying in ${delayMs}ms (attempt ${attempt}):`, error.message);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+        return this.executeWithRetry(url, options, attempt + 1);
       }
-
       throw error;
-
     }
-
   }
-
-  
-
-  isRetryableError(error) {
-
-    // Define which errors should trigger a retry
-
-    return error.name \=== 'TypeError' || // Network errors
-
-           error.message.includes('timeout') ||
 
            error.message.includes('ECONNRESET');
 
@@ -3447,127 +3399,16 @@ class PropertyDataCache {
 
     this.defaultTTL \= 300000; // 5 minutes for counts
 
-    this.purchaseTTL \= 86400000; // 24 hours for purchase data
-
-  }
-
-  
-
-  getKey(criteria, type \= 'count') {
-
-    // Create consistent cache keys
-
-    const sortedCriteria \= this.sortObject(criteria);
-
-    return \`${type}:${JSON.stringify(sortedCriteria)}\`;
-
-  }
-
-  
-
   sortObject(obj) {
+    if (obj === null || typeof obj !== 'object') return obj;
+   if (Array.isArray(obj)) return obj.map((v) => this.sortObject(v));
 
-    if (obj \=== null || typeof obj \!== 'object') return obj;
-
-    if (Array.isArray(obj)) return obj.map(this.sortObject);
-
-    
-
-    const sorted \= {};
-
-    Object.keys(obj).sort().forEach(key \=\> {
-
-      sorted\[key\] \= this.sortObject(obj\[key\]);
-
+    const sorted = {};
+    Object.keys(obj).sort().forEach(key => {
+      sorted[key] = this.sortObject(obj[key]);
     });
-
     return sorted;
-
   }
-
-  
-
-  get(criteria, type \= 'count') {
-
-    const key \= this.getKey(criteria, type);
-
-    const cached \= this.memoryCache.get(key);
-
-    
-
-    if (cached && Date.now() \< cached.expiry) {
-
-      return cached.data;
-
-    }
-
-    
-
-    if (cached) {
-
-      this.memoryCache.delete(key);
-
-    }
-
-    
-
-    return null;
-
-  }
-
-  
-
-  set(criteria, data, type \= 'count') {
-
-    const key \= this.getKey(criteria, type);
-
-    const ttl \= type \=== 'purchase' ? this.purchaseTTL : this.defaultTTL;
-
-    
-
-    // Implement LRU eviction
-
-    if (this.memoryCache.size \>= this.maxMemoryEntries) {
-
-      const firstKey \= this.memoryCache.keys().next().value;
-
-      this.memoryCache.delete(firstKey);
-
-    }
-
-    
-
-    this.memoryCache.set(key, {
-
-      data,
-
-      expiry: Date.now() \+ ttl,
-
-      created: Date.now()
-
-    });
-
-  }
-
-  
-
-  clear(pattern \= null) {
-
-    if (\!pattern) {
-
-      this.memoryCache.clear();
-
-      return;
-
-    }
-
-    
-
-    for (const key of this.memoryCache.keys()) {
-
-      if (key.includes(pattern)) {
-
-        this.memoryCache.delete(key);
 
       }
 
@@ -3740,85 +3581,46 @@ describe('Melissa Property API Validation Functions', () \=\> {
       const params \= { zip: '92688', mile: '25' };
 
       const constraints \= { minRadius: 0.25, maxRadius: 10, maxZipsForRadius: 1 };
+class OptimizedPropertyAPI extends MelissaPropertyAPI {
+  constructor(config) {
+    super(config);
+    this.cache = new PropertyDataCache();
+    this.circuitBreaker = new APICircuitBreaker();
+  }
 
-      
+  async getPropertyCountOptimized(userCriteria) {
+    // Check cache first
+    const cached = this.cache.get(userCriteria, 'count');
+    if (cached) {
+      return { ...cached, fromCache: true };
+    }
 
-      expect(() \=\> validateZipParameters(params, constraints))
+    // Use circuit breaker for resilience
+    const result = await this.circuitBreaker.execute(async () => {
+      const url = this.buildPropertyRequest(userCriteria);
 
-        .toThrow('Radius must be between 0.25 and 10 miles');
+      // Use compression if available
+      const response = await fetch(url, {
+        headers: {
+          'Accept': 'application/json',
+          'Accept-Encoding': 'gzip, deflate'
+        }
+      });
 
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      return response.json();
     });
 
-  });
+    // Parse and cache result
+    const countData = new PropertyListBuilder().parseCountResponse(result);
+    this.cache.set(userCriteria, countData, 'count');
 
-  describe('File Format Validation', () \=\> {
-
-    it('should accept valid format codes with appropriate record counts', () \=\> {
-
-      expect(() \=\> validateFileFormat(8, 50000)).not.toThrow(); // CSV with 50k records
-
-      expect(() \=\> validateFileFormat(10, 30000)).not.toThrow(); // Excel with 30k records
-
-    });
-
-    it('should reject record counts exceeding format limits', () \=\> {
-
-      expect(() \=\> validateFileFormat(10, 70000))
-
-        .toThrow('Record count 70000 exceeds .xls (Excel 97-2003) limit of 65535');
-
-    });
-
-    it('should reject invalid format codes', () \=\> {
-
-      expect(() \=\> validateFileFormat(99, 1000))
-
-        .toThrow('Invalid file format code: 99');
-
-    });
-
-  });
-
-  describe('Demographic Filter Formatting', () \=\> {
-
-    it('should format single demographic codes correctly', () \=\> {
-
-      expect(formatDemographicFilter(\['F'\])).toBe('F');
-
-      expect(formatDemographicFilter('F')).toBe('F');
-
-    });
-
-    it('should format multiple demographic codes with dashes', () \=\> {
-
-      expect(formatDemographicFilter(\['F', 'G', 'H'\])).toBe('F-G-H');
-
-      expect(formatDemographicFilter(\['1', '2', '3'\])).toBe('1-2-3');
-
-    });
-
-  });
-
-  describe('Status Code Handling', () \=\> {
-
-    it('should return correct status information for known codes', () \=\> {
-
-      const status \= getStatusResponse(100);
-
-      expect(status.type).toBe('user\_error');
-
-      expect(status.action).toBe('validate\_input');
-
-      expect(status.userMessage).toContain('ZIP code');
-
-    });
-
-    it('should handle unknown status codes gracefully', () \=\> {
-
-      const status \= getStatusResponse(999);
-
-      expect(status.type).toBe('unknown\_error');
-
+    return { ...countData, fromCache: false };
+  }
+}
       expect(status.action).toBe('contact\_support');
 
     });

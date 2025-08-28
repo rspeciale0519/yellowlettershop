@@ -1,15 +1,17 @@
-import { strict as assert } from 'assert'
-import { filterSortPaginateLists } from '@/lib/mailing-lists-utils'
-import type { MailingList, Campaign, Tag } from '@/types/supabase'
-import type { AdvancedSearchCriteria } from '@/types/advanced-search'
+import { strict as assert } from 'assert';
+import { filterSortPaginateLists } from '@/lib/mailing-lists-utils';
+import type { MailingList, Campaign, Tag } from '@/types/supabase';
+import type { AdvancedSearchCriteria } from '@/types/advanced-search';
 
 function daysAgo(n: number): string {
-  const d = new Date()
-  d.setDate(d.getDate() - n)
-  return d.toISOString()
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString();
 }
 
-function defaultCriteria(overrides: Partial<AdvancedSearchCriteria> = {}): AdvancedSearchCriteria {
+function defaultCriteria(
+  overrides: Partial<AdvancedSearchCriteria> = {}
+): AdvancedSearchCriteria {
   return {
     columnFilters: [],
     tagFilter: { tags: [], matchType: 'any' },
@@ -18,14 +20,14 @@ function defaultCriteria(overrides: Partial<AdvancedSearchCriteria> = {}): Advan
     listFilter: null,
     logicalOperator: 'AND',
     ...overrides,
-  }
+  };
 }
 
 function sampleLists() {
   const tags: Tag[] = [
     { id: 't1', name: 'VIP' },
     { id: 't2', name: 'Cold' },
-  ]
+  ];
 
   const campaigns: Campaign[] = [
     {
@@ -37,7 +39,7 @@ function sampleLists() {
       created_by: 'u2',
       sent_at: daysAgo(5),
     },
-  ]
+  ];
 
   const lists: MailingList[] = [
     {
@@ -106,51 +108,71 @@ function sampleLists() {
       criteria: {},
       version: 1,
     },
-  ]
+  ];
 
-  return { lists, tags, campaigns }
+  return { lists, tags, campaigns };
 }
 
 describe('mailing-lists-utils mailing history filters', () => {
   it('applies mailingHistoryFilter: not_mailed / in_last / more_than / between_dates', () => {
-    const { lists } = sampleLists()
+    const { lists } = sampleLists();
 
     // not_mailed -> lists with no campaigns
     let { items } = filterSortPaginateLists(lists, {
-      criteria: defaultCriteria({ mailingHistoryFilter: { type: 'not_mailed' } }),
+      criteria: defaultCriteria({
+        mailingHistoryFilter: { type: 'not_mailed' },
+      }),
       sortBy: { column: 'name', direction: 'asc' },
       page: 1,
       pageSize: 10,
-    })
-    assert.deepEqual(items.map((i) => i.name), ['Alpha', 'Delta'])
+    });
+    assert.deepEqual(
+      items.map((i) => i.name),
+      ['Alpha', 'Delta']
+    );
 
     // in_last 7 days -> Beta only (sent 5 days ago)
-    ;({ items } = filterSortPaginateLists(lists, {
-      criteria: defaultCriteria({ mailingHistoryFilter: { type: 'in_last', days: 7 } }),
+    ({ items } = filterSortPaginateLists(lists, {
+      criteria: defaultCriteria({
+        mailingHistoryFilter: { type: 'in_last', days: 7 },
+      }),
       page: 1,
       pageSize: 10,
-    }))
-    assert.deepEqual(items.map((i) => i.name), ['Beta'])
+    }));
+    assert.deepEqual(
+      items.map((i) => i.name),
+      ['Beta']
+    );
 
     // more_than 30 days -> Gamma only (last mail 80 days ago)
-    ;({ items } = filterSortPaginateLists(lists, {
-      criteria: defaultCriteria({ mailingHistoryFilter: { type: 'more_than', days: 30 } }),
+    ({ items } = filterSortPaginateLists(lists, {
+      criteria: defaultCriteria({
+        mailingHistoryFilter: { type: 'more_than', days: 30 },
+      }),
       sortBy: { column: 'name', direction: 'asc' },
       page: 1,
       pageSize: 10,
-    }))
-    assert.deepEqual(items.map((i) => i.name), ['Gamma'])
+    }));
+    assert.deepEqual(
+      items.map((i) => i.name),
+      ['Gamma']
+    );
 
     // between_dates around 70-85 days -> Gamma only
-    const start = new Date()
-    start.setDate(start.getDate() - 85)
-    const end = new Date()
-    end.setDate(end.getDate() - 70)
-    ;({ items } = filterSortPaginateLists(lists, {
-      criteria: defaultCriteria({ mailingHistoryFilter: { type: 'between_dates', startDate: start.toISOString(), endDate: end.toISOString() } }),
+    ({ items } = filterSortPaginateLists(lists, {
+      criteria: defaultCriteria({
+        mailingHistoryFilter: {
+          type: 'between_dates',
+          startDate: daysAgo(85),
+          endDate: daysAgo(70),
+        },
+      }),
       page: 1,
       pageSize: 10,
-    }))
-    assert.deepEqual(items.map((i) => i.name), ['Gamma'])
-  })
-})
+    }));
+    assert.deepEqual(
+      items.map((i) => i.name),
+      ['Gamma']
+    );
+  });
+});

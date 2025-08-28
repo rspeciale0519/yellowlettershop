@@ -126,7 +126,22 @@ describe('mailing-lists-utils mapping', () => {
     assert.equal(ui.tags[0].name, 'VIP')
     assert.equal(ui.campaigns.length, 0)
 
-    const ui2 = mapSupabaseListToUI(sampleLists().lists[1])
+    // Reuse the same fixture instance to avoid regenerating dates
+    const ui2 = mapSupabaseListToUI(lists[1])
     assert.equal(ui2.tags[0].name, 'Cold') // relation shape handled
+    // When modified_at is absent, mapping should not invent values
+    assert.equal(ui2.modifiedDate ?? null, null)
+    assert.equal(ui2.modifiedBy ?? null, null)
+
+    // Validate campaign mapping on list 3 (snake_case → camelCase)
+    const ui3 = mapSupabaseListToUI(lists[2])
+    assert.equal(ui3.campaigns.length, 1)
+    assert.equal(ui3.campaigns[0].id, 'c2')
+    assert.equal(ui3.campaigns[0].name, 'C2')
+    assert.equal(ui3.campaigns[0].status, 'scheduled')
+    // created_at should map to createdAt
+    assert.ok(ui3.campaigns[0].createdAt)
+    // scheduled_at should map to scheduledAt
+    assert.ok(ui3.campaigns[0].scheduledAt)
   })
 })

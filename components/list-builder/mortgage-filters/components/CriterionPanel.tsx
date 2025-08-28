@@ -21,6 +21,24 @@ import { LenderAssignedFilter } from "../filters/lender-assigned-filter"
 import { AdjustableRateRiderFilter } from "../filters/adjustable-rate-rider-filter"
 import { BooleanCriterionFilter } from "../filters/boolean-criterion-filter"
 
+// Maps hyphenated criterion values to MortgageCriteria field keys
+const FIELD_BY_CRITERION: Record<string, keyof MortgageCriteria> = {
+  "mortgage-amount": "mortgageAmount",
+  "interest-rate": "interestRate",
+  "loan-to-value": "loanToValue",
+  "mortgage-origination-date": "mortgageOriginationDate",
+  "maturity-date": "maturityDate",
+  "mortgage-term": "mortgageTerm",
+  "primary-loan-type": "primaryLoanType",
+  "lender-origination": "lenderOrigination",
+  "lender-assigned": "lenderAssigned",
+  "adjustable-rate-rider": "adjustableRateRider",
+  "balloon-loan": "balloonLoan",
+  "credit-line-loan": "creditLineLoan",
+  "equity-loan": "equityLoan",
+  "matured-mortgage": "maturedMortgage",
+}
+
 interface CriterionPanelProps {
   criterion: string
   criteria: MortgageCriteria
@@ -41,12 +59,14 @@ export function CriterionPanel({
   onToggle,
 }: CriterionPanelProps) {
   const criterionData = MORTGAGE_CRITERIA_OPTIONS.find((opt) => opt.value === criterion)
-  const hasError = validationErrors[criterion]
+  const fieldKey = FIELD_BY_CRITERION[criterion]
+  const hasError = validationErrors[fieldKey]
+  const isValid = !!criteria[fieldKey]
 
   if (!criterionData) return null
 
   return (
-    <Card key={criterion} className={`border-l-4 ${hasError ? "border-l-red-500" : "border-l-yellow-500"}`}>
+    <Card className={`border-l-4 ${hasError ? "border-l-red-500" : "border-l-yellow-500"}`}>
       <Collapsible open={isExpanded} onOpenChange={() => onToggle(criterion)}>
         <CollapsibleTrigger asChild>
           <CardHeader className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50">
@@ -57,7 +77,7 @@ export function CriterionPanel({
                   <CardTitle className="text-base font-medium flex items-center gap-2">
                     {criterionData.label}
                     {hasError && <AlertTriangle className="h-4 w-4 text-red-500" />}
-                    {!hasError && criteria[criterion as keyof MortgageCriteria] && (
+                    {!hasError && isValid && (
                       <CheckCircle className="h-4 w-4 text-green-500" />
                     )}
                   </CardTitle>

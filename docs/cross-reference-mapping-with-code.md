@@ -1306,26 +1306,20 @@ async function processSkipTraceOrderInBackground(orderId: string, userId: string
 
     // Step 4: Generate CSV file for the vendor
 
-    const csvData \= generateSkipTraceCsv(records, order)
+    const csvData = generateSkipTraceCsv(records, order)
 
-    const filename \= \`skip\_trace\_${orderId}\_${Date.now()}.csv\`
+    const filename = `skip_trace_${orderId}_${Date.now()}.csv`
 
     // Step 5: Upload CSV to our file storage
 
-    const { error: uploadError } \= await supabase.storage
-
+    const uploadBlob = new Blob([csvData], { type: 'text/csv' })
+    const { error: uploadError } = await supabase.storage
       .from('skip-trace-exports') // This bucket stores CSV files we send to vendors
-
-      .upload(filename, csvData, {
-
+      .upload(filename, uploadBlob, {
         contentType: 'text/csv',
-
         cacheControl: '3600', // Cache for 1 hour
-
         upsert: false // Don't overwrite if file already exists
-
       })
-
     if (uploadError) {
 
       throw new Error(\`Failed to upload CSV: ${uploadError.message}\`)
@@ -1372,27 +1366,32 @@ async function processSkipTraceOrderInBackground(orderId: string, userId: string
 
       .from('skip\_trace\_orders')
 
-      .update({
-
-        status: 'failed',
-
-        error\_message: (error as Error).message
-
-      })
-
-      .eq('id', orderId)
-
-    // Notify user that something went wrong
-
-    await sendErrorNotificationEmail(userId, orderId, (error as Error).message)
-
-  }
-
-}
-
-/\*\*
-
- \* Generate CSV data for skip tracing vendors
+   } catch (error) {
+     console.error(`Background processing failed for order ${orderId}:`, error)
+     // Update order status to failed
+     await supabase
+       .from('skip_trace_orders')
+       .update({
+         status: 'failed',
+         error_message: (error as Error).message
+       })
+       .eq('id', orderId)
+     try {
+       // fetch order to get payment intent id (if not already in scope)
+       const { data: failedOrder } = await supabase
+         .from('skip_trace_orders')
+         .select('stripe_payment_intent_id')
+         .eq('id', orderId)
+         .single()
+       if (failedOrder?.stripe_payment_intent_id) {
+         await stripe.paymentIntents.cancel(failedOrder.stripe_payment_intent_id)
+       }
+     } catch (piErr) {
+       console.error('Failed to cancel payment intent after background error:', piErr)
+     }
+     // Notify user that something went wrong
+     await sendErrorNotificationEmail(userId, orderId, (error as Error).message)
+   }
 
  \* This creates a standardized format that most vendors can work with
 
@@ -1663,15 +1662,11 @@ async function sendSkipTraceCsvToVendor(order: any, filename: string, csvData: s
   // Send the email via Mailgun
 
   const response \= await fetch(\`https://api.mailgun.net/v3/${mailgunDomain}/messages\`, {
-
+  const response = await fetch(`https://api.mailgun.net/v3/${mailgunDomain}/messages`, {
     method: 'POST',
-
     headers: {
-
-      'Authorization': \`Basic ${btoa(\`api:${mailgunApiKey}\`)}\`
-
+      Authorization: `Basic ${Buffer.from(`api:${mailgunApiKey}`).toString('base64')}`
     },
-
     body: formData
 
   })

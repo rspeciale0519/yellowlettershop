@@ -39,13 +39,12 @@ The Redstone Mail API enables software applications to automate direct mail camp
 ### 1.2. API Architecture
 
 The Redstone Mail API follows REST architectural principles with these key characteristics:
-- **HTTP Methods**: All endpoints require HTTP POST requests
+- **HTTP Methods**: Write operations use POST; read-only operations (status, proof/tracking downloads) use GET
 - **Data Formats**: Supports both JSON and XML request/response formats
 - **Authentication**: API key-based authentication via query parameters or headers
 - **File Handling**: Multipart form uploads and URL-based file retrieval
 - **Webhooks**: Event-driven status updates and notifications
 - **Rate Limiting**: Enforced to ensure system stability and fair usage
-
 ---
 
 ## 2. Getting Started
@@ -109,25 +108,6 @@ The Redstone Mail API uses API key-based authentication. You will receive separa
 **Method 1: Query Parameter (Default)**
 ```http
 POST https://redstonemail.com/apis/postNewOrder?API=your_api_key_here
-Content-Type: application/json
-
-{
-  "name": "Sample Campaign",
-  "jobtype": "Letter"
-}
-```
-
-**Method 2: HTTP Header (Recommended for Security)**
-```http
-POST https://redstonemail.com/apis/postNewOrder
-Authorization: Bearer your_api_key_here
-Content-Type: application/json
-
-{
-  "name": "Sample Campaign",
-  "jobtype": "Letter"
-}
-```
 
 ### 3.3. Authentication Error Handling
 
@@ -190,15 +170,6 @@ Content-Type: application/json
 **Additional Field Naming Conventions:**
 - **Property address fields**: Must be prefixed with "P_" (example: P_address, P_City, P_State, P_zip)
 - **Name prefix fields**: Use "PFX" (example: PFX for "Mr.", "Dr.", "Mrs.")
-- **Name suffix fields**: Use "SFX" (example: SFX for "Jr.", "Sr.", "III")
-
-**Data Quality Requirements:**
-- Remove all double quotes (") from data
-- Remove hidden wrap characters
-- For fields containing 100+ characters: Contact Redstone to configure special handling in their system
-- Clean data of formatting characters that could interfere with AccuZIP processing
-
----
 
 ## 4. Environment Configuration
 
@@ -638,41 +609,16 @@ GET {base_url}/apis/getProof/{order_id}?API={api_key}
   
   <postage_class>Standard</postage_class>
   <postage_type>Permit</postage_type>
-  <dist_type>Drop Ship</dist_type>
-  
   <seeds>
     <seed>
-      <fname>Test</fname>
-      <lname>User</lname>
+      <First>Test</First>
+      <Last>User</Last>
       <address>100 Test Street</address>
-      <city>Test City</city>
-      <state>NY</state>
+      <City>Test City</City>
+      <State>NY</State>
       <zip>10001</zip>
     </seed>
   </seeds>
-</order>
-```
-
-**XML Success Response:**
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<response>
-  <success>true</success>
-  <order_id>RS_2024_XML_001_B4M2</order_id>
-  <external_id>XML_TEST_001</external_id>
-  <status>Order Created</status>
-  <message>Order successfully created and queued for processing</message>
-  <estimated_completion>2024-04-01</estimated_completion>
-  <estimated_pieces>987</estimated_pieces>
-  <estimated_cost>493.50</estimated_cost>
-  <created_at>2024-03-01T11:15:00Z</created_at>
-</response>
-```
-
----
-
-## 8. File Upload Implementation
-
 ### 8.1. Supported File Types and Specifications
 
 **Data Files (.xls)**
@@ -721,47 +667,46 @@ GET {base_url}/apis/getProof/{order_id}?API={api_key}
 ```http
 POST https://api.redstonemail.com/apis/uploadDataFile?API=your_api_key
 Content-Type: multipart/form-data
+**Data Files (.xls or .csv)**
+- **Preferred format: .xls (Excel), CSV accepted**
+- Maximum size: 2GB (AccuZIP processing limit)
+- Required headers: First, Last, address, City, State, zip (exact capitalization required)
+- Maximum records: No specific limit (constrained by 2GB memory limit)
+- **Important**: Use .xls format to prevent special characters and numbers (like APNs) from being converted to calculations
 
---boundary123456
-Content-Disposition: form-data; name="order_id"
+**Suppression Files (.xls or .csv)**
+**Data Files (.xls or .csv)** — see Section 3.1 for complete requirements
+- **Preferred format: .xls (Excel), CSV accepted**
+- Maximum size: 2GB (AccuZIP processing limit)
+- Required headers: First, Last, address, City, State, zip (exact capitalization required)
+- Maximum records: No specific limit (constrained by 2GB memory limit)
+- **Important**: Use .xls format to prevent special characters and numbers (like APNs) from being converted to calculations
 
-RS_2024_CAMP_001_X7K9
---boundary123456
-Content-Disposition: form-data; name="file"; filename="campaign_data.csv"
-Content-Type: text/csv
+**Suppression Files (.xls or .csv)** — see Section 3.1 for complete requirements
+- Same format requirements as data files
+- Required fields: First, Last, address, City, State, zip (minimum)
+- Maximum size: 2GB
 
-fname,lname,address,city,state,zip
-John,Smith,123 Main St,Anytown,CA,90210
---boundary123456--
-```
+**Data File Formatting Requirements:**
+- **File format**: .xls (preferred) or .csv
+- **Rationale**: .xls helps prevent auto-formatting of special characters and numeric IDs in spreadsheet tools
+- **Character limits**: Remove all double quotes (") and hidden wrap characters
+- **Memory constraint**: AccuZIP has a 2GB processing limit
+- **Long fields**: Fields with 100+ characters require special program configuration
 
-**Method 2: URL-based File Retrieval**
+**Required Headers (exact capitalization):**
+- **First** - First name
+- **Last** - Last name  
+- **address** - Street address
+- **City** - City name
+- **State** - State abbreviation
+- **zip** - ZIP code
 
-Include file URLs in your order creation request:
-
-```json
-{
-  "files": {
-    "data_file_url": "https://myserver.com/files/data.csv",
-    "artwork_url": "https://myserver.com/artwork/design.pdf",
-    "suppression_url": "https://myserver.com/suppression/dnm.csv"
-  }
-}
-```
-
-**URL Requirements:**
-- Must be publicly accessible (no authentication required)
-- Must return appropriate Content-Type headers
-- Must support HTTP HEAD requests for file validation
+**Additional Header Conventions:**
+- **Property addresses**: Prefix with "P_" (e.g., P_address, P_City, P_State, P_zip)
+- **Name prefixes**: Use "PFX" for prefix fields (e.g., Dr., Mr., Mrs.)
+- **Name suffixes**: Use "SFX" for suffix fields (e.g., Jr., Sr., III)
 - HTTPS preferred for security
-
-### 8.3. File Upload Responses
-
-**Upload Success Response:**
-```json
-{
-  "success": true,
-  "file_id": "FILE_2024_001_A7X9",
   "filename": "campaign_data.csv",
   "file_size": 1048576,
   "upload_time": "2024-03-01T10:45:00Z",
@@ -775,11 +720,11 @@ Include file URLs in your order creation request:
 }
 ```
 
-**Upload Error Response:**
-```json
-{
-  "success": false,
-  "error": {
+Content-Type: text/csv
+
+First,Last,address,City,State,zip
+John,Smith,123 Main St,Anytown,CA,90210
+--boundary123456--
     "code": "FILE_VALIDATION_FAILED",
     "message": "File validation failed",
     "details": {
@@ -960,29 +905,34 @@ Your webhook endpoints must respond with HTTP 200 status code within 10 seconds:
   "next_retry": null
 }
 ```
+import hmac
+import hashlib
 
----
+def verify_webhook_signature(payload, signature_header, secret):
+    expected_hex = hmac.new(
+        secret.encode('utf-8'),
+        payload.encode('utf-8'),
+        hashlib.sha256
+import hmac
+import hashlib
 
-## 10. Error Handling
-
-### 10.1. HTTP Status Codes
-
-| Status Code | Meaning | Description |
-|-------------|---------|-------------|
-| 200 | OK | Request successful |
-| 201 | Created | Order successfully created |
-| 400 | Bad Request | Invalid request format or missing required fields |
-| 401 | Unauthorized | Invalid or missing API key |
-| 403 | Forbidden | API access denied or suspended |
-| 404 | Not Found | Requested resource not found |
-| 409 | Conflict | Duplicate order ID or resource conflict |
-| 422 | Unprocessable Entity | Request valid but business rules violated |
-| 429 | Too Many Requests | Rate limit exceeded |
-| 500 | Internal Server Error | Server error, retry recommended |
-| 502 | Bad Gateway | Temporary server issue |
-| 503 | Service Unavailable | Maintenance mode or overload |
-
-### 10.2. Error Response Structure
+def verify_webhook_signature(payload_bytes, signature_header, secret):
+    # Ensure we have raw bytes to hash
+    if not isinstance(payload_bytes, (bytes, bytearray)):
+        payload_bytes = str(payload_bytes).encode("utf-8")
+    # Enforce the "sha256=<hex>" header contract
+    if not (isinstance(signature_header, str) and signature_header.startswith("sha256=")):
+        return False
+    # Compute expected HMAC hex digest
+    expected = hmac.new(
+        secret.encode("utf-8"),
+        payload_bytes,
+        hashlib.sha256
+    ).hexdigest()
+    # Extract the hex portion from the header
+    received = signature_header.split("=", 1)[1].strip()
+    # Constant-time compare to mitigate timing attacks
+    return hmac.compare_digest(expected, received)
 
 **Standard Error Response:**
 ```json
@@ -1416,19 +1366,16 @@ function validateOrder(orderData) {
 - Track file upload patterns and sizes
 - Monitor for data exfiltration attempts
 
----
-
-## 13. Integration Workflow Guide
-
-### 13.1. Complete Integration Process
+**IP Whitelisting:**
+Configure your firewall to only accept webhooks from Redstone IP ranges (contact support for current CIDRs). Example placeholder ranges:
+- Production: `198.51.100.0/24`
+- Testing: `203.0.113.0/24`
 
 **Phase 1: Initial Setup (Days 1-2)**
 1. Obtain test API credentials from Redstone Mail
 2. Set up development environment with proper base URLs
-3. Implement basic authentication and error handling
-4. Test connectivity with simple order creation
-
-**Phase 2: Core Implementation (Days 3-7)**
+**IP Whitelisting:**
+Contact Redstone support for current webhook source CIDRs. Do not hardcode placeholder or private ranges in production configurations.
 1. Build order creation workflow for all job types
 2. Implement file upload system with validation
 3. Create status tracking and polling mechanisms
@@ -2159,22 +2106,15 @@ class RedstoneMailAPI {
         $this->httpClient = curl_init();
         curl_setopt($this->httpClient, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($this->httpClient, CURLOPT_TIMEOUT, 30);
-        curl_setopt($this->httpClient, CURLOPT_HTTPHEADER, [
-            'Authorization: Bearer ' . $this->apiKey,
-            'User-Agent: MyApp/1.0'
-        ]);
-    }
-    
-    public function createOrder($orderData) {
-        $url = $this->baseUrl . '/apis/postJSONorder';
-        
-        curl_setopt($this->httpClient, CURLOPT_URL, $url);
-        curl_setopt($this->httpClient, CURLOPT_POST, true);
-        curl_setopt($this->httpClient, CURLOPT_POSTFIELDS, json_encode($orderData));
-        curl_setopt($this->httpClient, CURLOPT_HTTPHEADER, [
-            'Authorization: Bearer ' . $this->apiKey,
-            'Content-Type: application/json',
-            'User-Agent: MyApp/1.0'
+      {
+        First: 'Test',
+        Last: 'User',
+        address: '123 Test St',
+        City: 'Test City',
+        State: 'NY',
+        zip: '10001'
+      }
+// (Removed stray, invalid PHP object-literal block)
         ]);
         
         $response = curl_exec($this->httpClient);
@@ -2397,13 +2337,13 @@ Sub CleanHeaders()
             cleanValue = Replace(cleanValue, " ", "_")
             cleanValue = RemoveNonAscii(cleanValue)
             cell.Value = cleanValue
-        End If
-    Next cell
-    
-    MsgBox "Header cleaning complete! Save as CSV before uploading to Redstone API."
-End Sub
-
-Function RemoveNonAscii(text As String) As String
+                'First'  => 'Test',
+                'Last'   => 'User',
+                'address'=> '123 Test St',
+                'City'   => 'Test City',
+                'State'  => 'NY',
+                'zip'    => '10001'
+            ]
     Dim i As Long
     Dim result As String
     
@@ -2414,13 +2354,7 @@ Function RemoveNonAscii(text As String) As String
         If c >= 32 And c <= 126 Then
             result = result & Chr(c)
         Else
-            result = result & "_"
-        End If
-    Next i
-    
-    RemoveNonAscii = result
-End Function
-```
+            ]
 
 **Usage Instructions:**
 1. Open Excel file with your mailing data
@@ -2611,14 +2545,9 @@ End Function
         ],
         "url": "{{base_url}}/apis/uploadDataFile",
         "body": {
-          "mode": "formdata",
-          "formdata": [
-            {
-              "key": "order_id",
-              "value": "{{order_id}}"
-            },
-            {
-              "key": "file",
+          "mode": "raw",
+          "raw": "{\n  \"id\": \"POSTMAN_TEST_001\",\n  \"name\": \"Postman Test Order\",\n  \"duedate\": \"2024-04-15\",\n  \"jobtype\": \"Letter\",\n  \"qty_est\": \"1000\",\n  \"notes\": \"Test order created via Postman\",\n  \"custom_envelope\": true,\n  \"num_inserts\": \"1\",\n  \"color\": \"4/0\",\n  \"postage_class\": \"Standard\",\n  \"postage_type\": \"Permit\",\n  \"dist_type\": \"PMOD\",\n  \"seeds\": [\n    {\n      \"First\": \"Test\",\n      \"Last\": \"User\",\n      \"address\": \"123 Test Street\",\n      \"City\": \"Test City\",\n      \"State\": \"NY\",\n      \"zip\": \"10001\"\n    }\n  ]\n}"
+        }
               "type": "file",
               "src": []
             }
@@ -2630,9 +2559,12 @@ End Function
 }
 ```
 
-### 17.4. Glossary of Terms
-
-**API (Application Programming Interface)**: A set of protocols and tools that allows different software applications to communicate with each other.
+          "mode": "formdata",
+          "formdata": [
+            { "key": "order_id", "type": "text", "value": "{{order_id}}" },
+            { "key": "file",     "type": "file", "src": [] }
+          ]
+        }
 
 **API Key**: A unique identifier used to authenticate requests to the Redstone Mail API. Functions as a digital credential for accessing API services.
 

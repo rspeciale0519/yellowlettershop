@@ -1,59 +1,109 @@
-"use client"
+'use client';
 
-import React from "react"
-import { GeographyFilters } from "@/components/list-builder/geography-filters"
-import { PropertyFilters } from "@/components/list-builder/property-filters"
-import { DemographicsFilters } from "@/components/list-builder/demographics-filters"
-import { MortgageFilters } from "@/components/list-builder/mortgage-filters"
-import { ForeclosureFilters } from "@/components/list-builder/foreclosure-filters"
-import { PredictiveFilters } from "@/components/list-builder/predictive-filters"
-import { OptionsFilters } from "@/components/list-builder/options-filters"
-import type { Criteria, ListCriteria } from "@/types/list-builder"
+import React from 'react';
+import dynamic from 'next/dynamic';
+import type { ListCriteria } from "@/types/list-builder"
+import type { Category, UpdateCriteria } from "../hooks/useBuildListsPage"
+
+const GeographyFilters = dynamic(() =>
+  import('@/components/list-builder/geography-filters').then(
+    (m) => m.GeographyFilters
+  )
+);
+
+const PropertyFilters = dynamic(() =>
+  import('@/components/list-builder/property').then(
+    (m) => m.PropertyFilters
+  )
+);
+
+const DemographicsFilters = dynamic(() =>
+  import('@/components/list-builder/demographics').then(
+    (m) => m.DemographicsFilters
+  )
+);
+
+const MortgageFilters = dynamic(() =>
+  import('@/components/list-builder/mortgage-filters').then(
+    (m) => m.MortgageFilters
+  )
+);
+
+const ForeclosureFilters = dynamic(() =>
+  import('@/components/list-builder/foreclosure-filters').then(
+    (m) => m.ForeclosureFilters
+  )
+);
+
+const PredictiveFilters = dynamic(() =>
+  import('@/components/list-builder/predictive-filters').then(
+    (m) => m.PredictiveFilters
+  )
+);
+
+const OptionsFilters = dynamic(() =>
+  import('@/components/list-builder/options-filters').then(
+    (m) => m.OptionsFilters
+  )
+);
 
 interface FilterPanelProps {
-  activeCategory: string
-  criteria: ListCriteria
-  updateCriteria: (category: keyof ListCriteria, values: Partial<Criteria>) => void
+  activeCategory: Category;
+  criteria: ListCriteria;
+  updateCriteria: UpdateCriteria;
 }
 
-export function FilterPanel({ activeCategory, criteria, updateCriteria }: FilterPanelProps) {
+export function FilterPanel({
+  activeCategory,
+  criteria,
+  updateCriteria,
+}: FilterPanelProps) {
   switch (activeCategory) {
-    case "geography":
+    case 'geography':
       return (
-        <GeographyFilters criteria={criteria.geography} onUpdate={(values) => updateCriteria("geography", values)} />
-      )
-    case "property":
+        <GeographyFilters
+          criteria={criteria.geography}
+          onUpdate={(values) => updateCriteria('geography', values)}
+        />
+      );
+    case 'property':
       return (
-        <PropertyFilters criteria={criteria.property} onUpdate={(values) => updateCriteria("property", values)} />
-      )
-    case "demographics":
+        <PropertyFilters
+          criteria={criteria.property}
+          onUpdate={(values) => updateCriteria('property', values)}
+        />
+      );
+    case 'demographics':
       return (
         <DemographicsFilters
           criteria={criteria.demographics}
-          onUpdate={(values) => updateCriteria("demographics", values)}
+          onUpdate={(values) => updateCriteria('demographics', values)}
         />
-      )
-    case "mortgage":
+      );
+    case 'mortgage':
       return (
-        <MortgageFilters criteria={criteria.mortgage} onUpdate={(values) => updateCriteria("mortgage", values)} />
-      )
-    case "foreclosure":
+        <MortgageFilters
+          criteria={criteria.mortgage}
+          onUpdate={(values) => updateCriteria('mortgage', values)}
+        />
+      );
+    case 'foreclosure':
       return (
         <ForeclosureFilters
           criteria={criteria.foreclosure}
-          onUpdate={(values) => updateCriteria("foreclosure", values)}
+          onUpdate={(values) => updateCriteria('foreclosure', values)}
         />
-      )
-    case "predictive":
+      );
+    case 'predictive':
       return (
         <PredictiveFilters
           criteria={criteria.predictive}
-          onUpdate={(values) => updateCriteria("predictive", values)}
+          onUpdate={(values) => updateCriteria('predictive', values)}
         />
-      )
-    case "options":
-      return <OptionsFilters />
+      );
+    case 'options':
+      return <OptionsFilters />;
     default:
-      return null
+      return null;
   }
 }

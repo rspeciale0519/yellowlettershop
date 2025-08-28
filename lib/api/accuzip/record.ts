@@ -1,56 +1,58 @@
 // AccuZIP record conversion utilities
-interface AccuZIPRecord {
-  id: string
-  firstName: string
-  lastName: string
-  middleName?: string
-  email?: string
-  phone?: string
-  addressLine1: string
-  addressLine2?: string
-  city: string
-  state: string
-  zipCode: string
-  county?: string
-  latitude?: number
-  longitude?: number
-  propertyType?: string
-  bedrooms?: number
-  bathrooms?: number
-  squareFeet?: number
-  lotSize?: number
-  yearBuilt?: number
-  estimatedValue?: number
-  lastSaleDate?: string
-  lastSalePrice?: number
-  loanType?: string
-  loanAmount?: number
-  interestRate?: number
-  loanToValue?: number
-  originationDate?: string
-  maturityDate?: string
-  lenderName?: string
-  age?: number
-  gender?: string
-  maritalStatus?: string
-  income?: number
-  netWorth?: number
-  homeOwnership?: string
-  occupation?: string
-  educationLevel?: string
-  foreclosureStatus?: string
-  filingDate?: string
-  auctionDate?: string
-  likelyToMove?: boolean
-  likelyToSell?: boolean
-  likelyToRefinance?: boolean
-  motivationScore?: number
+import type { MailingListRecord } from '@/types/supabase';
+
+export interface AccuZIPRecord {
+  id: string;
+  firstName: string;
+  lastName: string;
+  middleName?: string;
+  email?: string;
+  phone?: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  county?: string;
+  latitude?: number;
+  longitude?: number;
+  propertyType?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  squareFeet?: number;
+  lotSize?: number;
+  yearBuilt?: number;
+  estimatedValue?: number;
+  lastSaleDate?: string;
+  lastSalePrice?: number;
+  loanType?: string;
+  loanAmount?: number;
+  interestRate?: number;
+  loanToValue?: number;
+  originationDate?: string;
+  maturityDate?: string;
+  lenderName?: string;
+  age?: number;
+  gender?: string;
+  maritalStatus?: string;
+  income?: number;
+  netWorth?: number;
+  homeOwnership?: string;
+  occupation?: string;
+  educationLevel?: string;
+  foreclosureStatus?: string;
+  filingDate?: string;
+  auctionDate?: string;
+  likelyToMove?: boolean;
+  likelyToSell?: boolean;
+  likelyToRefinance?: boolean;
+  motivationScore?: number;
 }
 
 /**
  * Convert AccuZIP record to our database format
  */
-export function convertAccuZIPRecord(record: AccuZIPRecord): any {
+export function convertAccuZIPRecord(record: AccuZIPRecord): Partial<MailingListRecord> {
   return {
     external_id: record.id,
     first_name: record.firstName,
@@ -99,6 +101,6 @@ export function convertAccuZIPRecord(record: AccuZIPRecord): any {
     likely_to_refinance: record.likelyToRefinance,
     motivation_score: record.motivationScore,
     data_source: 'AccuZIP',
-    is_valid: true
-  }
+    is_valid: true,
+  };
 }

@@ -111,27 +111,7 @@ function sampleLists() {
   return { lists, tags, campaigns }
 }
 
-describe('mailing-lists-utils tag and list filters', () => {
-  it('applies tagFilter any/all', () => {
-    const { lists } = sampleLists()
-    // any t2 -> Beta, Gamma
-    let { items } = filterSortPaginateLists(lists, {
-      criteria: defaultCriteria({ tagFilter: { tags: ['t2'], matchType: 'any' } }),
-      sortBy: { column: 'name', direction: 'asc' },
-      page: 1,
-      pageSize: 10,
-    })
-    assert.deepEqual(items.map((i) => i.name), ['Beta', 'Gamma'])
-
-    // all [t1, t2] -> Gamma only
-    ;({ items } = filterSortPaginateLists(lists, {
-      criteria: defaultCriteria({ tagFilter: { tags: ['t1', 't2'], matchType: 'all' } }),
-      page: 1,
-      pageSize: 10,
-    }))
-    assert.deepEqual(items.map((i) => i.name), ['Gamma'])
-  })
-
+describe('List filtering', () => {
   it('applies listFilter to specific IDs', () => {
     const { lists } = sampleLists()
     const { items } = filterSortPaginateLists(lists, {

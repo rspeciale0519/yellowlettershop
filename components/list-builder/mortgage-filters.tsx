@@ -84,15 +84,14 @@ export function MortgageFilters({ criteria, onUpdate }: MortgageFiltersProps) {
     {} as Record<string, MortgageCriteriaOption[]>,
   )
 
-  const { addCriterion, removeCriterion, togglePanel, applyTemplate, saveCurrentCriteria, deleteSavedCriteria } = useMortgageFiltersCallbacks({
-    criteria,
-    onUpdate,
-    expandedPanels,
-    setExpandedPanels,
-    savedCriteria,
-    setSavedCriteria,
-  })
-
+                    <Button
+                      onClick={() => {
+                        addCriterion(selectedCriterion)
+                        setSelectedCriterion("")
+                      }}
+                      disabled={!selectedCriterion || criteria.selectedCriteria.includes(selectedCriterion)}
+                      className="bg-yellow-500 hover:bg-yellow-600 text-gray-900"
+                    >
   // Real-time validation
   useEffect(() => {
     const errors: Record<string, string> = {}

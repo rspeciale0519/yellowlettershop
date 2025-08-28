@@ -133,7 +133,6 @@ export default function ActivityPage() {
       const matchesCategory = categoryFilter === "all" || log.category === categoryFilter
 
       const logDate = new Date(log.timestamp)
-      const now = new Date()
       let matchesDateRange = true
 
       if (dateRange === "today") {
@@ -318,7 +317,7 @@ export default function ActivityPage() {
             <CardContent>
               <ScrollArea className="h-[600px] pr-4">
                 <div className="relative pl-6 border-l">
-                  {filteredLogs.map((log, index) => (
+                  {filteredLogs.map((log) => (
                     <div key={log.id} className="mb-8 relative">
                       <div
                         className={`absolute -left-[13px] top-0 h-6 w-6 rounded-full ${getCategoryColor(log.category)} flex items-center justify-center text-white`}

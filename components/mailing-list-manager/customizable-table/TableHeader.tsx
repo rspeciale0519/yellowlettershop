@@ -3,31 +3,34 @@
 import type React from 'react';
 import { GripVertical, EyeOff } from 'lucide-react';
 
-interface ColumnDef {
-  id: string;
-  header: string;
+import type React from 'react';
+
+type ColumnId = 'select' | 'rowNumber' | 'id' | 'actions' | (string & {});
+
+interface ColumnDef<T = unknown> {
+  id: ColumnId;
+  header: React.ReactNode;
   minWidth?: number;
-  cell: (row: any) => React.ReactNode;
+  cell: (row: T) => React.ReactNode;
 }
 
 interface ColumnState {
-  visible: boolean;
+  visible?: boolean; // default true
   width?: number;
-  order: number;
+  order?: number;
 }
 
-interface TableHeaderProps {
-  columns: ColumnDef[];
-  columnStates: { [key: string]: ColumnState };
-  viewMode: string;
-  draggedColumn: string | null;
-  isColumnDraggable: (columnId: string) => boolean;
-  handleDragStart: (columnId: string) => void;
-  handleDragOver: (e: React.DragEvent, columnId: string) => void;
+interface TableHeaderProps<T = unknown> {
+  columns: ColumnDef<T>[];
+  columnStates: Partial<Record<ColumnId, ColumnState>>;
+  viewMode: 'records' | 'list' | 'grid' | (string & {});
+  draggedColumn: ColumnId | null;
+  isColumnDraggable: (columnId: ColumnId) => boolean;
+  handleDragStart: (columnId: ColumnId) => void;
+  handleDragOver: (e: React.DragEvent, columnId: ColumnId) => void;
   handleDragEnd: () => void;
-  renderHeader?: (column: ColumnDef, index: number) => React.ReactNode;
+  renderHeader?: (column: ColumnDef<T>, index: number) => React.ReactNode;
 }
-
 export function TableHeader({
   columns,
   columnStates,
@@ -40,7 +43,7 @@ export function TableHeader({
   renderHeader,
 }: TableHeaderProps) {
   return (
-    <thead className="bg-muted/50">
+    <thead className='bg-muted/50'>
       <tr>
         {columns.map((column) => (
           <th
@@ -60,31 +63,43 @@ export function TableHeader({
                 ? 'bg-muted'
                 : column.id === 'actions'
                 ? 'bg-muted'
-                : 'bg-muted/50'
-            }`}
-            style={{
-              width:
-                column.id === 'rowNumber'
-                  ? '60px'
-                  : column.id === 'id'
-                  ? '100px'
-                  : column.id === 'actions'
-                  ? viewMode === 'records'
-                    ? '220px'
-                    : '140px'
-                  : `${
-                      columnStates[column.id]?.width ||
-                      column.minWidth ||
-                      150
-                    }px`,
-              minWidth: column.minWidth || 'auto',
-              left:
-                column.id === 'select'
-                  ? 0
-                  : column.id === 'actions'
-                  ? columnStates['select']?.width || 70
-                  : undefined,
-              boxShadow:
+// Keep column-width logic centralized
+const SELECT_COL_WIDTH = 70;
+
+…  
+
+// inside your render / style prop:
+style={{
+  width:
+    column.id === 'rowNumber'
+      ? '60px'
+      : column.id === 'id'
+      ? '100px'
+      : column.id === 'select'
+      ? `${columnStates['select']?.width ?? SELECT_COL_WIDTH}px`
+      : column.id === 'actions'
+      ? viewMode === 'records'
+        ? '220px'
+        : '140px'
+      : `${
+          columnStates[column.id]?.width ||
+          column.minWidth ||
+          150
+        }px`,
+  minWidth: column.minWidth || 'auto',
+  left:
+    column.id === 'select'
+      ? 0
+      : column.id === 'actions'
+      ? ((columnStates['select']?.visible !== false &&
+            draggable={isColumnDraggable(column.id)}
+            onDragStart={() => handleDragStart(column.id)}
+            onDragOver={(e) => {
+              e.preventDefault();
+              handleDragOver(e, column.id);
+            }}
+            onDragEnd={handleDragEnd}
+          >              boxShadow:
                 column.id === 'select' || column.id === 'actions'
                   ? '4px 0 6px -2px rgba(0, 0, 0, 0.1)'
                   : undefined,
@@ -97,17 +112,17 @@ export function TableHeader({
             onDragOver={(e) => handleDragOver(e, column.id)}
             onDragEnd={handleDragEnd}
           >
-            <div className="flex items-center">
+            <div className='flex items-center'>
               {isColumnDraggable(column.id) && (
-                <span className="inline-flex">
-                  <GripVertical className="h-4 w-4 mr-2 cursor-grab text-muted-foreground" />
+                <span className='inline-flex'>
+                  <GripVertical className='h-4 w-4 mr-2 cursor-grab text-muted-foreground' />
                 </span>
               )}
               {renderHeader
                 ? renderHeader(column, columns.indexOf(column))
                 : column.header}
               {columnStates[column.id]?.visible === false && (
-                <EyeOff className="h-4 w-4 ml-2 text-muted-foreground" />
+                <EyeOff className='h-4 w-4 ml-2 text-muted-foreground' />
               )}
             </div>
           </th>

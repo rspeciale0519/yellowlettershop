@@ -159,16 +159,12 @@ Based on the documentation analysis, the following external APIs are planned for
 ## 6. Security Considerations
 
 ### **6.1 API Key Management**
-- Environment variable storage for API credentials
-- Secure server-side API calls to prevent key exposure
-- Webhook signature verification for incoming data
-
-### **6.2 Data Privacy**
 - PII redaction utilities for logging
 - Encryption for sensitive data storage
 - GDPR compliance measures
-
-## 7. Current Implementation Status
+- Data retention/deletion timelines per dataset (e.g., uploads, logs)
+- Data Subject Request (access/delete) process and SLAs
+- Encryption in transit (TLS 1.2+) and at rest; key management ownership## 7. Current Implementation Status
 
 ### **✅ Fully Implemented**
 - AccuZIP integration for list validation and cleaning

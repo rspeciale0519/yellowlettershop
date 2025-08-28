@@ -11,25 +11,36 @@ import { TableBody } from './TableBody';
 import { TableSettingsDialog } from './TableSettingsDialog';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 
-export interface ColumnDef {
+export interface ColumnDef<TRecord = unknown> {
   id: string;
   header: string;
   minWidth?: number;
-  cell: (row: any) => React.ReactNode;
+  cell: (row: TRecord) => React.ReactNode;
 }
-
 export interface CustomizableTableProps {
-  data: any[];
-  columns: ColumnDef[];
-  renderRow: (record: any, columns: ColumnDef[], columnStates: any, index: number) => React.ReactNode;
-  renderHeader?: (column: ColumnDef, index: number) => React.ReactNode;
+export interface CustomizableTableProps<TRecord = unknown> {
+  data: TRecord[];
+  columns: ColumnDef<TRecord>[];
+  renderRow: (
+    record: TRecord,
+    columns: ColumnDef<TRecord>[],
+    columnStates: unknown,
+    index: number
+  ) => React.ReactNode;
+  renderHeader?: (column: ColumnDef<TRecord>, index: number) => React.ReactNode;
   viewMode: string;
-  selectedRecords?: Set<string>;
-  onDataOperation?: (operation: string, selectedIds: string[]) => void;
-  className?: string;
-}
-
-export function CustomizableTable({
+export function CustomizableTable<TRecord = unknown>({
+  data,
+  columns,
+  renderRow,
+  renderHeader,
+  viewMode,
+  selectedRecords = new Set(),
+  onDataOperation,
+  className = '',
+  storageKeyPrefix = 'mlm',
+  ariaLabel = 'Data table',
+}: CustomizableTableProps<TRecord>): React.JSX.Element {export function CustomizableTable({
   data,
   columns,
   renderRow,
@@ -39,7 +50,10 @@ export function CustomizableTable({
   onDataOperation,
   className = '',
 }: CustomizableTableProps) {
-  const [nameFormat, setNameFormat] = useLocalStorage('nameFormat', 'lastFirst');
+  const [nameFormat, setNameFormat] = useLocalStorage(
+    'nameFormat',
+    'lastFirst'
+  );
 
   const {
     columnStates,
@@ -62,10 +76,10 @@ export function CustomizableTable({
   return (
     <div className={`space-y-4 ${className}`}>
       <ResizeObserverErrorHandler />
-      
+
       {/* Table actions */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className='flex items-center justify-between'>
+        <div className='flex items-center gap-2'>
           {selectedRecords.size > 0 && onDataOperation && (
             <DataOperationsDropdown
               selectedRecords={selectedRecords}
@@ -75,24 +89,24 @@ export function CustomizableTable({
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className='flex items-center gap-2'>
           <Button
-            variant="outline"
-            size="sm"
+            variant='outline'
+            size='sm'
             onClick={() => setSettingsOpen(true)}
-            className="flex items-center"
+            className='flex items-center'
           >
-            <Settings className="h-4 w-4 mr-2" />
+            <Settings className='h-4 w-4 mr-2' />
             <span>Table Settings</span>
           </Button>
         </div>
       </div>
 
       {/* Table container */}
-      <div className="w-full">
-        <div className="overflow-x-auto relative">
+      <div className='w-full'>
+        <div className='overflow-x-auto relative'>
           <table
-            className="w-full border-collapse table-fixed"
+            className='w-full border-collapse table-fixed'
             style={{ minWidth: '100%' }}
           >
             <TableHeader

@@ -48,13 +48,13 @@ export interface DemographicsCriteria {
     hobbies: string[]
     purchasingBehavior: string[]
   }
-  ethnicity: string[]
-  language: string[]
-  religion: string[]
-  politicalAffiliation: string[]
-  veteranStatus: string[]
+  ethnicity?: string[]
+  language?: string[]
+  religion?: string[]
+  politicalAffiliation?: string[]
+  veteranStatus?: string[]
   childrenInHousehold: {
-    hasChildren: string // "yes" | "no" | "any"
+    hasChildren: 'any' | 'yes' | 'no'
     ageRanges: string[]
     numberOfChildren: number[]
   }

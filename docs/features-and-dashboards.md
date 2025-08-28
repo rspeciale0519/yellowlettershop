@@ -134,11 +134,12 @@ The YLS platform offers intuitive entry points based on user needs:
 - Company name and business information
 
 #### **Plan-Based Limits**
-- **Free Plan**: Maximum of 1 contact card
-- **Pro Plan**: Maximum of 2 contact cards
-- **Team Plans**: Maximum of 1 contact card per team member
-- **Enterprise Plans**: Maximum of 1 contact card per team member
-- **Enforcement**: System prevents creation beyond limits with upgrade prompts
+- **Free Plan**: Maximum of 1 contact card.
+- **Pro Plan**: Maximum of 2 contact cards.
+- **Team Plans**: Pooled limit equal to the number of active seats (1 per seat). Managers count toward seat total. Cards are shared from a team pool.
+- **Enterprise Plans**: Same pooled model by default; higher caps available via contract or support override.
+- **Deletion Policy**: Soft-deleted cards continue counting toward the limit until permanently purged.
+- **Enforcement**: System blocks creation beyond limits with upgrade/seat prompts and explains pooling rules.
 
 ### **2.3 Pre-Design Form Intake**
 
@@ -184,12 +185,13 @@ The mailing list system is built on a robust database foundation:
 - Template management for saved criteria configurations
 - Real-time statistics and analytics generation
 
-**Extended Functionality:**
 - Version history tracking with snapshot creation and restoration
 - Enhanced deduplication with multiple matching strategies:
   - Exact vs fuzzy matching algorithms
   - Keep first/last/most complete record options
   - Automatic backup creation before deduplication
+  - Defaults: exact match on (FullName + Address1 + ZIP5). Fuzzy match uses Jaro–Winkler ≥ 0.92 on name and address tokens.
+  - Safety: destructive actions require preview + confirmation; restore available via latest snapshot.
 - Bulk import processing with integrated deduplication
 - Advanced CSV parsing and export utilities with custom formatting
 
@@ -365,12 +367,13 @@ YLS incorporates advanced predictive scoring with five likelihood categories:
 - **Manual Entry Fields**: Text inputs for codes, ranges, and custom values
 - **Radio Button Groups**: Binary and tri-state options (Only/Exclude/No Preference)
 - **Interactive Mapping**: Google Maps integration for polygon and radius selection
-
-##### **Search and Filter Logic Implementation**
-- **Unified Query Model**: Each tab contributes to consolidated search parameters
-- **AND Combination**: All criteria combined with AND logic across tabs
-- **OR Filtering**: Selective OR logic for predictive scores and categories
-- **Input Validation**: Range validation, format checking, and conflict prevention
+- **Unified Query Model**: Each tab contributes to consolidated search parameters  
+- **AND Combination**: All criteria combined with AND logic across tabs  
+- **OR Filtering**: Selective OR logic for predictive scores and categories  
+- **Input Validation**: Range validation, format checking, and conflict prevention  
+- **Dependency Enforcement**: Geographic requirement before other tab activation  
+- **Precedence Rules**: When a criterion appears in multiple tabs, the most restrictive wins unless explicitly overridden.  
+- **Determinism**: Query object is serialized in stable key order; identical inputs yield identical hashes for caching.  
 - **Dependency Enforcement**: Geographic requirement before other tab activation
 
 ##### **State Management Architecture**

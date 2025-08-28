@@ -1,4 +1,5 @@
-import type { ListCriteria } from '@/lib/supabase/mailing-lists'
+import type { ListCriteria, CreateMailingListPayload } from '@/lib/supabase/mailing-lists'
+import type { MailingList, MailingListRecord } from '@/types/supabase'
 import { fetchRecords, estimateRecordCount, criteriaToAccuZIPParams } from './accuzip'
 
 /**
@@ -14,8 +15,8 @@ export async function createListFromAccuZIPCriteria(
     fetchLimit?: number
   },
   deps?: {
-    createMailingList?: (list: any) => Promise<any>
-    bulkImportRecords?: (listId: string, records: any[], deduplicationField?: string) => Promise<{ success: number; failed: number; duplicates: number }>
+    createMailingList?: (list: CreateMailingListPayload) => Promise<MailingList>
+    bulkImportRecords?: (listId: string, records: Partial<MailingListRecord>[], deduplicationField?: string) => Promise<{ success: number; failed: number; duplicates: number }>
   }
 ): Promise<{ 
   listId: string
@@ -159,7 +160,7 @@ export async function previewRecordsFromCriteria(
   criteria: ListCriteria,
   limit: number = 10
 ): Promise<{
-  records: any[]
+  records: Partial<MailingListRecord>[]
   estimatedTotal: number
   success: boolean
   error?: string

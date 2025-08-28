@@ -1685,8 +1685,7 @@ export class DatabasePerformanceOptimizer {
 
       // Track performance metrics
       this.performanceMetrics.queryTimes.push(executionTime)
-      this.performanceMetrics.cacheMisses++
-
+      if (queryConfig.cacheable) this.performanceMetrics.cacheMisses++
       // Alert on slow queries
       if (executionTime > this.slowQueryThreshold) {
         await this.handleSlowQuery(queryConfig, executionTime)
@@ -1981,30 +1980,32 @@ The caching strategy implements multiple layers of caching to optimize performan
 // Multi-layer caching system for optimal performance
 // Location: /lib/caching/cache-manager.js
 export class CacheManager {
+export class CacheManager {
   constructor() {
     this.cacheLayers = {
       'memory': new Map(), // In-memory cache for frequently accessed data
-      'redis': null, // Redis for distributed caching (if available)
-      'database': new Map() // Database-level caching
+      'redis': null,       // Redis for distributed caching (if available)
+      'database': null     // Database-level caching handled via helpers
     }
     
     this.cacheConfigs = {
-      'user_profiles': { ttl: 30 * 60 * 1000, layer: 'memory' }, // 30 minutes
-      'mailing_lists': { ttl: 15 * 60 * 1000, layer: 'memory' }, // 15 minutes
-      'design_templates': { ttl: 60 * 60 * 1000, layer: 'memory' }, // 1 hour
-      'melissa_counts': { ttl: 15 * 60 * 1000, layer: 'memory' }, // 15 minutes
-      'analytics_data': { ttl: 5 * 60 * 1000, layer: 'database' }, // 5 minutes
-      'external_api_responses': { ttl: 10 * 60 * 1000, layer: 'redis' } // 10 minutes
+      'default':               { ttl: 5 * 60 * 1000, layer: 'memory' },
+      'user_profiles':         { ttl: 30 * 60 * 1000, layer: 'memory' }, // 30 minutes
+      'mailing_lists':         { ttl: 15 * 60 * 1000, layer: 'memory' }, // 15 minutes
+      'design_templates':      { ttl: 60 * 60 * 1000, layer: 'memory' }, // 1 hour
+      'melissa_counts':        { ttl: 15 * 60 * 1000, layer: 'memory' }, // 15 minutes
+      'analytics_data':        { ttl: 5 * 60 * 1000, layer: 'database' }, // 5 minutes
+      'external_api_responses':{ ttl: 10 * 60 * 1000, layer: 'redis' }  // 10 minutes
     }
 
     this.invalidationPatterns = {
-      'user_profiles': ['user_settings', 'user_roles'],
-      'mailing_lists': ['mailing_list_records', 'analytics_data'],
-      'orders': ['analytics_data', 'campaign_performance'],
-      'design_templates': ['template_usage']
+      'user_profiles':   ['user_settings', 'user_roles'],
+      'mailing_lists':   ['mailing_list_records', 'analytics_data'],
+      'orders':          ['analytics_data', 'campaign_performance'],
+      'design_templates':['template_usage']
     }
   }
-
+}
   async get(key, cacheType = 'default') {
     // Retrieve data from appropriate cache layer
     try {
@@ -2086,7 +2087,6 @@ export class CacheManager {
       console.error('Cache invalidation error:', error)
     }
   }
-
   async invalidateByPattern(pattern) {
     // Invalidate cache items matching a pattern
     for (const [layerName, layer] of Object.entries(this.cacheLayers)) {
@@ -2101,13 +2101,33 @@ export class CacheManager {
             }
           }
         } else if (layerName === 'redis' && layer) {
-          // Redis cache: use pattern matching
-          await layer.del(await layer.keys(`*${pattern}*`))
+          // Redis cache: use SCAN instead of KEYS to avoid blocking
+          let cursor = '0'
+          const toDelete = []
+          do {
+            const [next, keys] = await layer.scan(
+              cursor,
+              'MATCH',
+              `*${pattern}*`,
+              'COUNT',
+              '500'
+            )
+            cursor = next
+            if (keys.length) {
+              toDelete.push(...keys)
+            }
+          } while (cursor !== '0')
+
+          if (toDelete.length) {
+            // Batch-delete all matched keys
+            await layer.del(...toDelete)
+          }
         }
       } catch (error) {
         console.error(`Pattern invalidation failed for ${layerName}:`, error)
       }
     }
+  }
   }
 
   async getCacheItem(cacheLayer, key, config) {
@@ -2152,26 +2172,7 @@ export class CacheManager {
       cacheLayer.delete(key)
     } else if (cacheLayer && cacheLayer.del) {
       await cacheLayer.del(key)
-    } else {
-      await this.removeDatabaseCacheItem(key)
-    }
-  }
-
-  isValidCacheItem(item, ttl) {
-    // Check if cache item is still valid
-    return item && (Date.now() - item.timestamp) < ttl
-  }
-
-  calculateDataSize(data) {
-    // Calculate approximate size of cached data
-    if (typeof data === 'string') {
-      return data.length * 2 // Approximate bytes for UTF-16
-    } else if (typeof data === 'object') {
-      return JSON.stringify(data).length * 2
-    }
-    return 0
-  }
-
+  // [Removed corrupted snippet in documentation example]
   async getD    while (this.isProcessing) {
       try {
         // Get next job from this priority queue
@@ -3037,81 +3038,77 @@ describe('External API Integrations', () => {
           undeliverableAddresses: 20
         }
       }
-
       const response = await fetch('/api/accuzip/webhook', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'X-AccuZIP-Signature': 'mock        return await this.encryptWithStandardSecurity(data, this.encryptionKeys.pii)
-      case 'internal':
-        return await this.encryptWithBasicSecurity(data, this.encryptionKeys.general)
-      case 'public':
-        return data // No encryption needed for public data
-      default:
-        throw new Error(`Unknown data classification: ${classification}`)
+          'X-AccuZIP-Signature': 'mock_signature'
+        }
+      });
+      switch (classification) {
+        case 'pii':
+          return await this.encryptWithStandardSecurity(data, this.encryptionKeys.pii)
+        case 'internal':
+          return await this.encryptWithBasicSecurity(data, this.encryptionKeys.general)
+        case 'public':
+          return data // No encryption needed for public data
+        default:
+          throw new Error(`Unknown data classification: ${classification}`)
+      }
     }
   }
 
   async encryptWithAdvancedSecurity(data, key) {
     // AES-256-GCM with additional authentication and key rotation
-    const crypto = require('crypto')
+  async encryptWithAdvancedSecurity(data, key) {
+    const crypto    = require('crypto')
     const algorithm = 'aes-256-gcm'
-    
-    // Generate unique IV for each encryption
-    const iv = crypto.randomBytes(16)
-    
-    // Add timestamp for key rotation tracking
+    const iv        = crypto.randomBytes(12)                          // 96-bit IV for GCM
     const timestamp = Date.now().toString()
-    const cipher = crypto.createCipher(algorithm, key + timestamp.slice(-8))
-    
-    // Set additional authenticated data
-    const aad = Buffer.from(`YLS-HSEC-${timestamp}`)
+    const aad       = Buffer.from(`YLS-HSEC-${timestamp}`)
+    const encKey    = Buffer.isBuffer(key) ? key : Buffer.from(key, 'base64')
+    const cipher    = crypto.createCipheriv(algorithm, encKey, iv, { authTagLength: 16 })
+
     cipher.setAAD(aad)
-    
-    let encrypted = cipher.update(JSON.stringify(data), 'utf8', 'hex')
-    encrypted += cipher.final('hex')
-    
-    const authTag = cipher.getAuthTag()
-    
+    const plaintext = Buffer.from(JSON.stringify(data), 'utf8')
+    const encrypted = Buffer.concat([cipher.update(plaintext), cipher.final()])
+    const authTag   = cipher.getAuthTag()
+
     return {
-      encrypted: encrypted,
-      iv: iv.toString('hex'),
-      authTag: authTag.toString('hex'),
-      timestamp: timestamp,
-      algorithm: algorithm,
+      encrypted: encrypted.toString('hex'),
+      iv:        iv.toString('hex'),
+      authTag:   authTag.toString('hex'),
+      timestamp,
+      algorithm,
       keyVersion: this.getCurrentKeyVersion('financial')
     }
   }
-
   async encryptWithStandardSecurity(data, key) {
     // AES-256-CBC with HMAC authentication
     const crypto = require('crypto')
     const algorithm = 'aes-256-cbc'
     
+  async encryptWithStandardSecurity(data, key) {
+    const crypto = require('crypto')
+    const algorithm = 'aes-256-cbc'
     const iv = crypto.randomBytes(16)
-    const cipher = crypto.createCipher(algorithm, key)
-    
-    let encrypted = cipher.update(JSON.stringify(data), 'utf8', 'hex')
-    encrypted += cipher.final('hex')
-    
-    // Generate HMAC for integrity verification
-    const hmac = crypto.createHmac('sha256', key)
-    hmac.update(encrypted + iv.toString('hex'))
-    const signature = hmac.digest('hex')
-    
+    const encKey = Buffer.isBuffer(key) ? key : Buffer.from(key, 'base64')
+    const cipher = crypto.createCipheriv(algorithm, encKey, iv)
+    const plaintext = Buffer.from(JSON.stringify(data), 'utf8')
+    const encrypted = Buffer.concat([cipher.update(plaintext), cipher.final()])
+    // derive mac key via HKDF
+    const macKey = crypto.hkdfSync('sha256', encKey, iv, Buffer.from('yls-mac'), 32)
+    const hmac = crypto.createHmac('sha256', macKey)
+      .update(Buffer.concat([encrypted, iv]))
+      .digest('hex')
     return {
-      encrypted: encrypted,
+      encrypted: encrypted.toString('hex'),
       iv: iv.toString('hex'),
-      signature: signature,
-      algorithm: algorithm,
+      signature: hmac,
+      algorithm,
       keyVersion: this.getCurrentKeyVersion('pii')
     }
   }
-
-  async decryptSensitiveData(encryptedData, dataType) {
-    // Decrypt based on algorithm and key version
-    const classification = this.classifyData(dataType)
-    const key = this.getKeyForClassification(classification, encryptedData.keyVersion)
     
     if (encryptedData.algorithm === 'aes-256-gcm') {
       return await this.decryptAdvancedSecurity(encryptedData, key)
@@ -3918,12 +3915,21 @@ export class BackgroundJobProcessor {
   async processQueue(queueName) {
     while (this.isProcessing) {  design_overrides JSONB DEFAULT '{}', -- Item-specific design modifications
   production_notes TEXT, -- Special production requirements
-  created_at TIMESTAMP DEFAULT NOW()
-);
-
--- Order workflow tracking for complex fulfillment processes
-CREATE TABLE order_workflows (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  async processQueue(queueName) {
+    while (this.isProcessing) {
+      try {
+        const job = await this.getNextJob(queueName)
+        if (!job) {
+          await this.sleep(5000)
+          continue
+        }
+        await this.processJob(job)
+      } catch (error) {
+        console.error(`Queue processing error in ${queueName}:`, error)
+        await this.sleep(10000)
+      }
+    }
+  }
   order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
   fulfillment_type VARCHAR(50) NOT NULL,
   current_step VARCHAR(100) NOT NULL,
@@ -4589,9 +4595,9 @@ export class EnhancedAuthSecurity {
   }
 
   async validateSessionSecurity(userId, riskLevel) {
+  async validateSessionSecurity(userId, riskLevel) {
     // Check session age and validity for risk level
-    const { data: session } = await supabase.auth.getSession()
-    
+    const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
       return {
         valid: false,
@@ -4624,7 +4630,6 @@ export class EnhancedAuthSecurity {
 
     return { valid: true }
   }
-
   async detectSuspiciousActivity(userId, session) {
     // Analyze recent user activity for suspicious patterns
     const recentActivity = await this.getUserRecentActivity(userId, '1 hour')
@@ -4681,19 +4686,23 @@ export class DataProtectionManager {
     // Apply appropriate encryption based on data sensitivity
     const classification = this.classifyData(dataType)
     
+  async encryptSensitiveData(data, dataType) {
+    // Apply appropriate encryption based on data sensitivity
+    const classification = this.classifyData(dataType)
+    
     switch (classification) {
       case 'highly_sensitive':
         return await this.encryptWithAdvancedSecurity(data, this.encryptionKeys.financial)
       case 'sensitive':
-        return await this.encryptWithStandardSecurity(data,    }
+        return await this.encryptWithStandardSecurity(data, this.encryptionKeys.pii)
+      // ...
+      default:
+        throw new Error(`Unknown data classification: ${classification}`)
+    }
 
     // Update order status with comprehensive tracking
     const { data: updatedOrder, error: updateError } = await supabase
       .from('orders')
-      .update({
-        status: newStatus,
-        status_updated_at: new Date(),
-        status_notes: notes
       })
       .eq('id', orderId)
       .select()
@@ -6362,10 +6371,7 @@ async function updateOrderStatus(req, res, orderId, userId) {
         error: 'Invalid status transition',
         details: transitionValidation.reason,
         allowedTransitions: transitionValidation.allowedTransitions
-      })# **Yellow Letter Shop (YLS) Internal Platform Documentation**
-
-*Last Updated: August 2025*
-
+      })
 This comprehensive documentation provides the architectural foundation and implementation details for the Yellow Letter Shop platform's internal infrastructure. Unlike external API integration patterns covered in `api-integrations.md`, this document focuses on the core platform components that power the YLS application: internal REST API endpoints, database architecture, authentication systems, and development patterns that enable seamless integration with external services.
 
 The platform architecture demonstrates how modern SaaS applications can achieve scalability, security, and maintainability while supporting complex business workflows like direct mail automation. This documentation serves both as a reference for current developers and as a foundation for future platform expansion and optimization.

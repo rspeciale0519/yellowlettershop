@@ -20,19 +20,44 @@ export type UIMailingList = {
 }
 
 // --------- Mapping utilities ---------
-function mapTags(raw: any[] | undefined): UITag[] {
+interface RawTagData {
+  id: string;
+  name: string;
+  [key: string]: unknown;
+}
+
+interface NestedTagData {
+  tag: RawTagData;
+  [key: string]: unknown;
+}
+
+type TagInput = RawTagData | NestedTagData;
+
+function mapTags(raw: TagInput[] | undefined): UITag[] {
   if (!raw || !Array.isArray(raw)) return []
   // Handle two shapes: [{ id, name, ... }] OR [{ tag: { id, name } }]
   return raw
-    .map((t: any) => (t?.tag ? t.tag : t))
-    .filter((t: any) => t && typeof t.id === 'string' && typeof t.name === 'string')
-    .map((t: SBTag) => ({ id: t.id, name: t.name }))
+    .map((t: TagInput) => ('tag' in t ? t.tag : t))
+    .filter((t): t is RawTagData => t && typeof t.id === 'string' && typeof t.name === 'string')
+    .map((t: RawTagData) => ({ id: t.id, name: t.name }))
 }
 
-function mapCampaigns(raw: any[] | undefined): UICampaign[] {
+interface RawCampaignData {
+  id?: string | number;
+  active_order_id?: string | number;
+  order_id?: string | number;
+  vendor_order_id?: string | number;
+  sent_at?: string;
+  completed_at?: string;
+  scheduled_at?: string;
+  created_at?: string;
+  [key: string]: unknown;
+}
+
+function mapCampaigns(raw: RawCampaignData[] | undefined): UICampaign[] {
   if (!raw || !Array.isArray(raw)) return []
   return raw
-    .map((c: any) => ({
+    .map((c: RawCampaignData) => ({
       id: String(c.id ?? ''),
       orderId: String(c.active_order_id ?? c.order_id ?? c.vendor_order_id ?? c.id ?? ''),
       mailedDate: String(c.sent_at ?? c.completed_at ?? c.scheduled_at ?? c.created_at ?? ''),
@@ -40,7 +65,12 @@ function mapCampaigns(raw: any[] | undefined): UICampaign[] {
     .filter((c) => !!c.id)
 }
 
-export function mapSupabaseListToUI(list: SBMailingList): UIMailingList {
+interface SupabaseListWithJoins extends SBMailingList {
+  tags?: TagInput[];
+  campaigns?: RawCampaignData[];
+}
+
+export function mapSupabaseListToUI(list: SupabaseListWithJoins): UIMailingList {
   return {
     id: list.id,
     name: list.name,
@@ -49,12 +79,12 @@ export function mapSupabaseListToUI(list: SBMailingList): UIMailingList {
     createdBy: list.created_by,
     modifiedDate: list.modified_at,
     modifiedBy: list.modified_by,
-    tags: mapTags((list as any).tags),
-    campaigns: mapCampaigns((list as any).campaigns),
+    tags: mapTags(list.tags),
+    campaigns: mapCampaigns(list.campaigns),
   }
 }
 
-export function mapSupabaseListsToUI(lists: SBMailingList[]): UIMailingList[] {
+export function mapSupabaseListsToUI(lists: SupabaseListWithJoins[]): UIMailingList[] {
   return (lists || []).map(mapSupabaseListToUI)
 }
 
@@ -91,8 +121,8 @@ function seededSample<T>(arr: T[], count: number, seedStr: string): T[] {
 }
 
 // --------- Filtering helpers (operate on raw snake_case lists) ---------
-function getLastMailDate(list: SBMailingList): Date | null {
-  const campaigns: any[] | undefined = (list as any).campaigns
+function getLastMailDate(list: SupabaseListWithJoins): Date | null {
+  const campaigns = list.campaigns
   if (!campaigns || campaigns.length === 0) return null
   let latest: Date | null = null
   for (const c of campaigns) {
@@ -104,7 +134,7 @@ function getLastMailDate(list: SBMailingList): Date | null {
   return latest
 }
 
-function applyMailingHistory(list: SBMailingList, filter: MailingHistoryFilter): boolean {
+function applyMailingHistory(list: SupabaseListWithJoins, filter: MailingHistoryFilter): boolean {
   const lastMailDate = getLastMailDate(list)
   const now = new Date()
   switch (filter.type) {
@@ -132,7 +162,7 @@ function applyMailingHistory(list: SBMailingList, filter: MailingHistoryFilter):
   }
 }
 
-function applyRecordCountRange(list: SBMailingList, recordCountFilter: RecordCountFilter | null): boolean {
+function applyRecordCountRange(list: SupabaseListWithJoins, recordCountFilter: RecordCountFilter | null): boolean {
   if (!recordCountFilter || recordCountFilter.type !== 'range' || !recordCountFilter.range) return true
   const [a, b] = recordCountFilter.range
   const start = Math.min(a, b)
@@ -141,17 +171,17 @@ function applyRecordCountRange(list: SBMailingList, recordCountFilter: RecordCou
   return count >= start && count <= end
 }
 
-function getTagIdsFromRaw(list: SBMailingList): string[] {
-  const raw = (list as any).tags as any[] | undefined
+function getTagIdsFromRaw(list: SupabaseListWithJoins): string[] {
+  const raw = list.tags
   if (!raw || !Array.isArray(raw)) return []
-  return raw.map((t: any) => (t?.tag ? t.tag.id : t.id)).filter(Boolean)
+  return raw.map((t: TagInput) => ('tag' in t ? t.tag.id : t.id)).filter(Boolean)
 }
 
-function applyAdvancedBooleanFilters(list: SBMailingList, criteria: AdvancedSearchCriteria): boolean {
+function applyAdvancedBooleanFilters(list: SupabaseListWithJoins, criteria: AdvancedSearchCriteria): boolean {
   const { columnFilters, tagFilter, listFilter, mailingHistoryFilter, recordCountFilter, logicalOperator } = criteria
 
   const columnBooleans = columnFilters.map((filter) => {
-    const value = (list as any)[filter.column]
+    const value = (list as Record<string, unknown>)[filter.column]
     if (value === undefined || value === null) return false
     const valueStr = String(value)
     const compare = filter.value
@@ -194,7 +224,7 @@ function applyAdvancedBooleanFilters(list: SBMailingList, criteria: AdvancedSear
 
 // --------- Public API ---------
 export function filterSortPaginateLists(
-  rawLists: SBMailingList[] | undefined,
+  rawLists: SupabaseListWithJoins[] | undefined,
   opts: {
     criteria: AdvancedSearchCriteria
     quickFilter?: 'all' | 'last_7_days' | 'used_in_campaign'

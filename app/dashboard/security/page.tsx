@@ -237,7 +237,7 @@ export default function SecurityPage() {
                     <Shield className="h-4 w-4" />
                     <AlertTitle>Two-factor authentication is enabled</AlertTitle>
                     <AlertDescription>
-                      Your account is now more secure. You'll need to enter a verification code when signing in.
+                      Your account is now more secure. You&apos;ll need to enter a verification code when signing in.
                     </AlertDescription>
                   </Alert>
 
@@ -310,7 +310,7 @@ export default function SecurityPage() {
                 <div className="rounded-md border p-4">
                   <img src="/placeholder.svg?height=200&width=200" alt="QR Code" className="h-48 w-48" />
                 </div>
-                <p className="text-sm text-muted-foreground">Can't scan the QR code? Use this code instead:</p>
+                <p className="text-sm text-muted-foreground">Can&apos;t scan the QR code? Use this code instead:</p>
                 <div className="flex items-center space-x-2">
                   <code className="rounded-md bg-muted px-2 py-1 font-mono text-sm">ABCD EFGH IJKL MNOP</code>
                   <Button variant="ghost" size="icon">

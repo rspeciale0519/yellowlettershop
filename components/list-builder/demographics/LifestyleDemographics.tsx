@@ -25,15 +25,15 @@ export function LifestyleDemographics({ criteria, expanded, onToggle, onUpdate }
       <MultiSelectField
         label="Interests"
         options={INTERESTS}
-        values={criteria.lifestyle.interests}
+        values={criteria.lifestyle?.interests ?? []}
         onChange={(values) =>
           onUpdate({
             lifestyle: {
-              ...criteria.lifestyle,
+              ...(criteria.lifestyle ?? {}),
               interests: values,
             },
           })
-        }
+        }        }
         icon={<Heart className="h-4 w-4 text-pink-600" />}
         tooltip="Personal interests and hobbies"
       />
@@ -41,15 +41,15 @@ export function LifestyleDemographics({ criteria, expanded, onToggle, onUpdate }
       <MultiSelectField
         label="Purchasing Behavior"
         options={PURCHASING_BEHAVIOR}
-        values={criteria.lifestyle.purchasingBehavior}
+        values={criteria.lifestyle?.purchasingBehavior ?? []}
         onChange={(values) =>
           onUpdate({
             lifestyle: {
-              ...criteria.lifestyle,
+              ...(criteria.lifestyle ?? {}),
               purchasingBehavior: values,
             },
           })
-        }
+        }        }
         icon={<CreditCard className="h-4 w-4 text-blue-600" />}
         tooltip="Shopping and purchasing patterns"
       />

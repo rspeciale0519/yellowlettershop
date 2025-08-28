@@ -29,7 +29,7 @@ export interface MailingRecord {
   zipCode?: string
   email?: string
   phone?: string
-  [key: string]: any
+  [key: string]: unknown
 }
 
 // Order types

@@ -137,14 +137,21 @@ Every developer needs their own personal settings. It's like adjusting the seat 
 
 \# This copies our template settings file to create your personal settings
 
+# This copies our template settings file to create your personal settings
+
+# macOS/Linux (bash/zsh):
 cp .env.example .env.local
 
-\# Now let's edit your personal settings file
+# Windows (Command Prompt):
+copy .env.example .env.local
 
-\# Open it in VS Code (or your preferred editor)
+# Windows (PowerShell):
+Copy-Item .env.example .env.local
 
+# Now let's edit your personal settings file
+# Open it in VS Code (or your preferred editor)
+# If `code` isn't in your PATH, use the GUI to open the file.
 code .env.local
-
 **What you'll see in `.env.local`:**
 
 \# Database Configuration \- think of this as the address of our data storage
@@ -333,13 +340,14 @@ git status
 \# This shows you what's different from the last checkpoint
 
 \# Add your changes to the "staging area" (preparing to save)
+git commit -m "Add personal welcome message to homepage" \
+  -m "Modified homepage to include developer name" \
+  -m "First commit as new team member" \
+  -m "Testing the development workflow"
 
-git add .
-
-\# The dot (.) means "add all my changes"
-
-\# Create a checkpoint (commit) with a message
-
+# Alternatively, let Git open your editor:
+# git commit
+# (Write a subject line on the first line, then a blank line, then the body.)
 git commit \-m "Add personal welcome message to homepage
 
 \- Modified homepage to include developer name

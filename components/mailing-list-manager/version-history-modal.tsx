@@ -1,93 +1,119 @@
-"use client"
+'use client';
 
-import React, { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { useToast } from "@/components/ui/use-toast"
-import { format } from 'date-fns'
-import { Clock, RotateCcw, User, FileText, AlertCircle, Loader2 } from "lucide-react"
+import React, { useState, useEffect } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/components/ui/use-toast';
+import { format } from 'date-fns';
+import {
+  Clock,
+  RotateCcw,
+  User,
+  FileText,
+  AlertCircle,
+  Loader2,
+} from 'lucide-react';
 
 interface VersionHistoryModalProps {
-  isOpen: boolean
-  onClose: () => void
-  listId: string
-  listName: string
-  currentVersion: number
-  onVersionRestore?: () => void
+  isOpen: boolean;
+  onClose: () => void;
+  listId: string;
+  listName: string;
+  currentVersion: number;
+  onVersionRestore?: () => void;
 }
 
 interface ListVersion {
-  id: string
-  version_number: number
-  name: string
-  description?: string
-  record_count: number
-  criteria?: any
-  created_at: string
+  id: string;
+  version_number: number;
+  name: string;
+  description?: string;
+  record_count: number;
+  criteria?: any;
+  created_at: string;
   created_by?: {
-    id: string
-    email: string
-    name?: string
-  }
-  change_description?: string
+    id: string;
+    email: string;
+    name?: string;
+  };
+  change_description?: string;
 }
 
-export function VersionHistoryModal({ 
-  isOpen, 
-  onClose, 
-  listId, 
+export function VersionHistoryModal({
+  isOpen,
+  onClose,
+  listId,
   listName,
   currentVersion,
-  onVersionRestore 
+  onVersionRestore,
 }: VersionHistoryModalProps) {
-  const { toast } = useToast()
-  const [versions, setVersions] = useState<ListVersion[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [selectedVersion, setSelectedVersion] = useState<ListVersion | null>(null)
-  const [isRestoring, setIsRestoring] = useState(false)
-  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false)
+  const { toast } = useToast();
+  const [versions, setVersions] = useState<ListVersion[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedVersion, setSelectedVersion] = useState<ListVersion | null>(
+    null
+  );
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      loadVersionHistory()
+      loadVersionHistory();
     }
-  }, [isOpen, listId])
+  }, [isOpen, listId]);
 
   const loadVersionHistory = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      const response = await fetch(`/api/mailing-lists/version-history?listId=${listId}`)
+      const response = await fetch(
+        `/api/mailing-lists/version-history?listId=${encodeURIComponent(
+          listId
+        )}`,
+        {
+          headers: { Accept: 'application/json' },
+        }
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to fetch version history')
+        const err = await response.json().catch(() => null);
+        throw new Error(err?.error || 'Failed to fetch version history');
       }
 
-      const result = await response.json()
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to fetch version history')
+      const result: {
+        success: boolean;
+        versions?: ListVersion[];
+        error?: string;
+      } = await response.json();
+      if (!result.success || !Array.isArray(result.versions)) {
+        throw new Error(
+          result?.error || 'Invalid response while fetching version history'
+        );
       }
-
-      setVersions(result.versions)
-    } catch (error) {
-      console.error('Failed to load version history:', error)
+      setVersions(result.versions);
+      console.error('Failed to load version history:', error);
       toast({
-        title: "Failed to load history",
-        description: "Could not retrieve version history for this list.",
-        variant: "destructive"
-      })
+        title: 'Failed to load history',
+        description: 'Could not retrieve version history for this list.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleRestore = async () => {
-    if (!selectedVersion) return
+    if (!selectedVersion) return;
 
-    setIsRestoring(true)
+    setIsRestoring(true);
     try {
       const response = await fetch('/api/mailing-lists/restore-version', {
         method: 'POST',
@@ -96,69 +122,102 @@ export function VersionHistoryModal({
         },
         body: JSON.stringify({
           listId,
-          versionId: selectedVersion.version_number
+          versionId: selectedVersion.version_number,
         }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error('Failed to restore version')
+        throw new Error('Failed to restore version');
       }
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (!result.success) {
-        throw new Error(result.error || 'Restore failed')
+        throw new Error(result.error || 'Restore failed');
       }
 
       toast({
-        title: "Version restored",
-        description: `List has been restored to version ${selectedVersion.version_number}.`
-      })
+        title: 'Version restored',
+        description: `List has been restored to version ${selectedVersion.version_number}.`,
+      });
 
       if (onVersionRestore) {
-        onVersionRestore()
+        onVersionRestore();
       }
 
-      onClose()
+      onClose();
     } catch (error) {
-      console.error('Failed to restore version:', error)
+      console.error('Failed to restore version:', error);
       toast({
-        title: "Restore failed",
-        description: "Could not restore the selected version.",
-        variant: "destructive"
-      })
+        title: 'Restore failed',
+        description: 'Could not restore the selected version.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsRestoring(false)
-      setShowRestoreConfirm(false)
+      setIsRestoring(false);
+      setShowRestoreConfirm(false);
     }
-  }
+  };
 
   const getChangeTypeIcon = (description?: string) => {
-    if (!description) return <FileText className="h-4 w-4" />
-    
-    const lowerDesc = description.toLowerCase()
-    if (lowerDesc.includes('import')) return <FileText className="h-4 w-4 text-green-500" />
-    if (lowerDesc.includes('delete') || lowerDesc.includes('remove')) return <FileText className="h-4 w-4 text-red-500" />
-    if (lowerDesc.includes('update') || lowerDesc.includes('edit')) return <FileText className="h-4 w-4 text-blue-500" />
-    return <FileText className="h-4 w-4" />
-  }
+    if (!description) return <FileText className='h-4 w-4' />;
+
+    const lowerDesc = description.toLowerCase();
+    if (lowerDesc.includes('import'))
+      return <FileText className='h-4 w-4 text-green-500' />;
+    if (lowerDesc.includes('delete') || lowerDesc.includes('remove'))
+      return <FileText className='h-4 w-4 text-red-500' />;
+    if (lowerDesc.includes('update') || lowerDesc.includes('edit'))
+      return <FileText className='h-4 w-4 text-blue-500' />;
+    return <FileText className='h-4 w-4' />;
+  };
 
   const getChangeTypeBadge = (description?: string) => {
-    if (!description) return null
-    
-    const lowerDesc = description.toLowerCase()
-    if (lowerDesc.includes('import')) return <Badge variant="secondary" className="bg-green-100">Import</Badge>
-    if (lowerDesc.includes('export')) return <Badge variant="secondary" className="bg-blue-100">Export</Badge>
-    if (lowerDesc.includes('delete') || lowerDesc.includes('remove')) return <Badge variant="secondary" className="bg-red-100">Delete</Badge>
-    if (lowerDesc.includes('update') || lowerDesc.includes('edit')) return <Badge variant="secondary" className="bg-blue-100">Update</Badge>
-    if (lowerDesc.includes('deduplicate')) return <Badge variant="secondary" className="bg-yellow-100">Deduplicate</Badge>
-    if (lowerDesc.includes('criteria')) return <Badge variant="secondary" className="bg-purple-100">Criteria Change</Badge>
-    return null
-  }
+    if (!description) return null;
+
+    const lowerDesc = description.toLowerCase();
+    if (lowerDesc.includes('import'))
+      return (
+        <Badge variant='secondary' className='bg-green-100'>
+          Import
+        </Badge>
+      );
+    if (lowerDesc.includes('export'))
+      return (
+        <Badge variant='secondary' className='bg-blue-100'>
+          Export
+        </Badge>
+      );
+    if (lowerDesc.includes('delete') || lowerDesc.includes('remove'))
+      return (
+        <Badge variant='secondary' className='bg-red-100'>
+          Delete
+        </Badge>
+      );
+    if (lowerDesc.includes('update') || lowerDesc.includes('edit'))
+      return (
+        <Badge variant='secondary' className='bg-blue-100'>
+          Update
+        </Badge>
+      );
+    if (lowerDesc.includes('deduplicate'))
+      return (
+        <Badge variant='secondary' className='bg-yellow-100'>
+          Deduplicate
+        </Badge>
+      );
+    if (lowerDesc.includes('criteria'))
+      return (
+        <Badge variant='secondary' className='bg-purple-100'>
+          Criteria Change
+        </Badge>
+      );
+    return null;
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px]">
+      <DialogContent className='sm:max-w-[700px]'>
         <DialogHeader>
           <DialogTitle>Version History - {listName}</DialogTitle>
           <DialogDescription>
@@ -167,61 +226,67 @@ export function VersionHistoryModal({
         </DialogHeader>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-8">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className='flex items-center justify-center py-8'>
+            <Loader2 className='h-6 w-6 animate-spin text-muted-foreground' />
           </div>
         ) : versions.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
+          <div className='text-center py-8 text-muted-foreground'>
             No version history available for this list.
           </div>
         ) : (
           <>
-            <ScrollArea className="h-[400px] pr-4">
-              <div className="space-y-3">
+            <ScrollArea className='h-[400px] pr-4'>
+              <div className='space-y-3'>
                 {versions.map((version) => {
-                  const isCurrent = version.version_number === currentVersion
-                  const isSelected = selectedVersion?.id === version.id
+                  const isCurrent = version.version_number === currentVersion;
+                  const isSelected = selectedVersion?.id === version.id;
 
                   return (
                     <div
                       key={version.id}
                       className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                        isCurrent 
-                          ? 'border-primary bg-primary/5' 
-                          : isSelected 
+                        isCurrent
+                          ? 'border-primary bg-primary/5'
+                          : isSelected
                           ? 'border-primary bg-primary/10'
                           : 'border-border hover:bg-muted/50'
                       }`}
                       onClick={() => !isCurrent && setSelectedVersion(version)}
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1 flex-1">
-                          <div className="flex items-center gap-2">
+                      <div className='flex items-start justify-between'>
+                        <div className='space-y-1 flex-1'>
+                          <div className='flex items-center gap-2'>
                             {getChangeTypeIcon(version.change_description)}
-                            <span className="font-medium">
+                            <span className='font-medium'>
                               Version {version.version_number}
                             </span>
                             {isCurrent && (
-                              <Badge variant="default" className="ml-2">Current</Badge>
+                              <Badge variant='default' className='ml-2'>
+                                Current
+                              </Badge>
                             )}
                             {getChangeTypeBadge(version.change_description)}
                           </div>
 
                           {version.change_description && (
-                            <p className="text-sm text-muted-foreground">
+                            <p className='text-sm text-muted-foreground'>
                               {version.change_description}
                             </p>
                           )}
 
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {format(new Date(version.created_at), 'MMM d, yyyy h:mm a')}
+                          <div className='flex items-center gap-4 text-xs text-muted-foreground'>
+                            <div className='flex items-center gap-1'>
+                              <Clock className='h-3 w-3' />
+                              {format(
+                                new Date(version.created_at),
+                                'MMM d, yyyy h:mm a'
+                              )}
                             </div>
                             {version.created_by && (
-                              <div className="flex items-center gap-1">
-                                <User className="h-3 w-3" />
-                                {version.created_by.name || version.created_by.email}
+                              <div className='flex items-center gap-1'>
+                                <User className='h-3 w-3' />
+                                {version.created_by.name ||
+                                  version.created_by.email}
                               </div>
                             )}
                             <div>
@@ -232,50 +297,53 @@ export function VersionHistoryModal({
 
                         {!isCurrent && (
                           <Button
-                            size="sm"
-                            variant={isSelected ? "default" : "ghost"}
-                            className="ml-4"
+                            size='sm'
+                            variant={isSelected ? 'default' : 'ghost'}
+                            className='ml-4'
                             onClick={(e) => {
-                              e.stopPropagation()
-                              setSelectedVersion(version)
-                              setShowRestoreConfirm(true)
+                              e.stopPropagation();
+                              setSelectedVersion(version);
+                              setShowRestoreConfirm(true);
                             }}
                           >
-                            <RotateCcw className="h-4 w-4" />
+                            <RotateCcw className='h-4 w-4' />
                           </Button>
                         )}
                       </div>
                     </div>
-                  )
+                  );
                 })}
               </div>
             </ScrollArea>
 
             {showRestoreConfirm && selectedVersion && (
               <Alert>
-                <AlertCircle className="h-4 w-4" />
+                <AlertCircle className='h-4 w-4' />
                 <AlertDescription>
-                  <div className="space-y-2">
-                    <p className="font-medium">
+                  <div className='space-y-2'>
+                    <p className='font-medium'>
                       Restore to Version {selectedVersion.version_number}?
                     </p>
-                    <p className="text-sm">
-                      This will replace the current list configuration with the selected version. 
-                      The current version will be saved in history.
+                    <p className='text-sm'>
+                      This will replace the current list configuration with the
+                      selected version. The current version will be saved in
+                      history.
                     </p>
-                    <div className="flex gap-2 mt-3">
+                    <div className='flex gap-2 mt-3'>
                       <Button
-                        size="sm"
-                        variant="default"
+                        size='sm'
+                        variant='default'
                         onClick={handleRestore}
                         disabled={isRestoring}
                       >
-                        {isRestoring && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                        {isRestoring && (
+                          <Loader2 className='mr-2 h-3 w-3 animate-spin' />
+                        )}
                         Confirm Restore
                       </Button>
                       <Button
-                        size="sm"
-                        variant="outline"
+                        size='sm'
+                        variant='outline'
                         onClick={() => setShowRestoreConfirm(false)}
                         disabled={isRestoring}
                       >
@@ -290,5 +358,5 @@ export function VersionHistoryModal({
         )}
       </DialogContent>
     </Dialog>
-  )
+  );
 }

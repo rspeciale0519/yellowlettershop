@@ -1,14 +1,14 @@
 // Custom hook for mortgage filters callbacks
-import { useCallback } from "react"
-import type { MortgageCriteria } from "@/types/list-builder"
+import { useCallback } from 'react';
+import type { MortgageCriteria } from '@/types/list-builder';
 
 interface UseMortgageFiltersCallbacksProps {
-  criteria: MortgageCriteria
-  onUpdate: (values: Partial<MortgageCriteria>) => void
-  expandedPanels: string[]
-  setExpandedPanels: (panels: string[]) => void
-  savedCriteria: (typeof MORTGAGE_TEMPLATES)[]
-  setSavedCriteria: (criteria: (typeof MORTGAGE_TEMPLATES)[]) => void
+  criteria: MortgageCriteria;
+  onUpdate: (values: Partial<MortgageCriteria>) => void;
+  expandedPanels: string[];
+  setExpandedPanels: (panels: string[]) => void;
+  savedCriteria: (typeof MORTGAGE_TEMPLATES)[];
+  setSavedCriteria: (criteria: (typeof MORTGAGE_TEMPLATES)[]) => void;
 }
 
 export function useMortgageFiltersCallbacks({
@@ -19,40 +19,40 @@ export function useMortgageFiltersCallbacks({
   savedCriteria,
   setSavedCriteria,
 }: UseMortgageFiltersCallbacksProps) {
-  const addCriterion = useCallback(() => {
-    if (selectedCriterion && !criteria.selectedCriteria.includes(selectedCriterion)) {
-      onUpdate({
-        selectedCriteria: [...criteria.selectedCriteria, selectedCriterion],
-      })
-      setExpandedPanels([...expandedPanels, selectedCriterion])
-      setSelectedCriterion("")
-    }
-  }, [selectedCriterion, criteria.selectedCriteria, expandedPanels, onUpdate])
-
+  const addCriterion = useCallback(
+    (criterion: string) => {
+      if (criterion && !criteria.selectedCriteria.includes(criterion)) {
+        onUpdate({
+          selectedCriteria: [...criteria.selectedCriteria, criterion],
+        });
+        setExpandedPanels((prev) =>
+          prev.includes(criterion) ? prev : [...prev, criterion]
+        );
+      }
   const removeCriterion = useCallback(
     (criterion: string) => {
       onUpdate({
         selectedCriteria: criteria.selectedCriteria.filter((c) => c !== criterion),
       })
-      setExpandedPanels(expandedPanels.filter((p) => p !== criterion))
+      setExpandedPanels((prev) => prev.filter((p) => p !== criterion))
     },
-    [criteria.selectedCriteria, expandedPanels, onUpdate],
+    [criteria.selectedCriteria, onUpdate, setExpandedPanels],
   )
-
-  const togglePanel = useCallback((criterion: string) => {
-    setExpandedPanels((prev) => (prev.includes(criterion) ? prev.filter((p) => p !== criterion) : [...prev, criterion]))
-  }, [])
-
+      });
+      setExpandedPanels(expandedPanels.filter((p) => p !== criterion));
+    },
+    [criteria.selectedCriteria, expandedPanels, onUpdate]
+  );
   const applyTemplate = useCallback(
-    (template: (typeof MORTGAGE_TEMPLATES)[0]) => {
+    (template: MortgageCriteriaTemplate) => {
       onUpdate(template.criteria)
-      setShowTemplates(false)
       // Expand relevant panels
       setExpandedPanels(template.criteria.selectedCriteria || [])
     },
-    [onUpdate],
+    [onUpdate, setExpandedPanels],
   )
-
+    (template: (typeof MORTGAGE_TEMPLATES)[0]) => {
+      onUpdate(template.criteria);
   const saveCurrentCriteria = useCallback(() => {
     const name = prompt("Enter a name for this criteria set:")
     if (name && name.trim()) {
@@ -61,7 +61,7 @@ export function useMortgageFiltersCallbacks({
         name: name.trim(),
         description: "Custom saved criteria",
         criteria: {
-          selectedCriteria: criteria.selectedCriteria,
+          selectedCriteria: [...criteria.selectedCriteria],
           lienPosition: criteria.lienPosition,
           mortgageAmount: criteria.mortgageAmount,
           interestRate: criteria.interestRate,
@@ -71,16 +71,23 @@ export function useMortgageFiltersCallbacks({
           primaryLoanType: criteria.primaryLoanType,
         },
       }
-      setSavedCriteria([...savedCriteria, newTemplate])
+      setSavedCriteria((prev) => [...prev, newTemplate])
     }
-  }, [criteria, savedCriteria])
+  }, [criteria, setSavedCriteria])
+          mortgageTerm: criteria.mortgageTerm,
+  const deleteSavedCriteria = useCallback(
+    (templateId: string) => {
+      setSavedCriteria((prev) => prev.filter((t) => t.id !== templateId))
+    },
+    [setSavedCriteria],
+  )
 
   const deleteSavedCriteria = useCallback(
     (templateId: string) => {
-      setSavedCriteria(savedCriteria.filter((t) => t.id !== templateId))
+      setSavedCriteria(savedCriteria.filter((t) => t.id !== templateId));
     },
-    [savedCriteria],
-  )
+    [savedCriteria]
+  );
 
   return {
     addCriterion,
@@ -89,5 +96,5 @@ export function useMortgageFiltersCallbacks({
     applyTemplate,
     saveCurrentCriteria,
     deleteSavedCriteria,
-  }
+  };
 }

@@ -1,7 +1,11 @@
 import type { MailingListRecord } from "@/types/supabase"
 
-export const mailingListData: Partial<MailingListRecord>[] = [
-  {
+export const mailingListData: ReadonlyArray<Pick<
+  MailingListRecord,
+  "id" | "full_name" | "address_line1" | "city" | "state" | "zip_code" | "status"
+>> = [
+  // …existing entries…
+];  {
     id: "rec_1",
     full_name: "John Doe",
     address_line1: "123 Main St",

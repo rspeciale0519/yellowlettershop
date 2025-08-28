@@ -908,15 +908,7 @@ async function clearAuthAndRetry(email, password) {
 
   await supabase.auth.signOut()
 
-  
-
-  // Step 2: Clear any stored tokens
-
-  localStorage.removeItem('supabase.auth.token')
-
-  sessionStorage.clear()
-
-  
+  // Step 2: SDK handles token cleanup; avoid manual storage tampering
 
   // Step 3: Wait a moment for cleanup
 
@@ -1552,47 +1544,34 @@ export default async function handler(req, res) {
 
   res.setHeader('Access-Control-Allow-Credentials', true)
 
-  res.setHeader('Access-Control-Allow-Origin', process.env.NEXT\_PUBLIC\_APP\_URL || 'http://localhost:3000')
+export default async function handler(req, res) {
 
+  // This is like giving your frontend a visitor's pass
+
+  const origin = req.headers.origin
+  const allowlist = new Set([process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'])
+  const allowedOrigin = allowlist.has(origin) ? origin : ''
+  res.setHeader('Vary', 'Origin')
+  res.setHeader('Access-Control-Allow-Credentials', 'true')
+  res.setHeader('Access-Control-Allow-Origin', allowedOrigin)
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT')
-
   res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization')
 
   // Handle preflight requests
-
-  if (req.method \=== 'OPTIONS') {
-
+  if (req.method === 'OPTIONS') {
     res.status(200).end()
-
     return
-
   }
 
   // Your actual API logic here
-
   try {
-
-    const result \= await yourAPILogic(req)
-
+    const result = await yourAPILogic(req)
     res.status(200).json(result)
-
   } catch (error) {
-
     console.error('API Error:', error)
-
     res.status(500).json({ error: 'Internal server error' })
-
   }
-
 }
-
-**Solution 3: Add proper error handling and retries**
-
-// Make your API calls more robust
-
-// This is like having a backup plan when the first restaurant doesn't answer
-
-async function robustAPICall(url, options \= {}) {
 
   const maxRetries \= 3
 
@@ -2879,65 +2858,36 @@ declare module 'some-external-library' {
     "esModuleInterop": true,
 
     "module": "esnext",
-
-    "moduleResolution": "node",
-
-    "resolveJsonModule": true,
-
-    "isolatedModules": true,
-
-    "jsx": "preserve",
-
-    "incremental": true,
-
-    "plugins": \[
-
-      {
-
-        "name": "next"
-
-      }
-
-    \],
-
-    "paths": {
-
-      "@/\*": \["./src/\*"\],                   // Path aliases make imports cleaner
-
-      "@/components/\*": \["./src/components/\*"\],
-
-      "@/lib/\*": \["./src/lib/\*"\]
-
-    }
-
-  },
-
-  "include": \["next-env.d.ts", "\*\*/\*.ts", "\*\*/\*.tsx", ".next/types/\*\*/\*.ts"\],
-
-  "exclude": \["node\_modules"\]
-
-}
-
-**Solution 3: Add type checking to your development workflow**
-
-// package.json \- Add scripts to catch type errors early
-
 {
-
-  "scripts": {
-
-    "dev": "next dev",
-
-    "build": "npm run typecheck && next build",     // Type check before building
-
-    "typecheck": "tsc \--noEmit",                   // Check types without building
-
-    "typecheck:watch": "tsc \--noEmit \--watch",     // Watch for type errors during development
-
-    "lint": "next lint && npm run typecheck",     // Include type checking in linting
-
-    "start": "next start"
-
+  "compilerOptions": {
+    "target": "es2022",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,                    // Skip type checking of declaration files (faster builds)
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./src/*"],                   // Path aliases make imports cleaner
+      "@/components/*": ["./src/components/*"],
+      "@/lib/*": ["./src/lib/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
   }
 
 }
@@ -3567,11 +3517,11 @@ const requiredEnvVars \= {
 
   'SUPABASE\_SERVICE\_ROLE\_KEY': {
 
-    required: true,
+echo "My environment variables:"
 
-    private: true,
+printenv | grep -E "^(NEXT_PUBLIC_|DATABASE_|STRIPE_|OPENAI_)" | sed -E 's/=.*/=***redacted*** /' | sort
 
-    description: 'Supabase service role key for server operations'
+# Create a safe environment check script
 
   },
 

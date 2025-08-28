@@ -39,7 +39,7 @@ export default function HomePage() {
                           Got Your Design Ready?
                         </CardTitle>
                         <CardDescription className='text-md text-gray-600 dark:text-gray-400 mt-2'>
-                          Already have a design? Upload your files and we'll
+                          Already have a design? Upload your files and we&apos;ll
                           handle the printing and mailing.
                         </CardDescription>
                         <div className='mt-6 flex items-center font-semibold text-yellow-600'>
