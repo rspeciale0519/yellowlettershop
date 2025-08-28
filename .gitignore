@@ -28,3 +28,6 @@ next-env.d.ts
 
 # Exclude docs and temp directories
 /old-version/
+
+# Claude Code settings (user-specific)
+.claude/settings.local.json

@@ -47,6 +47,17 @@ pnpm install
 pnpm dev
 ```
 
+### Claude Code Setup
+
+If you're using Claude Code for development, copy the example settings file:
+
+```bash
+# Copy Claude Code settings template
+cp .claude/settings.local.json.example .claude/settings.local.json
+```
+
+The example file uses safe defaults with no pre-approved permissions. Modify your local copy as needed.
+
 ### Environment Variables
 
 Create a `.env.local` file in the root directory with the following variables:
