@@ -47,19 +47,5 @@ export function SectionHeader({
       </CardTitle>
       {description ? <CardDescription>{description}</CardDescription> : null}
     </CardHeader>
-  )
-}
-        <span className='flex items-center gap-2'>
-          {icon}
-          {title}
-        </span>
-        {expanded ? (
-          <ChevronUp className='h-5 w-5' />
-        ) : (
-          <ChevronDown className='h-5 w-5' />
-        )}
-      </CardTitle>
-      {description ? <CardDescription>{description}</CardDescription> : null}
-    </CardHeader>
   );
 }

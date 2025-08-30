@@ -54,8 +54,6 @@ export async function deduplicateList(
   const groups = new Map<string, any[]>()
   
   for (const record of records) {
--    const key = matchingStrategy === 'fuzzy' 
--      ? (record[dedupeField] || '').toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/gi, '')
     const val = String(record[dedupeField] ?? '')
     const key = matchingStrategy === 'fuzzy'
       ? val.toLowerCase().replace(/\s+/g, '').replace(/[^a-z0-9]/gi, '')

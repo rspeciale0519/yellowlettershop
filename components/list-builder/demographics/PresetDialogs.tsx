@@ -62,7 +62,6 @@ export function PresetDialogs({
             onChange={(e) => setPresetName(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
-                if (e.isComposing) return;
                 const name = presetName.trim();
                 if (!name) return;
                 e.preventDefault();
@@ -78,12 +77,8 @@ export function PresetDialogs({
               Cancel
             </Button>
             <Button onClick={onSavePreset} disabled={!presetName.trim()}>
-      <AlertDialog
-        open={!!deletePresetId}
-        onOpenChange={(open) => {
-          if (!open) setDeletePresetId(null)
-        }}
-      >              Save Preset
+              <Save className="h-4 w-4 mr-2" />
+              Save Preset
             </Button>
           </DialogFooter>
         </DialogContent>

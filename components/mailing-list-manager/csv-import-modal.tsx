@@ -1,464 +1,200 @@
-'use client';
+"use client"
 
-import React, { useState, useRef } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useToast } from '@/components/ui/use-toast';
-import {
-  Upload,
-  FileText,
-  AlertCircle,
-  CheckCircle,
-  Loader2,
-} from 'lucide-react';
+import type React from "react"
+import { useState, useRef } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Upload, FileText, CheckCircle2, AlertCircle } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface CSVImportModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  listId: string;
-  listName: string;
-  onImportComplete?: (recordCount: number) => void;
+  isOpen: boolean
+  onClose: () => void
+  listId: string
+  listName: string
+  onImportComplete: () => void
 }
 
-export function CSVImportModal({
-  isOpen,
-  onClose,
-  listId,
-  listName,
-  onImportComplete,
+export function CSVImportModal({ 
+  isOpen, 
+  onClose, 
+  listId, 
+  listName, 
+  onImportComplete 
 }: CSVImportModalProps) {
-  const { toast } = useToast();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [file, setFile] = useState<File | null>(null);
-  const [isImporting, setIsImporting] = useState(false);
-  const [importProgress, setImportProgress] = useState(0);
-  const [importStatus, setImportStatus] = useState<
-    'idle' | 'parsing' | 'importing' | 'complete' | 'error'
-  >('idle');
-  const [importResults, setImportResults] = useState<{
-    total: number;
-    imported: number;
-    failed: number;
-    duplicates: number;
-  } | null>(null);
-
-  // Import options
-  const [skipDuplicates, setSkipDuplicates] = useState(true);
-  const [deduplicationField, setDeduplicationField] = useState<
-    'address' | 'name' | 'phone' | 'email'
-  >('address');
-  const [validateData, setValidateData] = useState(true);
+  const [file, setFile] = useState<File | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = event.target.files?.[0];
+    const selectedFile = event.target.files?.[0]
     if (selectedFile) {
-      if (
-        selectedFile.type !== 'text/csv' &&
-        !selectedFile.name.endsWith('.csv')
-      ) {
-        toast({
-          title: 'Invalid file type',
-          description: 'Please select a CSV file.',
-          variant: 'destructive',
-        });
-        return;
+      if (selectedFile.type !== 'text/csv' && !selectedFile.name.endsWith('.csv')) {
+        setError('Please select a valid CSV file')
+        return
       }
-      setFile(selectedFile);
-      setImportStatus('idle');
-      setImportResults(null);
+      setFile(selectedFile)
+      setError(null)
+      setSuccess(false)
     }
-  };
+  }
 
-  const parseCSV = (text: string): any[] => {
-    const lines = text.split('\n').filter((line) => line.trim());
-    if (lines.length === 0) return [];
+  const handleDragOver = (event: React.DragEvent) => {
+    event.preventDefault()
+  }
 
-    // Parse headers
-    const headers = lines[0]
-      .split(',')
-      .map((h) => h.trim().toLowerCase().replace(/['"]/g, ''));
-
-    // Parse data rows
-    const records = [];
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i]
-        .split(',')
-        .map((v) => v.trim().replace(/^["']|["']$/g, ''));
-      const record: any = {};
-
-      headers.forEach((header, index) => {
-        // Map CSV headers to database fields
-        const fieldMap: { [key: string]: string } = {
-          first_name: 'first_name',
-          firstname: 'first_name',
-          last_name: 'last_name',
-          lastname: 'last_name',
-          email: 'email',
-          phone: 'phone',
-          address: 'address_line1',
-          address1: 'address_line1',
-          address2: 'address_line2',
-          city: 'city',
-          state: 'state',
-          zip: 'zip_code',
-          zipcode: 'zip_code',
-          zip_code: 'zip_code',
-          property_type: 'property_type',
-          bedrooms: 'bedrooms',
-          bathrooms: 'bathrooms',
-          square_feet: 'square_feet',
-          sqft: 'square_feet',
-          year_built: 'year_built',
-          estimated_value: 'estimated_value',
-          value: 'estimated_value',
-          loan_amount: 'loan_amount',
-          loan_type: 'loan_type',
-          interest_rate: 'interest_rate',
-          age: 'age',
-          income: 'income',
-          marital_status: 'marital_status',
-        };
-
-        const mappedField = fieldMap[header] || header;
-        if (values[index] !== undefined && values[index] !== '') {
-          // Convert numeric fields
-          if (
-            [
-              'bedrooms',
-              'bathrooms',
-              'square_feet',
-              'year_built',
-              'age',
-            ].includes(mappedField)
-          ) {
-            record[mappedField] = parseInt(values[index]) || null;
-          } else if (
-            [
-              'estimated_value',
-              'loan_amount',
-              'interest_rate',
-              'income',
-            ].includes(mappedField)
-          ) {
-            record[mappedField] = parseFloat(values[index]) || null;
-          } else {
-            record[mappedField] = values[index];
-          }
-        }
-      });
-
-      // Only add if record has some data
-      if (Object.keys(record).length > 0) {
-        record.mailing_list_id = listId;
-        records.push(record);
+  const handleDrop = (event: React.DragEvent) => {
+    event.preventDefault()
+    const droppedFile = event.dataTransfer.files[0]
+    if (droppedFile) {
+      if (droppedFile.type !== 'text/csv' && !droppedFile.name.endsWith('.csv')) {
+        setError('Please select a valid CSV file')
+        return
       }
+      setFile(droppedFile)
+      setError(null)
+      setSuccess(false)
     }
-
-    return records;
-  };
+  }
 
   const handleImport = async () => {
-    if (!file) {
-      toast({
-        title: 'No file selected',
-        description: 'Please select a CSV file to import.',
-        variant: 'destructive',
-      });
-      return;
-    }
+    if (!file || !listId) return
 
-    setIsImporting(true);
-    setImportStatus('parsing');
-    setImportProgress(10);
+    setIsUploading(true)
+    setError(null)
 
     try {
-      // Read file content
-      const text = await file.text();
-      const records = parseCSV(text);
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('listId', listId)
 
-      if (records.length === 0) {
-        throw new Error('No valid records found in CSV file');
-      }
-
-      setImportProgress(30);
-      setImportStatus('importing');
-
-      // Import records with deduplication if enabled
-      const response = await fetch('/api/mailing-lists/csv-import', {
+      const response = await fetch('/api/mailing-lists/import-csv', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          listId,
-          records,
-          deduplicationField: skipDuplicates ? deduplicationField : undefined,
-        }),
-      });
+        body: formData,
+      })
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(
-          `HTTP ${response.status}: ${errorText || 'Failed to import records'}`
-        );
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to import CSV')
       }
 
-      const result = await response.json();
-
-      if (!result.success) {
-        throw new Error(result.error || 'Import failed');
-      }
-
-      setImportProgress(100);
-      setImportStatus('complete');
-
-      setImportResults({
-        total: records.length,
-        imported: result.imported,
-        failed: result.failed,
-        duplicates: result.duplicates,
-      });
-
-      toast({
-        title: 'Import complete',
-        description: `Successfully imported ${result.imported} records.`,
-      });
-
-      if (onImportComplete) {
-        onImportComplete(result.imported);
-      }
-
-      // Close modal after delay if successful
-      if (result.failed === 0) {
-        setTimeout(() => {
-          onClose();
-        }, 2000);
-      }
-    } catch (error) {
-      console.error('Import error:', error);
-      setImportStatus('error');
-      toast({
-        title: 'Import failed',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'An error occurred during import.',
-        variant: 'destructive',
-      });
+      const result = await response.json()
+      setSuccess(true)
+      onImportComplete()
+      
+      // Auto-close after success
+      setTimeout(() => {
+        handleClose()
+      }, 2000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to import CSV')
     } finally {
-      setIsImporting(false);
+      setIsUploading(false)
     }
-  };
+  }
 
-  const handleReset = () => {
-    setFile(null);
-    setImportStatus('idle');
-    setImportResults(null);
-    setImportProgress(0);
+  const handleClose = () => {
+    setFile(null)
+    setError(null)
+    setSuccess(false)
+    setIsUploading(false)
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = ''
     }
-  };
+    onClose()
+  }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className='sm:max-w-[600px]'>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Import CSV to {listName}</DialogTitle>
-          <DialogDescription>
-            Upload a CSV file to bulk import records to your mailing list.
-          </DialogDescription>
         </DialogHeader>
 
-        <div className='space-y-4'>
-          {/* File Upload */}
-          <div>
-            <Label htmlFor='csv-file'>CSV File</Label>
-            <div className='mt-2'>
-              <Input
-                ref={fileInputRef}
-                id='csv-file'
-                type='file'
-                accept='.csv,text/csv'
-                onChange={handleFileSelect}
-                disabled={isImporting}
-              />
-              {file && (
-                <div className='mt-2 flex items-center gap-2 text-sm text-muted-foreground'>
-                  <FileText className='h-4 w-4' />
-                  {file.name} ({(file.size / 1024).toFixed(2)} KB)
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Import Options */}
-          <div className='space-y-3'>
-            <div className='flex items-center space-x-2'>
-              <Checkbox
-                id='skip-duplicates'
-                checked={skipDuplicates}
-                onCheckedChange={(checked) =>
-                  setSkipDuplicates(checked as boolean)
-                }
-                disabled={isImporting}
-              />
-              <label htmlFor='skip-duplicates' className='text-sm'>
-                Skip duplicate records
-              </label>
-            </div>
-
-            {skipDuplicates && (
-              <div className='ml-6'>
-                <Label htmlFor='dedup-field' className='text-xs'>
-                  Deduplicate by
-                </Label>
-                <Select
-                  value={deduplicationField}
-                  onValueChange={(value: any) => setDeduplicationField(value)}
-                  disabled={isImporting}
-                >
-                  <SelectTrigger
-                    id='dedup-field'
-                    className='w-[200px] h-8 mt-1'
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='address'>Address</SelectItem>
-                    <SelectItem value='name'>Name</SelectItem>
-                    <SelectItem value='phone'>Phone</SelectItem>
-                    <SelectItem value='email'>Email</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <div className='flex items-center space-x-2'>
-              <Checkbox
-                id='validate-data'
-                checked={validateData}
-                onCheckedChange={(checked) =>
-                  setValidateData(checked as boolean)
-                }
-                disabled={isImporting}
-              />
-              <label htmlFor='validate-data' className='text-sm'>
-                Validate data during import
-              </label>
-            </div>
-          </div>
-
-          {/* Import Progress */}
-          {importStatus !== 'idle' && (
-            <div className='space-y-2'>
-              <div className='flex items-center justify-between text-sm'>
-                <span className='text-muted-foreground'>
-                  {importStatus === 'parsing' && 'Parsing CSV file...'}
-                  {importStatus === 'importing' && 'Importing records...'}
-                  {importStatus === 'complete' && 'Import complete!'}
-                  {importStatus === 'error' && 'Import failed'}
-                </span>
-                <span>{importProgress}%</span>
-              </div>
-              <Progress value={importProgress} className='h-2' />
-            </div>
-          )}
-
-          {/* Import Results */}
-          {importResults && (
-            <Alert
-              className={importStatus === 'error' ? 'border-destructive' : ''}
-            >
-              {importStatus === 'complete' ? (
-                <CheckCircle className='h-4 w-4' />
-              ) : (
-                <AlertCircle className='h-4 w-4' />
-              )}
-              <AlertDescription>
-                <div className='space-y-1'>
-                  <p>Total records: {importResults.total}</p>
-                  <p>Successfully imported: {importResults.imported}</p>
-                  {importResults.duplicates > 0 && (
-                    <p>Skipped (duplicates): {importResults.duplicates}</p>
-                  )}
-                  {importResults.failed > 0 && (
-                    <p className='text-destructive'>
-                      Failed: {importResults.failed}
-                    </p>
-                  )}
-                </div>
-              </AlertDescription>
+        <div className="space-y-4">
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
 
-          {/* CSV Format Help */}
-          <Alert>
-            <AlertCircle className='h-4 w-4' />
-            <AlertDescription>
-              <p className='font-medium mb-1'>CSV Format Requirements:</p>
-              <ul className='text-xs space-y-0.5 ml-4'>
-                <li>• First row must contain column headers</li>
-                <li>
-                  • Supported fields: first_name, last_name, email, phone,
-                  address, city, state, zip_code
-                </li>
-                <li>
-                  • Additional property fields: bedrooms, bathrooms,
-                  square_feet, year_built, estimated_value
-                </li>
-                <li>• Use comma (,) as delimiter</li>
-              </ul>
-            </AlertDescription>
-          </Alert>
+          {success && (
+            <Alert>
+              <CheckCircle2 className="h-4 w-4" />
+              <AlertDescription>CSV imported successfully!</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="space-y-2">
+            <Label htmlFor="csv-file">Select CSV File</Label>
+            <div
+              className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center hover:border-muted-foreground/50 transition-colors"
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+            >
+              {file ? (
+                <div className="flex items-center justify-center space-x-2">
+                  <FileText className="h-8 w-8 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">{file.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {(file.size / 1024).toFixed(1)} KB
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Upload className="h-8 w-8 text-muted-foreground mx-auto" />
+                  <p className="text-sm text-muted-foreground">
+                    Drag and drop your CSV file here, or click to browse
+                  </p>
+                </div>
+              )}
+            </div>
+            <Input
+              ref={fileInputRef}
+              id="csv-file"
+              type="file"
+              accept=".csv"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+            <Button
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              className="w-full"
+            >
+              Browse Files
+            </Button>
+          </div>
+
+          <div className="text-sm text-muted-foreground space-y-1">
+            <p><strong>CSV Format Requirements:</strong></p>
+            <ul className="list-disc list-inside space-y-1 ml-2">
+              <li>First row should contain column headers</li>
+              <li>Supported columns: firstName, lastName, address, city, state, zipCode, email, phone</li>
+              <li>File size limit: 10MB</li>
+            </ul>
+          </div>
         </div>
 
         <DialogFooter>
-          {importStatus === 'complete' || importStatus === 'error' ? (
-            <>
-              <Button variant='outline' onClick={handleReset}>
-                Import Another
-              </Button>
-              <Button onClick={onClose}>Done</Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant='outline'
-                onClick={onClose}
-                disabled={isImporting}
-              >
-                Cancel
-              </Button>
-              <Button onClick={handleImport} disabled={!file || isImporting}>
-                {isImporting && (
-                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-                )}
-                Import
-              </Button>
-            </>
-          )}
+          <Button variant="outline" onClick={handleClose} disabled={isUploading}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleImport} 
+            disabled={!file || isUploading || success}
+          >
+            {isUploading ? 'Importing...' : 'Import CSV'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
+  )
 }

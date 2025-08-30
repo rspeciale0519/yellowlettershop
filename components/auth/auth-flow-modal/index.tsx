@@ -13,16 +13,20 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
+import type { CheckedState } from "@radix-ui/react-checkbox"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { GoogleIcon } from "@/components/icons/google-icon"
 import { Mail, Lock, AlertCircle, Loader2, Eye, EyeOff, CheckCircle2 } from "lucide-react"
+import { AuthChangeEvent, Session } from "@supabase/supabase-js"
 import { createClient } from "@/utils/supabase/client"
 
 // Centralized modal that reacts to the `?auth=` query param across the app
 // Supported values: login, signup, forgot, reset, verify, change
 
 type AuthMode = "login" | "signup" | "forgot" | "reset" | "verify" | "change"
+const AUTH_MODES: AuthMode[] = ["login", "signup", "forgot", "reset", "verify", "change"]
+const isAuthMode = (value: any): value is AuthMode => AUTH_MODES.includes(value)
 
 export function AuthFlowModalController() {
   const router = useRouter()
@@ -30,11 +34,12 @@ export function AuthFlowModalController() {
   const searchParams = useSearchParams()
   const supabase = createClient()
 
-  const authParam = (searchParams.get("auth") || "") as AuthMode | ""
+  const authParamValue = searchParams.get("auth")
+  const authParam: AuthMode | "" = isAuthMode(authParamValue) ? authParamValue : ""
   const redirectedFrom = searchParams.get("redirectedFrom") || undefined
 
   const [isOpen, setIsOpen] = useState<boolean>(!!authParam)
-  const [mode, setMode] = useState<AuthMode>((authParam as AuthMode) || "login")
+  const [mode, setMode] = useState<AuthMode>(authParam || "login")
 
   // Shared state
   const [isLoading, setIsLoading] = useState(false)
@@ -62,9 +67,10 @@ export function AuthFlowModalController() {
 
   // Keep modal in sync with query param
   useEffect(() => {
-    const incoming = (searchParams.get("auth") || "") as AuthMode | ""
+    const incomingValue = searchParams.get("auth")
+    const incoming: AuthMode | "" = isAuthMode(incomingValue) ? incomingValue : ""
     if (incoming) {
-      setMode((incoming as AuthMode) || "login")
+      setMode(incoming || "login")
       if (!isOpen) setIsOpen(true)
     } else {
       setIsOpen(false)
@@ -265,7 +271,8 @@ export function AuthFlowModalController() {
         const hasCode = !!url.searchParams.get("code")
         const hasHashToken = !!url.hash && (url.hash.includes("access_token") || url.hash.includes("refresh_token"))
         if (hasCode) {
-          const code = url.searchParams.get("code") as string
+          const code = url.searchParams.get("code")
+          if (!code) return
           await supabase.auth.exchangeCodeForSession(code)
           // Remove sensitive params after exchange but keep auth + redirectedFrom
           const clean = new URL(window.location.href)
@@ -273,7 +280,7 @@ export function AuthFlowModalController() {
           clean.searchParams.delete("type")
           router.replace(clean.pathname + (clean.search ? clean.search : "") + (clean.hash || ""), { scroll: false })
         } else if (hasHashToken) {
-          const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+          const { data } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
             if (session) {
               const clean = new URL(window.location.href)
               clean.hash = ""
@@ -347,7 +354,7 @@ export function AuthFlowModalController() {
                 <Label htmlFor="login-email">Email Address</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input id="login-email" type="email" placeholder="Enter your email" value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} autoComplete="email" required className="pl-10 h-12" />
+                                    <Input id="login-email" type="email" placeholder="Enter your email" value={loginEmail} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLoginEmail(e.target.value)} autoComplete="email" required className="pl-10 h-12" />
                 </div>
               </div>
 
@@ -355,7 +362,7 @@ export function AuthFlowModalController() {
                 <Label htmlFor="login-password">Password</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input id="login-password" type={showPassword ? "text" : "password"} placeholder="Enter your password" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} autoComplete="current-password" required className="pl-10 pr-10 h-12" />
+                                    <Input id="login-password" type={showPassword ? "text" : "password"} placeholder="Enter your password" value={loginPassword} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLoginPassword(e.target.value)} autoComplete="current-password" required className="pl-10 pr-10 h-12" />
                   <Button type="button" variant="ghost" size="sm" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Hide password" : "Show password"}>
                     {showPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
                   </Button>
@@ -364,7 +371,7 @@ export function AuthFlowModalController() {
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
-                  <Checkbox id="remember-me" checked={rememberMe} onCheckedChange={(checked) => setRememberMe(!!checked)} />
+                                    <Checkbox id="remember-me" checked={rememberMe} onCheckedChange={(checked: CheckedState) => setRememberMe(!!checked)} />
                   <Label htmlFor="remember-me" className="text-sm">Remember me</Label>
                 </div>
                 <Button type="button" variant="link" className="p-0 h-auto text-sm" onClick={() => {
@@ -399,21 +406,21 @@ export function AuthFlowModalController() {
               <Label htmlFor="signup-email">Email</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input id="signup-email" type="email" placeholder="Email" className="pl-10" value={signupEmail} onChange={(e) => setSignupEmail(e.target.value)} required autoComplete="email" />
+                                <Input id="signup-email" type="email" placeholder="Email" className="pl-10" value={signupEmail} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSignupEmail(e.target.value)} required autoComplete="email" />
               </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="signup-password">Password (min 6 characters)</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input id="signup-password" type={showPassword ? "text" : "password"} placeholder="Password" className="pl-10 pr-10" value={signupPassword} onChange={(e) => setSignupPassword(e.target.value)} required minLength={6} autoComplete="new-password" />
+                                <Input id="signup-password" type={showPassword ? "text" : "password"} placeholder="Password" className="pl-10 pr-10" value={signupPassword} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSignupPassword(e.target.value)} required minLength={6} autoComplete="new-password" />
                 <Button type="button" variant="ghost" size="sm" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Hide password" : "Show password"}>
                   {showPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
                 </Button>
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox id="agree" checked={agree} onCheckedChange={(v) => setAgree(!!v)} />
+                            <Checkbox id="agree" checked={agree} onCheckedChange={(v: CheckedState) => setAgree(!!v)} />
               <label htmlFor="agree" className="text-sm">I agree to the Terms and Privacy Policy</label>
             </div>
             <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading}>
@@ -436,7 +443,7 @@ export function AuthFlowModalController() {
               <Label htmlFor="forgot-email">Email</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input id="forgot-email" type="email" placeholder="Email" className="pl-10" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} required autoComplete="email" />
+                                <Input id="forgot-email" type="email" placeholder="Email" className="pl-10" value={forgotEmail} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setForgotEmail(e.target.value)} required autoComplete="email" />
               </div>
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
@@ -459,7 +466,7 @@ export function AuthFlowModalController() {
               <Label htmlFor="new-password">New Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input id="new-password" type={showPassword ? "text" : "password"} placeholder="Enter a new password" className="pl-10 pr-10" required value={newPassword} onChange={(e) => setNewPassword(e.target.value)} autoComplete="new-password" />
+                                <Input id="new-password" type={showPassword ? "text" : "password"} placeholder="Enter a new password" className="pl-10 pr-10" required value={newPassword} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewPassword(e.target.value)} autoComplete="new-password" />
                 <Button type="button" variant="ghost" size="sm" className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "Hide password" : "Show password"}>
                   {showPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
                 </Button>
@@ -469,7 +476,7 @@ export function AuthFlowModalController() {
               <Label htmlFor="confirm-password">Confirm Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input id="confirm-password" type={showPassword ? "text" : "password"} placeholder="Confirm your new password" className="pl-10 pr-10" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} autoComplete="new-password" />
+                                <Input id="confirm-password" type={showPassword ? "text" : "password"} placeholder="Confirm your new password" className="pl-10 pr-10" required value={confirmPassword} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)} autoComplete="new-password" />
               </div>
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>

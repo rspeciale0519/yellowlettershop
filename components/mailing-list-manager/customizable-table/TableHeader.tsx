@@ -2,36 +2,25 @@
 
 import type React from 'react';
 import { GripVertical, EyeOff } from 'lucide-react';
-
-import type React from 'react';
-
-type ColumnId = 'select' | 'rowNumber' | 'id' | 'actions' | (string & {});
-
-interface ColumnDef<T = unknown> {
-  id: ColumnId;
-  header: React.ReactNode;
-  minWidth?: number;
-  cell: (row: T) => React.ReactNode;
-}
-
-interface ColumnState {
-  visible?: boolean; // default true
-  width?: number;
-  order?: number;
-}
+import type { ColumnDef } from './CustomizableTable';
+import type { ColumnStates } from '@/hooks/filters/useCustomizableTable';
 
 interface TableHeaderProps<T = unknown> {
   columns: ColumnDef<T>[];
-  columnStates: Partial<Record<ColumnId, ColumnState>>;
-  viewMode: 'records' | 'list' | 'grid' | (string & {});
-  draggedColumn: ColumnId | null;
-  isColumnDraggable: (columnId: ColumnId) => boolean;
-  handleDragStart: (columnId: ColumnId) => void;
-  handleDragOver: (e: React.DragEvent, columnId: ColumnId) => void;
+  columnStates: Partial<ColumnStates>;
+  viewMode: string;
+  draggedColumn: string | null;
+  isColumnDraggable: (columnId: string) => boolean;
+  handleDragStart: (columnId: string) => void;
+  handleDragOver: (e: React.DragEvent, columnId: string) => void;
   handleDragEnd: () => void;
   renderHeader?: (column: ColumnDef<T>, index: number) => React.ReactNode;
 }
-export function TableHeader({
+
+// Keep column-width logic centralized
+const SELECT_COL_WIDTH = 70;
+
+export function TableHeader<T = unknown>({
   columns,
   columnStates,
   viewMode,
@@ -41,7 +30,7 @@ export function TableHeader({
   handleDragOver,
   handleDragEnd,
   renderHeader,
-}: TableHeaderProps) {
+}: TableHeaderProps<T>) {
   return (
     <thead className='bg-muted/50'>
       <tr>
@@ -63,43 +52,33 @@ export function TableHeader({
                 ? 'bg-muted'
                 : column.id === 'actions'
                 ? 'bg-muted'
-// Keep column-width logic centralized
-const SELECT_COL_WIDTH = 70;
-
-…  
-
-// inside your render / style prop:
-style={{
-  width:
-    column.id === 'rowNumber'
-      ? '60px'
-      : column.id === 'id'
-      ? '100px'
-      : column.id === 'select'
-      ? `${columnStates['select']?.width ?? SELECT_COL_WIDTH}px`
-      : column.id === 'actions'
-      ? viewMode === 'records'
-        ? '220px'
-        : '140px'
-      : `${
-          columnStates[column.id]?.width ||
-          column.minWidth ||
-          150
-        }px`,
-  minWidth: column.minWidth || 'auto',
-  left:
-    column.id === 'select'
-      ? 0
-      : column.id === 'actions'
-      ? ((columnStates['select']?.visible !== false &&
-            draggable={isColumnDraggable(column.id)}
-            onDragStart={() => handleDragStart(column.id)}
-            onDragOver={(e) => {
-              e.preventDefault();
-              handleDragOver(e, column.id);
-            }}
-            onDragEnd={handleDragEnd}
-          >              boxShadow:
+                : ''
+            }`}
+            style={{
+              width:
+                column.id === 'rowNumber'
+                  ? '60px'
+                  : column.id === 'id'
+                  ? '100px'
+                  : column.id === 'select'
+                  ? `${columnStates['select']?.width ?? SELECT_COL_WIDTH}px`
+                  : column.id === 'actions'
+                  ? viewMode === 'records'
+                    ? '220px'
+                    : '140px'
+                  : `${
+                      columnStates[column.id]?.width ||
+                      column.minWidth ||
+                      150
+                    }px`,
+              minWidth: column.minWidth || 'auto',
+              left:
+                column.id === 'select'
+                  ? 0
+                  : column.id === 'actions'
+                  ? (columnStates['select']?.visible !== false ? SELECT_COL_WIDTH : 0)
+                  : undefined,
+              boxShadow:
                 column.id === 'select' || column.id === 'actions'
                   ? '4px 0 6px -2px rgba(0, 0, 0, 0.1)'
                   : undefined,
@@ -109,7 +88,10 @@ style={{
             }}
             draggable={isColumnDraggable(column.id)}
             onDragStart={() => handleDragStart(column.id)}
-            onDragOver={(e) => handleDragOver(e, column.id)}
+            onDragOver={(e) => {
+              e.preventDefault();
+              handleDragOver(e, column.id);
+            }}
             onDragEnd={handleDragEnd}
           >
             <div className='flex items-center'>

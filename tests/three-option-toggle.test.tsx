@@ -2,8 +2,6 @@ import React from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ThreeOptionToggle, type ThreeOption } from '@/components/list-builder/mortgage-filters/components/three-option-toggle'
-import { describe, it } from 'mocha'
-import { strict as assert } from 'assert'
 
 function setup(initial: ThreeOption = 'no-preference') {
   const calls: ThreeOption[] = []
@@ -43,6 +41,6 @@ describe('ThreeOptionToggle', () => {
     await user.click(screen.getByLabelText('No preference'))
     await user.click(screen.getByLabelText('Only'))
 
-    assert.deepEqual(calls, ['exclude', 'no-preference', 'only'])
+    expect(calls).toEqual(['exclude', 'no-preference', 'only'])
   })
 })

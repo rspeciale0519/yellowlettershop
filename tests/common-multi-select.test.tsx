@@ -1,8 +1,6 @@
 import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it } from 'mocha'
-import { strict as assert } from 'assert'
 import { MultiSelect, type MultiSelectOption } from '@/components/list-builder/common/multi-select'
 
 function setup(initialSelected: string[] = []) {
@@ -49,12 +47,12 @@ describe('MultiSelect (common)', () => {
     await user.click(checks[1])
 
     // onChange called each time with cumulative selections
-    assert.ok(calls.length >= 2)
-    assert.deepEqual(calls[calls.length - 1].sort(), ['a', 'b'])
+    expect(calls.length).toBeGreaterThanOrEqual(2)
+    expect(calls[calls.length - 1].sort()).toEqual(['a', 'b'])
 
     // Clicking Alpha again should remove it
     await user.click(checks[0])
-    assert.deepEqual(calls[calls.length - 1].sort(), ['b'])
+    expect(calls[calls.length - 1].sort()).toEqual(['b'])
   })
 
   it('toggling via checkbox fires only one onChange per click', async () => {
@@ -68,6 +66,6 @@ describe('MultiSelect (common)', () => {
     const checkboxes = await screen.findAllByRole('checkbox')
     const initialCalls = calls.length
     await user.click(checkboxes[0])
-    assert.equal(calls.length, initialCalls + 1)
+    expect(calls.length).toBe(initialCalls + 1)
   })
 })

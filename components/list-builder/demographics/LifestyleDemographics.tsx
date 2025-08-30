@@ -33,7 +33,7 @@ export function LifestyleDemographics({ criteria, expanded, onToggle, onUpdate }
               interests: values,
             },
           })
-        }        }
+        }
         icon={<Heart className="h-4 w-4 text-pink-600" />}
         tooltip="Personal interests and hobbies"
       />
@@ -49,7 +49,7 @@ export function LifestyleDemographics({ criteria, expanded, onToggle, onUpdate }
               purchasingBehavior: values,
             },
           })
-        }        }
+        }
         icon={<CreditCard className="h-4 w-4 text-blue-600" />}
         tooltip="Shopping and purchasing patterns"
       />

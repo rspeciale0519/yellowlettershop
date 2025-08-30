@@ -34,7 +34,7 @@ export const AdvancedSearch = ({
   availableLists = [],
 }: AdvancedSearchProps) => {
   // Guard against rendering with incomplete criteria to prevent runtime errors
-  if (!criteria || !criteria.tagFilter) {
+  if (!criteria) {
     return null; // Or a loading indicator
   }
 
@@ -77,14 +77,20 @@ export const AdvancedSearch = ({
   const handleTagFilterChange = (tags: string[]) => {
     onCriteriaChange({
       ...criteria,
-      tagFilter: { ...criteria.tagFilter, tags },
+      tagFilter: { 
+        matchType: criteria.tagFilter?.matchType || 'any',
+        tags 
+      },
     });
   };
 
   const handleTagFilterMatchTypeChange = (matchType: 'any' | 'all') => {
     onCriteriaChange({
       ...criteria,
-      tagFilter: { ...criteria.tagFilter, matchType },
+      tagFilter: { 
+        tags: criteria.tagFilter?.tags || [],
+        matchType 
+      },
     });
   };
 
@@ -272,7 +278,7 @@ export const AdvancedSearch = ({
               onValueChange={(value) =>
                 handleTagFilterMatchTypeChange(value as 'any' | 'all')
               }
-              value={criteria.tagFilter.matchType}
+              value={criteria.tagFilter?.matchType || 'any'}
             >
               <SelectTrigger className='w-full'>
                 <SelectValue placeholder='Select match type' />
@@ -287,7 +293,7 @@ export const AdvancedSearch = ({
                 value: tag.id,
                 label: tag.name,
               }))}
-              selected={criteria.tagFilter.tags}
+              selected={criteria.tagFilter?.tags || []}
               onChange={handleTagFilterChange}
               placeholder='Select tags...'
               className='w-full'

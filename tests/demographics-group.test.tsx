@@ -1,8 +1,6 @@
 import React from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it } from 'mocha'
-import { strict as assert } from 'assert'
 import { DemographicsGroup } from '@/components/list-builder/demographics/DemographicsGroup'
 
 describe('DemographicsGroup', () => {
@@ -21,12 +19,12 @@ describe('DemographicsGroup', () => {
     )
 
     // Header pieces exist
-    assert.ok(screen.getByText('My Group'))
-    assert.ok(screen.getByText('Desc here'))
-    assert.ok(screen.getByTestId('icon'))
+    expect(screen.getByText('My Group')).toBeInTheDocument()
+    expect(screen.getByText('Desc here')).toBeInTheDocument()
+    expect(screen.getByTestId('icon')).toBeInTheDocument()
 
     // Children hidden when not expanded
-    assert.equal(screen.queryByText('Child Content'), null)
+    expect(screen.queryByText('Child Content')).toBeNull()
 
     // When expanded, children render
     rerender(
@@ -40,7 +38,7 @@ describe('DemographicsGroup', () => {
         <div>Child Content</div>
       </DemographicsGroup>,
     )
-    assert.ok(screen.getByText('Child Content'))
+    expect(screen.getByText('Child Content')).toBeInTheDocument()
   })
 
   it('fires onToggle when header is clicked', async () => {
@@ -63,6 +61,6 @@ describe('DemographicsGroup', () => {
     const title = screen.getByText('Toggle Group')
     await user.click(title)
 
-    assert.equal(calls.length, 1)
+    expect(calls.length).toBe(1)
   })
 })

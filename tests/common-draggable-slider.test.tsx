@@ -1,7 +1,5 @@
 import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { describe, it } from 'mocha'
-import { strict as assert } from 'assert'
 import { DraggableSlider } from '@/components/list-builder/common/draggable-slider'
 
 function setup(initial: [number, number] = [20, 120]) {
@@ -53,9 +51,9 @@ describe('DraggableSlider (common)', () => {
     fireEvent.mouseUp(document)
 
     // Last call should reflect updated min with preserved max
-    assert.ok(calls.length >= 1)
+    expect(calls.length).toBeGreaterThanOrEqual(1)
     const last = calls[calls.length - 1]
-    assert.deepEqual(last, [50, 120])
+    expect(last).toEqual([50, 120])
   })
 
   it('respects min <= max - step constraint while dragging', async () => {
@@ -77,8 +75,8 @@ describe('DraggableSlider (common)', () => {
     fireEvent.mouseMove(document, { clientX: 190 })
     fireEvent.mouseUp(document)
 
-    assert.ok(calls.length >= 1)
+    expect(calls.length).toBeGreaterThanOrEqual(1)
     const last = calls[calls.length - 1]
-    assert.deepEqual(last, [100, 110])
+    expect(last).toEqual([100, 110])
   })
 })

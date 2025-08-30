@@ -176,29 +176,20 @@ export function useDemographicsFilters({
     }
 
     return selected;
-  const savePreset = () => {
-    if (!presetName.trim()) return
-
-    const existingPresetIndex = safeCriteria.presets.findIndex(
-      p => p.name === presetName
-    )
-    const newPreset = {
-      name: presetName,
-      criteria: { ...safeCriteria },
-    }
-
-    const updatedPresets =
-      existingPresetIndex >= 0
-        ? safeCriteria.presets.map((preset, index) =>
-  const loadPreset = (presetName: string) => {
-    const preset = safeCriteria.presets.find((p) => p.name === presetName)
-    if (preset) {
-      onUpdate({ ...preset.criteria, activePreset: presetName })
-    } else {
-      console.warn(`Preset "${presetName}" not found`)
-    }
-  }    setShowPresetDialog(false)
-  }    safeCriteria.ethnicity,
+  }, [
+    safeCriteria.age,
+    safeCriteria.gender,
+    safeCriteria.maritalStatus,
+    safeCriteria.householdSize,
+    safeCriteria.income,
+    safeCriteria.educationLevel,
+    safeCriteria.occupation,
+    safeCriteria.employmentStatus,
+    safeCriteria.homeOwnership,
+    safeCriteria.creditRating,
+    safeCriteria.lifestyle.interests,
+    safeCriteria.lifestyle.purchasingBehavior,
+    safeCriteria.ethnicity,
     safeCriteria.language,
     safeCriteria.politicalAffiliation,
     safeCriteria.veteranStatus,

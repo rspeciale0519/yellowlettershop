@@ -27,6 +27,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { useState, useEffect } from 'react';
+import { useSupabaseClient } from '@/hooks/use-supabase-client';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 
@@ -34,7 +35,7 @@ export function Header() {
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAtTop, setIsAtTop] = useState(true);
-  const supabase = createClient();
+  const supabase = useSupabaseClient();
   const router = useRouter();
 
   useEffect(() => {
@@ -62,6 +63,8 @@ export function Header() {
 
   // Check for existing user session on component mount
   useEffect(() => {
+    if (!supabase) return;
+    let subscription: any;
     const init = async () => {
       try {
         const {
@@ -78,14 +81,12 @@ export function Header() {
     init();
 
     // Subscribe to auth state changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    subscription = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-    });
+    }).data.subscription;
 
     return () => {
-      subscription.unsubscribe();
+      if (subscription) subscription.unsubscribe();
     };
   }, [supabase]);
 
@@ -107,6 +108,7 @@ export function Header() {
 
   // Handle logout
   const handleLogout = () => {
+    if (!supabase) return;
     supabase.auth
       .signOut()
       .then(() => {

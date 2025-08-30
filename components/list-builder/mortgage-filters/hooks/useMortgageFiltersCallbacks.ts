@@ -2,13 +2,21 @@
 import { useCallback } from 'react';
 import type { MortgageCriteria } from '@/types/list-builder';
 
+// Define the template type directly since MORTGAGE_TEMPLATES might not be available
+interface MortgageCriteriaTemplate {
+  id: string;
+  name: string;
+  description: string;
+  criteria: Partial<MortgageCriteria>;
+}
+
 interface UseMortgageFiltersCallbacksProps {
   criteria: MortgageCriteria;
   onUpdate: (values: Partial<MortgageCriteria>) => void;
   expandedPanels: string[];
   setExpandedPanels: (panels: string[]) => void;
-  savedCriteria: (typeof MORTGAGE_TEMPLATES)[];
-  setSavedCriteria: (criteria: (typeof MORTGAGE_TEMPLATES)[]) => void;
+  savedCriteria: MortgageCriteriaTemplate[];
+  setSavedCriteria: (criteria: MortgageCriteriaTemplate[]) => void;
 }
 
 export function useMortgageFiltersCallbacks({
@@ -29,34 +37,44 @@ export function useMortgageFiltersCallbacks({
           prev.includes(criterion) ? prev : [...prev, criterion]
         );
       }
+    },
+    [criteria.selectedCriteria, onUpdate, setExpandedPanels]
+  );
+
   const removeCriterion = useCallback(
     (criterion: string) => {
       onUpdate({
         selectedCriteria: criteria.selectedCriteria.filter((c) => c !== criterion),
-      })
-      setExpandedPanels((prev) => prev.filter((p) => p !== criterion))
-    },
-    [criteria.selectedCriteria, onUpdate, setExpandedPanels],
-  )
       });
-      setExpandedPanels(expandedPanels.filter((p) => p !== criterion));
+      setExpandedPanels((prev) => prev.filter((p) => p !== criterion));
     },
-    [criteria.selectedCriteria, expandedPanels, onUpdate]
+    [criteria.selectedCriteria, onUpdate, setExpandedPanels]
   );
+
+  const togglePanel = useCallback(
+    (panelId: string) => {
+      setExpandedPanels((prev) =>
+        prev.includes(panelId)
+          ? prev.filter((p) => p !== panelId)
+          : [...prev, panelId]
+      );
+    },
+    [setExpandedPanels]
+  );
+
   const applyTemplate = useCallback(
     (template: MortgageCriteriaTemplate) => {
-      onUpdate(template.criteria)
-      // Expand relevant panels
-      setExpandedPanels(template.criteria.selectedCriteria || [])
-    },
-    [onUpdate, setExpandedPanels],
-  )
-    (template: (typeof MORTGAGE_TEMPLATES)[0]) => {
       onUpdate(template.criteria);
+      // Expand relevant panels
+      setExpandedPanels(template.criteria.selectedCriteria || []);
+    },
+    [onUpdate, setExpandedPanels]
+  );
+
   const saveCurrentCriteria = useCallback(() => {
-    const name = prompt("Enter a name for this criteria set:")
+    const name = prompt("Enter a name for this criteria set:");
     if (name && name.trim()) {
-      const newTemplate = {
+      const newTemplate: MortgageCriteriaTemplate = {
         id: `custom-${Date.now()}`,
         name: name.trim(),
         description: "Custom saved criteria",
@@ -70,23 +88,16 @@ export function useMortgageFiltersCallbacks({
           mortgageTerm: criteria.mortgageTerm,
           primaryLoanType: criteria.primaryLoanType,
         },
-      }
-      setSavedCriteria((prev) => [...prev, newTemplate])
+      };
+      setSavedCriteria((prev) => [...prev, newTemplate]);
     }
-  }, [criteria, setSavedCriteria])
-          mortgageTerm: criteria.mortgageTerm,
-  const deleteSavedCriteria = useCallback(
-    (templateId: string) => {
-      setSavedCriteria((prev) => prev.filter((t) => t.id !== templateId))
-    },
-    [setSavedCriteria],
-  )
+  }, [criteria, setSavedCriteria]);
 
   const deleteSavedCriteria = useCallback(
     (templateId: string) => {
-      setSavedCriteria(savedCriteria.filter((t) => t.id !== templateId));
+      setSavedCriteria((prev) => prev.filter((t) => t.id !== templateId));
     },
-    [savedCriteria]
+    [setSavedCriteria]
   );
 
   return {

@@ -1,10 +1,9 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 
-
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -26,5 +25,18 @@ export default function LoginPage() {
       </div>
     </div>
   )
+}
 
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="container mx-auto px-4 py-12 flex flex-col items-center">
+        <div className="w-full max-w-md text-center text-sm text-muted-foreground">
+          Loading...
+        </div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
+  )
 }

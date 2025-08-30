@@ -1,8 +1,6 @@
 import React from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, it } from 'mocha'
-import { strict as assert } from 'assert'
 
 import { LenderOriginationFilter } from '@/components/list-builder/mortgage-filters/filters/lender-origination-filter'
 import { LenderAssignedFilter } from '@/components/list-builder/mortgage-filters/filters/lender-assigned-filter'
@@ -76,7 +74,7 @@ describe('LenderOriginationFilter', () => {
     // Badge appears
     screen.getByText('Acme Bank')
     // onUpdate called with appended list
-    assert.ok(calls.some((p) => Array.isArray(p.lenderOrigination) && p.lenderOrigination.includes('Acme Bank')))
+    expect(calls.some((p) => Array.isArray(p.lenderOrigination) && p.lenderOrigination.includes('Acme Bank'))).toBe(true)
   })
 
   it('adds via button', async () => {
@@ -87,7 +85,7 @@ describe('LenderOriginationFilter', () => {
     await user.click(screen.getByRole('button', { name: 'Add' }))
 
     screen.getByText('Zenith Lending')
-    assert.ok(calls.some((p) => Array.isArray(p.lenderOrigination) && p.lenderOrigination.includes('Zenith Lending')))
+    expect(calls.some((p) => Array.isArray(p.lenderOrigination) && p.lenderOrigination.includes('Zenith Lending'))).toBe(true)
   })
 
   it('removes via chip X', async () => {
@@ -102,7 +100,7 @@ describe('LenderOriginationFilter', () => {
 
     // Badge disappears
     const removed = screen.queryByText('RemoveMe')
-    assert.equal(removed, null)
+    expect(removed).toBeNull()
   })
 
   it('clears all', async () => {
@@ -118,8 +116,8 @@ describe('LenderOriginationFilter', () => {
 
     await user.click(screen.getByRole('button', { name: 'Clear All' }))
 
-    assert.equal(screen.queryByText('A'), null)
-    assert.equal(screen.queryByText('B'), null)
+    expect(screen.queryByText('A')).toBeNull()
+    expect(screen.queryByText('B')).toBeNull()
   })
 })
 
@@ -137,7 +135,7 @@ describe('LenderAssignedFilter', () => {
     screen.getByText('Servicer Two')
 
     const lastPatch = calls[calls.length - 1]
-    assert.ok(Array.isArray(lastPatch.lenderAssigned) && lastPatch.lenderAssigned.includes('Servicer Two'))
+    expect(Array.isArray(lastPatch.lenderAssigned) && lastPatch.lenderAssigned.includes('Servicer Two')).toBe(true)
   })
 
   it('removes via chip X and supports Clear All', async () => {
@@ -153,9 +151,9 @@ describe('LenderAssignedFilter', () => {
     screen.getByText('X2')
 
     await user.click(screen.getByLabelText('Remove X1'))
-    assert.equal(screen.queryByText('X1'), null)
+    expect(screen.queryByText('X1')).toBeNull()
 
     await user.click(screen.getByRole('button', { name: 'Clear All' }))
-    assert.equal(screen.queryByText('X2'), null)
+    expect(screen.queryByText('X2')).toBeNull()
   })
 })

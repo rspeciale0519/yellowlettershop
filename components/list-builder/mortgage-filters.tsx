@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useRef } from "react"
 
@@ -84,14 +84,43 @@ export function MortgageFilters({ criteria, onUpdate }: MortgageFiltersProps) {
     {} as Record<string, MortgageCriteriaOption[]>,
   )
 
-                    <Button
-                      onClick={() => {
-                        addCriterion(selectedCriterion)
-                        setSelectedCriterion("")
-                      }}
-                      disabled={!selectedCriterion || criteria.selectedCriteria.includes(selectedCriterion)}
-                      className="bg-yellow-500 hover:bg-yellow-600 text-gray-900"
-                    >
+  // Callback functions
+  const addCriterion = (criterion?: string) => {
+    if (!criterion) criterion = selectedCriterion;
+    if (criterion && !criteria.selectedCriteria.includes(criterion)) {
+      onUpdate({ selectedCriteria: [...criteria.selectedCriteria, criterion] });
+      setSelectedCriterion("");
+      setExpandedPanels(prev => [...prev, criterion]);
+    }
+  };
+
+  const removeCriterion = (criterion: string) => {
+    onUpdate({
+      selectedCriteria: criteria.selectedCriteria.filter(c => c !== criterion)
+    });
+    setExpandedPanels(prev => prev.filter(p => p !== criterion));
+  };
+
+  const togglePanel = (criterion: string) => {
+    setExpandedPanels(prev => 
+      prev.includes(criterion) 
+        ? prev.filter(p => p !== criterion)
+        : [...prev, criterion]
+    );
+  };
+
+  const saveCurrentCriteria = () => {
+    // Implementation for saving current criteria as template
+    console.log("Save current criteria", criteria);
+  };
+
+  const applyTemplate = (template: any) => {
+    onUpdate(template.criteria);
+  };
+
+  const deleteSavedCriteria = (templateId: string) => {
+    setSavedCriteria(prev => prev.filter(t => t.id !== templateId));
+  };
   // Real-time validation
   useEffect(() => {
     const errors: Record<string, string> = {}

@@ -67,15 +67,15 @@ export function useBuildListsPage() {
     if (avgSqFt < 1500) count *= 1.1;
 
     // Mortgage criteria impact
-    if (criteria.mortgage.selectedCriteria.length > 0) count *= 0.7;
-    if (criteria.mortgage.lienPosition === 'first') count *= 0.8;
-    if (criteria.mortgage.lienPosition === 'junior') count *= 0.2;
+    if (criteria.mortgage?.selectedCriteria?.length > 0) count *= 0.7;
+    if (criteria.mortgage?.lienPosition === 'first') count *= 0.8;
+    if (criteria.mortgage?.lienPosition === 'junior') count *= 0.2;
 
     // Foreclosure criteria impact
-    if (criteria.foreclosure.selectedCriteria.length > 0) count *= 0.1;
+    if (criteria.foreclosure?.selectedCriteria?.length > 0) count *= 0.1;
     if (
-      Array.isArray(criteria.foreclosure.foreclosureStatus) &&
-      criteria.foreclosure.foreclosureStatus.length > 0
+      Array.isArray(criteria.foreclosure?.foreclosureStatus) &&
+      criteria.foreclosure?.foreclosureStatus.length > 0
     ) {
       // Different statuses have different availability
       const statusMultiplier = criteria.foreclosure.foreclosureStatus.reduce(

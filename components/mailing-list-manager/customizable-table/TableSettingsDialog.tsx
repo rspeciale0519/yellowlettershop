@@ -13,13 +13,8 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
-export interface AppColumnDef {
-  id: string;
-  header: React.ReactNode;
-  minWidth?: number;
-  cell: (row: unknown) => React.ReactNode;
-}  cell: (row: any) => React.ReactNode;
-}
+} from '@/components/ui/dialog';
+import type { ColumnDef } from './CustomizableTable';
 
 interface ColumnState {
   visible: boolean;
@@ -27,10 +22,12 @@ interface ColumnState {
   order: number;
 }
 
-interface TableSettingsDialogProps {
+type NameFormat = 'lastFirst' | 'firstLast';
+
+interface TableSettingsDialogProps<TRecord = unknown> {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  columns: ColumnDef[];
+  columns: ColumnDef<TRecord>[];
   columnStates: { [key: string]: ColumnState };
   nameFormat: string;
   setNameFormat: (format: string) => void;
@@ -40,7 +37,7 @@ interface TableSettingsDialogProps {
   handleResetColumnWidths: () => void;
 }
 
-export function TableSettingsDialog({
+export function TableSettingsDialog<TRecord = unknown>({
   open,
   onOpenChange,
   columns,
@@ -51,7 +48,8 @@ export function TableSettingsDialog({
   resetColumnOrder,
   resetColumnVisibility,
   handleResetColumnWidths,
-}: TableSettingsDialogProps) {
+}: TableSettingsDialogProps<TRecord>) {
+  const baseId = useId();
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='sm:max-w-md md:max-w-lg'>
@@ -105,10 +103,6 @@ export function TableSettingsDialog({
           {columns.some((col) => col.id === 'name') && (
             <div>
               <h3 className='text-lg font-medium mb-3'>Name Format</h3>
-          {/* Name Format Section */}
-          {columns.some((col) => col.id === 'name') && (
-            <div>
-              <h3 className="text-lg font-medium mb-3">Name Format</h3>
               <RadioGroup
                 value={nameFormat}
                 onValueChange={(val: NameFormat) => setNameFormat(val)}
@@ -140,7 +134,12 @@ export function TableSettingsDialog({
                 </div>
               </RadioGroup>
             </div>
-          )}            <div className='space-y-2'>
+          )}
+
+          {/* Reset Actions Section */}
+          <div>
+            <h3 className='text-lg font-medium mb-3'>Reset Options</h3>
+            <div className='space-y-2'>
               <Button
                 variant='outline'
                 onClick={resetColumnOrder}

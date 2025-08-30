@@ -1,8 +1,9 @@
 {
   "require": [
-    "tests/setup/register-ts-node.cjs",
-    "tests/setup/jsdom.js",
-    "tests/setup/mock-lucide-react.js"
+    "ts-node/register",
+    "tsconfig-paths/register",
+    "tests/setup/jsdom.ts",
+    "tests/setup/lucide-react-cjs-stub.js"
   ],
   "spec": [
     "tests/**/*.test.ts",

@@ -60,23 +60,10 @@ export function PropertyRangeSection({
   expanded,
   onToggle,
   icon,
-  const handleCustomMinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value)
-    const newMin =
-      isNaN(value)
-        ? min
-        : Math.max(min, Math.min(value, customRange?.[1] ?? max))
-    onCustomRangeInput(field, [newMin, customRange?.[1] ?? max])
-  }
-
-  const handleCustomMaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value)
-    const newMax =
-      isNaN(value)
-        ? max
-        : Math.min(max, Math.max(value, customRange?.[0] ?? min))
-    onCustomRangeInput(field, [customRange?.[0] ?? min, newMax])
-  }
+  helpText,
+  residentialOnly,
+}: PropertyRangeSectionProps) {
+  const currentValue = criteria[field] || [min, max];
   const currentMin = currentValue[0];
   const currentMax = currentValue[1];
 

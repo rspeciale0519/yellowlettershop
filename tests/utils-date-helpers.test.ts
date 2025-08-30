@@ -1,36 +1,34 @@
-import { strict as assert } from 'assert'
-import { describe, it } from 'mocha'
 import { parseISODate, toISODateString, formatDate } from '@/lib/utils'
 
 describe('date helpers', () => {
   describe('parseISODate', () => {
     it('returns undefined for empty/invalid inputs', () => {
-      assert.equal(parseISODate(undefined), undefined)
-      assert.equal(parseISODate(null as unknown as string), undefined)
-      assert.equal(parseISODate(''), undefined)
-      assert.equal(parseISODate('not-a-date'), undefined)
+      expect(parseISODate(undefined)).toBeUndefined()
+      expect(parseISODate(null as unknown as string)).toBeUndefined()
+      expect(parseISODate('')).toBeUndefined()
+      expect(parseISODate('not-a-date')).toBeUndefined()
     })
 
     it('parses valid ISO dates', () => {
       const d = parseISODate('2024-02-29')
-      assert.ok(d instanceof Date)
+      expect(d).toBeInstanceOf(Date)
       // 2024 leap year
-      assert.equal(d?.getUTCFullYear(), 2024)
-      assert.equal(d?.getUTCMonth(), 1) // Feb is 1 (0-based)
-      assert.equal(d?.getUTCDate(), 29)
+      expect(d?.getUTCFullYear()).toBe(2024)
+      expect(d?.getUTCMonth()).toBe(1) // Feb is 1 (0-based)
+      expect(d?.getUTCDate()).toBe(29)
     })
   })
 
   describe('toISODateString', () => {
     it('returns empty string for invalid/empty', () => {
-      assert.equal(toISODateString(undefined), '')
-      assert.equal(toISODateString(null), '')
-      assert.equal(toISODateString(new Date('invalid')), '')
+      expect(toISODateString(undefined)).toBe('')
+      expect(toISODateString(null)).toBe('')
+      expect(toISODateString(new Date('invalid'))).toBe('')
     })
 
     it('formats dates to yyyy-mm-dd', () => {
       const d = new Date(Date.UTC(2025, 0, 5)) // Jan 5, 2025 UTC
-      assert.equal(toISODateString(d), '2025-01-05')
+      expect(toISODateString(d)).toBe('2025-01-05')
     })
   })
 
@@ -39,13 +37,13 @@ describe('date helpers', () => {
       const d = new Date(Date.UTC(2025, 7, 18))
       const out = formatDate(d, 'en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' })
       // Locale-dependent, but should contain pieces
-      assert.match(out, /2025/)
-      assert.match(out, /Aug|Aug\./)
-      assert.match(out, /18/)
+      expect(out).toMatch(/2025/)
+      expect(out).toMatch(/Aug|Aug\./)
+      expect(out).toMatch(/18/)
     })
 
     it('returns empty string for invalid inputs', () => {
-      assert.equal(formatDate('bad-input'), '')
+      expect(formatDate('bad-input')).toBe('')
     })
   })
 })

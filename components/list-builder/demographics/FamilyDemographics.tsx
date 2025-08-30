@@ -28,10 +28,6 @@ export function FamilyDemographics({ criteria, expanded, onToggle, onUpdate, idP
       icon={<Baby className="h-5 w-5 text-pink-600" />}
       expanded={expanded}
       onToggle={onToggle}
-    >      title='Family Demographics'
-      icon={<Baby className='h-5 w-5 text-pink-600' />}
-      expanded={expanded}
-      onToggle={onToggle}
     >
       <div className='space-y-4'>
         <Label id={`${idBase}-children-label`} className='text-sm font-medium'>

@@ -2,49 +2,89 @@
 
 import React from 'react';
 import dynamic from 'next/dynamic';
-import type { ListCriteria } from "@/types/list-builder"
+import type {
+  ListCriteria,
+  GeographyCriteria,
+  PropertyCriteria,
+  DemographicsCriteria,
+  MortgageCriteria,
+  ForeclosureCriteria,
+  PredictiveCriteria,
+} from "@/types/list-builder"
 import type { Category, UpdateCriteria } from "../hooks/useBuildListsPage"
 
-const GeographyFilters = dynamic(() =>
-  import('@/components/list-builder/geography-filters').then(
-    (m) => m.GeographyFilters
-  )
+const GeographyFilters = dynamic<{
+  criteria: GeographyCriteria;
+  onUpdate: (values: Partial<GeographyCriteria>) => void;
+}>(
+  () =>
+    import('@/components/list-builder/geography-filters').then(
+      (m) => m.GeographyFilters
+    ),
+  { ssr: false }
 );
 
-const PropertyFilters = dynamic(() =>
-  import('@/components/list-builder/property').then(
-    (m) => m.PropertyFilters
-  )
+const PropertyFilters = dynamic<{
+  criteria: PropertyCriteria;
+  onUpdate: (values: Partial<PropertyCriteria>) => void;
+}>(
+  () =>
+    import('@/components/list-builder/property-filters').then(
+      (m) => m.PropertyFilters
+    ),
+  { ssr: false }
 );
 
-const DemographicsFilters = dynamic(() =>
-  import('@/components/list-builder/demographics').then(
-    (m) => m.DemographicsFilters
-  )
+const DemographicsFilters = dynamic<{
+  criteria: DemographicsCriteria;
+  onUpdate: (values: Partial<DemographicsCriteria>) => void;
+}>(
+  () =>
+    import('@/components/list-builder/demographics-filters').then(
+      (m) => m.DemographicsFilters
+    ),
+  { ssr: false }
 );
 
-const MortgageFilters = dynamic(() =>
-  import('@/components/list-builder/mortgage-filters').then(
-    (m) => m.MortgageFilters
-  )
+const MortgageFilters = dynamic<{
+  criteria: MortgageCriteria;
+  onUpdate: (values: Partial<MortgageCriteria>) => void;
+}>(
+  () =>
+    import('@/components/list-builder/mortgage-filters').then(
+      (m) => m.MortgageFilters
+    ),
+  { ssr: false }
 );
 
-const ForeclosureFilters = dynamic(() =>
-  import('@/components/list-builder/foreclosure-filters').then(
-    (m) => m.ForeclosureFilters
-  )
+const ForeclosureFilters = dynamic<{
+  criteria: ForeclosureCriteria;
+  onUpdate: (values: Partial<ForeclosureCriteria>) => void;
+}>(
+  () =>
+    import('@/components/list-builder/foreclosure-filters').then(
+      (m) => m.ForeclosureFilters
+    ),
+  { ssr: false }
 );
 
-const PredictiveFilters = dynamic(() =>
-  import('@/components/list-builder/predictive-filters').then(
-    (m) => m.PredictiveFilters
-  )
+const PredictiveFilters = dynamic<{
+  criteria: PredictiveCriteria;
+  onUpdate: (values: Partial<PredictiveCriteria>) => void;
+}>(
+  () =>
+    import('@/components/list-builder/predictive-filters').then(
+      (m) => m.PredictiveFilters
+    ),
+  { ssr: false }
 );
 
-const OptionsFilters = dynamic(() =>
-  import('@/components/list-builder/options-filters').then(
-    (m) => m.OptionsFilters
-  )
+const OptionsFilters = dynamic<{}>(
+  () =>
+    import('@/components/list-builder/options-filters').then(
+      (m) => m.OptionsFilters
+    ),
+  { ssr: false }
 );
 
 interface FilterPanelProps {
