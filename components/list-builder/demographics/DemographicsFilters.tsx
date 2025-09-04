@@ -16,7 +16,7 @@ import { FamilyDemographics } from "./FamilyDemographics"
 import { PresetDialogs } from "./PresetDialogs"
 
 interface DemographicsFiltersProps {
-  criteria: DemographicsCriteria
+  criteria: DemographicsCriteria | undefined
   onUpdate: (values: Partial<DemographicsCriteria>) => void
 }
 

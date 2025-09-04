@@ -29,8 +29,7 @@ export function ValidationResults({ importResults, importStatus }: ValidationRes
     return null
   }
 
-  // ...existing rendering logic for successful importResults
-}  return (
+  return (
     <Alert className={importStatus === 'error' ? 'border-destructive' : ''}>
       {importStatus === 'complete' ? (
         <CheckCircle className="h-4 w-4" />

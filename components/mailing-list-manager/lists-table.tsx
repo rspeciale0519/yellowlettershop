@@ -89,7 +89,7 @@ export const ListsTable = ({
         cell: (list) => (
           <Checkbox
             checked={selectedRecords.includes(list.id)}
-            onCheckedChange={() => onCheckboxToggle(list.id)}
+            onCheckedChange={(checked) => onCheckboxToggle(list.id, !!checked)}
             aria-label={`Select ${list.name}`}
           />
         ),
@@ -139,19 +139,6 @@ export const ListsTable = ({
               </Tooltip>
             </TooltipProvider>
 
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="outline" size="sm" onClick={() => onOpenCSVImport(list.id)}>
-                    <Upload className="h-4 w-4" />
-                    <span className="sr-only">Import CSV</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Import CSV</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
 
             <TooltipProvider>
               <Tooltip>

@@ -23,14 +23,14 @@ export function FiltersSummary({ criteria }: FiltersSummaryProps) {
             {criteria.columnFilters.length} column filter(s)
           </Badge>
         )}
-        {criteria.listFilter && (
+        {(criteria.listFilter?.listIds?.length ?? 0) > 0 && (
           <Badge variant='secondary'>
-        {(criteria.tagFilter?.tagIds?.length ?? 0) > 0 && (
-          <Badge variant="secondary">
-            {criteria.tagFilter?.operator} {(criteria.tagFilter?.tagIds?.length ?? 0)} {pluralize((criteria.tagFilter?.tagIds?.length ?? 0), "tag")}
+            {criteria.listFilter?.listIds?.length} list(s)
           </Badge>
-        )}          <Badge variant='secondary'>
-            {criteria.tagFilter.operator} {criteria.tagFilter.tagIds.length}{' '}
+        )}
+        {(criteria.tagFilter?.tagIds?.length ?? 0) > 0 && (
+          <Badge variant='secondary'>
+            {criteria.tagFilter?.operator} {criteria.tagFilter?.tagIds?.length}{' '}
             tag(s)
           </Badge>
         )}

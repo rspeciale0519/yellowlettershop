@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { CardContent } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -104,7 +104,7 @@ export function ExportOptionsSection({ criteria, onUpdate }: ExportOptionsSectio
             >
               Large lists will be split into multiple files for easier handling.
             </p>
-          </div>          </div>
+          </div>
         </div>
       </div>
     </CardContent>

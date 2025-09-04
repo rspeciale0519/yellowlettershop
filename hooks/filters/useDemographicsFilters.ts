@@ -1,9 +1,9 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import type { DemographicsCriteria } from '@/types/list-builder';
 import { GENDER_OPTIONS } from '@/data/demographics';
 
 interface UseDemographicsFiltersProps {
-  criteria: DemographicsCriteria;
+  criteria: DemographicsCriteria | undefined;
   onUpdate: (values: Partial<DemographicsCriteria>) => void;
 }
 
@@ -56,10 +56,10 @@ export function useDemographicsFilters({
     activePreset: null,
   };
 
-  const safeCriteria: DemographicsCriteria = {
+  const safeCriteria: DemographicsCriteria = useMemo(() => ({
     ...defaultCriteria,
     ...criteria,
-  };
+  }), [criteria]);
 
   // Generate selected criteria labels
   const generateSelectedCriteria = useCallback(() => {

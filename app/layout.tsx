@@ -8,6 +8,7 @@ import { Footer } from '@/components/layout/footer';
 import { ThemeProvider } from '@/components/theme-provider';
 import { ThemeScript } from '@/components/theme/theme-script';
 import { AuthFlowModalController } from '@/components/auth/auth-flow-modal/index';
+import { Toaster } from 'sonner';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -45,6 +46,7 @@ export default function RootLayout({
           <Suspense fallback={null}>
             <AuthFlowModalController />
           </Suspense>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

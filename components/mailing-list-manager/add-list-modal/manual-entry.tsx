@@ -20,7 +20,6 @@ interface ManualEntryProps {
   onRemoveRecord: (index: number) => void
   onRecordChange: (index: number, field: keyof ManualRecord, value: string) => void
 }
-}
 
 export function ManualEntry({
   manualRecords,
@@ -36,24 +35,19 @@ export function ManualEntry({
           <Button variant='outline' size='sm' onClick={onAddRecord}>
             <Plus className='h-4 w-4 mr-2' />
             Add Record
+          </Button>
+        </div>
+
         {manualRecords.map((record, index) => (
-          <div key={record.id ?? index} className="border rounded-md p-4 relative">
+          <div key={record.id ?? index} className='border rounded-md p-4 relative'>
             <Button
-              variant="ghost"
-              size="sm"
-              className="absolute top-2 right-2"
-              onClick={() => onRemoveRecord(index)}
-              disabled={manualRecords.length === 1}
-              aria-label={`Remove record ${index + 1}`}
-              title="Remove record"
-            >
-              <X className="h-4 w-4" />
-            </Button>
               variant='ghost'
               size='sm'
               className='absolute top-2 right-2'
               onClick={() => onRemoveRecord(index)}
               disabled={manualRecords.length === 1}
+              aria-label={`Remove record ${index + 1}`}
+              title='Remove record'
             >
               <X className='h-4 w-4' />
             </Button>

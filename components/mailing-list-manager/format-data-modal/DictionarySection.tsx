@@ -57,7 +57,9 @@ export function DictionarySection({
               <TableHead className="w-[200px]">Replace With</TableHead>
               <TableHead className="w-[80px]">
                 <span className="sr-only">Actions</span>
-              </TableHead>          </TableHeader>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
           <TableBody>
             {dictionaryEntries.map((entry, index) => (
               <TableRow key={index}>

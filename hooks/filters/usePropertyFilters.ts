@@ -16,6 +16,7 @@ interface CustomRangeState {
 }
 
 export function usePropertyFilters({ criteria, onUpdate }: UsePropertyFiltersProps) {
+  
   const [showTemplates, setShowTemplates] = useState({ value: false, toggle: () => setShowTemplates(prev => ({ ...prev, value: !prev.value })) })
   const [expandedSections, setExpandedSections] = useState<string[]>(["property-type"])
   const [customRanges, setCustomRanges] = useState<CustomRangeState>({

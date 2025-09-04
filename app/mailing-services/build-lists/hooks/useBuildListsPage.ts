@@ -9,7 +9,6 @@ export type Category =
   | 'demographics'
   | 'mortgage'
   | 'foreclosure'
-  | 'predictive'
   | 'options';
 
 export type UpdateCriteria = <K extends keyof ListCriteria>(
@@ -97,34 +96,15 @@ export function useBuildListsPage() {
       count *= statusMultiplier;
     }
 
-    // Predictive criteria impact
-    const { modelScores, selectedCriteria } = criteria.predictive;
-    if (selectedCriteria && selectedCriteria.length > 0) {
-      count *= 0.2; // Predictive filters are highly specific
-
-      // Check if any high likelihood scores are selected
-      const hasHighLikelihood = Object.values(modelScores || {}).some(
-        (scores) => scores?.some((score) => score.includes('high'))
-      );
-      if (hasHighLikelihood) {
-        count *= 0.5; // High likelihood scores are rarer
-      }
-    }
 
     return Math.max(0, Math.floor(count));
   }, [criteria]);
 
   const totalCost = useMemo(() => {
-    // Mock cost: $0.12 per record, but predictive data costs more
-    let baseRate = 0.12;
-    if (
-      criteria.predictive.selectedCriteria &&
-      criteria.predictive.selectedCriteria.length > 0
-    ) {
-      baseRate = 0.2; // Premium for predictive data
-    }
+    // Mock cost: $0.12 per record
+    const baseRate = 0.12;
     return recordCount * baseRate;
-  }, [recordCount, criteria.predictive.selectedCriteria]);
+  }, [recordCount]);
 
   return {
     listName,

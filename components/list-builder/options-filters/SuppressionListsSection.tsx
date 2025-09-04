@@ -92,16 +92,12 @@ export function SuppressionListsSection({
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
-                <button
-                  type="button"
-                  aria-label={`Remove ${file}`}
-                  title={`Remove ${file}`}
-                  onClick={() => onRemoveSuppressionFile(index)}
-                  className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  <X className="h-3 w-3" aria-hidden="true" />
-                </button>
-              </Badge>              type='button'
+                  handleAddFile();
+                }
+              }}
+            />
+            <Button
+              type='button'
               variant='outline'
               size='sm'
               onClick={handleAddFile}
@@ -121,10 +117,15 @@ export function SuppressionListsSection({
                   className='flex items-center gap-1'
                 >
                   {file}
-                  <X
-                    className='h-3 w-3 cursor-pointer'
+                  <button
+                    type="button"
+                    aria-label={`Remove ${file}`}
+                    title={`Remove ${file}`}
                     onClick={() => onRemoveSuppressionFile(index)}
-                  />
+                    className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <X className="h-3 w-3" aria-hidden="true" />
+                  </button>
                 </Badge>
               )
             )}

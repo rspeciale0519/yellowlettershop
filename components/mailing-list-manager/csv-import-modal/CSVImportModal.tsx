@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -8,29 +8,34 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { useToast } from '@/components/ui/use-toast'
-import { Loader2 } from 'lucide-react'
-import { FileUpload } from './FileUpload'
-import { ColumnMapping } from './ColumnMapping'
-import { ImportProgress } from './ImportProgress'
-import { ValidationResults } from './ValidationResults'
-import { FormatHelp } from './FormatHelp'
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
+import { Loader2 } from 'lucide-react';
+import { FileUpload } from './FileUpload';
+import { ColumnMapping } from './ColumnMapping';
+import { ImportProgress } from './ImportProgress';
+import { ValidationResults } from './ValidationResults';
+import { FormatHelp } from './FormatHelp';
 
 interface CSVImportModalProps {
-  isOpen: boolean
-  onClose: () => void
-  listId: string
-  listName: string
-  onImportComplete?: (recordCount: number) => void
+  isOpen: boolean;
+  onClose: () => void;
+  listId: string;
+  listName: string;
+  onImportComplete?: (recordCount: number) => void;
 }
 
 interface ImportResults {
-  total: number
-  imported: number
-  failed: number
-  duplicates: number
+  total: number;
+  imported: number;
+  failed: number;
+  duplicates: number;
+}
+
+interface CSVRecord {
+  mailing_list_id: string;
+  [key: string]: any;
 }
 
 export function CSVImportModal({
@@ -76,24 +81,21 @@ export function CSVImportModal({
     }
   }
 
-  const parseCSV = (text: string): any[] => {
-    const lines = text.split('\n').filter((line) => line.trim())
-    if (lines.length === 0) return []
+  const parseCSV = (text: string): CSVRecord[] => {
+    const lines = text.split('\n').filter((line) => line.trim());
+    if (lines.length === 0) return [];
 
     const headers = lines[0]
       .split(',')
-      .map((h) => h.trim().toLowerCase().replace(/['"]/g, ''))
+      .map((h) => h.trim().toLowerCase().replace(/['"]/g, ''));
 
-    const records = []
-// …within CSVImportModal.tsx, around lines 88–92:
-for (let i = 1; i < lines.length; i++) {
-  const values = lines[i]
-    .split(',')
-    .map((v) => v.trim().replace(/^["']|["']$/g, ''))
-  const record: CSVRecord = { mailing_list_id: listId }
+    const records: CSVRecord[] = [];
 
-  // …the rest of your parsing logic
-}
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i]
+        .split(',')
+        .map((v) => v.trim().replace(/^["']|["']$/g, ''));
+      const record: CSVRecord = { mailing_list_id: listId };
       headers.forEach((header, index) => {
         const fieldMap: { [key: string]: string } = {
           first_name: 'first_name',
@@ -126,7 +128,7 @@ for (let i = 1; i < lines.length; i++) {
           marital_status: 'marital_status',
         }
 
-        const mappedField = fieldMap[header] || header
+        const mappedField = fieldMap[header] || header;
         if (values[index] !== undefined && values[index] !== '') {
           if (
             [
@@ -137,7 +139,7 @@ for (let i = 1; i < lines.length; i++) {
               'age',
             ].includes(mappedField)
           ) {
-            record[mappedField] = parseInt(values[index]) || null
+            record[mappedField] = parseInt(values[index]) || null;
           } else if (
             [
               'estimated_value',
@@ -146,21 +148,20 @@ for (let i = 1; i < lines.length; i++) {
               'income',
             ].includes(mappedField)
           ) {
-            record[mappedField] = parseFloat(values[index]) || null
+            record[mappedField] = parseFloat(values[index]) || null;
           } else {
-            record[mappedField] = values[index]
+            record[mappedField] = values[index];
           }
         }
-      })
+      });
 
-      if (Object.keys(record).length > 0) {
-        record.mailing_list_id = listId
-        records.push(record)
+      if (Object.keys(record).length > 1) {
+        records.push(record);
       }
     }
 
-    return records
-  }
+    return records;
+  };
 
   const handleImport = async () => {
     if (!file) {
@@ -172,121 +173,104 @@ for (let i = 1; i < lines.length; i++) {
       return
     }
 
-    setIsImporting(true)
-    setImportStatus('parsing')
-    setImportProgress(10)
+    setIsImporting(true);
+    setImportStatus('parsing');
+    setImportProgress(10);
 
     try {
-      const text = await file.text()
-      const records = parseCSV(text)
+      const text = await file.text();
+      const records = parseCSV(text);
 
       if (records.length === 0) {
-        throw new Error('No valid records found in CSV file')
+        throw new Error('No valid records found in CSV file');
       }
 
-      try {
-        setImportStatus('loading')
-       const controller = new AbortController()
-       const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+      setImportStatus('importing');
+      setImportProgress(50);
 
-        const response = await fetch('/api/mailing-lists/csv-import', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-         signal: controller.signal,
-          body: JSON.stringify({
-            listId,
-            records,
-            deduplicationField: skipDuplicates ? deduplicationField : undefined,
-          }),
-        })
-       clearTimeout(timeoutId)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-        // …handle success (e.g. setImportStatus('success'), etc.)…
-      } catch (error) {
-        console.error('Import error:', error)
-        setImportStatus('error')
-       const errorMessage = error instanceof Error
-         ? error.name === 'AbortError'
-           ? 'Request timed out. Please try again.'
-           : error.message
-         : 'An error occurred during import.'
-
-        toast({
-          title: 'Import failed',
--         description:
--           error instanceof Error
--             ? error.message
-         description: errorMessage,
-          variant: 'destructive',
-        })
-      }          deduplicationField: skipDuplicates ? deduplicationField : undefined,
+      const response = await fetch('/api/mailing-lists/csv-import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        signal: controller.signal,
+        body: JSON.stringify({
+          listId,
+          records,
+          deduplicationField: skipDuplicates ? deduplicationField : undefined,
         }),
-      })
+      });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const errorText = await response.text()
+        const errorText = await response.text();
         throw new Error(
           `HTTP ${response.status}: ${errorText || 'Failed to import records'}`
-        )
+        );
       }
 
-      const result = await response.json()
+      const result = await response.json();
 
       if (!result.success) {
-        throw new Error(result.error || 'Import failed')
+        throw new Error(result.error || 'Import failed');
       }
 
-      setImportProgress(100)
-      setImportStatus('complete')
+      setImportProgress(100);
+      setImportStatus('complete');
 
       setImportResults({
         total: records.length,
         imported: result.imported,
         failed: result.failed,
         duplicates: result.duplicates,
-      })
+      });
 
       toast({
         title: 'Import complete',
         description: `Successfully imported ${result.imported} records.`,
-      })
+      });
 
       if (onImportComplete) {
-        onImportComplete(result.imported)
+        onImportComplete(result.imported);
       }
 
       if (result.failed === 0) {
         setTimeout(() => {
-          onClose()
-        }, 2000)
+          onClose();
+        }, 2000);
       }
     } catch (error) {
-      console.error('Import error:', error)
-      setImportStatus('error')
+      console.error('Import error:', error);
+      setImportStatus('error');
+      const errorMessage = error instanceof Error
+        ? error.name === 'AbortError'
+          ? 'Request timed out. Please try again.'
+          : error.message
+        : 'An error occurred during import.';
+
       toast({
         title: 'Import failed',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'An error occurred during import.',
+        description: errorMessage,
         variant: 'destructive',
-      })
+      });
     } finally {
-      setIsImporting(false)
+      setIsImporting(false);
     }
   }
 
   const handleReset = () => {
-    setFile(null)
-    setImportStatus('idle')
-    setImportResults(null)
-    setImportProgress(0)
+    setFile(null);
+    setImportStatus('idle');
+    setImportResults(null);
+    setImportProgress(0);
     if (fileInputRef.current) {
-      fileInputRef.current.value = ''
+      fileInputRef.current.value = '';
     }
-  }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -345,5 +329,5 @@ for (let i = 1; i < lines.length; i++) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

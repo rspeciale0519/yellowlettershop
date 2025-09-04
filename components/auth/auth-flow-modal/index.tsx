@@ -121,7 +121,7 @@ export function AuthFlowModalController() {
     }
   }, [mode])
 
-  const destAfterAuth = (redirectedFrom && redirectedFrom.startsWith("/")) ? redirectedFrom : "/dashboard"
+  const destAfterAuth = "/dashboard"
 
   // Actions
   const loginWithEmail = async (e: React.FormEvent) => {

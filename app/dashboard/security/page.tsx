@@ -3,13 +3,15 @@
 import type React from "react"
 
 import { useState } from "react"
+import { createClient } from "@/utils/supabase/client"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
-import { AlertCircle, Check, Copy, Eye, EyeOff, Lock, RefreshCw, Shield, Smartphone } from "lucide-react"
+import { AlertCircle, Check, Copy, Eye, EyeOff, Lock, Loader2, RefreshCw, Shield, Smartphone } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
 import {
@@ -25,11 +27,16 @@ export default function SecurityPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [currentPassword, setCurrentPassword] = useState("")
   const [passwordStrength, setPasswordStrength] = useState(0)
+  const [updating, setUpdating] = useState(false)
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
   const [showRecoveryCodes, setShowRecoveryCodes] = useState(false)
   const [showQRCode, setShowQRCode] = useState(false)
   const [verificationCode, setVerificationCode] = useState("")
+  
+  const supabase = createClient()
 
   // Mock recovery codes
   const recoveryCodes = [
@@ -93,6 +100,70 @@ export default function SecurityPage() {
     return "Strong"
   }
 
+  const handlePasswordUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    
+    if (!currentPassword) {
+      toast.error('Please enter your current password')
+      return
+    }
+    
+    if (!password) {
+      toast.error('Please enter a new password')
+      return
+    }
+    
+    if (password !== confirmPassword) {
+      toast.error('New passwords do not match')
+      return
+    }
+    
+    if (passwordStrength < 60) {
+      toast.error('Password is too weak. Please choose a stronger password.')
+      return
+    }
+
+    try {
+      setUpdating(true)
+      
+      // First, verify the current password by attempting to sign in
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user?.email) {
+        throw new Error('No user found')
+      }
+      
+      // Attempt to verify current password by signing in
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword
+      })
+      
+      if (signInError) {
+        throw new Error('Current password is incorrect')
+      }
+      
+      // Now update the password
+      const { error } = await supabase.auth.updateUser({
+        password: password
+      })
+      
+      if (error) throw error
+      
+      // Reset form fields
+      setCurrentPassword('')
+      setPassword('')
+      setConfirmPassword('')
+      setPasswordStrength(0)
+      
+      toast.success('Password updated successfully!')
+    } catch (error: any) {
+      console.error('Error updating password:', error)
+      toast.error(error.message || 'Failed to update password')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -113,46 +184,53 @@ export default function SecurityPage() {
               <CardTitle>Change Password</CardTitle>
               <CardDescription>Update your password to keep your account secure</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="current-password">Current Password</Label>
-                <div className="relative">
-                  <Input
-                    id="current-password"
-                    type={showCurrentPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-2 top-1/2 -translate-y-1/2"
-                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  >
-                    {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
+            <form onSubmit={handlePasswordUpdate}>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="current-password">Current Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="current-password"
+                      name="current-password"
+                      type={showCurrentPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-2 top-1/2 -translate-y-1/2"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    >
+                      {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="new-password">New Password</Label>
-                <div className="relative">
-                  <Input
-                    id="new-password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={handlePasswordChange}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-2 top-1/2 -translate-y-1/2"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">New Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="new-password"
+                      name="new-password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={handlePasswordChange}
+                      required
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-2 top-1/2 -translate-y-1/2"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </Button>
+                  </div>
                 {password && (
                   <div className="mt-2 space-y-1">
                     <div className="flex items-center justify-between">
@@ -195,14 +273,38 @@ export default function SecurityPage() {
                   </div>
                 )}
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirm New Password</Label>
-                <Input id="confirm-password" type="password" placeholder="••••••••" />
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button>Update Password</Button>
-            </CardFooter>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-password">Confirm New Password</Label>
+                  <Input 
+                    id="confirm-password" 
+                    name="confirm-password"
+                    type="password" 
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                  />
+                  {confirmPassword && password && confirmPassword !== password && (
+                    <p className="text-sm text-red-500">Passwords do not match</p>
+                  )}
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button 
+                  type="submit" 
+                  disabled={updating || !currentPassword || !password || !confirmPassword || password !== confirmPassword || passwordStrength < 60}
+                >
+                  {updating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    'Update Password'
+                  )}
+                </Button>
+              </CardFooter>
+            </form>
           </Card>
         </TabsContent>
 

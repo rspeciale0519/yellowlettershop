@@ -3,6 +3,7 @@
 import React from "react";
 import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   Home,
@@ -23,6 +24,17 @@ interface PropertyFiltersProps {
 }
 
 export function PropertyFilters({ criteria, onUpdate }: PropertyFiltersProps) {
+  // Ensure we have a safe criteria object with defaults
+  const safeCriteria = criteria || {
+    propertyTypes: [],
+    yearBuilt: [1900, new Date().getFullYear()],
+    squareFootage: [500, 10000],
+    bedrooms: [1, 8],
+    bathrooms: [1, 8],
+    lotSize: [0.1, 10],
+    propertyValue: [50000, 2000000],
+  };
+
   const {
     expandedSections,
     showTemplates,
@@ -37,7 +49,7 @@ export function PropertyFilters({ criteria, onUpdate }: PropertyFiltersProps) {
     hasActiveFilters,
     getSelectedTypesCount,
     formatValue,
-  } = usePropertyFilters(criteria, onUpdate)
+  } = usePropertyFilters({ criteria: safeCriteria, onUpdate })
 
   return (
     <TooltipProvider>
@@ -98,7 +110,7 @@ export function PropertyFilters({ criteria, onUpdate }: PropertyFiltersProps) {
 
           {/* Property Type Section */}
           <PropertyTypeSection
-            criteria={criteria}
+            criteria={safeCriteria}
             onPropertyTypeChange={handlePropertyTypeChange}
             expanded={expandedSections.includes("property-type")}
             onToggle={() => toggleSection("property-type")}
@@ -110,7 +122,7 @@ export function PropertyFilters({ criteria, onUpdate }: PropertyFiltersProps) {
             title="Property Value"
             description="Filter by estimated property value"
             field="propertyValue"
-            criteria={criteria}
+            criteria={safeCriteria}
             onUpdate={handleRangeChange}
             formatValue={(value) => formatValue("propertyValue", value)}
             min={50000}
@@ -130,7 +142,7 @@ export function PropertyFilters({ criteria, onUpdate }: PropertyFiltersProps) {
             title="Square Footage"
             description="Filter by building square footage"
             field="squareFootage"
-            criteria={criteria}
+            criteria={safeCriteria}
             onUpdate={handleRangeChange}
             formatValue={(value) => formatValue("squareFootage", value)}
             min={500}
@@ -150,7 +162,7 @@ export function PropertyFilters({ criteria, onUpdate }: PropertyFiltersProps) {
             title="Year Built"
             description="Filter by construction year"
             field="yearBuilt"
-            criteria={criteria}
+            criteria={safeCriteria}
             onUpdate={handleRangeChange}
             formatValue={(value) => formatValue("yearBuilt", value)}
             min={1900}
@@ -170,7 +182,7 @@ export function PropertyFilters({ criteria, onUpdate }: PropertyFiltersProps) {
             title="Bedrooms"
             description="Number of bedrooms"
             field="bedrooms"
-            criteria={criteria}
+            criteria={safeCriteria}
             onUpdate={handleRangeChange}
             formatValue={(value) => formatValue("bedrooms", value)}
             min={1}
@@ -191,7 +203,7 @@ export function PropertyFilters({ criteria, onUpdate }: PropertyFiltersProps) {
             title="Bathrooms"
             description="Number of bathrooms"
             field="bathrooms"
-            criteria={criteria}
+            criteria={safeCriteria}
             onUpdate={handleRangeChange}
             formatValue={(value) => formatValue("bathrooms", value)}
             min={1}
@@ -212,7 +224,7 @@ export function PropertyFilters({ criteria, onUpdate }: PropertyFiltersProps) {
             title="Lot Size"
             description="Property lot size in acres"
             field="lotSize"
-            criteria={criteria}
+            criteria={safeCriteria}
             onUpdate={handleRangeChange}
             formatValue={(value) => formatValue("lotSize", value)}
             min={0.1}

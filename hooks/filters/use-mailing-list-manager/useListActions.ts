@@ -351,7 +351,7 @@ export function useListActions({
     selectedCampaigns,
 
     // Selection state
-    selectedRecords,
+    selectedRecords: Array.from(selectedRecords),
     selectAll,
     editingName,
     setEditingName,

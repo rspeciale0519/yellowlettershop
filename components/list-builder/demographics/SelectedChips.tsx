@@ -10,7 +10,7 @@ export interface SelectedChipsProps {
 }
 
 export function SelectedChips({ items, onRemove }: SelectedChipsProps) {
-  if (items.length === 0) return null;
+  if (!items || items.length === 0) return null;
   return (
     <div className='flex flex-wrap gap-2'>
       {items.map((criterion, index) => (

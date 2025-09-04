@@ -144,7 +144,10 @@ export function ActionsCell({
             <Button
               variant='outline'
               size='sm'
-              onClick={() => onDelete(record.id)}
+              onClick={() => {
+                console.log('Delete button clicked for record:', { id: record.id, record });
+                onDelete(record.id);
+              }}
               className='yellow-hover-button'
             >
               <Trash className='h-4 w-4' />
@@ -173,9 +176,9 @@ export function TagsCell({
 }) {
   return (
     <div className='flex flex-wrap gap-1 items-center'>
-      {record.tags.map((tag: { id: string; name: string }) => (
+      {record.tags.map((tag: { id: string; name: string }, index: number) => (
         <Badge
-          key={tag.id}
+          key={`${record.id}-${tag.id}-${index}`}
           variant='outline'
           className='flex items-center gap-1'
         >

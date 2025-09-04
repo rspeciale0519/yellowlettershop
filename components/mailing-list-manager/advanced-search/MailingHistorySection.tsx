@@ -41,12 +41,8 @@ export function MailingHistorySection({
       onSetMailingHistoryFilter({ id, operator } as MailingHistoryFilter);
       return;
     }
-  const handleValueChange = (value: number) => {
-    if (!mailingHistoryFilter) return
-    const n = Number.isFinite(value) ? Math.max(1, Math.floor(value)) : 1
-    onSetMailingHistoryFilter({ ...mailingHistoryFilter, value: n })
-  }    }
 
+    const defaultValue = operator === 'mailedBetween' ? [new Date(), new Date()] as [Date, Date] : 1;
     onSetMailingHistoryFilter({ id, operator, value: defaultValue });
   };
   const handleValueChange = (value: number) => {
@@ -57,13 +53,11 @@ export function MailingHistorySection({
     });
   };
 
-  const handleDateRangeChange = (
-    range: { from: Date; to: Date } | undefined
-  ) => {
+  const handleDateRangeChange = (range: any) => {
     if (!mailingHistoryFilter || !range?.from || !range?.to) return;
     onSetMailingHistoryFilter({
       ...mailingHistoryFilter,
-      value: [range.from, range.to],
+      value: [range.from, range.to] as [Date, Date],
     });
   };
 

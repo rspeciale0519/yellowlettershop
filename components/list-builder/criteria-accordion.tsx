@@ -2,7 +2,7 @@
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { MapPin, Home, UserCircle, Landmark, Gavel, BrainCircuit, SlidersHorizontal } from "lucide-react"
+import { MapPin, Home, UserCircle, Landmark, Gavel, SlidersHorizontal } from "lucide-react"
 import type React from "react"
 
 const categories: { id: string; name: string; icon: React.ElementType }[] = [
@@ -11,7 +11,6 @@ const categories: { id: string; name: string; icon: React.ElementType }[] = [
   { id: "demographics", name: "Demographics", icon: UserCircle },
   { id: "mortgage", name: "Mortgage", icon: Landmark },
   { id: "foreclosure", name: "Foreclosure", icon: Gavel },
-  { id: "predictive", name: "Predictive", icon: BrainCircuit },
   { id: "options", name: "Options", icon: SlidersHorizontal },
 ]
 

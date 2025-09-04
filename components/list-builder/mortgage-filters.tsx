@@ -4,7 +4,7 @@ import { useRef } from "react"
 
 import type React from "react"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -63,7 +63,7 @@ import { CriterionPanel } from "./mortgage-filters/components/CriterionPanel"
 
 
 interface MortgageFiltersProps {
-  criteria: MortgageCriteria
+  criteria: MortgageCriteria | undefined
   onUpdate: (values: Partial<MortgageCriteria>) => void
 }
 
@@ -73,6 +73,15 @@ export function MortgageFilters({ criteria, onUpdate }: MortgageFiltersProps) {
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const [showTemplates, setShowTemplates] = useState(false)
   const [savedCriteria, setSavedCriteria] = useState(MORTGAGE_TEMPLATES)
+
+  const safeCriteria = useMemo(() => criteria || {
+    selectedCriteria: [],
+    lienPosition: "all" as const,
+    mortgageAmount: null,
+    interestRate: null,
+    mortgageOriginationDate: null,
+    maturityDate: null
+  }, [criteria])
 
   // Create groupedCriteria inline to avoid server-side import issues
   const groupedCriteria = MORTGAGE_CRITERIA_OPTIONS.reduce(
@@ -87,8 +96,8 @@ export function MortgageFilters({ criteria, onUpdate }: MortgageFiltersProps) {
   // Callback functions
   const addCriterion = (criterion?: string) => {
     if (!criterion) criterion = selectedCriterion;
-    if (criterion && !criteria.selectedCriteria.includes(criterion)) {
-      onUpdate({ selectedCriteria: [...criteria.selectedCriteria, criterion] });
+    if (criterion && !safeCriteria.selectedCriteria.includes(criterion)) {
+      onUpdate({ selectedCriteria: [...safeCriteria.selectedCriteria, criterion] });
       setSelectedCriterion("");
       setExpandedPanels(prev => [...prev, criterion]);
     }
@@ -96,7 +105,7 @@ export function MortgageFilters({ criteria, onUpdate }: MortgageFiltersProps) {
 
   const removeCriterion = (criterion: string) => {
     onUpdate({
-      selectedCriteria: criteria.selectedCriteria.filter(c => c !== criterion)
+      selectedCriteria: safeCriteria.selectedCriteria.filter(c => c !== criterion)
     });
     setExpandedPanels(prev => prev.filter(p => p !== criterion));
   };
@@ -111,7 +120,7 @@ export function MortgageFilters({ criteria, onUpdate }: MortgageFiltersProps) {
 
   const saveCurrentCriteria = () => {
     // Implementation for saving current criteria as template
-    console.log("Save current criteria", criteria);
+    console.log("Save current criteria", safeCriteria);
   };
 
   const applyTemplate = (template: any) => {
@@ -125,28 +134,33 @@ export function MortgageFilters({ criteria, onUpdate }: MortgageFiltersProps) {
   useEffect(() => {
     const errors: Record<string, string> = {}
 
-    if (criteria.mortgageAmount) {
-      const error = validateMortgageAmount(criteria.mortgageAmount.min, criteria.mortgageAmount.max)
+    if (safeCriteria.mortgageAmount) {
+      const error = validateMortgageAmount(safeCriteria.mortgageAmount.min, safeCriteria.mortgageAmount.max)
       if (error) errors.mortgageAmount = error
     }
 
-    if (criteria.interestRate) {
-      const error = validateInterestRate(criteria.interestRate.min, criteria.interestRate.max)
+    if (safeCriteria.interestRate) {
+      const error = validateInterestRate(safeCriteria.interestRate.min, safeCriteria.interestRate.max)
       if (error) errors.interestRate = error
     }
 
-    if (criteria.mortgageOriginationDate) {
-      const error = validateDateRange(criteria.mortgageOriginationDate.from, criteria.mortgageOriginationDate.to)
+    if (safeCriteria.mortgageOriginationDate) {
+      const error = validateDateRange(safeCriteria.mortgageOriginationDate.from, safeCriteria.mortgageOriginationDate.to)
       if (error) errors.mortgageOriginationDate = error
     }
 
-    if (criteria.maturityDate) {
-      const error = validateDateRange(criteria.maturityDate.from, criteria.maturityDate.to)
+    if (safeCriteria.maturityDate) {
+      const error = validateDateRange(safeCriteria.maturityDate.from, safeCriteria.maturityDate.to)
       if (error) errors.maturityDate = error
     }
 
     setValidationErrors(errors)
-  }, [criteria])
+  }, [
+    safeCriteria.mortgageAmount,
+    safeCriteria.interestRate, 
+    safeCriteria.mortgageOriginationDate,
+    safeCriteria.maturityDate
+  ])
 
   const handleLienPositionChange = useCallback(
     (value: string) => {
@@ -186,7 +200,7 @@ export function MortgageFilters({ criteria, onUpdate }: MortgageFiltersProps) {
                   <p>Use predefined mortgage criteria templates</p>
                 </TooltipContent>
               </Tooltip>
-              {criteria.selectedCriteria.length > 0 && (
+              {safeCriteria.selectedCriteria.length > 0 && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -263,7 +277,7 @@ export function MortgageFilters({ criteria, onUpdate }: MortgageFiltersProps) {
               </Tooltip>
             </div>
             <RadioGroup
-              value={criteria.lienPosition}
+              value={safeCriteria.lienPosition}
               onValueChange={handleLienPositionChange}
               className="flex flex-col space-y-2"
             >
@@ -317,12 +331,12 @@ export function MortgageFilters({ criteria, onUpdate }: MortgageFiltersProps) {
                           <SelectItem
                             key={option.value}
                             value={option.value}
-                            disabled={criteria.selectedCriteria.includes(option.value)}
+                            disabled={safeCriteria.selectedCriteria.includes(option.value)}
                           >
                             <div className="flex items-center gap-2">
                               <option.icon className="h-4 w-4" />
                               <span>{option.label}</span>
-                              {criteria.selectedCriteria.includes(option.value) && " (Added)"}
+                              {safeCriteria.selectedCriteria.includes(option.value) && " (Added)"}
                             </div>
                           </SelectItem>
                         ))}
@@ -330,7 +344,7 @@ export function MortgageFilters({ criteria, onUpdate }: MortgageFiltersProps) {
                     </Select>
                     <Button
                       onClick={addCriterion}
-                      disabled={!selectedCriterion || criteria.selectedCriteria.includes(selectedCriterion)}
+                      disabled={!selectedCriterion || safeCriteria.selectedCriteria.includes(selectedCriterion)}
                       className="bg-yellow-500 hover:bg-yellow-600 text-gray-900"
                     >
                       <Plus className="h-4 w-4 mr-1" />
@@ -343,12 +357,12 @@ export function MortgageFilters({ criteria, onUpdate }: MortgageFiltersProps) {
           </div>
 
           {/* Selected Criteria Panels */}
-          {criteria.selectedCriteria.length > 0 && (
+          {safeCriteria.selectedCriteria.length > 0 && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label className="text-base font-semibold">Selected Criteria</Label>
                 <div className="flex flex-wrap gap-1">
-                  {criteria.selectedCriteria.map((criterion) => {
+                  {safeCriteria.selectedCriteria.map((criterion) => {
                     const hasError = validationErrors[criterion]
                     return (
                       <Badge key={criterion} variant={hasError ? "destructive" : "secondary"} className="text-xs">
@@ -360,11 +374,11 @@ export function MortgageFilters({ criteria, onUpdate }: MortgageFiltersProps) {
                 </div>
               </div>
               <div className="space-y-3">
-                {criteria.selectedCriteria.map((criterion) => (
+                {safeCriteria.selectedCriteria.map((criterion) => (
                   <CriterionPanel
                     key={criterion}
                     criterion={criterion}
-                    criteria={criteria}
+                    criteria={safeCriteria}
                     onUpdate={onUpdate}
                     validationErrors={validationErrors}
                     onRemove={removeCriterion}
@@ -376,7 +390,7 @@ export function MortgageFilters({ criteria, onUpdate }: MortgageFiltersProps) {
             </div>
           )}
 
-          {criteria.selectedCriteria.length === 0 && (
+          {safeCriteria.selectedCriteria.length === 0 && (
             <Alert>
               <Info className="h-4 w-4" />
               <AlertDescription>

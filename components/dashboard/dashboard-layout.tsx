@@ -21,16 +21,7 @@ import {
   LogOut,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { useMediaQuery } from "@/hooks/use-media-query"
 
 interface DashboardLayoutProps {
@@ -67,6 +58,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
+      {/* Mobile Overlay */}
+      {isSidebarOpen && !isDesktop && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <div
         className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-card shadow-lg transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
@@ -74,16 +73,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         }`}
       >
         <div className="flex h-full flex-col">
-          <div className="flex h-16 items-center justify-between px-4 border-b">
-            <Link href="/dashboard" className="text-xl font-bold">
-              YLS Dashboard
-            </Link>
-            <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(false)} className="lg:hidden">
+          <div className="flex h-16 items-center justify-end px-4 border-b lg:hidden">
+            <Button variant="ghost" size="icon" onClick={() => setIsSidebarOpen(false)}>
               <X className="h-5 w-5" />
             </Button>
           </div>
           <ScrollArea className="flex-1 py-4">
-            <nav className="space-y-1 px-2">
+            <div className="px-4 py-6 border-b">
+              <Link href="/dashboard" className="text-2xl font-bold text-foreground">
+                YLS Dashboard
+              </Link>
+            </div>
+            <nav className="space-y-1 px-2 py-4">
               {navigationItems.map((item) => {
                 // For dashboard home, only exact match; for other items, allow sub-paths
                 const isActive =
@@ -126,14 +127,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Main Content */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Header */}
-        <header className="flex h-16 items-center justify-between border-b bg-card px-4 shadow-sm">
+        {/* Mobile-only Header */}
+        <header className="flex h-16 items-center justify-between border-b bg-card px-4 shadow-sm lg:hidden">
           <div className="flex items-center">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="mr-2 lg:hidden"
+              className="mr-2"
             >
               <Menu className="h-5 w-5" />
             </Button>
@@ -141,38 +142,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               {navigationItems.find((item) => pathname === item.href || pathname?.startsWith(`${item.href}/`))?.name ||
                 "Dashboard"}
             </h1>
-          </div>
-          <div className="flex items-center space-x-4">
-            <Button variant="outline" size="icon">
-              <Bell className="h-5 w-5" />
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="/placeholder.svg?height=32&width=32" alt="User" />
-                    <AvatarFallback>JD</AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/profile">Profile</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/security">Security</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/notifications">Notifications</Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/login">Sign Out</Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </header>
 

@@ -111,11 +111,6 @@ export function createInitialCriteria(options?: { enableSensitiveCriteria?: bool
       trusteeNames: [],
       caseNumbers: [],
     },
-    predictive: {
-      selectedModel: null,
-      modelScores: {},
-      selectedCriteria: [],
-    },
     options: {
       selectedCriteria: [],
       listCleaning: {

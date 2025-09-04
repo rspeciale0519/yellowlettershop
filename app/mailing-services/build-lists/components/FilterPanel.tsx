@@ -9,7 +9,6 @@ import type {
   DemographicsCriteria,
   MortgageCriteria,
   ForeclosureCriteria,
-  PredictiveCriteria,
 } from "@/types/list-builder"
 import type { Category, UpdateCriteria } from "../hooks/useBuildListsPage"
 
@@ -68,16 +67,6 @@ const ForeclosureFilters = dynamic<{
   { ssr: false }
 );
 
-const PredictiveFilters = dynamic<{
-  criteria: PredictiveCriteria;
-  onUpdate: (values: Partial<PredictiveCriteria>) => void;
-}>(
-  () =>
-    import('@/components/list-builder/predictive-filters').then(
-      (m) => m.PredictiveFilters
-    ),
-  { ssr: false }
-);
 
 const OptionsFilters = dynamic<{}>(
   () =>
@@ -132,13 +121,6 @@ export function FilterPanel({
         <ForeclosureFilters
           criteria={criteria.foreclosure}
           onUpdate={(values) => updateCriteria('foreclosure', values)}
-        />
-      );
-    case 'predictive':
-      return (
-        <PredictiveFilters
-          criteria={criteria.predictive}
-          onUpdate={(values) => updateCriteria('predictive', values)}
         />
       );
     case 'options':

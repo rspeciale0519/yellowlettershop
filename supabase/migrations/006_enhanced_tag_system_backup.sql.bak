@@ -1,0 +1,353 @@
+-- =================================================================================
+-- Migration 006: Enhanced Tag System for Record Organization
+-- =================================================================================
+-- This migration enhances the existing tag system to support:
+-- 1. Tag categories for better organization
+-- 2. System tags (like "List Name") that are always available
+-- 3. Enhanced record-level tagging for flexible organization
+-- 4. Tag hierarchy and relationships
+
+-- =================================================================================
+-- Enhanced Tag System Types
+-- =================================================================================
+
+-- Tag categories for organization
+CREATE TYPE tag_category AS ENUM (
+    'system',           -- System-defined tags (List Name, etc.)
+    'list_management',  -- User-created tags for list organization
+    'demographics',     -- Tags for demographic categorization
+    'geography',        -- Geographic tags
+    'campaign',         -- Campaign-related tags
+    'custom'           -- General custom user tags
+);
+
+-- Tag visibility and access levels
+CREATE TYPE tag_visibility AS ENUM (
+    'public',    -- Visible to all team members
+    'private',   -- Only visible to creator
+    'system'     -- System tags visible to all
+);
+
+-- =================================================================================
+-- Enhanced Tables
+-- =================================================================================
+
+-- Add new columns to existing tags table
+ALTER TABLE tags 
+ADD COLUMN category tag_category DEFAULT 'custom' NOT NULL,
+ADD COLUMN is_system boolean DEFAULT false NOT NULL,
+ADD COLUMN visibility tag_visibility DEFAULT 'public' NOT NULL,
+ADD COLUMN parent_tag_id uuid REFERENCES tags(id) ON DELETE SET NULL,
+ADD COLUMN sort_order integer DEFAULT 0 NOT NULL,
+ADD COLUMN metadata jsonb DEFAULT '{}' NOT NULL;
+
+-- Create index for better performance
+CREATE INDEX idx_tags_category ON tags(category);
+CREATE INDEX idx_tags_is_system ON tags(is_system);
+CREATE INDEX idx_tags_parent ON tags(parent_tag_id);
+
+-- =================================================================================
+-- System Tags Creation
+-- =================================================================================
+
+-- Insert the required "List Name" system tag
+INSERT INTO tags (name, category, is_system, visibility, color, description, user_id, team_id)
+VALUES (
+    'List Name',
+    'system',
+    true,
+    'system',
+    '#10B981', -- Green color
+    'System tag used to identify which mailing list records belong to. Required for all records.',
+    NULL,
+    NULL
+);
+
+-- Insert other useful system tags
+INSERT INTO tags (name, category, is_system, visibility, color, description, user_id, team_id)
+VALUES 
+(
+    'Source',
+    'system',
+    true,
+    'system',
+    '#3B82F6', -- Blue color
+    'Identifies the source of the record (upload, list_builder, manual, etc.)',
+    NULL,
+    NULL
+),
+(
+    'Quality Score',
+    'system',
+    true,
+    'system',
+    '#F59E0B', -- Orange color
+    'Data quality assessment for the record',
+    NULL,
+    NULL
+),
+(
+    'Campaign Target',
+    'system',
+    true,
+    'system',
+    '#8B5CF6', -- Purple color
+    'Marks records as targets for specific campaigns',
+    NULL,
+    NULL
+);
+
+-- =================================================================================
+-- Record-Tag Junction Table for Enhanced Organization
+-- =================================================================================
+
+-- Create a dedicated table for record-level tagging
+-- This allows individual records to have multiple tags beyond just the mailing list
+CREATE TABLE record_tags (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    record_id uuid REFERENCES mailing_list_records(id) ON DELETE CASCADE NOT NULL,
+    tag_id uuid REFERENCES tags(id) ON DELETE CASCADE NOT NULL,
+    tag_value text, -- For tags that need values (like "List Name: My List")
+    assigned_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+    assigned_at timestamp with time zone DEFAULT now() NOT NULL,
+    metadata jsonb DEFAULT '{}' NOT NULL,
+    UNIQUE(record_id, tag_id)
+);
+
+-- Indexes for performance
+CREATE INDEX idx_record_tags_record_id ON record_tags(record_id);
+CREATE INDEX idx_record_tags_tag_id ON record_tags(tag_id);
+CREATE INDEX idx_record_tags_tag_value ON record_tags(tag_value);
+
+-- =================================================================================
+-- Tag Categories Reference Table
+-- =================================================================================
+
+-- Table to store tag category templates and configurations
+CREATE TABLE tag_categories (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    name text NOT NULL UNIQUE,
+    description text,
+    color text DEFAULT '#6B7280',
+    icon text, -- Icon name or emoji
+    is_system boolean DEFAULT false NOT NULL,
+    sort_order integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+-- Insert default categories
+INSERT INTO tag_categories (name, description, color, icon, is_system, sort_order) VALUES
+('System', 'System-defined tags that are always available', '#10B981', '⚙️', true, 1),
+('List Management', 'Tags for organizing and managing mailing lists', '#3B82F6', '📋', true, 2),
+('Demographics', 'Tags for demographic categorization', '#F59E0B', '👥', true, 3),
+('Geography', 'Geographic and location-based tags', '#EF4444', '🗺️', true, 4),
+('Campaign', 'Campaign and marketing-related tags', '#8B5CF6', '📢', true, 5),
+('Custom', 'User-defined custom tags', '#6B7280', '🏷️', true, 6);
+
+-- =================================================================================
+-- Enhanced RLS Policies
+-- =================================================================================
+
+-- Enable RLS on new tables
+ALTER TABLE record_tags ENABLE row_level_security;
+ALTER TABLE tag_categories ENABLE row_level_security;
+
+-- RLS for record_tags
+CREATE POLICY "Record tags access" ON record_tags FOR ALL USING (
+    -- User can access record tags if they own the record or are part of the same team
+    EXISTS (
+        SELECT 1 FROM mailing_list_records mlr
+        JOIN mailing_lists ml ON mlr.mailing_list_id = ml.id
+        WHERE mlr.id = record_tags.record_id
+        AND (
+            ml.user_id = auth.uid() OR
+            ml.team_id IN (
+                SELECT team_id FROM team_members 
+                WHERE user_id = auth.uid()
+            )
+        )
+    )
+);
+
+-- RLS for tag_categories (readable by all authenticated users)
+CREATE POLICY "Tag categories readable" ON tag_categories FOR SELECT USING (
+    auth.role() = 'authenticated'
+);
+
+-- Update existing tags RLS to handle system tags
+DROP POLICY IF EXISTS "Tags access" ON tags;
+CREATE POLICY "Tags access" ON tags FOR ALL USING (
+    -- System tags are accessible by everyone
+    is_system = true OR
+    -- Regular tags follow user/team ownership
+    user_id = auth.uid() OR 
+    team_id IN (
+        SELECT team_id FROM team_members 
+        WHERE user_id = auth.uid()
+    )
+);
+
+-- =================================================================================
+-- Helper Functions
+-- =================================================================================
+
+-- Function to get system tag ID by name
+CREATE OR REPLACE FUNCTION get_system_tag_id(tag_name text)
+RETURNS uuid
+LANGUAGE sql
+STABLE
+AS $$
+    SELECT id FROM tags 
+    WHERE name = tag_name 
+    AND is_system = true 
+    LIMIT 1;
+$$;
+
+-- Function to ensure required system tags exist for a record
+CREATE OR REPLACE FUNCTION ensure_system_tags_for_record(
+    p_record_id uuid,
+    p_list_name text
+)
+RETURNS void
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    list_name_tag_id uuid;
+BEGIN
+    -- Get the "List Name" system tag ID
+    list_name_tag_id := get_system_tag_id('List Name');
+    
+    -- Insert or update the List Name tag for this record
+    INSERT INTO record_tags (record_id, tag_id, tag_value)
+    VALUES (p_record_id, list_name_tag_id, p_list_name)
+    ON CONFLICT (record_id, tag_id) 
+    DO UPDATE SET 
+        tag_value = EXCLUDED.tag_value,
+        assigned_at = now();
+END;
+$$;
+
+-- Function to get all tags for a record with their values
+CREATE OR REPLACE FUNCTION get_record_tags(p_record_id uuid)
+RETURNS TABLE (
+    tag_id uuid,
+    tag_name text,
+    tag_value text,
+    category tag_category,
+    color text,
+    is_system boolean
+)
+LANGUAGE sql
+STABLE
+AS $$
+    SELECT 
+        t.id as tag_id,
+        t.name as tag_name,
+        rt.tag_value,
+        t.category,
+        t.color,
+        t.is_system
+    FROM record_tags rt
+    JOIN tags t ON rt.tag_id = t.id
+    WHERE rt.record_id = p_record_id
+    ORDER BY t.is_system DESC, t.sort_order, t.name;
+$$;
+
+-- =================================================================================
+-- Triggers for Automatic Tag Management
+-- =================================================================================
+
+-- Trigger to automatically assign system tags when records are created
+CREATE OR REPLACE FUNCTION trigger_assign_system_tags()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    mailing_list_name text;
+    source_tag_id uuid;
+BEGIN
+    -- Get the mailing list name
+    SELECT name INTO mailing_list_name 
+    FROM mailing_lists 
+    WHERE id = NEW.mailing_list_id;
+    
+    -- Ensure List Name tag is assigned
+    PERFORM ensure_system_tags_for_record(NEW.id, mailing_list_name);
+    
+    -- Assign Source tag if we have source information
+    source_tag_id := get_system_tag_id('Source');
+    IF source_tag_id IS NOT NULL THEN
+        INSERT INTO record_tags (record_id, tag_id, tag_value)
+        VALUES (NEW.id, source_tag_id, 
+            CASE 
+                WHEN (SELECT source_type FROM mailing_lists WHERE id = NEW.mailing_list_id) = 'upload' THEN 'File Upload'
+                WHEN (SELECT source_type FROM mailing_lists WHERE id = NEW.mailing_list_id) = 'list_builder' THEN 'List Builder'
+                WHEN (SELECT source_type FROM mailing_lists WHERE id = NEW.mailing_list_id) = 'manual' THEN 'Manual Entry'
+                ELSE 'Unknown'
+            END
+        )
+        ON CONFLICT (record_id, tag_id) DO NOTHING;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$;
+
+-- Create the trigger
+CREATE TRIGGER assign_system_tags_trigger
+    AFTER INSERT ON mailing_list_records
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_assign_system_tags();
+
+-- =================================================================================
+-- Views for Easy Querying
+-- =================================================================================
+
+-- View to easily query records with their tags
+CREATE VIEW records_with_tags AS
+SELECT 
+    mlr.*,
+    ml.name as mailing_list_name,
+    array_agg(
+        jsonb_build_object(
+            'tag_id', rt.tag_id,
+            'tag_name', t.name,
+            'tag_value', rt.tag_value,
+            'category', t.category,
+            'color', t.color,
+            'is_system', t.is_system
+        )
+    ) FILTER (WHERE t.id IS NOT NULL) as tags
+FROM mailing_list_records mlr
+LEFT JOIN mailing_lists ml ON mlr.mailing_list_id = ml.id
+LEFT JOIN record_tags rt ON mlr.id = rt.record_id
+LEFT JOIN tags t ON rt.tag_id = t.id
+GROUP BY mlr.id, ml.name;
+
+-- View to get tag usage statistics
+CREATE VIEW tag_usage_stats AS
+SELECT 
+    t.id,
+    t.name,
+    t.category,
+    t.color,
+    t.is_system,
+    COUNT(rt.id) as usage_count,
+    COUNT(DISTINCT rt.record_id) as unique_records,
+    MAX(rt.assigned_at) as last_used
+FROM tags t
+LEFT JOIN record_tags rt ON t.id = rt.tag_id
+GROUP BY t.id, t.name, t.category, t.color, t.is_system;
+
+-- =================================================================================
+-- Comments
+-- =================================================================================
+
+COMMENT ON TABLE record_tags IS 'Junction table linking individual records to tags for flexible organization';
+COMMENT ON TABLE tag_categories IS 'Categories for organizing tags into logical groups';
+COMMENT ON COLUMN tags.category IS 'Category this tag belongs to for organization';
+COMMENT ON COLUMN tags.is_system IS 'Whether this is a system-defined tag that cannot be deleted';
+COMMENT ON COLUMN tags.visibility IS 'Who can see this tag (public, private, system)';
+COMMENT ON COLUMN tags.parent_tag_id IS 'Parent tag for hierarchical organization';
+COMMENT ON FUNCTION ensure_system_tags_for_record IS 'Ensures required system tags are assigned to a record';
+COMMENT ON VIEW records_with_tags IS 'Convenient view to query records with all their associated tags';

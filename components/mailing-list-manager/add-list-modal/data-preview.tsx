@@ -1,31 +1,31 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { X } from "lucide-react"
-import type { ColumnMapping } from "./types"
-import { PREDEFINED_FIELDS } from "./types"
+import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
+import type { ColumnMapping } from "./types";
+import { PREDEFINED_FIELDS } from "./types";
 
 interface DataPreviewProps {
-  previewData: string[][]
-  columnMappings: Record<string, ColumnMapping>
-  showPreview: boolean
-  onTogglePreview: () => void
+  previewData: string[][];
+  columnMappings: Record<string, ColumnMapping>;
+  showPreview: boolean;
+  onTogglePreview: () => void;
 }
 
 export function DataPreview({ previewData, columnMappings, showPreview, onTogglePreview }: DataPreviewProps) {
   const getEffectiveFieldName = (header: string) => {
-    const mapping = columnMappings[header]
-    if (!mapping) return header
+    const mapping = columnMappings[header];
+    if (!mapping) return header;
 
-    if (mapping.fieldId === "ignore") return "Ignored"
-    if (mapping.fieldId === "custom") return mapping.customName || header
-    if (mapping.fieldId === "keep") return header
+    if (mapping.fieldId === "ignore") return "Ignored";
+    if (mapping.fieldId === "custom") return mapping.customName || header;
+    if (mapping.fieldId === "keep") return header;
 
-    const field = PREDEFINED_FIELDS.find((f) => f.id === mapping.fieldId)
-    return field ? field.label : header
-  }
+    const field = PREDEFINED_FIELDS.find((f) => f.id === mapping.fieldId);
+    return field ? field.label : header;
+  };
 
-  if (!previewData[0]) return null
+  if (!previewData[0]) return null;
 
   return (
     <div>
@@ -41,26 +41,19 @@ export function DataPreview({ previewData, columnMappings, showPreview, onToggle
           </p>
 
           <div className="border rounded-md">
-            <div
-              <div className="overflow-x-auto max-w-full">
-                <table className="w-full text-sm min-w-full table-auto">
+            <div className="overflow-x-auto max-w-full">
+              <table className="w-full text-sm min-w-full table-auto">
                 <thead className="bg-muted sticky top-0 z-10">
                   <tr>
                     {previewData[0].map((header, index) => {
-                      const mapping = columnMappings[header]
-                      const isIgnored = mapping?.fieldId === "ignore"
-                      const isCustom = mapping?.fieldId === "custom"
-                      const isKeep = mapping?.fieldId === "keep"
+                      const mapping = columnMappings[header];
+                      const isIgnored = mapping?.fieldId === "ignore";
+                      const isCustom = mapping?.fieldId === "custom";
+                      const isKeep = mapping?.fieldId === "keep";
 
                       return (
                         <th
                           key={index}
-                          className={`px-4 py-2 text-left font-medium whitespace-nowrap ${
-                            isIgnored ? "text-muted-foreground line-through" : ""
-                          }`}
-                        >
-                        <th
-                          key={header}
                           scope="col"
                           className={`px-4 py-2 text-left font-medium whitespace-nowrap ${
                             isIgnored ? "text-muted-foreground line-through" : ""
@@ -70,6 +63,12 @@ export function DataPreview({ previewData, columnMappings, showPreview, onToggle
                             {header}
                             {isIgnored && <X className="h-3 w-3 text-red-500" aria-hidden="true" />}
                           </div>
+                          <div
+                            className={`text-xs mt-1 ${
+                              isIgnored
+                                ? "text-muted-foreground"
+                                : isCustom
+                                  ? "text-blue-500"
                                   : isKeep
                                     ? "text-green-500"
                                     : "text-primary"
@@ -78,7 +77,7 @@ export function DataPreview({ previewData, columnMappings, showPreview, onToggle
                             {isIgnored ? "Excluded" : <>↓ {getEffectiveFieldName(header)}</>}
                           </div>
                         </th>
-                      )
+                      );
                     })}
                   </tr>
                 </thead>
@@ -86,15 +85,9 @@ export function DataPreview({ previewData, columnMappings, showPreview, onToggle
                   {previewData.slice(1, 6).map((row, rowIndex) => (
                     <tr key={rowIndex}>
                       {row.map((cell, cellIndex) => {
-                        const header = previewData[0][cellIndex]
-                        const mapping = columnMappings[header]
-                  {previewData.slice(1, 6).map((row, rowIndex) => (
-                    <tr key={rowIndex}>
-                      {headerRow.map((_, cellIndex) => {
-                        const cell = row[cellIndex] ?? ""
-                        const header = headerRow[cellIndex]
-                        const mapping = columnMappings[header]
-                        const isIgnored = mapping?.fieldId === "ignore"
+                        const header = previewData[0][cellIndex];
+                        const mapping = columnMappings[header];
+                        const isIgnored = mapping?.fieldId === "ignore";
 
                         return (
                           <td
@@ -105,11 +98,16 @@ export function DataPreview({ previewData, columnMappings, showPreview, onToggle
                           >
                             {cell}
                           </td>
-                        )
+                        );
                       })}
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       )}
     </div>
-  )
+  );
 }

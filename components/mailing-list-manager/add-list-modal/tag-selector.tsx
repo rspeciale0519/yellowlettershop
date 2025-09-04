@@ -35,6 +35,7 @@ export function TagSelector({ tags, selectedTags, onTagAdd, onTagRemove }: TagSe
               >
                 <X className="h-3 w-3" />
               </Button>
+            </Badge>
           ))}
 
         <DropdownMenu>

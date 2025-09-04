@@ -12,8 +12,11 @@ export type { ListCriteria } from '@/types/list-builder';
 
 // Payload types for creating and updating records.
 // These provide a clear API for the functions below.
-export type CreateMailingListPayload = Pick<MailingList, 'name' | 'description' | 'criteria' | 'metadata'>;
-export type UpdateMailingListPayload = Omit<Partial<MailingList>, 'id' | 'created_by' | 'created_at'>;
+export type CreateMailingListPayload = Pick<MailingList, 'name' | 'description'> & {
+  source_criteria?: Record<string, any>
+  source_type?: 'upload' | 'list_builder' | 'manual' | 'imported'
+};
+export type UpdateMailingListPayload = Omit<Partial<MailingList>, 'id' | 'created_by' | 'created_at' | 'user_id' | 'team_id'>;
 export type CreateMailingListRecordPayload = Omit<Partial<MailingListRecord>, 'id' | 'created_at' | 'created_by' | 'modified_at' | 'modified_by'> & { mailing_list_id: string };
 export type UpdateMailingListRecordPayload = Omit<Partial<MailingListRecord>, 'id' | 'created_at' | 'created_by' | 'mailing_list_id'>;
 
@@ -23,6 +26,7 @@ export type UpdateMailingListRecordPayload = Omit<Partial<MailingListRecord>, 'i
 
 export async function getMailingLists(): Promise<MailingList[]> {
   const supabase = createClient()
+  // Try to embed tags if relationships are defined; otherwise fall back gracefully.
   const { data, error } = await supabase
     .from('mailing_lists')
     .select(`
@@ -31,7 +35,19 @@ export async function getMailingLists(): Promise<MailingList[]> {
     `)
     .order('created_at', { ascending: false })
 
-  if (error) throw error
+  if (error) {
+    const msg = String((error as any)?.message || error)
+    const missingRel = msg.includes('relationship') && msg.includes('mailing_list_tags')
+    if (missingRel) {
+      const fallback = await supabase
+        .from('mailing_lists')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (fallback.error) throw fallback.error
+      return fallback.data || []
+    }
+    throw error
+  }
   return data || []
 }
 
@@ -77,10 +93,7 @@ export async function updateMailingList(id: string, updates: UpdateMailingListPa
     .from('mailing_lists')
     .update({
       ...updates,
-      modified_at: new Date().toISOString(),
-      modified_by: user?.id,
-      // Increment version if it's passed in the updates.
-      version: typeof updates.version === 'number' ? updates.version + 1 : undefined
+      updated_at: new Date().toISOString()
     })
     .eq('id', id)
     .select()
@@ -135,21 +148,30 @@ export async function getMailingListRecords(
   return { data: data || [], count: count || 0 }
 }
 
-export async function createMailingListRecord(record: CreateMailingListRecordPayload): Promise<MailingListRecord> {
+export async function createMailingListRecord(
+  mailingListId: string,
+  recordData: Omit<MailingListRecord, 'id' | 'created_at' | 'updated_at'>
+): Promise<MailingListRecord> {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) throw new Error('User not authenticated')
   
   const { data, error } = await supabase
     .from('mailing_list_records')
     .insert({
-      ...record,
-      created_by: user?.id,
-      status: record.status || 'active'
+      ...recordData,
+      mailing_list_id: mailingListId,
+      usage_count: 0,
+      validation_status: 'pending'
     })
     .select()
     .single()
 
   if (error) throw error
+
+  // Update mailing list record count (handled by database trigger)
+  
   return data
 }
 
@@ -173,9 +195,54 @@ export async function updateMailingListRecord(id: string, updates: UpdateMailing
 }
 
 export async function deleteMailingListRecord(id: string): Promise<void> {
+  console.log('deleteMailingListRecord called with id:', id, 'type:', typeof id)
   const supabase = createClient()
-  const { error } = await supabase.from('mailing_list_records').delete().eq('id', id)
-  if (error) throw error
+  
+  // Check if user is authenticated
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  console.log('User authenticated:', !!user, authError ? authError.message : 'no auth error')
+  
+  // First, let's see if the record exists at all
+  const { data: existingRecord, error: findError } = await supabase
+    .from('mailing_list_records')
+    .select('id, mailing_list_id')
+    .eq('id', id)
+    .single()
+  
+  console.log('Record lookup result:', { existingRecord, findError })
+  
+  if (findError && findError.code !== 'PGRST116') {
+    console.error('Error looking up record:', findError)
+    throw findError
+  }
+  
+  if (!existingRecord) {
+    console.warn('Record not found with ID:', id)
+    // Let's try to find any records with similar IDs
+    const { data: allRecords } = await supabase
+      .from('mailing_list_records')
+      .select('id')
+      .limit(10)
+    console.log('Sample record IDs in database:', allRecords?.map(r => r.id))
+    throw new Error(`Record with ID ${id} not found`)
+  }
+  
+  console.log('Record found, proceeding with deletion...')
+  
+  const { data, error } = await supabase
+    .from('mailing_list_records')
+    .delete()
+    .eq('id', id)
+    .select() // Return the deleted record to confirm deletion
+  
+  console.log('Delete result:', { data, error })
+  
+  if (error) {
+    console.error('Delete error details:', error)
+    throw error
+  }
+  
+  console.log('Successfully deleted record:', data)
 }
 
 export async function bulkImportRecords(listId: string, records: Partial<MailingListRecord>[]): Promise<MailingListRecord[]> {
@@ -185,8 +252,9 @@ export async function bulkImportRecords(listId: string, records: Partial<Mailing
   const recordsWithMetadata = records.map(record => ({
     ...record,
     mailing_list_id: listId,
-    created_by: user?.id,
-    status: record.status || 'active'
+    usage_count: 0,
+    validation_status: 'pending' as const,
+    additional_data: record.additional_data || {}
   }))
   
   const { data, error } = await supabase

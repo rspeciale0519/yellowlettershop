@@ -259,17 +259,14 @@ export function AddListModal({
                 tags={tags}
                 selectedTags={selectedTags}
                 onTagAdd={handleTagAdd}
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => { resetForm(); onOpenChange(false) }}
-          >
-            Cancel
-          </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting ? "Creating..." : "Add List"}
-          </Button>
-        </DialogFooter>
+                onTagRemove={handleTagRemove}
+              />
+            </div>
+          </div>
+
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList>
+              <TabsTrigger value='upload'>File Upload</TabsTrigger>
               <TabsTrigger value='manual'>Manual Entry</TabsTrigger>
             </TabsList>
 

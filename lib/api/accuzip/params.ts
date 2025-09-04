@@ -137,9 +137,6 @@ export function criteriaToAccuZIPParams(
     }
   }
 
-  // Predictive Analytics
-  // Note: current PredictiveCriteria in types/list-builder.ts does not include fields
-  // like likelyToMove/likelyToSell. When such fields are added, map them here.
 
   return params;
 }

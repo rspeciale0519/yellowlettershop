@@ -26,7 +26,6 @@ export function FileUpload({ fileInputRef, file, onFileSelect, isImporting }: Fi
           disabled={isImporting}
         />
         {file && (
-        {file && (
           <div
             className="mt-2 flex items-center gap-2 text-sm text-muted-foreground"
             role="status"
@@ -38,7 +37,8 @@ export function FileUpload({ fileInputRef, file, onFileSelect, isImporting }: Fi
             </span>
             <span className="shrink-0">({(file.size / 1024).toFixed(2)} KB)</span>
           </div>
-        )}      </div>
+        )}
+      </div>
     </div>
   )
 }

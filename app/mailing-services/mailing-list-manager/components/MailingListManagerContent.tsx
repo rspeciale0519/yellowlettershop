@@ -16,6 +16,7 @@ import { FilterBar } from '@/components/mailing-list-manager/page-components/fil
 import { Breadcrumbs } from '@/components/mailing-list-manager/page-components/breadcrumbs';
 import { TableView } from '@/components/mailing-list-manager/page-components/table-view';
 import { useMailingListManager } from '@/hooks/filters/useMailingListManager';
+import { useListFilters } from '@/hooks/filters/use-mailing-list-manager/useListFilters';
 
 export default function MailingListManagerContent() {
   const {
@@ -109,6 +110,14 @@ export default function MailingListManagerContent() {
     tagFilters,
   } = useMailingListManager();
 
+  // Enhanced filtering with new FilterState
+  const enhancedFilters = useListFilters({
+    lists: lists || [],
+    records: [],
+    viewMode,
+    totalRecords: 0,
+  });
+
   // Cleanup effect
   // Cleanup effect
   useEffect(() => {
@@ -154,29 +163,30 @@ export default function MailingListManagerContent() {
         onAddClick={() =>
           viewMode === 'lists' ? setAddListOpen(true) : setAddRecordOpen(true)
         }
-        isViewChangeDisabled={!selectedList && viewMode === 'records'}
+        onUploadClick={() => setCsvImportOpen(true)}
+        isViewChangeDisabled={false}
       />
 
       <FilterBar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onClearFilters={clearFilters}
-        hasActiveFilters={hasActiveFilters}
-        showAdvancedSearch={advancedSearchOpen}
-        onToggleAdvancedSearch={() =>
-          setAdvancedSearchOpen(!advancedSearchOpen)
-        }
-        sortBy={sortBy}
-        onSortByChange={handleSort}
-        quickFilter={quickFilter}
-        onQuickFilterChange={setQuickFilter}
+        searchQuery={enhancedFilters.searchQuery}
+        onSearchChange={enhancedFilters.setSearchQuery}
+        onClearFilters={enhancedFilters.clearFilters}
+        hasActiveFilters={enhancedFilters.hasActiveFilters}
+        showAdvancedSearch={enhancedFilters.advancedSearchOpen}
+        onToggleAdvancedSearch={enhancedFilters.toggleAdvancedSearch}
+        sortBy={enhancedFilters.sortBy}
+        onSortByChange={enhancedFilters.handleSortChange}
+        filterState={enhancedFilters.filterState}
+        onFilterChange={enhancedFilters.handleFilterChange}
+        onQuickAction={enhancedFilters.handleQuickAction}
+        availableTags={tags?.map(tag => ({ id: tag.id, name: tag.name })) || []}
       />
 
-      {advancedSearchOpen && (
+      {enhancedFilters.advancedSearchOpen && (
         <div className='mt-4 p-4 border rounded-md bg-muted/50'>
           <AdvancedSearch
-            criteria={advancedSearchCriteria}
-            onCriteriaChange={setAdvancedSearchCriteria}
+            criteria={enhancedFilters.advancedSearchCriteria}
+            onCriteriaChange={enhancedFilters.setAdvancedSearchCriteria}
             availableTags={tags || []}
             availableLists={lists || []}
           />
@@ -283,28 +293,58 @@ export default function MailingListManagerContent() {
       />
 
       <DeleteConfirmModal
-        isOpen={deleteId !== null}
-        onClose={() => setDeleteId(null)}
+        open={deleteId !== null}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+        title={deleteType === 'list' ? 'Delete Mailing List' : 'Delete Record'}
+        description={
+          deleteType === 'list'
+            ? 'Are you sure you want to delete this mailing list? This action cannot be undone.'
+            : 'Are you sure you want to delete this record? This action cannot be undone.'
+        }
         onConfirm={async () => {
           if (deleteId) {
+            console.log(`Attempting to delete ${deleteType} with ID:`, deleteId);
             try {
               if (deleteType === 'list') {
+                console.log('Calling deleteMailingList...');
                 await deleteMailingList(deleteId);
+                console.log('List deleted successfully, refreshing lists...');
                 await mutateLists();
               } else {
+                console.log('Calling deleteMailingListRecord...');
                 await deleteMailingListRecord(deleteId);
-                if (selectedList?.id) {
-                  const result = await getMailingListRecords(selectedList.id, {
-                    limit: itemsPerPage,
-                    offset: (currentPage - 1) * itemsPerPage,
-                    search: searchQuery,
+                console.log('Record deleted successfully, refreshing all records...');
+                console.log('Current viewMode:', viewMode);
+                console.log('isMountedRef.current:', isMountedRef.current);
+                
+                // Refresh all records since we're showing records from all lists
+                if (viewMode === 'records' && isMountedRef.current) {
+                  console.log('About to fetch records with parameters:', {
+                    limit: itemsPerPage || 50,
+                    offset: ((currentPage || 1) - 1) * (itemsPerPage || 50),
+                    search: searchQuery || '',
                     status: statusFilter !== 'all' ? statusFilter : undefined,
-                    tags: tagFilters.length > 0 ? tagFilters : undefined,
+                    tags: tagFilters && tagFilters.length > 0 ? tagFilters : undefined,
                   });
+                  
+                  const result = await getMailingListRecords(undefined, {
+                    limit: itemsPerPage || 50,
+                    offset: ((currentPage || 1) - 1) * (itemsPerPage || 50),
+                    search: searchQuery || '',
+                    status: statusFilter !== 'all' ? statusFilter : undefined,
+                    tags: tagFilters && tagFilters.length > 0 ? tagFilters : undefined,
+                  });
+                  
+                  console.log('Fetch result:', result);
+                  
                   if (isMountedRef.current) {
+                    console.log('Setting records:', result.data?.length || 0, 'records');
                     setRecords(result.data || []);
                     setTotalRecords(result.count || 0);
                   }
+                  console.log('Records refreshed successfully');
+                } else {
+                  console.log('Skipping record refresh - not in records view or component unmounted');
                 }
               }
               setDeleteId(null);

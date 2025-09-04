@@ -1,0 +1,74 @@
+[
+    {
+      "schemaname": "public",
+      "tablename": "user_profiles",
+      "policyname": "up_update",
+      "cmd": "UPDATE",
+      "qual": "(id = auth.uid())",
+      "with_check": "(id = auth.uid())"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "user_profiles",
+      "policyname": "up_insert",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "(id = auth.uid())"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "mailing_lists",
+      "policyname": "ml_select",
+      "cmd": "SELECT",
+      "qual": "(user_id = auth.uid())",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "mailing_lists",
+      "policyname": "ml_insert",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "(user_id = auth.uid())"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "user_profiles",
+      "policyname": "up_select",
+      "cmd": "SELECT",
+      "qual": "(id = auth.uid())",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "mailing_lists",
+      "policyname": "ml_update",
+      "cmd": "UPDATE",
+      "qual": "(user_id = auth.uid())",
+      "with_check": "(user_id = auth.uid())"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "mailing_list_records",
+      "policyname": "mlr_select",
+      "cmd": "SELECT",
+      "qual": "(EXISTS ( SELECT 1\n   FROM mailing_lists ml\n  WHERE ((ml.id = mailing_list_records.mailing_list_id) AND (ml.user_id = auth.uid()))))",
+      "with_check": null
+    },
+    {
+      "schemaname": "public",
+      "tablename": "mailing_list_records",
+      "policyname": "mlr_insert",
+      "cmd": "INSERT",
+      "qual": null,
+      "with_check": "(EXISTS ( SELECT 1\n   FROM mailing_lists ml\n  WHERE ((ml.id = mailing_list_records.mailing_list_id) AND (ml.user_id = auth.uid()))))"
+    },
+    {
+      "schemaname": "public",
+      "tablename": "mailing_list_records",
+      "policyname": "mlr_update",
+      "cmd": "UPDATE",
+      "qual": "(EXISTS ( SELECT 1\n   FROM mailing_lists ml\n  WHERE ((ml.id = mailing_list_records.mailing_list_id) AND (ml.user_id = auth.uid()))))",
+      "with_check": "(EXISTS ( SELECT 1\n   FROM mailing_lists ml\n  WHERE ((ml.id = mailing_list_records.mailing_list_id) AND (ml.user_id = auth.uid()))))"
+    }
+  ]

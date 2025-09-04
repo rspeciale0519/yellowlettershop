@@ -16,7 +16,13 @@ const fetcher = async () => {
     const data = await getMailingLists()
     return data || []
   } catch (error) {
-    console.error('Error fetching mailing lists:', error)
+    const err = error as any
+    const detail = err?.message || err?.error || err?.code || err
+    try {
+      console.error('Error fetching mailing lists:', detail)
+    } catch {
+      console.error('Error fetching mailing lists: unknown error')
+    }
     return []
   }
 }
@@ -59,4 +65,3 @@ export function useLists() {
     mutate,
   }
 }
-

@@ -12,8 +12,6 @@ import {
 } from '@/components/ui/select';
 import type { OptionsCriteria } from '@/types/list-builder';
 
-import type { OptionsCriteria } from '@/types/list-builder';
-
 type DataFreshness = OptionsCriteria['dataFreshness'];
 type DataFreshnessUpdate = <K extends keyof DataFreshness>(
   field: K,
@@ -21,20 +19,13 @@ type DataFreshnessUpdate = <K extends keyof DataFreshness>(
 ) => void;
 
 interface DataFreshnessSectionProps {
-            <Label htmlFor="max-age" className="text-sm font-medium">
-              Maximum Data Age (months)
-            </Label>
-            <Select
-              value={
-                criteria.dataFreshness.maxAge != null
-                  ? String(criteria.dataFreshness.maxAge)
-                  : undefined
-              }
-              onValueChange={(value) => onUpdate("maxAge", Number.parseInt(value, 10))}
-            >
-              <SelectTrigger id="max-age" className="w-full mt-2">
-                <SelectValue placeholder="Select max age" />
-              </SelectTrigger>    <CardContent className='pt-0'>
+  criteria: OptionsCriteria;
+  onUpdate: DataFreshnessUpdate;
+}
+
+export function DataFreshnessSection({ criteria, onUpdate }: DataFreshnessSectionProps) {
+  return (
+    <CardContent className='pt-0'>
       <div className='space-y-6'>
         <p className='text-sm text-gray-600 dark:text-gray-400'>
           Control the freshness and recency of your data.
@@ -46,13 +37,13 @@ interface DataFreshnessSectionProps {
               Maximum Data Age (months)
             </Label>
             <Select
-              value={criteria.dataFreshness.maxAge.toString()}
+              value={criteria?.dataFreshness?.maxAge?.toString() || ''}
               onValueChange={(value) =>
-                onUpdate('maxAge', Number.parseInt(value))
+                onUpdate('maxAge', Number.parseInt(value, 10))
               }
             >
               <SelectTrigger className='w-full mt-2'>
-                <SelectValue />
+                <SelectValue placeholder="Select max age" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value='1'>1 month</SelectItem>
@@ -73,7 +64,7 @@ interface DataFreshnessSectionProps {
             </Label>
             <Switch
               id='require-recent-update'
-              checked={criteria.dataFreshness.requireRecentUpdate}
+              checked={criteria?.dataFreshness?.requireRecentUpdate || false}
               onCheckedChange={(checked) =>
                 onUpdate('requireRecentUpdate', checked)
               }

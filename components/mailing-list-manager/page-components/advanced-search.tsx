@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MultiSelect } from '@/components/ui/multi-select';
@@ -11,7 +11,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Trash } from 'lucide-react';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import { Badge } from '@/components/ui/badge';
+import { 
+  Trash, 
+  ChevronDown, 
+  ChevronUp,
+  Filter,
+  Tag,
+  Mail,
+  Hash,
+  Columns,
+  X
+} from 'lucide-react';
 import type {
   AdvancedSearchCriteria,
   ColumnFilter,
@@ -25,6 +41,8 @@ interface AdvancedSearchProps {
   onCriteriaChange: (criteria: AdvancedSearchCriteria) => void;
   availableTags: { id: string; name: string }[];
   availableLists?: { id: string; name: string; record_count?: number }[];
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 export const AdvancedSearch = ({
@@ -32,6 +50,8 @@ export const AdvancedSearch = ({
   onCriteriaChange,
   availableTags,
   availableLists = [],
+  isOpen = true,
+  onClose,
 }: AdvancedSearchProps) => {
   // Guard against rendering with incomplete criteria to prevent runtime errors
   if (!criteria) {
@@ -39,6 +59,42 @@ export const AdvancedSearch = ({
   }
 
   const [nextId, setNextId] = useState(1);
+  const [expandedSections, setExpandedSections] = useState({
+    columnFilters: true,
+    mailingLists: true,
+    tagFilters: true,
+    mailingHistory: true,
+    recordCount: true,
+  });
+
+  // Calculate active filters count
+  const activeFiltersCount = [
+    criteria.columnFilters.length,
+    criteria.listFilter?.length || 0,
+    criteria.tagFilter?.tags?.length || 0,
+    criteria.mailingHistoryFilter ? 1 : 0,
+    criteria.recordCountFilter ? 1 : 0,
+  ].reduce((a, b) => a + b, 0);
+
+  // Toggle section expansion
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
+
+  // Clear all filters
+  const handleClearAll = () => {
+    onCriteriaChange({
+      ...criteria,
+      columnFilters: [],
+      listFilter: null,
+      tagFilter: { tags: [], matchType: 'any' },
+      mailingHistoryFilter: null,
+      recordCountFilter: null,
+    });
+  };
 
   const addColumnFilter = () => {
     const newFilter: ColumnFilter = {
@@ -188,11 +244,59 @@ export const AdvancedSearch = ({
   };
 
   return (
-    <div className='space-y-6'>
-      {/* Column Filters */}
-      <div>
-        <h4 className='font-semibold mb-2'>Column Filters</h4>
-        <div className='space-y-2'>
+    <div className='space-y-4 p-4 bg-background border rounded-lg'>
+      {/* Header */}
+      <div className='flex items-center justify-between pb-4 border-b'>
+        <div className='flex items-center gap-2'>
+          <Filter className='h-5 w-5' />
+          <h3 className='text-lg font-semibold'>Advanced Search</h3>
+          {activeFiltersCount > 0 && (
+            <Badge variant='secondary'>{activeFiltersCount} active</Badge>
+          )}
+        </div>
+        <div className='flex items-center gap-2'>
+          {activeFiltersCount > 0 && (
+            <Button
+              variant='ghost'
+              size='sm'
+              onClick={handleClearAll}
+              className='text-red-500 hover:text-red-600'
+            >
+              <X className='h-4 w-4 mr-1' />
+              Clear All
+            </Button>
+          )}
+          {onClose && (
+            <Button variant='ghost' size='icon' onClick={onClose}>
+              <X className='h-4 w-4' />
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Column Filters Section */}
+      <Collapsible open={expandedSections.columnFilters}>
+        <CollapsibleTrigger
+          onClick={() => toggleSection('columnFilters')}
+          className='flex items-center justify-between w-full p-2 hover:bg-accent rounded-md transition-colors'
+        >
+          <div className='flex items-center gap-2'>
+            <Columns className='h-4 w-4' />
+            <h4 className='font-semibold'>Column Filters</h4>
+            {criteria.columnFilters.length > 0 && (
+              <Badge variant='outline' className='ml-2'>
+                {criteria.columnFilters.length}
+              </Badge>
+            )}
+          </div>
+          {expandedSections.columnFilters ? (
+            <ChevronUp className='h-4 w-4' />
+          ) : (
+            <ChevronDown className='h-4 w-4' />
+          )}
+        </CollapsibleTrigger>
+        <CollapsibleContent className='pt-2'>
+          <div className='space-y-2'>
           {criteria.columnFilters.map((filter) => (
             <div key={filter.id} className='flex items-center gap-2'>
               <Select
@@ -242,70 +346,129 @@ export const AdvancedSearch = ({
               </Button>
             </div>
           ))}
-        </div>
-        <Button
-          onClick={addColumnFilter}
-          variant='outline'
-          size='sm'
-          className='mt-2'
-        >
-          + Add Filter
-        </Button>
-      </div>
+          </div>
+          <Button
+            onClick={addColumnFilter}
+            variant='outline'
+            size='sm'
+            className='mt-2'
+          >
+            + Add Filter
+          </Button>
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Mailing List Selection and Tag Filters */}
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
         {/* Mailing List Selection */}
-        <div>
-          <h4 className='font-semibold mb-2'>Mailing List Selection</h4>
-          <MultiSelect
-            options={availableLists.map((l) => ({
-              value: l.id,
-              label: `${l.name}${typeof l.record_count === 'number' ? ` (${l.record_count})` : ''}`,
-            }))}
-            selected={criteria.listFilter ?? []}
-            onChange={handleListFilterChange}
-            placeholder='Select lists...'
-            className='w-full'
-          />
-        </div>
-
-        {/* Tag Filters */}
-        <div>
-          <h4 className='font-semibold mb-2'>Tag Filters</h4>
-          <div className='flex items-center gap-2'>
-            <Select
-              onValueChange={(value) =>
-                handleTagFilterMatchTypeChange(value as 'any' | 'all')
-              }
-              value={criteria.tagFilter?.matchType || 'any'}
-            >
-              <SelectTrigger className='w-full'>
-                <SelectValue placeholder='Select match type' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='any'>Any</SelectItem>
-                <SelectItem value='all'>All</SelectItem>
-              </SelectContent>
-            </Select>
+        <Collapsible open={expandedSections.mailingLists}>
+          <CollapsibleTrigger
+            onClick={() => toggleSection('mailingLists')}
+            className='flex items-center justify-between w-full p-2 hover:bg-accent rounded-md transition-colors mb-2'
+          >
+            <div className='flex items-center gap-2'>
+              <Filter className='h-4 w-4' />
+              <h4 className='font-semibold'>Mailing List Selection</h4>
+              {criteria.listFilter && criteria.listFilter.length > 0 && (
+                <Badge variant='outline' className='ml-2'>
+                  {criteria.listFilter.length}
+                </Badge>
+              )}
+            </div>
+            {expandedSections.mailingLists ? (
+              <ChevronUp className='h-4 w-4' />
+            ) : (
+              <ChevronDown className='h-4 w-4' />
+            )}
+          </CollapsibleTrigger>
+          <CollapsibleContent>
             <MultiSelect
-              options={availableTags.map((tag) => ({
-                value: tag.id,
-                label: tag.name,
+              options={availableLists.map((l) => ({
+                value: l.id,
+                label: `${l.name}${typeof l.record_count === 'number' ? ` (${l.record_count})` : ''}`,
               }))}
-              selected={criteria.tagFilter?.tags || []}
-              onChange={handleTagFilterChange}
-              placeholder='Select tags...'
+              selected={criteria.listFilter ?? []}
+              onChange={handleListFilterChange}
+              placeholder='Select lists...'
               className='w-full'
             />
-          </div>
-        </div>
+          </CollapsibleContent>
+        </Collapsible>
+
+        {/* Tag Filters */}
+        <Collapsible open={expandedSections.tagFilters}>
+          <CollapsibleTrigger
+            onClick={() => toggleSection('tagFilters')}
+            className='flex items-center justify-between w-full p-2 hover:bg-accent rounded-md transition-colors mb-2'
+          >
+            <div className='flex items-center gap-2'>
+              <Tag className='h-4 w-4' />
+              <h4 className='font-semibold'>Tag Filters</h4>
+              {criteria.tagFilter?.tags && criteria.tagFilter.tags.length > 0 && (
+                <Badge variant='outline' className='ml-2'>
+                  {criteria.tagFilter.tags.length}
+                </Badge>
+              )}
+            </div>
+            {expandedSections.tagFilters ? (
+              <ChevronUp className='h-4 w-4' />
+            ) : (
+              <ChevronDown className='h-4 w-4' />
+            )}
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className='flex items-center gap-2'>
+              <Select
+                onValueChange={(value) =>
+                  handleTagFilterMatchTypeChange(value as 'any' | 'all')
+                }
+                value={criteria.tagFilter?.matchType || 'any'}
+              >
+                <SelectTrigger className='w-full'>
+                  <SelectValue placeholder='Select match type' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='any'>Any</SelectItem>
+                  <SelectItem value='all'>All</SelectItem>
+                </SelectContent>
+              </Select>
+              <MultiSelect
+                options={availableTags.map((tag) => ({
+                  value: tag.id,
+                  label: tag.name,
+                }))}
+                selected={criteria.tagFilter?.tags || []}
+                onChange={handleTagFilterChange}
+                placeholder='Select tags...'
+                className='w-full'
+              />
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
 
       {/* Mailing History & Record Count Filters */}
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-        <div>
-          <h4 className='font-semibold mb-2'>Mailing History</h4>
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+        {/* Mailing History */}
+        <Collapsible open={expandedSections.mailingHistory}>
+          <CollapsibleTrigger
+            onClick={() => toggleSection('mailingHistory')}
+            className='flex items-center justify-between w-full p-2 hover:bg-accent rounded-md transition-colors mb-2'
+          >
+            <div className='flex items-center gap-2'>
+              <Mail className='h-4 w-4' />
+              <h4 className='font-semibold'>Mailing History</h4>
+              {criteria.mailingHistoryFilter && (
+                <Badge variant='outline' className='ml-2'>1</Badge>
+              )}
+            </div>
+            {expandedSections.mailingHistory ? (
+              <ChevronUp className='h-4 w-4' />
+            ) : (
+              <ChevronDown className='h-4 w-4' />
+            )}
+          </CollapsibleTrigger>
+          <CollapsibleContent>
           <div className='flex items-center gap-2'>
             <Select
               onValueChange={(value) =>
@@ -357,10 +520,30 @@ export const AdvancedSearch = ({
                 />
               </div>
             )}
-          </div>
-        </div>
-        <div>
-          <h4 className='font-semibold mb-2'>Record Count</h4>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+        
+        {/* Record Count */}
+        <Collapsible open={expandedSections.recordCount}>
+          <CollapsibleTrigger
+            onClick={() => toggleSection('recordCount')}
+            className='flex items-center justify-between w-full p-2 hover:bg-accent rounded-md transition-colors mb-2'
+          >
+            <div className='flex items-center gap-2'>
+              <Hash className='h-4 w-4' />
+              <h4 className='font-semibold'>Record Count</h4>
+              {criteria.recordCountFilter && (
+                <Badge variant='outline' className='ml-2'>1</Badge>
+              )}
+            </div>
+            {expandedSections.recordCount ? (
+              <ChevronUp className='h-4 w-4' />
+            ) : (
+              <ChevronDown className='h-4 w-4' />
+            )}
+          </CollapsibleTrigger>
+          <CollapsibleContent>
           <div className='flex items-center gap-2'>
             <Select
               onValueChange={(value) =>
@@ -409,13 +592,15 @@ export const AdvancedSearch = ({
                 />
               </div>
             )}
-          </div>
-        </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
 
-      <div className='flex items-center justify-between'>
+      {/* Footer with Logical Operator and Apply Button */}
+      <div className='flex items-center justify-between pt-4 border-t'>
         <div className='flex items-center gap-2'>
-          <label>Logical Operator:</label>
+          <label className='text-sm font-medium'>Logical Operator:</label>
           <Select
             value={criteria.logicalOperator}
             onValueChange={(value) =>
@@ -434,8 +619,10 @@ export const AdvancedSearch = ({
             </SelectContent>
           </Select>
         </div>
-        <Button>Apply Filters</Button>
+        <Button className='min-w-[120px]'>
+          Apply Filters
+        </Button>
       </div>
     </div>
   );
-};
+}; 

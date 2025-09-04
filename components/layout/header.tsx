@@ -23,6 +23,8 @@ import {
   FileText,
   DollarSign,
   Palette,
+  Shield,
+  Bell,
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
@@ -44,6 +46,18 @@ export function Header() {
     handleScroll();
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  useEffect(() => {
+    const handleAvatarUpdate = (event: CustomEvent) => {
+      const { avatarUrl } = event.detail;
+      if (user) {
+        setUser({ ...user, user_metadata: { ...user.user_metadata, avatar_url: avatarUrl } });
+      }
+    };
+    
+    window.addEventListener('avatar-updated', handleAvatarUpdate as EventListener);
+    return () => window.removeEventListener('avatar-updated', handleAvatarUpdate as EventListener);
+  }, [user]);
 
   const navLinks = [
     { href: '/design/customize', label: 'New Design', icon: Palette },
@@ -81,8 +95,20 @@ export function Header() {
     init();
 
     // Subscribe to auth state changes
-    subscription = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    subscription = supabase.auth.onAuthStateChange((event, session) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      
+      // Redirect to dashboard on successful sign-in
+      if (event === 'SIGNED_IN' && currentUser) {
+        // Clear any auth query parameters
+        const url = new URL(window.location.href);
+        url.searchParams.delete('auth');
+        window.history.replaceState({}, '', url.pathname);
+        
+        // Immediate redirect to dashboard
+        router.push('/dashboard');
+      }
     }).data.subscription;
 
     return () => {
@@ -196,6 +222,11 @@ export function Header() {
                   >
                     <Link href='/new-campaign'>New Campaign</Link>
                   </Button>
+                  <Button variant="outline" size="icon" asChild>
+                    <Link href="/dashboard/notifications">
+                      <Bell className="h-4 w-4" />
+                    </Link>
+                  </Button>
                   <ThemeToggle />
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -237,6 +268,18 @@ export function Header() {
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link href="/dashboard/profile" className="flex items-center cursor-pointer">
+                          <User className='mr-2 h-4 w-4' />
+                          <span>Profile</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/dashboard/security" className="flex items-center cursor-pointer">
+                          <Shield className='mr-2 h-4 w-4' />
+                          <span>Security</span>
+                        </Link>
+                      </DropdownMenuItem>
                       <DropdownMenuItem>
                         <CreditCard className='mr-2 h-4 w-4' />
                         <span>Identity Cards</span>

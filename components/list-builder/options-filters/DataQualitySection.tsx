@@ -12,12 +12,10 @@ interface DataQualitySectionProps {
   criteria: OptionsCriteria;
   onToggle: (field: DataQualityField, value: boolean) => void;
   onConfidenceScoreChange: (values: [number, number]) => void;
-export function DataQualitySection(
-  { criteria, onToggle, onConfidenceScoreChange }: DataQualitySectionProps
-): JSX.Element {
-  const uid = useId()
-  const minConfidence = Math.max(0, Math.min(100, criteria.dataQuality.minimumConfidenceScore ?? 0))
-  return (  criteria,
+}
+
+export function DataQualitySection({
+  criteria,
   onToggle,
   onConfidenceScoreChange,
 }: DataQualitySectionProps) {
@@ -36,7 +34,7 @@ export function DataQualitySection(
             <Switch
               id='require-phone'
               checked={criteria.dataQuality.requirePhoneNumbers}
-              onCheckedChange={() => onToggle('requirePhoneNumbers')}
+              onCheckedChange={(checked) => onToggle('requirePhoneNumbers', checked)}
             />
           </div>
           <div className='flex items-center justify-between'>
@@ -46,7 +44,7 @@ export function DataQualitySection(
             <Switch
               id='require-email'
               checked={criteria.dataQuality.requireEmailAddresses}
-              onCheckedChange={() => onToggle('requireEmailAddresses')}
+              onCheckedChange={(checked) => onToggle('requireEmailAddresses', checked)}
             />
           </div>
           <div className='flex items-center justify-between'>
@@ -59,7 +57,7 @@ export function DataQualitySection(
             <Switch
               id='require-complete-address'
               checked={criteria.dataQuality.requireCompleteAddresses}
-              onCheckedChange={() => onToggle('requireCompleteAddresses')}
+              onCheckedChange={(checked) => onToggle('requireCompleteAddresses', checked)}
             />
           </div>
         </div>

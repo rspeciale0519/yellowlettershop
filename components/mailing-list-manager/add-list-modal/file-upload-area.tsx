@@ -1,18 +1,18 @@
-"use client"
+"use client";
 
-import { useRef } from "react"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Upload, FileText, X } from "lucide-react"
+import { useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Upload, FileText, X } from "lucide-react";
 
 interface FileUploadAreaProps {
-  file: File | null
-  isDragging: boolean
-  onFileSelect: (file: File) => void
-  onFileRemove: () => void
-  onDragOver: (e: React.DragEvent) => void
-  onDragLeave: () => void
-  onDrop: (e: React.DragEvent) => void
+  file: File | null;
+  isDragging: boolean;
+  onFileSelect: (file: File) => void;
+  onFileRemove: () => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragLeave: () => void;
+  onDrop: (e: React.DragEvent) => void;
 }
 
 export function FileUploadArea({
@@ -24,13 +24,13 @@ export function FileUploadArea({
   onDragLeave,
   onDrop,
 }: FileUploadAreaProps) {
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const triggerFileInput = () => {
     if (fileInputRef.current) {
-      fileInputRef.current.click()
+      fileInputRef.current.click();
     }
-  }
+  };
 
   if (file) {
     return (
@@ -48,6 +48,18 @@ export function FileUploadArea({
         </div>
         <Button
           type="button"
+          variant="ghost"
+          size="sm"
+          onClick={onFileRemove}
+          aria-label="Remove file"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  }
+
+  return (
     <div
       role="button"
       tabIndex={0}
@@ -60,21 +72,10 @@ export function FileUploadArea({
       onClick={triggerFileInput}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault()
-          triggerFileInput()
+          e.preventDefault();
+          triggerFileInput();
         }
       }}
-    >
-
-  return (
-    <div
-      className={`border-2 border-dashed rounded-lg p-8 text-center ${
-        isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/20"
-      } cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors`}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
-      onClick={triggerFileInput}
     >
       <input
         type="file"
@@ -82,7 +83,7 @@ export function FileUploadArea({
         accept=".csv,.xls,.xlsx"
         onChange={(e) => {
           if (e.target.files && e.target.files.length > 0) {
-            onFileSelect(e.target.files[0])
+            onFileSelect(e.target.files[0]);
           }
         }}
         className="hidden"
@@ -94,13 +95,13 @@ export function FileUploadArea({
         <Button
           variant="outline"
           onClick={(e) => {
-            e.stopPropagation()
-            triggerFileInput()
+            e.stopPropagation();
+            triggerFileInput();
           }}
         >
           Select File
         </Button>
       </div>
     </div>
-  )
+  );
 }

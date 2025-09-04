@@ -167,8 +167,8 @@ export function MailingListManagerModals({
       <CSVImportModal
         isOpen={csvImportOpen}
         onClose={() => setCsvImportOpen(false)}
-        listId={selectedList?.id ?? ''}
-        listName={selectedList?.name ?? ''}
+        listId={selectedList?.id ?? null}
+        listName={selectedList?.name ?? null}
         onImportComplete={async () => {
           await mutateLists();
           if (viewMode === 'records') {

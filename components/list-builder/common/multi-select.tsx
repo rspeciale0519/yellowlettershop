@@ -16,7 +16,7 @@ export interface MultiSelectOption {
 export interface MultiSelectProps {
   label: string
   options: MultiSelectOption[]
-  selected: string[]
+  selected: string[] | undefined
   onChange: (selected: string[]) => void
   icon?: React.ReactNode
   tooltip?: string
@@ -25,14 +25,16 @@ export interface MultiSelectProps {
 
 export function MultiSelect({ label, options, selected, onChange, icon, tooltip, placeholder }: MultiSelectProps) {
   const [isOpen, setIsOpen] = useState(false)
+  
+  const safeSelected = selected || []
 
   const handleToggle = (value: string) => {
-    const newSelected = selected.includes(value) ? selected.filter((item) => item !== value) : [...selected, value]
+    const newSelected = safeSelected.includes(value) ? safeSelected.filter((item) => item !== value) : [...safeSelected, value]
     onChange(newSelected)
   }
 
   const handleRemove = (value: string) => {
-    onChange(selected.filter((item) => item !== value))
+    onChange(safeSelected.filter((item) => item !== value))
   }
 
   return (
@@ -53,9 +55,9 @@ export function MultiSelect({ label, options, selected, onChange, icon, tooltip,
       </div>
 
       {/* Selected Items */}
-      {selected.length > 0 && (
+      {safeSelected.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {selected.map((value) => {
+          {safeSelected.map((value) => {
             const option = options.find((opt) => opt.value === value)
             return (
               <Badge key={value} variant="secondary" className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200">
@@ -78,7 +80,7 @@ export function MultiSelect({ label, options, selected, onChange, icon, tooltip,
       <div className="relative">
         <Button variant="outline" onClick={() => setIsOpen(!isOpen)} className="w-full justify-between">
           <span className="text-gray-500">
-            {selected.length > 0 ? `${selected.length} selected` : placeholder || `Select ${label}`}
+            {safeSelected.length > 0 ? `${safeSelected.length} selected` : placeholder || `Select ${label}`}
           </span>
           {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </Button>
@@ -92,7 +94,7 @@ export function MultiSelect({ label, options, selected, onChange, icon, tooltip,
                 onClick={() => handleToggle(option.value)}
               >
                 <Checkbox
-                  checked={selected.includes(option.value)}
+                  checked={safeSelected.includes(option.value)}
                   onCheckedChange={() => handleToggle(option.value)}
                   onClick={(e) => e.stopPropagation()}
                 />

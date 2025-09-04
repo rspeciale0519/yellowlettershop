@@ -43,10 +43,6 @@ const FIELD_GROUPS = {
   foreclosure: {
     label: 'Foreclosure',
     fields: ['foreclosure_status', 'filing_date', 'auction_date']
-  },
-  analytics: {
-    label: 'Predictive Analytics',
-    fields: ['likely_to_move', 'likely_to_sell', 'likely_to_refinance', 'motivation_score']
   }
 }
 

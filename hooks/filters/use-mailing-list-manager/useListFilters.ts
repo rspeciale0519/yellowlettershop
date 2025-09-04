@@ -14,6 +14,28 @@ interface UseListFiltersProps {
   totalRecords: number;
 }
 
+export type DateRangeFilter = 
+  | 'all-time'
+  | 'today'
+  | 'last-7-days'
+  | 'last-30-days'
+  | 'last-90-days'
+  | 'this-month'
+  | 'last-month'
+  | 'this-year';
+
+export type UsageFilter = 
+  | 'all'
+  | 'used'
+  | 'unused'
+  | 'recently-used';
+
+export interface FilterState {
+  dateRange: DateRangeFilter;
+  tags: string[];
+  usage: UsageFilter;
+}
+
 export function useListFilters({
   lists,
   records,
@@ -22,10 +44,14 @@ export function useListFilters({
 }: UseListFiltersProps) {
   // Search and filtering state
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('name_asc');
+  const [sortBy, setSortBy] = useState('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [quickFilter, setQuickFilter] = useState('all');
-  const [tagFilters, setTagFilters] = useState<string[]>([]);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [filterState, setFilterState] = useState<FilterState>({
+    dateRange: 'all-time',
+    tags: [],
+    usage: 'all',
+  });
   const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false);
   const [advancedSearchCriteria, setAdvancedSearchCriteria] =
     useState<AdvancedSearchCriteria>({
@@ -41,13 +67,37 @@ export function useListFilters({
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
 
+  // Helper function to get date range for filtering
+  const getDateRangeFilter = useCallback((dateRange: DateRangeFilter): Date | null => {
+    const now = new Date();
+    switch (dateRange) {
+      case 'today':
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      case 'last-7-days':
+        return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      case 'last-30-days':
+        return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      case 'last-90-days':
+        return new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      case 'this-month':
+        return new Date(now.getFullYear(), now.getMonth(), 1);
+      case 'last-month':
+        return new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      case 'this-year':
+        return new Date(now.getFullYear(), 0, 1);
+      default:
+        return null;
+    }
+  }, []);
+
   // Computed values
   const hasActiveFilters = useMemo(() => {
     return (
       searchQuery !== '' ||
       quickFilter !== 'all' ||
-      tagFilters.length > 0 ||
-      statusFilter !== 'all' ||
+      filterState.dateRange !== 'all-time' ||
+      filterState.tags.length > 0 ||
+      filterState.usage !== 'all' ||
       advancedSearchCriteria.columnFilters.length > 0 ||
       advancedSearchCriteria.tagFilter.tags.length > 0 ||
       advancedSearchCriteria.mailingHistoryFilter !== null ||
@@ -57,8 +107,7 @@ export function useListFilters({
   }, [
     searchQuery,
     quickFilter,
-    tagFilters,
-    statusFilter,
+    filterState,
     advancedSearchCriteria,
   ]);
 
@@ -67,24 +116,72 @@ export function useListFilters({
       return { items: [], total: 0 };
     }
     
-    // Parse sortBy string into object format
-    const [column, direction] = sortBy.split('_');
+    let filteredLists = [...(lists ?? [])];
+    
+    // Apply date range filter
+    const dateFilter = getDateRangeFilter(filterState.dateRange);
+    if (dateFilter) {
+      filteredLists = filteredLists.filter(list => {
+        const createdDate = new Date(list.created_at || '');
+        return createdDate >= dateFilter;
+      });
+    }
+    
+    // Apply usage filter
+    if (filterState.usage !== 'all') {
+      filteredLists = filteredLists.filter(list => {
+        // Check if list has been used (based on campaigns or other usage indicators)
+        // For now, we'll consider a list "used" if it has any associated data
+        // This can be enhanced when usage_count and last_used_at are added to the type
+        const hasBeenUsed = false; // TODO: Add usage tracking to MailingList type
+        const recentlyUsed = false; // TODO: Add last_used_at tracking
+        
+        switch (filterState.usage) {
+          case 'used':
+            return hasBeenUsed;
+          case 'unused':
+            return !hasBeenUsed;
+          case 'recently-used':
+            return recentlyUsed;
+          default:
+            return true;
+        }
+      });
+    }
+    
+    // Map sort column names
+    const sortColumnMap: Record<string, string> = {
+      'name': 'name',
+      'record_count': 'record_count',
+      'created_at': 'created_at',
+      'modified_at': 'modified_at',
+      'created_by': 'created_by',
+      'modified_by': 'modified_by'
+    };
+    
+    const mappedSortColumn = sortColumnMap[sortBy] || sortBy;
+    const isDescending = sortBy.endsWith('_desc');
+    const cleanSortColumn = sortBy.replace('_desc', '');
+    const finalSortColumn = sortColumnMap[cleanSortColumn] || cleanSortColumn;
+    
+    // Parse sortBy and determine direction
     const sortByObj = { 
-      column: column === 'name' ? 'name' : column === 'created' ? 'createdAt' : column, 
-      direction: (direction as 'asc' | 'desc') || 'asc' 
+      column: finalSortColumn,
+      direction: isDescending ? 'desc' : sortDirection
     };
     
     // Merge additional filters into advanced criteria
     const mergedCriteria = {
       ...advancedSearchCriteria,
-      // Merge tagFilters into tagFilter if not already present
       tagFilter: {
         ...advancedSearchCriteria.tagFilter,
-        tags: advancedSearchCriteria.tagFilter.tags.length ? advancedSearchCriteria.tagFilter.tags : tagFilters,
+        tags: advancedSearchCriteria.tagFilter.tags.length 
+          ? advancedSearchCriteria.tagFilter.tags 
+          : filterState.tags,
       },
     };
     
-    const result = filterSortPaginateLists(lists ?? [], {
+    const result = filterSortPaginateLists(filteredLists, {
       criteria: mergedCriteria,
       searchQuery,
       sortBy: sortByObj,
@@ -93,19 +190,19 @@ export function useListFilters({
       quickFilter: quickFilter as 'all' | 'last_7_days' | 'used_in_campaign',
     });
     
-    // Return with totalCount for backward compatibility
     return { items: result.items, totalCount: result.total };
   }, [
     viewMode,
     lists,
     searchQuery,
     sortBy,
+    sortDirection,
     currentPage,
     itemsPerPage,
     quickFilter,
-    tagFilters,
-    statusFilter,
+    filterState,
     advancedSearchCriteria,
+    getDateRangeFilter,
   ]);
   const paginatedItems = useMemo(() => {
     return viewMode === 'lists'
@@ -122,8 +219,11 @@ export function useListFilters({
   const clearFilters = useCallback(() => {
     setSearchQuery('');
     setQuickFilter('all');
-    setTagFilters([]);
-    setStatusFilter('all');
+    setFilterState({
+      dateRange: 'all-time',
+      tags: [],
+      usage: 'all',
+    });
     setAdvancedSearchCriteria({
       columnFilters: [],
       tagFilter: { tags: [], matchType: 'any' },
@@ -139,6 +239,40 @@ export function useListFilters({
     setSortBy(newSortBy);
     setCurrentPage(1);
   }, []);
+  
+  const handleFilter = useCallback((filterType: keyof FilterState, value: any) => {
+    setFilterState(prev => ({
+      ...prev,
+      [filterType]: value,
+    }));
+    setCurrentPage(1);
+  }, []);
+  
+  const handleQuickAction = useCallback((action: string) => {
+    switch (action) {
+      case 'recent-unused':
+        setFilterState({
+          dateRange: 'last-30-days',
+          tags: [],
+          usage: 'unused',
+        });
+        break;
+      case 'this-month-active':
+        setFilterState({
+          dateRange: 'this-month',
+          tags: [],
+          usage: 'used',
+        });
+        break;
+      default:
+        break;
+    }
+    setCurrentPage(1);
+  }, []);
+
+  const toggleAdvancedSearch = useCallback(() => {
+    setAdvancedSearchOpen(!advancedSearchOpen);
+  }, [advancedSearchOpen]);
 
   return {
     // State
@@ -146,12 +280,7 @@ export function useListFilters({
     setSearchQuery,
     sortBy,
     setSortBy,
-    quickFilter,
-    setQuickFilter,
-    tagFilters,
-    setTagFilters,
-    statusFilter,
-    setStatusFilter,
+    filterState,
     advancedSearchOpen,
     setAdvancedSearchOpen,
     advancedSearchCriteria,
@@ -159,15 +288,20 @@ export function useListFilters({
     currentPage,
     setCurrentPage,
     itemsPerPage,
-
-    // Computed values
-    hasActiveFilters,
-    listResults,
+    
+    // Computed
+    filteredAndSortedLists: listResults.items,
     paginatedItems,
     totalPages,
-
-    // Event handlers
-    clearFilters,
+    hasActiveFilters,
+    
+    // Handlers
+    handleFilter,
+    handleFilterChange: handleFilter,
     handleSort,
+    handleSortChange: handleSort,
+    clearFilters,
+    handleQuickAction,
+    toggleAdvancedSearch,
   };
 }

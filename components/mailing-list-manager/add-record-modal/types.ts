@@ -1,30 +1,28 @@
-export interface AddRecordModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
 // components/mailing-list-manager/add-record-modal/types.ts
 
 export interface MailingListSummary {
   id: string
   name: string
+  recordCount: number
 }
 
-export interface AddRecordModalProps<TRecord = AddRecordFormData, TList = MailingListSummary> {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSuccess: (newRecord: TRecord) => void
-  lists?: TList[]
-  onCreateNewList: (listName: string) => Promise<TList>
-}
-}
-
-export type CustomField =
-  | { id: string; name: string; type: "text" }
-  | { id: string; name: string; type: "number" }
-  | { id: string; name: string; type: "checkbox" }
-  | { id: string; name: string; type: "select"; options: readonly string[] }
+export interface FormData {
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  address: string
   city: string
   state: string
   zipCode: string
+}
+
+export interface AddRecordModalProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onSuccess: (newRecord: any) => void
+  lists?: MailingListSummary[]
+  onCreateNewList: (listName: string) => Promise<MailingListSummary>
 }
 
 export interface CustomField {

@@ -1,5 +1,7 @@
 "use client"
 
+import { FeatureAuthGuard } from "@/components/auth/FeatureAuthGuard"
+import { BuildListLanding } from "@/components/landing-pages/BuildListLanding"
 import { ListSummary } from "@/components/list-builder/list-summary"
 import { CriteriaAccordion } from "@/components/list-builder/criteria-accordion"
 import { Button } from "@/components/ui/button"
@@ -7,7 +9,7 @@ import { Save, ShoppingCart, Trash2 } from "lucide-react"
 import { useBuildListsPage } from "./hooks/useBuildListsPage"
 import { FilterPanel } from "./components/FilterPanel"
 
-export default function BuildListsPage() {
+function BuildListsContent() {
   const {
     listName,
     setListName,
@@ -77,5 +79,16 @@ export default function BuildListsPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function BuildListsPage() {
+  return (
+    <FeatureAuthGuard
+      landingPage={<BuildListLanding />}
+      requireAuth={true}
+    >
+      <BuildListsContent />
+    </FeatureAuthGuard>
   )
 }

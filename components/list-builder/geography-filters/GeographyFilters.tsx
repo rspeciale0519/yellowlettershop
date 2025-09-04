@@ -56,22 +56,24 @@ export function GeographyFilters({
   const [selectedCounty, setSelectedCounty] = useState<string>('');
 
   const addCriterion = useCallback(() => {
+    const currentCriteria = criteria?.selectedCriteria || [];
     if (
       selectedCriterion &&
-      !criteria.selectedCriteria.includes(selectedCriterion)
+      !currentCriteria.includes(selectedCriterion)
     ) {
       onUpdate({
-        selectedCriteria: [...criteria.selectedCriteria, selectedCriterion],
+        selectedCriteria: [...currentCriteria, selectedCriterion],
       });
       setExpandedPanels((prev) => [...prev, selectedCriterion]);
       setSelectedCriterion('');
     }
-  }, [selectedCriterion, criteria.selectedCriteria, onUpdate]);
+  }, [selectedCriterion, criteria?.selectedCriteria, onUpdate]);
 
   const removeCriterion = useCallback(
     (criterion: string) => {
+      const currentCriteria = criteria?.selectedCriteria || [];
       onUpdate({
-        selectedCriteria: criteria.selectedCriteria.filter(
+        selectedCriteria: currentCriteria.filter(
           (c) => c !== criterion
         ),
       });
@@ -88,7 +90,7 @@ export function GeographyFilters({
         onUpdate({ counties: [] });
       }
     },
-    [criteria.selectedCriteria, onUpdate]
+    [criteria?.selectedCriteria, onUpdate]
   );
 
   const togglePanel = useCallback((criterion: string) => {
@@ -226,10 +228,10 @@ export function GeographyFilters({
 
   // Check if at least one geographic criterion is selected
   const hasGeographicCriteria =
-    criteria.states.length > 0 ||
-    criteria.zipCodes.length > 0 ||
-    criteria.cities.length > 0 ||
-    criteria.counties.length > 0;
+    (criteria?.states?.length || 0) > 0 ||
+    (criteria?.zipCodes?.length || 0) > 0 ||
+    (criteria?.cities?.length || 0) > 0 ||
+    (criteria?.counties?.length || 0) > 0;
 
   return (
     <Card>
@@ -270,10 +272,10 @@ export function GeographyFilters({
                   <SelectItem
                     key={option.value}
                     value={option.value}
-                    disabled={criteria.selectedCriteria.includes(option.value)}
+                    disabled={(criteria?.selectedCriteria || []).includes(option.value)}
                   >
                     {option.label}
-                    {criteria.selectedCriteria.includes(option.value) &&
+                    {(criteria?.selectedCriteria || []).includes(option.value) &&
                       ' (Added)'}
                   </SelectItem>
                 ))}
@@ -283,7 +285,7 @@ export function GeographyFilters({
               onClick={addCriterion}
               disabled={
                 !selectedCriterion ||
-                criteria.selectedCriteria.includes(selectedCriterion)
+(criteria?.selectedCriteria || []).includes(selectedCriterion)
               }
               className='bg-yellow-500 hover:bg-yellow-600 text-gray-900'
             >
@@ -294,14 +296,14 @@ export function GeographyFilters({
         </div>
 
         {/* Selected Criteria Panels */}
-        {criteria.selectedCriteria.length > 0 && (
+        {(criteria?.selectedCriteria?.length || 0) > 0 && (
           <div className='space-y-4'>
             <div className='flex items-center justify-between'>
               <Label className='text-base font-semibold'>
                 Selected Criteria
               </Label>
               <div className='flex flex-wrap gap-1'>
-                {criteria.selectedCriteria.map((criterion) => (
+                {(criteria?.selectedCriteria || []).map((criterion) => (
                   <Badge
                     key={criterion}
                     variant='secondary'
@@ -317,12 +319,12 @@ export function GeographyFilters({
               </div>
             </div>
             <div className='space-y-3'>
-              {criteria.selectedCriteria.map(renderCriterionPanel)}
+              {(criteria?.selectedCriteria || []).map(renderCriterionPanel)}
             </div>
           </div>
         )}
 
-        {criteria.selectedCriteria.length === 0 && (
+        {(criteria?.selectedCriteria?.length || 0) === 0 && (
           <Alert>
             <Info className='h-4 w-4' />
             <AlertDescription>

@@ -50,49 +50,26 @@ export function ListSelector({
           <div className='flex items-center space-x-2'>
             <RadioGroupItem value='existing' id='existing-list' />
             <Label htmlFor='existing-list' className='font-normal'>
+              Use existing list
+            </Label>
+          </div>
+          <div className='flex items-center space-x-2'>
+            <RadioGroupItem value='new' id='new-list' />
+            <Label htmlFor='new-list' className='font-normal'>
+              Create new list
+            </Label>
+          </div>
+        </RadioGroup>
+      </div>
+
+      {listOption === 'existing' ? (
         <div>
-          <Label htmlFor="list-select">Select a mailing list</Label>
+          <Label htmlFor='list-select'>Select a mailing list</Label>
           <Select
             value={selectedListId}
             onValueChange={onListChange}
             disabled={!lists || lists.length === 0}
           >
-            <SelectTrigger
-              id="list-select"
-              className="mt-1"
-              aria-invalid={!!errors?.selectedListId}
-              aria-describedby={errors?.selectedListId ? "list-select-error" : undefined}
-            >
-              <SelectValue placeholder="Select a mailing list" />
-            </SelectTrigger>
-            <SelectContent>
-              {lists?.map((list) => (
-                <SelectItem key={list.id} value={list.id}>
-                  {list.name} ({list.recordCount.toLocaleString()} records)
-                </SelectItem>
-              ))}
-            </SelectContent>
-          <Label htmlFor="new-list-name">New list name</Label>
-          <Input
-            id="new-list-name"
-            value={newListName}
-            onChange={(e) => onNewListNameChange(e.target.value)}
-            placeholder="e.g., New York Leads 2025"
-            className="mt-1"
-            aria-invalid={!!errors?.newListName}
-            aria-describedby={errors?.newListName ? "new-list-name-error" : undefined}
-          />
-          {errors?.newListName && (
-            <p id="new-list-name-error" className="text-sm text-destructive mt-1">
-              {errors.newListName}
-            </p>
-          )}
-        </div>
-            >
-              {errors.selectedListId}
-            </p>
-          )}
-        </div>
             <SelectTrigger id='list-select' className='mt-1'>
               <SelectValue placeholder='Select a mailing list' />
             </SelectTrigger>

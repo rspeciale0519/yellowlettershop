@@ -111,17 +111,6 @@ export interface ForeclosureCriteria {
   caseNumbers: string[]
 }
 
-export interface PredictiveCriteria {
-  selectedModel?: string | null
-  modelScores?: {
-    heloc?: string[]
-    purchase?: string[]
-    refinance?: string[]
-    rent?: string[]
-    sale?: string[]
-  }
-  selectedCriteria?: string[]
-}
 
 export interface OptionsCriteria {
   selectedCriteria: string[]
@@ -176,7 +165,6 @@ export type Criteria =
   | DemographicsCriteria
   | MortgageCriteria
   | ForeclosureCriteria
-  | PredictiveCriteria
   | OptionsCriteria
 
 export interface ListCriteria {
@@ -185,6 +173,5 @@ export interface ListCriteria {
   demographics: DemographicsCriteria
   mortgage: MortgageCriteria
   foreclosure: ForeclosureCriteria
-  predictive: PredictiveCriteria
   options: OptionsCriteria
 }

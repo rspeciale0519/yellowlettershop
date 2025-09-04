@@ -13,8 +13,6 @@ import { CheckCircle2 } from 'lucide-react';
 import type { ColumnMapping, PredefinedField } from './types';
 import { PREDEFINED_FIELDS } from './types';
 
-import type { ColumnMapping, PredefinedField } from './types';
-
 type FieldId = 'custom' | 'keep' | 'ignore' | PredefinedField['id'];
 
 interface ColumnMappingProps {
@@ -38,11 +36,7 @@ export function ColumnMappingSection({
     <div className='space-y-4'>
       <div>
         <h3 className='font-medium mb-2'>Column Mapping</h3>
-            const defaultMapping: ColumnMapping = {
-              fieldId: "custom",
-              customName: header,
-            }
-            const mapping: ColumnMapping = columnMappings[header] ?? defaultMapping
+        <div className='border rounded-md'>
           <div className='bg-muted px-4 py-2 flex'>
             <div className='w-1/2 font-medium text-sm'>
               Uploaded Column Headers

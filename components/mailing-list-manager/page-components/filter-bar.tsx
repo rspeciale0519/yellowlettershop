@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Filter, SlidersHorizontal, X } from 'lucide-react';
 import { FilterDropdown } from './filter-dropdown';
 import { SortByDropdown } from './sort-by-dropdown';
+import type { FilterState } from '@/hooks/filters/use-mailing-list-manager/useListFilters';
 
 interface FilterBarProps {
   searchQuery: string;
@@ -15,8 +16,10 @@ interface FilterBarProps {
   onToggleAdvancedSearch: () => void;
   sortBy: { column: string; direction: 'asc' | 'desc' };
   onSortByChange: (column: string) => void;
-  quickFilter: string;
-  onQuickFilterChange: (filter: string) => void;
+  filterState: FilterState;
+  onFilterChange: (filterType: keyof FilterState, value: any) => void;
+  onQuickAction: (action: string) => void;
+  availableTags: Array<{ id: string; name: string }>;
 }
 
 export const FilterBar = ({
@@ -28,8 +31,10 @@ export const FilterBar = ({
   onToggleAdvancedSearch,
   sortBy,
   onSortByChange,
-  quickFilter,
-  onQuickFilterChange,
+  filterState,
+  onFilterChange,
+  onQuickAction,
+  availableTags,
 }: FilterBarProps) => {
   return (
     <div className='flex flex-wrap items-center gap-2'>
@@ -45,10 +50,15 @@ export const FilterBar = ({
 
       <div className='flex items-center gap-2'>
         <FilterDropdown
-          selectedFilter={quickFilter}
-          onFilterChange={onQuickFilterChange}
+          selectedFilters={filterState}
+          onFilterChange={onFilterChange}
+          onQuickAction={onQuickAction}
+          availableTags={availableTags}
         />
-        <SortByDropdown sortBy={sortBy} onSortChange={onSortByChange} />
+        <SortByDropdown 
+          sortBy={sortBy} 
+          onSortChange={onSortByChange} 
+        />
         <Button
           variant={showAdvancedSearch ? 'secondary' : 'outline'}
           onClick={onToggleAdvancedSearch}

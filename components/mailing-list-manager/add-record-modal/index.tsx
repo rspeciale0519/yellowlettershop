@@ -234,7 +234,6 @@ export function AddRecordModal({ open, onOpenChange, onSuccess, lists, onCreateN
             {isSubmitting ? "Creating..." : "Create Record"}
           </Button>
         </DialogFooter>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   )

@@ -45,6 +45,37 @@ export function useListData() {
   const [records, setRecords] = useState<MailingListRecord[]>([])
   const [totalRecords, setTotalRecords] = useState(0)
 
+  // Fetch all records when in records view mode
+  useEffect(() => {
+    async function fetchAllRecords() {
+      if (viewMode === 'records' && isMountedRef.current) {
+        try {
+          // Fetch all records from all lists by not passing a listId
+          const result = await getMailingListRecords(undefined, {
+            limit: 50, // Default page size
+            offset: 0,
+          })
+          if (isMountedRef.current) {
+            setRecords(result.data || [])
+            setTotalRecords(result.count || 0)
+          }
+        } catch (error) {
+          console.error('Failed to fetch all records:', error)
+          if (isMountedRef.current) {
+            setRecords([])
+            setTotalRecords(0)
+          }
+        }
+      } else if (viewMode === 'lists' && isMountedRef.current) {
+        // Clear records when in lists view
+        setRecords([])
+        setTotalRecords(0)
+      }
+    }
+
+    fetchAllRecords()
+  }, [viewMode, getMailingListRecords])
+
   return {
     // Data
     lists,

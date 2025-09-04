@@ -63,6 +63,7 @@ export function PropertyRangeSection({
   helpText,
   residentialOnly,
 }: PropertyRangeSectionProps) {
+  const [showCustomInput, setShowCustomInput] = useState(false);
   const currentValue = criteria[field] || [min, max];
   const currentMin = currentValue[0];
   const currentMax = currentValue[1];

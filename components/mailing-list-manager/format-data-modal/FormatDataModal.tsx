@@ -36,23 +36,24 @@ interface RecordRange {
   record: string;
 }
 
-interface ApplyFormatOptions {
-  columns: string[];
-  const [selectedColumns, setSelectedColumns] = useState<string[]>([])
-  const [formatOption, setFormatOption] = useState<string>('upper')
-- const [recordSelection, setRecordSelection] = useState<string>('all')
- const [recordSelection, setRecordSelection] = useState<RecordSelection>('all')
- const [recordRange, setRecordRange] = useState<RecordRange>({
-    from: '1',
-    to: '100',
-    next: '1',
-    rest: '1',
-    record: '1',
-  })export type { FormatDataModalProps };
 interface DictionaryEntry {
   search: string;
   replace: string;
 }
+
+interface ApplyFormatOptions {
+  columns: string[];
+  formatOption: string;
+  recordSelection: RecordSelection;
+  recordRange: RecordRange;
+  dictionaryEnabled: boolean;
+  dictionaryEntries: DictionaryEntry[];
+  includeDeleted: boolean;
+  autoRun: boolean;
+  autoClose: boolean;
+}
+
+export type { FormatDataModalProps };
 
 export function FormatDataModal({
   open,
@@ -64,45 +65,39 @@ export function FormatDataModal({
 }: FormatDataModalProps) {
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [formatOption, setFormatOption] = useState<string>('upper');
-  const [recordSelection, setRecordSelection] = useState<string>('all');
-  const [recordRange, setRecordRange] = useState({
+  const [recordSelection, setRecordSelection] = useState<RecordSelection>('all');
+  const [recordRange, setRecordRange] = useState<RecordRange>({
     from: '1',
+    to: '100',
+    next: '1',
+    rest: '1',
+    record: '1',
+  });
+  const [dictionaryEnabled, setDictionaryEnabled] = useState<boolean>(false);
+  const [includeDeleted, setIncludeDeleted] = useState<boolean>(false);
+  const [autoRun, setAutoRun] = useState<boolean>(false);
+  const [autoClose, setAutoClose] = useState<boolean>(true);
+  const [dictionaryEntries, setDictionaryEntries] = useState<DictionaryEntry[]>([
+    { search: 'JR', replace: 'Jr.' },
+    { search: 'SR', replace: 'Sr.' },
+    { search: 'inc', replace: 'Inc.' },
+    { search: 'llc', replace: 'LLC' },
+  ]);
+
+  const toggleColumnSelection = (columnId: string) => {
+    setSelectedColumns((prev) =>
+      prev.includes(columnId)
+        ? prev.filter((id) => id !== columnId)
+        : [...prev, columnId]
+    );
+  };
+
   const addDictionaryEntry = () => {
-    setDictionaryEntries((prev) => [...prev, { search: '', replace: '' }])
-  }
+    setDictionaryEntries((prev) => [...prev, { search: '', replace: '' }]);
+  };
 
   const removeDictionaryEntry = (index: number) => {
-    setDictionaryEntries((prev) => prev.filter((_, i) => i !== index))
-  }  const [dictionaryEntries, setDictionaryEntries] = useState<DictionaryEntry[]>(
-    [
-      { search: 'JR', replace: 'Jr.' },
-      { search: 'SR', replace: 'Sr.' },
-      { search: 'inc', replace: 'Inc.' },
-      { search: 'llc', replace: 'LLC' },
-    ]
-  );
-  const handleApplyFormat = async () => {
-    const payload: ApplyFormatOptions = {
-      columns: selectedColumns,
-      formatOption,
-      recordSelection,
-      recordRange,
-      dictionaryEnabled,
-      dictionaryEntries,
-      includeDeleted,
-      autoRun,
-      autoClose,
-    }
-    try {
-      await Promise.resolve(onApplyFormat(payload))
-      if (autoClose) onOpenChange(false)
-    } catch (err) {
-      // Replace with toast/logger in your codebase
-      // eslint-disable-next-line no-console
-      console.error('onApplyFormat failed', err)
-    }
-  }  const removeDictionaryEntry = (index: number) => {
-    setDictionaryEntries(dictionaryEntries.filter((_, i) => i !== index));
+    setDictionaryEntries((prev) => prev.filter((_, i) => i !== index));
   };
 
   const updateDictionaryEntry = (
@@ -115,8 +110,8 @@ export function FormatDataModal({
     setDictionaryEntries(newEntries);
   };
 
-  const handleApplyFormat = () => {
-    onApplyFormat({
+  const handleApplyFormat = async () => {
+    const payload: ApplyFormatOptions = {
       columns: selectedColumns,
       formatOption,
       recordSelection,
@@ -126,10 +121,15 @@ export function FormatDataModal({
       includeDeleted,
       autoRun,
       autoClose,
-    });
+    };
 
-    if (autoClose) {
-      onOpenChange(false);
+    try {
+      await Promise.resolve(onApplyFormat(payload));
+      if (autoClose) onOpenChange(false);
+    } catch (err) {
+      // Replace with toast/logger in your codebase
+      // eslint-disable-next-line no-console
+      console.error('onApplyFormat failed', err);
     }
   };
 

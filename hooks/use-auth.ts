@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { createClient } from "@/utils/supabase/client"
 import type { User as SupabaseUser } from "@supabase/supabase-js"
 
@@ -12,6 +13,7 @@ interface AuthState {
 
 export function useAuth() {
   const supabase = createClient()
+  const router = useRouter()
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
     isLoading: true,
@@ -41,9 +43,13 @@ export function useAuth() {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) throw error
       setAuthState({ user: data.user, isLoading: false, isAuthenticated: true })
+      
+      // Redirect to dashboard after successful login
+      router.push('/dashboard')
+      
       return data
     },
-    [supabase]
+    [supabase, router]
   )
 
   // Logout via Supabase
@@ -56,15 +62,20 @@ export function useAuth() {
   useEffect(() => {
     checkSession()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const u = session?.user ?? null
       setAuthState({ user: u, isLoading: false, isAuthenticated: !!u })
+      
+      // Redirect to dashboard on successful sign-in
+      if (event === 'SIGNED_IN' && u) {
+        router.push('/dashboard')
+      }
     })
 
     return () => {
       subscription.unsubscribe()
     }
-  }, [checkSession, supabase])
+  }, [checkSession, supabase, router])
 
   return {
     ...authState,
