@@ -1,7 +1,0 @@
-{
-  "/page": "app/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/dashboard/profile/page": "app/dashboard/profile/page.js",
-  "/mailing-services/mailing-list-manager/page": "app/mailing-services/mailing-list-manager/page.js",
-  "/dashboard/security/page": "app/dashboard/security/page.js"
-}
