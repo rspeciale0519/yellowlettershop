@@ -36,3 +36,9 @@ export async function createServerClient() {
     }
   )
 }
+
+// Alias for backward compatibility with existing imports
+export const createClient = createServerClient
+
+// Alternative export name used in lib/supabase imports
+export const createSupabaseServerClient = createServerClient

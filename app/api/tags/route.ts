@@ -10,7 +10,6 @@ const TagCreateSchema = z.object({
   visibility: z.enum(['public', 'private', 'system']),
   sort_order: z.number().min(0).max(999),
   parent_tag_id: z.string().uuid().optional(),
-  userId: z.string().uuid(),
   teamId: z.string().uuid().optional(),
   is_system: z.boolean().optional(),
   metadata: z.record(z.any()).optional()
@@ -18,7 +17,7 @@ const TagCreateSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
     const teamId = searchParams.get('teamId')
@@ -46,11 +45,8 @@ export async function GET(request: NextRequest) {
       `)
 
     // Add filters for user access
-    query = query.or(`
-      is_system.eq.true,
-      user_id.eq.${user.id}
-      ${teamId ? `,team_id.eq.${teamId}` : ''}
-    `)
+    const orCondition = `is_system.eq.true,user_id.eq.${user.id}${teamId ? `,team_id.eq.${teamId}` : ''}`
+    query = query.or(orCondition)
 
     query = query.order('is_system', { ascending: false })
       .order('sort_order')
@@ -60,6 +56,13 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('Error fetching tags:', error)
+      
+      // If the table doesn't exist, return an empty tags array instead of failing
+      if (error.code === '42P01') { // Table doesn't exist error code
+        console.log('Tags table does not exist yet, returning empty array')
+        return NextResponse.json({ tags: [] })
+      }
+      
       return NextResponse.json({ error: 'Failed to fetch tags' }, { status: 500 })
     }
 
@@ -72,7 +75,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
     const body = await request.json()
 
     // Validate input
@@ -108,6 +111,14 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Error creating tag:', error)
+      
+      // If the table doesn't exist, provide helpful error message
+      if (error.code === '42P01') {
+        return NextResponse.json({ 
+          error: 'Tags system not yet set up. Please contact support to enable the tags feature.' 
+        }, { status: 503 })
+      }
+      
       return NextResponse.json({ error: 'Failed to create tag' }, { status: 500 })
     }
 

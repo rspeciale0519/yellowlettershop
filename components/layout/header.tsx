@@ -29,7 +29,6 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { useState, useEffect } from 'react';
-import { useSupabaseClient } from '@/hooks/use-supabase-client';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 
@@ -37,8 +36,14 @@ export function Header() {
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAtTop, setIsAtTop] = useState(true);
-  const supabase = useSupabaseClient();
+  const [isHydrated, setIsHydrated] = useState(false);
+  const supabase = createClient();
   const router = useRouter();
+
+  // Ensure hydration is complete before showing auth-dependent UI
+  useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setIsAtTop(window.scrollY < 8);
@@ -77,8 +82,7 @@ export function Header() {
 
   // Check for existing user session on component mount
   useEffect(() => {
-    if (!supabase) return;
-    let subscription: any;
+    let subscription: { unsubscribe: () => void } | undefined;
     const init = async () => {
       try {
         const {
@@ -99,25 +103,34 @@ export function Header() {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       
-      // Redirect to dashboard on successful sign-in
+      // Only redirect on actual sign-in events from authentication flow
+      // Check for auth query parameter to ensure this is from login flow
       if (event === 'SIGNED_IN' && currentUser) {
-        // Clear any auth query parameters
         const url = new URL(window.location.href);
-        url.searchParams.delete('auth');
-        window.history.replaceState({}, '', url.pathname);
+        const hasAuthParam = url.searchParams.has('auth');
         
-        // Immediate redirect to dashboard
-        router.push('/dashboard');
+        // Only redirect if this is from an auth flow (has auth param)
+        if (hasAuthParam) {
+          // Clear auth query parameters
+          url.searchParams.delete('auth');
+          window.history.replaceState({}, '', url.pathname);
+          
+          // Only redirect if we're not already on dashboard
+          const currentPath = window.location.pathname;
+          if (!currentPath.startsWith('/dashboard')) {
+            router.push('/dashboard');
+          }
+        }
       }
     }).data.subscription;
 
     return () => {
       if (subscription) subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [router]);
 
   // Handle successful login
-  const handleLoginSuccess = (userData: any) => {
+  const handleLoginSuccess = (userData: { id: string; email?: string } | null) => {
     setUser(userData);
   };
 
@@ -212,7 +225,7 @@ export function Header() {
         </nav>
 
         <div className='flex items-center gap-4'>
-          {!isLoading && (
+          {isHydrated && !isLoading ? (
             <>
               {user ? (
                 <>
@@ -315,6 +328,13 @@ export function Header() {
                 </>
               )}
             </>
+          ) : (
+            // Show placeholder during hydration to prevent layout shift
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-transparent" /> {/* ThemeToggle placeholder */}
+              <div className="w-20 h-9 bg-transparent" /> {/* Button placeholder */}
+              <div className="w-24 h-9 bg-transparent" /> {/* Button placeholder */}
+            </div>
           )}
 
           <div className='md:hidden'>
@@ -340,7 +360,7 @@ export function Header() {
                       </Link>
                     );
                   })}
-                  {!isLoading && !user && (
+                  {isHydrated && !isLoading && !user && (
                     <>
                       <Button
                         variant='outline'
@@ -357,7 +377,7 @@ export function Header() {
                       </Button>
                     </>
                   )}
-                  {user && (
+                  {isHydrated && user && (
                     <Button
                       asChild
                       className='w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900'

@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     if (teamId) {
       const requests = await timeBasedPermissions.getTeamAccessRequests(
         teamId,
-        status as any
+        status as 'pending' | 'approved' | 'rejected' | 'expired' | null
       )
       return NextResponse.json({ requests })
     } else {

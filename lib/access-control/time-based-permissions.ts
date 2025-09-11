@@ -3,7 +3,7 @@
  * Handles expiring permissions, access requests, and permission templates
  */
 
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { createSupabaseServerClient } from '@/utils/supabase/server'
 import { createSupabaseClient } from '@/lib/supabase/client'
 
 export type AccessRequestStatus = 'pending' | 'approved' | 'denied' | 'expired' | 'withdrawn'
@@ -68,7 +68,9 @@ export interface TeamActivity {
  * Server-side time-based permissions service
  */
 export class TimeBasedPermissionsService {
-  private supabase = createSupabaseServerClient()
+  private async getSupabase() {
+    return await createSupabaseServerClient()
+  }
 
   /**
    * Create an access request
@@ -80,7 +82,7 @@ export class TimeBasedPermissionsService {
     justification?: string
     requested_duration_days?: number
   }): Promise<AccessRequest> {
-    const { data: request, error } = await this.supabase
+    const { data: request, error } = await (await this.getSupabase())
       .from('access_requests')
       .insert({
         resource_type: data.resource_type,
@@ -101,7 +103,7 @@ export class TimeBasedPermissionsService {
    * Get access requests for a team (managers only)
    */
   async getTeamAccessRequests(teamId: string, status?: AccessRequestStatus): Promise<AccessRequest[]> {
-    let query = this.supabase
+    let query = (await this.getSupabase())
       .from('access_requests')
       .select(`
         *,
@@ -124,7 +126,7 @@ export class TimeBasedPermissionsService {
    * Get user's own access requests
    */
   async getUserAccessRequests(userId: string): Promise<AccessRequest[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (await this.getSupabase())
       .from('access_requests')
       .select('*')
       .eq('requester_id', userId)
@@ -142,7 +144,7 @@ export class TimeBasedPermissionsService {
     reviewerUserId: string, 
     reviewNotes?: string
   ): Promise<void> {
-    const { error } = await this.supabase.rpc('approve_access_request', {
+    const { error } = await (await this.getSupabase()).rpc('approve_access_request', {
       request_id: requestId,
       reviewer_user_id: reviewerUserId,
       review_notes_text: reviewNotes
@@ -159,7 +161,7 @@ export class TimeBasedPermissionsService {
     reviewerUserId: string, 
     reviewNotes?: string
   ): Promise<void> {
-    const { error } = await this.supabase
+    const { error } = await (await this.getSupabase())
       .from('access_requests')
       .update({
         status: 'denied',
@@ -182,7 +184,7 @@ export class TimeBasedPermissionsService {
     team_id?: string
     template_permissions: TemplatePermission[]
   }): Promise<PermissionTemplate> {
-    const { data: template, error } = await this.supabase
+    const { data: template, error } = await (await this.getSupabase())
       .from('permission_templates')
       .insert({
         name: data.name,
@@ -203,7 +205,7 @@ export class TimeBasedPermissionsService {
    * Get permission templates for a team
    */
   async getPermissionTemplates(teamId?: string): Promise<PermissionTemplate[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (await this.getSupabase())
       .from('permission_templates')
       .select('*')
       .eq('team_id', teamId)
@@ -222,7 +224,7 @@ export class TimeBasedPermissionsService {
     targetUserId: string, 
     appliedByUserId: string
   ): Promise<void> {
-    const { error } = await this.supabase.rpc('apply_permission_template', {
+    const { error } = await (await this.getSupabase()).rpc('apply_permission_template', {
       template_id: templateId,
       target_user_id: targetUserId,
       applied_by_user_id: appliedByUserId
@@ -239,7 +241,7 @@ export class TimeBasedPermissionsService {
     limit: number = 50,
     offset: number = 0
   ): Promise<TeamActivity[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (await this.getSupabase())
       .from('team_activity_log')
       .select(`
         *,
@@ -258,7 +260,7 @@ export class TimeBasedPermissionsService {
    * Revoke expired permissions (should be called via cron job)
    */
   async revokeExpiredPermissions(): Promise<void> {
-    const { error } = await this.supabase.rpc('revoke_expired_permissions')
+    const { error } = await (await this.getSupabase()).rpc('revoke_expired_permissions')
     if (error) throw error
   }
 
@@ -266,7 +268,7 @@ export class TimeBasedPermissionsService {
    * Get user's permissions with expiration info
    */
   async getUserPermissions(userId: string): Promise<any[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (await this.getSupabase())
       .from('resource_permissions')
       .select('*')
       .eq('user_id', userId)
@@ -284,7 +286,7 @@ export class TimeBasedPermissionsService {
     permissionId: string, 
     additionalDays: number
   ): Promise<void> {
-    const { error } = await this.supabase
+    const { error } = await (await this.getSupabase())
       .from('resource_permissions')
       .update({
         expires_at: `now() + interval '${additionalDays} days'`
@@ -308,7 +310,7 @@ export class ClientTimeBasedPermissionsService {
     justification?: string
     requested_duration_days?: number
   }): Promise<AccessRequest> {
-    const { data: request, error } = await this.supabase
+    const { data: request, error } = await (await this.getSupabase())
       .from('access_requests')
       .insert({
         resource_type: data.resource_type,
@@ -326,7 +328,7 @@ export class ClientTimeBasedPermissionsService {
   }
 
   async getUserAccessRequests(): Promise<AccessRequest[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (await this.getSupabase())
       .from('access_requests')
       .select('*')
       .order('created_at', { ascending: false })
@@ -336,7 +338,7 @@ export class ClientTimeBasedPermissionsService {
   }
 
   async withdrawAccessRequest(requestId: string): Promise<void> {
-    const { error } = await this.supabase
+    const { error } = await (await this.getSupabase())
       .from('access_requests')
       .update({
         status: 'withdrawn',

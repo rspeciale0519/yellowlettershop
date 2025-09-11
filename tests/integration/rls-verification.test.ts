@@ -1,32 +1,95 @@
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals'
+import { describe, it, before, after } from 'mocha'
+import { expect } from 'chai'
 import { createClient } from '@supabase/supabase-js'
 import { v4 as uuidv4 } from 'uuid'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+// Helper to create properly configured Supabase client
+function createServiceClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+
+  return createClient(supabaseUrl, serviceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    },
+    global: {
+      fetch: (url, options = {}) => {
+        const controller = new AbortController()
+        const id = setTimeout(() => controller.abort(), 5000)
+        
+        return fetch(url, {
+          ...options,
+          signal: controller.signal
+        }).finally(() => clearTimeout(id))
+      }
+    }
+  })
+}
+
+function createAnonClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+
+  return createClient(supabaseUrl, anonKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    },
+    global: {
+      fetch: (url, options = {}) => {
+        const controller = new AbortController()
+        const id = setTimeout(() => controller.abort(), 5000)
+        
+        return fetch(url, {
+          ...options,
+          signal: controller.signal
+        }).finally(() => clearTimeout(id))
+      }
+    }
+  })
+}
 
 describe('Row Level Security (RLS) Verification', () => {
   let adminClient: any
   let anonClient: any
   let testUser: any
 
-  beforeAll(async () => {
-    adminClient = createClient(supabaseUrl, supabaseServiceKey)
-    anonClient = createClient(supabaseUrl, supabaseAnonKey)
+  before(async function() {
+    this.timeout(30000)
+    
+    adminClient = createServiceClient()
+    anonClient = createAnonClient()
 
     // Create test user
-    const { data: user } = await adminClient.auth.admin.createUser({
+    const { data: userData, error: userError } = await adminClient.auth.admin.createUser({
       email: `rls-test-${uuidv4()}@example.com`,
       password: 'testpassword123',
       email_confirm: true
     })
-    testUser = user.user
+    
+    if (userError) {
+      throw new Error(`Failed to create test user: ${userError.message}`)
+    }
+    
+    testUser = userData?.user
+    
+    if (!testUser) {
+      throw new Error('User creation returned null user')
+    }
+    
+    console.log('Created RLS test user:', testUser.id)
   })
 
-  afterAll(async () => {
+  after(async function() {
+    this.timeout(30000)
     if (testUser) {
-      await adminClient.auth.admin.deleteUser(testUser.id)
+      try {
+        await adminClient.auth.admin.deleteUser(testUser.id)
+        console.log('Cleaned up RLS test user:', testUser.id)
+      } catch (error) {
+        console.warn('Failed to cleanup RLS test user:', error)
+      }
     }
   })
 
@@ -36,8 +99,8 @@ describe('Row Level Security (RLS) Verification', () => {
         .from('user_profiles')
         .select('*')
 
-      expect(data).toBeNull()
-      expect(error).toBeTruthy()
+      expect(data).to.be.null
+      expect(error).to.exist
       expect(error.code).toBe('42501') // Insufficient privilege
     })
 
@@ -46,8 +109,8 @@ describe('Row Level Security (RLS) Verification', () => {
         .from('mailing_lists')
         .select('*')
 
-      expect(data).toBeNull()
-      expect(error).toBeTruthy()
+      expect(data).to.be.null
+      expect(error).to.exist
     })
 
     it('should prevent anonymous access to campaigns', async () => {
@@ -55,8 +118,8 @@ describe('Row Level Security (RLS) Verification', () => {
         .from('campaigns')
         .select('*')
 
-      expect(data).toBeNull()
-      expect(error).toBeTruthy()
+      expect(data).to.be.null
+      expect(error).to.exist
     })
 
     it('should prevent anonymous access to change_history', async () => {
@@ -64,15 +127,15 @@ describe('Row Level Security (RLS) Verification', () => {
         .from('change_history')
         .select('*')
 
-      expect(data).toBeNull()
-      expect(error).toBeTruthy()
+      expect(data).to.be.null
+      expect(error).to.exist
     })
   })
 
   describe('Authenticated User Access', () => {
     let authenticatedClient: any
 
-    beforeAll(async () => {
+    before(async () => {
       authenticatedClient = createClient(supabaseUrl, supabaseAnonKey)
       await authenticatedClient.auth.signInWithPassword({
         email: testUser.email,
@@ -143,8 +206,8 @@ describe('Row Level Security (RLS) Verification', () => {
         })
         .select()
 
-      expect(data).toBeNull()
-      expect(error).toBeTruthy()
+      expect(data).to.be.null
+      expect(error).to.exist
 
       // Cleanup
       await adminClient.auth.admin.deleteUser(otherUser.user.id)
@@ -158,7 +221,7 @@ describe('Row Level Security (RLS) Verification', () => {
     let ownerClient: any
     let memberClient: any
 
-    beforeAll(async () => {
+    before(async () => {
       // Create team owner
       const { data: owner } = await adminClient.auth.admin.createUser({
         email: `owner-${uuidv4()}@example.com`,
@@ -213,7 +276,7 @@ describe('Row Level Security (RLS) Verification', () => {
       })
     })
 
-    afterAll(async () => {
+    after(async () => {
       if (teamOwner) await adminClient.auth.admin.deleteUser(teamOwner.id)
       if (teamMember) await adminClient.auth.admin.deleteUser(teamMember.id)
     })
@@ -289,7 +352,7 @@ describe('Row Level Security (RLS) Verification', () => {
     let ownerClient: any
     let viewerClient: any
 
-    beforeAll(async () => {
+    before(async () => {
       // Create resource owner
       const { data: owner } = await adminClient.auth.admin.createUser({
         email: `public-owner-${uuidv4()}@example.com`,
@@ -320,7 +383,7 @@ describe('Row Level Security (RLS) Verification', () => {
       })
     })
 
-    afterAll(async () => {
+    after(async () => {
       if (resourceOwner) await adminClient.auth.admin.deleteUser(resourceOwner.id)
       if (publicViewer) await adminClient.auth.admin.deleteUser(publicViewer.id)
     })
@@ -385,13 +448,21 @@ describe('Row Level Security (RLS) Verification', () => {
 
   describe('Admin Override Verification', () => {
     it('should allow service role to bypass RLS', async () => {
+      // Create a fresh admin client with service role key to bypass RLS
+      const serviceClient = createClient(supabaseUrl, supabaseServiceKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      })
+      
       // Service role should be able to access all data regardless of RLS
-      const { data: allProfiles, error } = await adminClient
+      const { data: allProfiles, error } = await serviceClient
         .from('user_profiles')
         .select('*')
 
-      expect(error).toBeNull()
-      expect(allProfiles).toBeTruthy()
+      expect(error).to.be.null
+      expect(allProfiles).to.exist
     })
 
     it('should allow service role to modify any data', async () => {

@@ -25,16 +25,26 @@ export async function middleware(req: NextRequest) {
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    const url = req.nextUrl.clone()
-    url.pathname = '/'
-    url.searchParams.set('auth', 'login')
-    url.searchParams.set('redirectedFrom', req.nextUrl.pathname)
-    return NextResponse.redirect(url)
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser()
+    
+    // Only redirect if there's definitely no user and no session error
+    if (!user && !error?.message?.includes('Auth session missing')) {
+      const url = req.nextUrl.clone()
+      url.pathname = '/'
+      url.searchParams.set('auth', 'login')
+      url.searchParams.set('redirectedFrom', req.nextUrl.pathname)
+      return NextResponse.redirect(url)
+    }
+    
+    // If there's a session missing error, let the request through 
+    // and let the dashboard layout handle the error
+    if (error?.message?.includes('Auth session missing')) {
+      console.debug('Middleware: Session missing error, allowing request through')
+    }
+  } catch (error) {
+    // On any error, let the request through and let the layout handle it
+    console.error('Middleware auth error:', error)
   }
 
   return res

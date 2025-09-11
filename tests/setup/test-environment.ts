@@ -1,5 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 import { v4 as uuidv4 } from 'uuid'
+import { config } from 'dotenv'
+import path from 'path'
+
+// Load environment variables from .env.local
+config({ path: path.resolve(process.cwd(), '.env.local') })
 
 // Test environment setup utilities
 export class TestEnvironment {
@@ -9,10 +14,73 @@ export class TestEnvironment {
   private testResources: any[] = []
 
   constructor() {
-    this.supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
+    this.supabase = this.createServiceClient()
+  }
+
+  /**
+   * Creates a properly configured Supabase client with service role key
+   */
+  createServiceClient() {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!supabaseUrl || !serviceKey) {
+      throw new Error(
+        `Missing Supabase environment variables. Found URL: ${!!supabaseUrl}, Service Key: ${!!serviceKey}. ` +
+        `Make sure .env.local file exists with NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY`
+      )
+    }
+
+    return createClient(supabaseUrl, serviceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      },
+      global: {
+        fetch: (url, options = {}) => {
+          // Add timeout to prevent hanging
+          const controller = new AbortController()
+          const id = setTimeout(() => controller.abort(), 5000)
+          
+          return fetch(url, {
+            ...options,
+            signal: controller.signal
+          }).finally(() => clearTimeout(id))
+        }
+      }
+    })
+  }
+
+  /**
+   * Creates a properly configured anonymous Supabase client
+   */
+  createAnonClient() {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+    if (!supabaseUrl || !anonKey) {
+      throw new Error(
+        `Missing Supabase environment variables for anon client. Found URL: ${!!supabaseUrl}, Anon Key: ${!!anonKey}`
+      )
+    }
+
+    return createClient(supabaseUrl, anonKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      },
+      global: {
+        fetch: (url, options = {}) => {
+          const controller = new AbortController()
+          const id = setTimeout(() => controller.abort(), 5000)
+          
+          return fetch(url, {
+            ...options,
+            signal: controller.signal
+          }).finally(() => clearTimeout(id))
+        }
+      }
+    })
   }
 
   /**

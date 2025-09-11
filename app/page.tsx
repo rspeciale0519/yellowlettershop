@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { createServerClient } from '@/utils/supabase/server';
 import {
   Card,
   CardHeader,
@@ -9,7 +11,19 @@ import { UploadCloud, PaletteIcon, ArrowRight } from 'lucide-react';
 import { PricingSection } from '@/components/pricing/pricing-section';
 import { AmbientBackground } from '@/components/ambient-background';
 
-export default function HomePage() {
+export default async function HomePage() {
+  // Check if user is authenticated and redirect to dashboard
+  try {
+    const supabase = await createServerClient();
+    const { data: { user }, error } = await supabase.auth.getUser();
+    
+    // Only redirect if we have a valid user with no errors
+    if (user && !error) {
+      redirect('/dashboard');
+    }
+  } catch (error) {
+    // Silently handle redirect operations - they're expected
+  }
   return (
     <div className='relative flex flex-col min-h-screen'>
       <AmbientBackground />

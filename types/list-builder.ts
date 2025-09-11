@@ -112,6 +112,35 @@ export interface ForeclosureCriteria {
 }
 
 
+export interface PredictiveCriteria {
+  selectedCriteria: string[]
+  lifestylePredictors: {
+    homeImprovement: 'likely' | 'unlikely' | 'no-preference'
+    autoShopping: 'likely' | 'unlikely' | 'no-preference'
+    investmentInterest: 'likely' | 'unlikely' | 'no-preference'
+    healthConsciousness: 'likely' | 'unlikely' | 'no-preference'
+    technologyAdoption: 'early' | 'late' | 'no-preference'
+  }
+  financialBehavior: {
+    creditSeeker: 'likely' | 'unlikely' | 'no-preference'
+    bigTicketShopper: 'likely' | 'unlikely' | 'no-preference'
+    onlineShopper: 'likely' | 'unlikely' | 'no-preference'
+    brandLoyal: 'likely' | 'unlikely' | 'no-preference'
+  }
+  propertyBehavior: {
+    likelyToMove: 'likely' | 'unlikely' | 'no-preference'
+    likelyToRefinance: 'likely' | 'unlikely' | 'no-preference'
+    likelyToSell: 'likely' | 'unlikely' | 'no-preference'
+    homeEquityUser: 'likely' | 'unlikely' | 'no-preference'
+  }
+  communicationPreferences: {
+    responsiveToDirectMail: 'likely' | 'unlikely' | 'no-preference'
+    responsiveToEmail: 'likely' | 'unlikely' | 'no-preference'
+    responsiveToPhone: 'likely' | 'unlikely' | 'no-preference'
+    socialMediaActive: 'likely' | 'unlikely' | 'no-preference'
+  }
+}
+
 export interface OptionsCriteria {
   selectedCriteria: string[]
   listCleaning: {
@@ -165,6 +194,7 @@ export type Criteria =
   | DemographicsCriteria
   | MortgageCriteria
   | ForeclosureCriteria
+  | PredictiveCriteria
   | OptionsCriteria
 
 export interface ListCriteria {
@@ -173,5 +203,6 @@ export interface ListCriteria {
   demographics: DemographicsCriteria
   mortgage: MortgageCriteria
   foreclosure: ForeclosureCriteria
+  predictive: PredictiveCriteria
   options: OptionsCriteria
 }

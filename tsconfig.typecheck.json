@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "app/dashboard/page.tsx",
+    "components/dashboard/media-upload.tsx",
+    "components/media/upload-dialog.tsx",
+    "hooks/use-assets.ts",
+    "types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "app/api",
+    "lib",
+    "scripts",
+    "tests"
+  ]
+}

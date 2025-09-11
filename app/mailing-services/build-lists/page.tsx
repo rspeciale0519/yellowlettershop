@@ -5,7 +5,8 @@ import { BuildListLanding } from "@/components/landing-pages/BuildListLanding"
 import { ListSummary } from "@/components/list-builder/list-summary"
 import { CriteriaAccordion } from "@/components/list-builder/criteria-accordion"
 import { Button } from "@/components/ui/button"
-import { Save, ShoppingCart, Trash2 } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Save, ShoppingCart, Trash2, Loader2, RefreshCw } from "lucide-react"
 import { useBuildListsPage } from "./hooks/useBuildListsPage"
 import { FilterPanel } from "./components/FilterPanel"
 
@@ -20,6 +21,9 @@ function BuildListsContent() {
     clearAllCriteria,
     recordCount,
     totalCost,
+    estimateLoading,
+    estimateError,
+    refreshEstimate,
   } = useBuildListsPage()
 
   return (
@@ -51,6 +55,24 @@ function BuildListsContent() {
 
         {/* Main Content */}
         <main className="lg:col-span-3 space-y-6">
+          {/* Error Alert */}
+          {estimateError && (
+            <Alert variant="destructive">
+              <AlertDescription className="flex items-center justify-between">
+                <span>Failed to get real-time estimate: {estimateError}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={refreshEstimate}
+                  className="ml-2"
+                >
+                  <RefreshCw className="h-3 w-3 mr-1" />
+                  Retry
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <FilterPanel
             activeCategory={activeCategory}
             criteria={criteria}
@@ -63,7 +85,10 @@ function BuildListsContent() {
       <div className="sticky bottom-0 left-0 right-0 mt-8 p-4 bg-background/80 backdrop-blur-sm border-t border-border">
         <div className="flex items-center justify-end gap-4 px-4 lg:px-8">
           <div className="text-right">
-            <p className="font-bold text-lg">{recordCount.toLocaleString()} Records</p>
+            <p className="font-bold text-lg flex items-center justify-end gap-2">
+              {estimateLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {recordCount.toLocaleString()} Records
+            </p>
             <p className="text-yellow-600 dark:text-yellow-400 font-semibold text-xl">
               ${totalCost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>

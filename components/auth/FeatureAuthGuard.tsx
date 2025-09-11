@@ -46,20 +46,8 @@ export function FeatureAuthGuard({
       setUser(currentUser);
       setIsLoading(false);
 
-      // Redirect to dashboard on successful sign-in
-      if (event === 'SIGNED_IN' && currentUser && !hasRedirected && !isRedirecting) {
-        console.log('FeatureAuthGuard: Redirecting to dashboard...');
-        setIsRedirecting(true);
-        setHasRedirected(true);
-        
-        // Use replace instead of push to avoid history issues
-        router.replace('/dashboard');
-        
-        // Reset redirecting state after a timeout to prevent infinite loading
-        setTimeout(() => {
-          setIsRedirecting(false);
-        }, 3000);
-      }
+      // Note: Redirect logic removed from FeatureAuthGuard to prevent conflicts
+      // Auth flow redirects are now handled only by the Header component
     }).data.subscription;
 
     return () => {

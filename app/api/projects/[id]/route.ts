@@ -9,7 +9,7 @@ const ProjectUpdateSchema = z.object({
   type: z.enum(['campaign', 'template_set', 'general']).optional(),
   status: z.enum(['active', 'archived', 'completed']).optional(),
   isPublic: z.boolean().optional(),
-  settings: z.record(z.any()).optional()
+  settings: z.record(z.unknown()).optional()
 })
 
 export async function GET(
@@ -74,7 +74,7 @@ export async function PATCH(
     const supabase = createSupabaseServerClient()
 
     // Prepare update data
-    const updateData: any = {}
+    const updateData: Record<string, unknown> = {}
     if (updates.name !== undefined) updateData.name = updates.name
     if (updates.description !== undefined) updateData.description = updates.description
     if (updates.type !== undefined) updateData.type = updates.type

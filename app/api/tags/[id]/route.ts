@@ -17,8 +17,8 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createSupabaseServerClient()
-    const tagId = params.id
+    const supabase = await createSupabaseServerClient()
+    const { id: tagId } = await params
     const body = await request.json()
 
     // Validate input
@@ -73,6 +73,14 @@ export async function PATCH(
 
     if (error) {
       console.error('Error updating tag:', error)
+      
+      // If the table doesn't exist, provide helpful error message
+      if (error.code === '42P01') {
+        return NextResponse.json({ 
+          error: 'Tags system not yet set up. Please contact support to enable the tags feature.' 
+        }, { status: 503 })
+      }
+      
       return NextResponse.json({ error: 'Failed to update tag' }, { status: 500 })
     }
 
@@ -95,8 +103,8 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const supabase = createSupabaseServerClient()
-    const tagId = params.id
+    const supabase = await createSupabaseServerClient()
+    const { id: tagId } = await params
 
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -134,6 +142,14 @@ export async function DELETE(
 
     if (error) {
       console.error('Error deleting tag:', error)
+      
+      // If the table doesn't exist, provide helpful error message  
+      if (error.code === '42P01') {
+        return NextResponse.json({ 
+          error: 'Tags system not yet set up. Please contact support to enable the tags feature.' 
+        }, { status: 503 })
+      }
+      
       return NextResponse.json({ error: 'Failed to delete tag' }, { status: 500 })
     }
 

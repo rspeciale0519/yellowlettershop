@@ -9,6 +9,14 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  webpack: (config, { isServer }) => {
+    // Fix Windows file system caching issues
+    config.cache = {
+      type: 'memory',
+    };
+    
+    return config;
+  },
 }
 
 export default nextConfig

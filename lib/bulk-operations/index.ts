@@ -73,7 +73,9 @@ export const RATE_LIMITS = {
 // =================================================================================
 
 export class BulkOperationsService {
-  private supabase = createSupabaseServerClient()
+  private async getSupabase() {
+    return await createSupabaseServerClient()
+  }
 
   /**
    * Create a bulk operation job
@@ -99,7 +101,7 @@ export class BulkOperationsService {
       }
     }
 
-    const { data, error } = await this.supabase
+    const { data, error } = await (await this.getSupabase())
       .from('bulk_operations')
       .insert([operation])
       .select()
@@ -117,7 +119,7 @@ export class BulkOperationsService {
     limit = 50,
     offset = 0
   ): Promise<BulkOperation[]> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (await this.getSupabase())
       .from('bulk_operations')
       .select('*')
       .eq('user_id', userId)
@@ -160,7 +162,7 @@ export class BulkOperationsService {
       }
     }
 
-    const { error } = await this.supabase
+    const { error } = await (await this.getSupabase())
       .from('bulk_operations')
       .update(updates)
       .eq('id', operationId)
@@ -172,7 +174,7 @@ export class BulkOperationsService {
    * Get operation by ID
    */
   async getOperation(operationId: string): Promise<BulkOperation | null> {
-    const { data, error } = await this.supabase
+    const { data, error } = await (await this.getSupabase())
       .from('bulk_operations')
       .select('*')
       .eq('id', operationId)
@@ -186,7 +188,7 @@ export class BulkOperationsService {
    * Cancel an operation
    */
   async cancelOperation(operationId: string, userId: string): Promise<void> {
-    const { error } = await this.supabase
+    const { error } = await (await this.getSupabase())
       .from('bulk_operations')
       .update({
         status: 'cancelled',
@@ -241,7 +243,7 @@ export class BulkOperationsService {
             }))
           )
 
-          const { error: insertError } = await this.supabase
+          const { error: insertError } = await (await this.getSupabase())
             .from('record_tags')
             .insert(assignments)
 
@@ -310,7 +312,7 @@ export class BulkOperationsService {
     try {
       await this.updateOperationProgress(operation.id, 0, 0, 0, 'processing')
 
-      const { error } = await this.supabase
+      const { error } = await (await this.getSupabase())
         .from('record_tags')
         .delete()
         .in('record_id', recordIds)
@@ -353,7 +355,7 @@ export class BulkOperationsService {
       await this.updateOperationProgress(operation.id, 0, 0, 0, 'processing')
 
       // Verify user owns all records
-      const { data: ownedRecords } = await this.supabase
+      const { data: ownedRecords } = await (await this.getSupabase())
         .from('mailing_list_records')
         .select('id')
         .in('id', recordIds)
@@ -376,7 +378,7 @@ export class BulkOperationsService {
       for (let i = 0; i < recordIds.length; i += batchSize) {
         const batch = recordIds.slice(i, i + batchSize)
         
-        const { error: deleteError } = await this.supabase
+        const { error: deleteError } = await (await this.getSupabase())
           .from('mailing_list_records')
           .delete()
           .in('id', batch)
@@ -436,7 +438,7 @@ export class BulkOperationsService {
         updated_at: new Date().toISOString()
       }
 
-      const { error } = await this.supabase
+      const { error } = await (await this.getSupabase())
         .from('mailing_list_records')
         .update(updateData)
         .in('id', recordIds)

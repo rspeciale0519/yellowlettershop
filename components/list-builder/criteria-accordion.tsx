@@ -11,6 +11,7 @@ const categories: { id: string; name: string; icon: React.ElementType }[] = [
   { id: "demographics", name: "Demographics", icon: UserCircle },
   { id: "mortgage", name: "Mortgage", icon: Landmark },
   { id: "foreclosure", name: "Foreclosure", icon: Gavel },
+  { id: "predictive", name: "Predictive", icon: UserCircle },
   { id: "options", name: "Options", icon: SlidersHorizontal },
 ]
 

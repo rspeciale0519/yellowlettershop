@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    let mailingList: any
+    let mailingList: { id: string; name: string; user_id: string; team_id?: string; record_count: number; source_type?: string }
     let targetListId: string
 
     if (isNewList) {
@@ -123,7 +123,7 @@ export async function POST(request: NextRequest) {
       .filter(addr => addr.address && addr.city && addr.state && addr.zipCode)
 
     // Batch validate emails if any exist
-    let emailValidationResults: Record<string, any> = {}
+    let emailValidationResults: Record<string, unknown> = {}
     if (emailsToValidate.length > 0) {
       try {
         emailValidationResults = await validateEmailBatch(emailsToValidate, {
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Batch validate addresses if any exist
-    let addressValidationResults: Record<string, any> = {}
+    let addressValidationResults: Record<string, unknown> = {}
     if (addressesToValidate.length > 0) {
       try {
         addressValidationResults = await validateAddressBatch(addressesToValidate, {
@@ -163,7 +163,7 @@ export async function POST(request: NextRequest) {
     const userListIds = userLists?.map(list => list.id) || []
 
     // Get existing records for duplicate detection
-    let existingRecords: any[] = []
+    let existingRecords: Array<{ id: string; record_data: Record<string, unknown>; mailing_list_id: string }> = []
     let existingRecordsError = null
     
     if (userListIds.length > 0) {
@@ -185,7 +185,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Batch duplicate detection (simplified for now)
-    let duplicateResults: Record<string, any> = {}
+    let duplicateResults: Record<string, unknown> = {}
     if (existingRecords && existingRecords.length > 0) {
       try {
         // Convert existing records to the format expected by duplicate detection
@@ -224,7 +224,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate completeness scores for all records
-    let completenessResults: Record<string, any> = {}
+    let completenessResults: Record<string, unknown> = {}
     try {
       const recordsForScoring = transformedRecords.map((record, index) => ({
         ...record,
@@ -442,7 +442,7 @@ function transformDataWithMappings(
   const transformedRows = []
   
   for (const row of rows) {
-    const transformedRow: Record<string, any> = {}
+    const transformedRow: Record<string, unknown> = {}
     
     headers.forEach((header, index) => {
       const systemField = columnMappings[header]
@@ -461,7 +461,7 @@ function transformDataWithMappings(
 }
 
 // Helper function to validate record data
-function validateRecord(record: Record<string, any>, emailValidationResults?: Record<string, any>, addressValidation?: any) {
+function validateRecord(record: Record<string, unknown>, emailValidationResults?: Record<string, unknown>, addressValidation?: unknown) {
   const errors = []
   
   // At least one name field is required

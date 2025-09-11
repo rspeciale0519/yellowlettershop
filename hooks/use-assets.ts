@@ -1,14 +1,14 @@
 import { useState, useCallback } from 'react'
-import { FileAsset } from '@/types/supabase'
+import { UserAsset } from '@/types/supabase'
 import { UploadAssetRequest, AssetFilters, AssetUsageStats } from '@/lib/assets/asset-service'
 
 export function useAssets() {
   const [isLoading, setIsLoading] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
-  const [assets, setAssets] = useState<FileAsset[]>([])
+  const [assets, setAssets] = useState<UserAsset[]>([])
   const [stats, setStats] = useState<AssetUsageStats | null>(null)
 
-  const getAssets = useCallback(async (filters: AssetFilters = {}): Promise<FileAsset[]> => {
+  const getAssets = useCallback(async (filters: AssetFilters = {}): Promise<UserAsset[]> => {
     setIsLoading(true)
     try {
       const params = new URLSearchParams()
@@ -35,7 +35,7 @@ export function useAssets() {
     }
   }, [])
 
-  const uploadAsset = useCallback(async (request: UploadAssetRequest): Promise<FileAsset> => {
+  const uploadAsset = useCallback(async (request: UploadAssetRequest): Promise<UserAsset> => {
     setIsUploading(true)
     try {
       const formData = new FormData()
@@ -59,7 +59,7 @@ export function useAssets() {
       }
 
       const asset = await response.json()
-      setAssets(prev => [asset, ...prev])
+      // Don't update local state here - let the parent component handle it via getAssets()
       return asset
     } finally {
       setIsUploading(false)
@@ -75,7 +75,7 @@ export function useAssets() {
       isPublic?: boolean
       category?: string
     }
-  ): Promise<FileAsset> => {
+  ): Promise<UserAsset> => {
     setIsLoading(true)
     try {
       const response = await fetch('/api/assets', {
@@ -142,7 +142,7 @@ export function useAssets() {
       // Update local usage count
       setAssets(prev => prev.map(asset => 
         asset.id === assetId 
-          ? { ...asset, usage_count: asset.usage_count + 1, last_used_at: new Date().toISOString() }
+          ? { ...asset, metadata: { ...asset.metadata, usage_count: (asset.metadata.usage_count || 0) + 1, last_used_at: new Date().toISOString() } }
           : asset
       ))
     } catch (error) {
@@ -193,7 +193,7 @@ export function useAssets() {
   const uploadMultipleAssets = useCallback(async (
     files: File[],
     commonOptions: Omit<UploadAssetRequest, 'file'> = {}
-  ): Promise<FileAsset[]> => {
+  ): Promise<UserAsset[]> => {
     setIsUploading(true)
     try {
       const uploadPromises = files.map(file => 
@@ -203,7 +203,7 @@ export function useAssets() {
       const results = await Promise.allSettled(uploadPromises)
       
       const successful = results
-        .filter((result): result is PromiseFulfilledResult<FileAsset> => result.status === 'fulfilled')
+        .filter((result): result is PromiseFulfilledResult<UserAsset> => result.status === 'fulfilled')
         .map(result => result.value)
 
       const failed = results
@@ -230,16 +230,16 @@ export function useAssets() {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }, [])
 
-  const getAssetsByCategory = useCallback((category: string): FileAsset[] => {
-    return assets.filter(asset => asset.category === category)
+  const getAssetsByCategory = useCallback((category: string): UserAsset[] => {
+    return assets.filter(asset => asset.file_type === category)
   }, [assets])
 
-  const searchAssets = useCallback((query: string): FileAsset[] => {
+  const searchAssets = useCallback((query: string): UserAsset[] => {
     const lowercaseQuery = query.toLowerCase()
     return assets.filter(asset => 
-      asset.name.toLowerCase().includes(lowercaseQuery) ||
-      asset.description?.toLowerCase().includes(lowercaseQuery) ||
-      asset.tags.some(tag => tag.toLowerCase().includes(lowercaseQuery))
+      asset.filename.toLowerCase().includes(lowercaseQuery) ||
+      asset.original_filename.toLowerCase().includes(lowercaseQuery) ||
+      false // Tags will be handled via resource_tags table later
     )
   }, [assets])
 

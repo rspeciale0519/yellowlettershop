@@ -119,7 +119,18 @@
       "Read(/C:\\Users\\rob\\Documents\\Software\\SaaS\\YLS\\new-001\\app\\dashboard\\profile/**)",
       "Read(/C:\\Users\\rob\\Documents\\Software\\SaaS\\YLS\\new-001\\app\\dashboard\\profile/**)",
       "Read(/C:\\Users\\rob\\Documents\\Software\\SaaS\\YLS\\new-001\\components\\dashboard/**)",
-      "Read(/C:\\Users\\rob\\Documents\\Software\\SaaS\\YLS\\new-001\\app\\dashboard\\security/**)"
+      "Read(/C:\\Users\\rob\\Documents\\Software\\SaaS\\YLS\\new-001\\app\\dashboard\\security/**)",
+      "Bash(python:*)",
+      "Bash(echo:*)",
+      "Bash(npm run typecheck:ui:*)",
+      "Bash(npx mocha:*)",
+      "Bash(npm test:*)",
+      "Bash(timeout:*)",
+      "Read(//c/Users/rob/Documents/Software/SaaS/YLS/new-001/**)",
+      "Bash(taskkill:*)",
+      "Bash(if exist \".next\\cache\" rmdir /s /q \".next\\cache\")",
+      "Bash(if [ -d \".next/cache\" ])",
+      "Bash(then rm -rf .next/cache)"
     ],
     "deny": [],
     "ask": [

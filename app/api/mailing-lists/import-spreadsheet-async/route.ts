@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    let mailingList: any
+    let mailingList: { id: string; name: string; user_id: string; team_id?: string; record_count: number }
     let targetListId: string
 
     if (isNewList) {
@@ -173,10 +173,10 @@ export async function POST(request: NextRequest) {
       .filter(addr => addr.address && addr.city && addr.state && addr.zipCode)
 
     // Run validation processes
-    let emailValidationResults: Record<string, any> = {}
-    let addressValidationResults: Record<string, any> = {}
-    let duplicateResults: Record<string, any> = {}
-    let completenessResults: Record<string, any> = {}
+    let emailValidationResults: Record<string, unknown> = {}
+    let addressValidationResults: Record<string, unknown> = {}
+    let duplicateResults: Record<string, unknown> = {}
+    let completenessResults: Record<string, unknown> = {}
 
     try {
       // Email validation
@@ -311,7 +311,7 @@ function transformDataWithMappings(
   const transformedRows = []
   
   for (const row of rows) {
-    const transformedRow: Record<string, any> = {}
+    const transformedRow: Record<string, unknown> = {}
     
     headers.forEach((header, index) => {
       const systemField = columnMappings[header]

@@ -17,10 +17,19 @@ export interface FormData {
   zipCode: string
 }
 
+export interface NewRecord {
+  id: string
+  mailing_list_id: string
+  record_data: Record<string, unknown>
+  validation_status: string
+  created_at: string
+  updated_at: string
+}
+
 export interface AddRecordModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSuccess: (newRecord: any) => void
+  onSuccess: (newRecord: NewRecord) => void
   lists?: MailingListSummary[]
   onCreateNewList: (listName: string) => Promise<MailingListSummary>
 }

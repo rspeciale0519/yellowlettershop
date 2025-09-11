@@ -1,97 +1,119 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals'
+import { describe, it, before, after, beforeEach } from 'mocha'
+import { expect } from 'chai'
 import { createClient } from '@supabase/supabase-js'
 import { v4 as uuidv4 } from 'uuid'
 
-// Test configuration
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+// Helper to create properly configured Supabase client
+function createServiceClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+
+  return createClient(supabaseUrl, serviceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    },
+    global: {
+      fetch: (url, options = {}) => {
+        // Add timeout to prevent hanging
+        const controller = new AbortController()
+        const id = setTimeout(() => controller.abort(), 5000)
+        
+        return fetch(url, {
+          ...options,
+          signal: controller.signal
+        }).finally(() => clearTimeout(id))
+      }
+    }
+  })
+}
 
 describe('Multi-Tenant Isolation Tests', () => {
   let supabase: any
   let testUser1: any
   let testUser2: any
-  let testTeam1: any
-  let testTeam2: any
+  let testUsersToCleanup: any[] = []
 
-  beforeAll(async () => {
-    supabase = createClient(supabaseUrl, supabaseServiceKey)
+  before(async function() {
+    this.timeout(30000) // Increase timeout for setup
+    
+    supabase = createServiceClient()
     
     // Create test users
-    const { data: user1 } = await supabase.auth.admin.createUser({
+    const { data: user1Data, error: user1Error } = await supabase.auth.admin.createUser({
       email: `test1-${uuidv4()}@example.com`,
       password: 'testpassword123',
       email_confirm: true
     })
     
-    const { data: user2 } = await supabase.auth.admin.createUser({
+    if (user1Error) {
+      throw new Error(`Failed to create test user 1: ${user1Error.message}`)
+    }
+    
+    const { data: user2Data, error: user2Error } = await supabase.auth.admin.createUser({
       email: `test2-${uuidv4()}@example.com`,
       password: 'testpassword123',
       email_confirm: true
     })
+    
+    if (user2Error) {
+      throw new Error(`Failed to create test user 2: ${user2Error.message}`)
+    }
 
-    testUser1 = user1.user
-    testUser2 = user2.user
-
-    // Create test teams
-    const { data: team1 } = await supabase
-      .from('teams')
-      .insert({
-        id: uuidv4(),
-        name: 'Test Team 1',
-        owner_id: testUser1.id,
-        plan: 'team'
-      })
-      .select()
-      .single()
-
-    const { data: team2 } = await supabase
-      .from('teams')
-      .insert({
-        id: uuidv4(),
-        name: 'Test Team 2',
-        owner_id: testUser2.id,
-        plan: 'team'
-      })
-      .select()
-      .single()
-
-    testTeam1 = team1
-    testTeam2 = team2
+    testUser1 = user1Data?.user
+    testUser2 = user2Data?.user
+    
+    if (!testUser1 || !testUser2) {
+      throw new Error('User creation returned null users')
+    }
+    
+    testUsersToCleanup.push(testUser1, testUser2)
+    console.log('Created test users:', testUser1.id, testUser2.id)
   })
 
-  afterAll(async () => {
-    // Cleanup test data
-    if (testUser1) {
-      await supabase.auth.admin.deleteUser(testUser1.id)
-    }
-    if (testUser2) {
-      await supabase.auth.admin.deleteUser(testUser2.id)
+  after(async function() {
+    this.timeout(30000)
+    // Cleanup test users
+    for (const user of testUsersToCleanup) {
+      try {
+        await supabase.auth.admin.deleteUser(user.id)
+        console.log('Cleaned up user:', user.id)
+      } catch (error) {
+        console.warn('Failed to cleanup user:', user.id, error)
+      }
     }
   })
 
   describe('Mailing Lists Isolation', () => {
-    it('should prevent users from accessing other users mailing lists', async () => {
-      // Create mailing list as user1
-      const { data: mailingList } = await supabase
+    it('should prevent users from accessing other users mailing lists', async function() {
+      this.timeout(10000)
+      
+      // Create mailing list as user1 with required fields
+      const { data: mailingList, error: createError } = await supabase
         .from('mailing_lists')
         .insert({
           id: uuidv4(),
           user_id: testUser1.id,
-          name: 'User 1 List',
-          source: 'manual'
+          created_by: testUser1.id,
+          name: 'User 1 Private List'
         })
         .select()
         .single()
 
-      // Try to access as user2 - should fail
+      if (createError) {
+        throw new Error(`Failed to create mailing list: ${createError.message}`)
+      }
+
+      // Try to access as user2 - should return empty due to RLS
       const { data: unauthorizedAccess, error } = await supabase
         .from('mailing_lists')
         .select('*')
         .eq('id', mailingList.id)
         .eq('user_id', testUser2.id)
 
-      expect(unauthorizedAccess).toHaveLength(0)
-      expect(error).toBeNull() // RLS should filter results, not error
+      expect(unauthorizedAccess).to.be.an('array')
+      expect(unauthorizedAccess).to.have.length(0)
+      expect(error).to.be.null // RLS should filter results, not error
     })
 
     it('should allow team members to access shared mailing lists', async () => {

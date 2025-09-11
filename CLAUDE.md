@@ -48,31 +48,36 @@ Yellow Letter Shop is a comprehensive SaaS platform for direct mail automation, 
 - **Cross-platform compatibility** - Windows/Ubuntu support
 
 ## Project Structure
-
 ```
 ├── app/                    # Next.js App Router pages
 │   ├── api/               # API route handlers
-│   │   ├── accuzip/       # Address validation endpoints
-│   │   └── mailing-lists/ # List management endpoints
 │   ├── dashboard/         # Protected dashboard pages
+│   ├── design/            # Design canvas pages
+│   ├── forgot-password/   # Forgot password pages
+│   ├── login/             # Login pages
 │   ├── mailing-services/  # Core service pages
+│   ├── register/          # Register pages
+│   ├── reset-password/    # Reset password pages
+│   ├── s/                 # Shortcode pages
+│   ├── signup/            # Signup pages
+│   ├── templates/         # Templates pages
+│   ├── test-types/        # Test types pages
+│   ├── globals.css        # Global styles
+│   ├── layout.tsx         # Global layout
 │   └── page.tsx           # Landing page
 ├── components/            # Reusable UI components
-│   ├── ui/               # Base UI components (shadcn)
-│   ├── list-builder/     # List building and filtering
-│   │   ├── common/       # Shared components (MultiSelect, DraggableSlider)
-│   │   ├── demographics/ # Demographics filter components
-│   │   └── property/     # Property filter components
-│   ├── mailing-list-manager/ # List management interface
-│   ├── auth/             # Authentication components
-│   └── dashboard/        # Dashboard-specific components
 ├── data/                 # Static data and constants
 ├── docs/                 # Comprehensive project documentation
 ├── hooks/                # Custom React hooks
 ├── lib/                  # Utility functions and API clients
+├── node_modules/         # Node.js dependencies
+├── public/               # Static assets
+├── scripts/              # Build and deployment scripts
+├── supabase/             # Supabase configuration
 ├── tests/                # Test files and setup
 ├── types/                # TypeScript type definitions
-└── utils/                # Helper functions
+├── utils/                # Helper functions
+
 ```
 
 ## Key Development Scripts
@@ -105,6 +110,8 @@ From package.json:
    ```
 
 ### Code Standards
+- **Modularization Priority**: When writing new or modifying existing code, ALWAYS prioritize modularization over monolithic files
+- **File Size Limit**: All code files MUST be ≤350 lines of code (LOC)
 - **TypeScript Required**: All new files must be `.ts` or `.tsx`
 - **Strict Typing**: Avoid `any` types, document when necessary
 - **Tailwind CSS**: Use utility classes over custom CSS

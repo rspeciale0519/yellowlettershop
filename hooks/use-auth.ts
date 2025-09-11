@@ -24,6 +24,13 @@ export function useAuth() {
   const checkSession = useCallback(async () => {
     try {
       const { data, error } = await supabase.auth.getUser()
+      
+      // Handle specific "Auth session missing" case silently
+      if (error && error.message === 'Auth session missing!') {
+        setAuthState({ user: null, isLoading: false, isAuthenticated: false })
+        return
+      }
+      
       if (error) throw error
       const user = data.user ?? null
       setAuthState({
@@ -32,7 +39,11 @@ export function useAuth() {
         isAuthenticated: !!user,
       })
     } catch (error) {
-      console.error("Error checking Supabase session:", error)
+      // Only log unexpected errors, not missing session
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      if (errorMessage !== 'Auth session missing!') {
+        console.error("Error checking Supabase session:", error)
+      }
       setAuthState({ user: null, isLoading: false, isAuthenticated: false })
     }
   }, [supabase])
@@ -66,10 +77,8 @@ export function useAuth() {
       const u = session?.user ?? null
       setAuthState({ user: u, isLoading: false, isAuthenticated: !!u })
       
-      // Redirect to dashboard on successful sign-in
-      if (event === 'SIGNED_IN' && u) {
-        router.push('/dashboard')
-      }
+      // Note: Redirect logic removed from here to prevent conflicts
+      // Auth flow redirects are now handled only by the Header component
     })
 
     return () => {

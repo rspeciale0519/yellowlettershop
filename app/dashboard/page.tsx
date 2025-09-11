@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Package, Users, FileText, ImageIcon } from "lucide-react"
 import Link from "next/link"
 import { orders, activityItems } from "@/lib/data-structures"
+import MediaUpload from "@/components/dashboard/media-upload"
 
 export default function DashboardPage() {
   return (
@@ -47,17 +48,21 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {activityItems.map((item, index) => (
-                <div key={index} className="flex items-center">
-                  <div className="mr-4 rounded-full bg-primary/10 p-2">
-                    <item.icon className="h-4 w-4 text-primary" />
+              {activityItems.map((item, index) => {
+                const IconComp = (item as any).icon || Package
+                const when = (item as any).time ?? item.date
+                return (
+                  <div key={index} className="flex items-center">
+                    <div className="mr-4 rounded-full bg-primary/10 p-2">
+                      <IconComp className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{item.action}</p>
+                      <p className="text-xs text-muted-foreground">{when}</p>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{item.action}</p>
-                    <p className="text-xs text-muted-foreground">{item.time}</p>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </CardContent>
         </Card>
@@ -75,13 +80,7 @@ export default function DashboardPage() {
                 <FileText className="mr-3 h-4 w-4 text-primary" />
                 Create New Template
               </Link>
-              <Link
-                href="/dashboard/media/upload"
-                className="flex items-center rounded-md border p-3 text-sm transition-colors hover:bg-muted"
-              >
-                <ImageIcon className="mr-3 h-4 w-4 text-primary" />
-                Upload Media
-              </Link>
+              <MediaUpload />
               <Link
                 href="/dashboard/orders/new"
                 className="flex items-center rounded-md border p-3 text-sm transition-colors hover:bg-muted"

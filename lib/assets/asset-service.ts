@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client'
-import { FileAsset } from '@/types/supabase'
+import { UserAsset } from '@/types/supabase'
 import { recordChange } from '@/lib/version-history/change-tracker'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -10,7 +10,7 @@ export interface UploadAssetRequest {
   tags?: string[]
   isPublic?: boolean
   teamId?: string
-  category?: 'image' | 'document' | 'template' | 'design' | 'other'
+  category?: string
 }
 
 export interface AssetFilters {
@@ -27,9 +27,9 @@ export interface AssetUsageStats {
   storageUsed: number
   storageLimit: number
   assetsByCategory: Record<string, number>
-  recentUploads: FileAsset[]
+  recentUploads: UserAsset[]
   mostUsedAssets: Array<{
-    asset: FileAsset
+    asset: UserAsset
     usageCount: number
   }>
 }
@@ -43,7 +43,7 @@ export class AssetService {
   /**
    * Uploads a file asset to storage and creates database record
    */
-  async uploadAsset(request: UploadAssetRequest): Promise<FileAsset> {
+  async uploadAsset(request: UploadAssetRequest): Promise<UserAsset> {
     const { data: { user } } = await this.supabase.auth.getUser()
     if (!user) throw new Error('User not authenticated')
 
@@ -56,10 +56,7 @@ export class AssetService {
       // Upload file to Supabase Storage
       const { data: uploadData, error: uploadError } = await this.supabase.storage
         .from('assets')
-        .upload(filePath, request.file, {
-          cacheControl: '3600',
-          upsert: false
-        })
+        .upload(filePath, request.file)
 
       if (uploadError) throw uploadError
 
@@ -73,23 +70,25 @@ export class AssetService {
         id: fileId,
         user_id: user.id,
         team_id: request.teamId,
-        name: request.name || request.file.name,
-        description: request.description,
-        file_name: request.file.name,
-        file_path: filePath,
-        file_size: request.file.size,
+        uploaded_by: user.id,
+        filename: fileName,
+        original_filename: request.file.name,
+        file_type: this.getCategoryFromMimeType(request.file.type),
         mime_type: request.file.type,
-        category: request.category || this.getCategoryFromMimeType(request.file.type),
-        tags: request.tags || [],
+        file_size: request.file.size,
+        file_path: filePath,
+        file_url: publicUrl,
         is_public: request.isPublic || false,
-        storage_url: publicUrl,
-        usage_count: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        metadata: {
+          tags: request.tags || [],
+          category: request.category,
+          description: request.description
+        },
+        created_at: new Date().toISOString()
       }
 
       const { data: asset, error: dbError } = await this.supabase
-        .from('file_assets')
+        .from('user_assets')
         .insert(assetData)
         .select()
         .single()
@@ -101,7 +100,7 @@ export class AssetService {
       }
 
       // Record asset creation
-      await recordChange('file_asset', asset.id, 'create', {
+      await recordChange('asset', asset.id, 'create', {
         newValue: asset,
         description: `Uploaded asset "${request.name || request.file.name}"`
       })
@@ -117,21 +116,17 @@ export class AssetService {
   /**
    * Gets assets with optional filtering
    */
-  async getAssets(filters: AssetFilters = {}): Promise<FileAsset[]> {
+  async getAssets(filters: AssetFilters = {}): Promise<UserAsset[]> {
     const { data: { user } } = await this.supabase.auth.getUser()
     if (!user) throw new Error('User not authenticated')
 
     let query = this.supabase
-      .from('file_assets')
+      .from('user_assets')
       .select('*')
       .or(`user_id.eq.${user.id},is_public.eq.true`)
 
     if (filters.category) {
-      query = query.eq('category', filters.category)
-    }
-
-    if (filters.tags && filters.tags.length > 0) {
-      query = query.overlaps('tags', filters.tags)
+      query = query.eq('file_type', filters.category)
     }
 
     if (filters.isPublic !== undefined) {
@@ -143,11 +138,11 @@ export class AssetService {
     }
 
     if (filters.createdBy) {
-      query = query.eq('user_id', filters.createdBy)
+      query = query.eq('uploaded_by', filters.createdBy)
     }
 
     if (filters.searchQuery) {
-      query = query.or(`name.ilike.%${filters.searchQuery}%,description.ilike.%${filters.searchQuery}%`)
+      query = query.or(`filename.ilike.%${filters.searchQuery}%,original_filename.ilike.%${filters.searchQuery}%`)
     }
 
     query = query.order('created_at', { ascending: false })
@@ -161,12 +156,12 @@ export class AssetService {
   /**
    * Gets a single asset by ID
    */
-  async getAsset(assetId: string): Promise<FileAsset | null> {
+  async getAsset(assetId: string): Promise<UserAsset | null> {
     const { data: { user } } = await this.supabase.auth.getUser()
     if (!user) throw new Error('User not authenticated')
 
     const { data: asset, error } = await this.supabase
-      .from('file_assets')
+      .from('user_assets')
       .select('*')
       .eq('id', assetId)
       .or(`user_id.eq.${user.id},is_public.eq.true`)
@@ -177,7 +172,7 @@ export class AssetService {
   }
 
   /**
-   * Updates asset metadata
+   * Updates an asset's metadata
    */
   async updateAsset(
     assetId: string,
@@ -188,13 +183,13 @@ export class AssetService {
       isPublic?: boolean
       category?: string
     }
-  ): Promise<FileAsset> {
+  ): Promise<UserAsset> {
     const { data: { user } } = await this.supabase.auth.getUser()
     if (!user) throw new Error('User not authenticated')
 
     // Get current asset for change tracking
     const { data: currentAsset } = await this.supabase
-      .from('file_assets')
+      .from('user_assets')
       .select('*')
       .eq('id', assetId)
       .eq('user_id', user.id)
@@ -204,24 +199,24 @@ export class AssetService {
       throw new Error('Asset not found or access denied')
     }
 
-    const updateData = {
-      name: updates.name,
-      description: updates.description,
-      tags: updates.tags,
-      is_public: updates.isPublic,
-      category: updates.category,
-      updated_at: new Date().toISOString()
-    }
-
-    // Remove undefined values
-    Object.keys(updateData).forEach(key => {
-      if (updateData[key] === undefined) {
-        delete updateData[key]
-      }
-    })
+    const updateData: any = {}
+    
+    if (updates.name) updateData.filename = updates.name
+    if (updates.isPublic !== undefined) updateData.is_public = updates.isPublic
+    if (updates.category) updateData.file_type = updates.category
+    
+    // Update metadata
+    const currentMetadata = currentAsset.metadata || {}
+    const newMetadata = { ...currentMetadata }
+    
+    if (updates.description !== undefined) newMetadata.description = updates.description
+    if (updates.tags !== undefined) newMetadata.tags = updates.tags
+    if (updates.category !== undefined) newMetadata.category = updates.category
+    
+    updateData.metadata = newMetadata
 
     const { data: asset, error } = await this.supabase
-      .from('file_assets')
+      .from('user_assets')
       .update(updateData)
       .eq('id', assetId)
       .eq('user_id', user.id)
@@ -232,10 +227,10 @@ export class AssetService {
 
     // Record changes
     for (const [field, newValue] of Object.entries(updates)) {
-      if (newValue !== undefined && currentAsset[field] !== newValue) {
-        await recordChange('file_asset', assetId, 'update', {
+      if (newValue !== undefined) {
+        await recordChange('asset', assetId, 'update', {
           fieldName: field,
-          oldValue: currentAsset[field],
+          oldValue: (currentAsset as any)[field],
           newValue,
           description: `Updated asset ${field}`
         })
@@ -254,7 +249,7 @@ export class AssetService {
 
     // Get asset for cleanup and change tracking
     const { data: asset } = await this.supabase
-      .from('file_assets')
+      .from('user_assets')
       .select('*')
       .eq('id', assetId)
       .eq('user_id', user.id)
@@ -276,7 +271,7 @@ export class AssetService {
 
     // Delete database record
     const { error: dbError } = await this.supabase
-      .from('file_assets')
+      .from('user_assets')
       .delete()
       .eq('id', assetId)
       .eq('user_id', user.id)
@@ -284,233 +279,99 @@ export class AssetService {
     if (dbError) throw dbError
 
     // Record deletion
-    await recordChange('file_asset', assetId, 'delete', {
+    await recordChange('asset', assetId, 'delete', {
       oldValue: asset,
-      description: `Deleted asset "${asset.name}"`
+      description: `Deleted asset "${asset.filename}"`
     })
   }
 
   /**
-   * Shares an asset with a team
-   */
-  async shareAssetWithTeam(assetId: string, teamId: string): Promise<void> {
-    const { data: { user } } = await this.supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    // Verify user owns the asset
-    const { data: asset } = await this.supabase
-      .from('file_assets')
-      .select('*')
-      .eq('id', assetId)
-      .eq('user_id', user.id)
-      .single()
-
-    if (!asset) {
-      throw new Error('Asset not found or access denied')
-    }
-
-    // Update asset to include team_id
-    const { error } = await this.supabase
-      .from('file_assets')
-      .update({
-        team_id: teamId,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', assetId)
-
-    if (error) throw error
-
-    // Record sharing
-    await recordChange('file_asset', assetId, 'update', {
-      fieldName: 'team_id',
-      oldValue: asset.team_id,
-      newValue: teamId,
-      description: `Shared asset with team`
-    })
-  }
-
-  /**
-   * Records asset usage for analytics
-   */
-  async recordAssetUsage(assetId: string, usageContext?: string): Promise<void> {
-    const { data: { user } } = await this.supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    // Increment usage count
-    const { error: updateError } = await this.supabase
-      .from('file_assets')
-      .update({
-        usage_count: this.supabase.sql`usage_count + 1`,
-        last_used_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', assetId)
-
-    if (updateError) {
-      console.error('Failed to update usage count:', updateError)
-    }
-
-    // Record usage event
-    const usageData = {
-      id: uuidv4(),
-      user_id: user.id,
-      resource_type: 'file_asset',
-      resource_id: assetId,
-      action: 'asset_used',
-      metadata: {
-        context: usageContext
-      },
-      created_at: new Date().toISOString()
-    }
-
-    const { error: usageError } = await this.supabase
-      .from('mailing_list_usage')
-      .insert(usageData)
-
-    if (usageError) {
-      console.error('Failed to record asset usage:', usageError)
-    }
-  }
-
-  /**
-   * Gets asset usage statistics
+   * Gets asset usage statistics for the user
    */
   async getAssetStats(userId?: string): Promise<AssetUsageStats> {
     const { data: { user } } = await this.supabase.auth.getUser()
-    const targetUserId = userId || user?.id
+    if (!user) throw new Error('User not authenticated')
 
-    if (!targetUserId) {
-      return this.getEmptyStats()
-    }
+    const targetUserId = userId || user.id
 
-    try {
-      // Get all assets for user
-      const { data: assets } = await this.supabase
-        .from('file_assets')
-        .select('*')
-        .eq('user_id', targetUserId)
-        .order('created_at', { ascending: false })
+    const { data: assets, error } = await this.supabase
+      .from('user_assets')
+      .select('*')
+      .eq('user_id', targetUserId)
 
-      if (!assets || assets.length === 0) {
-        return this.getEmptyStats()
-      }
+    if (error) throw error
 
-      const totalAssets = assets.length
-      const storageUsed = assets.reduce((sum, asset) => sum + asset.file_size, 0)
-      const storageLimit = 5 * 1024 * 1024 * 1024 // 5GB default limit
+    const totalAssets = assets?.length || 0
+    const storageUsed = assets?.reduce((sum, asset) => sum + asset.file_size, 0) || 0
+    
+    // Mock storage limit - will be replaced with actual quota system
+    const storageLimit = 100 * 1024 * 1024 // 100MB default
+    
+    const assetsByCategory: Record<string, number> = {}
+    assets?.forEach(asset => {
+      const category = asset.file_type || 'other'
+      assetsByCategory[category] = (assetsByCategory[category] || 0) + 1
+    })
 
-      // Group by category
-      const assetsByCategory: Record<string, number> = {}
-      assets.forEach(asset => {
-        assetsByCategory[asset.category] = (assetsByCategory[asset.category] || 0) + 1
-      })
-
-      // Recent uploads (last 30 days)
-      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-      const recentUploads = assets.filter(asset => asset.created_at >= thirtyDaysAgo)
-
-      // Most used assets
-      const mostUsedAssets = assets
-        .filter(asset => asset.usage_count > 0)
-        .sort((a, b) => b.usage_count - a.usage_count)
-        .slice(0, 10)
-        .map(asset => ({
-          asset,
-          usageCount: asset.usage_count
-        }))
-
-      return {
-        totalAssets,
-        storageUsed,
-        storageLimit,
-        assetsByCategory,
-        recentUploads,
-        mostUsedAssets
-      }
-
-    } catch (error) {
-      console.error('Failed to get asset stats:', error)
-      return this.getEmptyStats()
+    return {
+      totalAssets,
+      storageUsed,
+      storageLimit,
+      assetsByCategory,
+      recentUploads: assets?.slice(-5) || [],
+      mostUsedAssets: [] // Will be populated when usage tracking is implemented
     }
   }
 
   /**
-   * Generates a signed URL for temporary access to a private asset
+   * Determines file category from MIME type
+   */
+  private getCategoryFromMimeType(mimeType: string): string {
+    if (mimeType.startsWith('image/')) return 'image'
+    if (mimeType.startsWith('video/')) return 'video'
+    if (mimeType.startsWith('audio/')) return 'audio'
+    if (mimeType.includes('pdf')) return 'document'
+    if (mimeType.includes('text/') || mimeType.includes('document')) return 'document'
+    if (mimeType.includes('font')) return 'font'
+    return 'other'
+  }
+
+  /**
+   * Gets a signed URL for accessing a private asset
    */
   async getSignedUrl(assetId: string, expiresIn: number = 3600): Promise<string> {
     const { data: { user } } = await this.supabase.auth.getUser()
     if (!user) throw new Error('User not authenticated')
 
-    // Get asset to verify access
-    const asset = await this.getAsset(assetId)
-    if (!asset) {
-      throw new Error('Asset not found or access denied')
+    // Get the asset to verify access and get file path
+    const { data: asset, error } = await this.supabase
+      .from('user_assets')
+      .select('file_path, user_id, is_public')
+      .eq('id', assetId)
+      .single()
+
+    if (error || !asset) {
+      throw new Error('Asset not found')
     }
 
-    // Generate signed URL
-    const { data, error } = await this.supabase.storage
+    // Check if user has access to this asset
+    if (asset.user_id !== user.id && !asset.is_public) {
+      throw new Error('Access denied')
+    }
+
+    // Generate signed URL for the file
+    const { data: signedUrlData, error: signedUrlError } = await this.supabase.storage
       .from('assets')
       .createSignedUrl(asset.file_path, expiresIn)
 
-    if (error) throw error
-    return data.signedUrl
-  }
-
-  /**
-   * Duplicates an asset
-   */
-  async duplicateAsset(assetId: string, newName?: string): Promise<FileAsset> {
-    const { data: { user } } = await this.supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    // Get original asset
-    const originalAsset = await this.getAsset(assetId)
-    if (!originalAsset) {
-      throw new Error('Asset not found or access denied')
+    if (signedUrlError || !signedUrlData?.signedUrl) {
+      console.error('Signed URL generation error:', signedUrlError)
+      throw new Error('Failed to generate signed URL')
     }
 
-    // Download original file
-    const { data: fileData, error: downloadError } = await this.supabase.storage
-      .from('assets')
-      .download(originalAsset.file_path)
-
-    if (downloadError) throw downloadError
-
-    // Create new file from downloaded data
-    const file = new File([fileData], originalAsset.file_name, {
-      type: originalAsset.mime_type
-    })
-
-    // Upload as new asset
-    return await this.uploadAsset({
-      file,
-      name: newName || `Copy of ${originalAsset.name}`,
-      description: originalAsset.description,
-      tags: originalAsset.tags,
-      isPublic: originalAsset.is_public,
-      teamId: originalAsset.team_id,
-      category: originalAsset.category
-    })
-  }
-
-  // Private helper methods
-
-  private getCategoryFromMimeType(mimeType: string): string {
-    if (mimeType.startsWith('image/')) return 'image'
-    if (mimeType.startsWith('video/')) return 'video'
-    if (mimeType.startsWith('audio/')) return 'audio'
-    if (mimeType.includes('pdf') || mimeType.includes('document') || mimeType.includes('text')) return 'document'
-    return 'other'
-  }
-
-  private getEmptyStats(): AssetUsageStats {
-    return {
-      totalAssets: 0,
-      storageUsed: 0,
-      storageLimit: 5 * 1024 * 1024 * 1024, // 5GB
-      assetsByCategory: {},
-      recentUploads: [],
-      mostUsedAssets: []
-    }
+    return signedUrlData.signedUrl
   }
 }
+
+// Export singleton instance
+export const assetService = new AssetService()

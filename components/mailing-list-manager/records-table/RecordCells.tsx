@@ -15,8 +15,41 @@ import { Ban, MailX, Trash, X } from 'lucide-react';
 import { TagsDropdown } from '../tags-dropdown';
 import { CampaignUsageTooltip } from '../campaign-usage-tooltip';
 
+interface Campaign {
+  id: string;
+  orderId: string;
+  mailedDate: string;
+}
+
+interface MailingListRecord {
+  id: string;
+  record_data: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    [key: string]: unknown;
+  };
+  validation_status: string;
+  tags?: Array<{ id: string; name: string }>;
+  campaigns?: Campaign[];
+  status?: 'active' | 'doNotContact' | 'returnedMail';
+  created_at: string;
+  updated_at: string;
+}
+
+interface EditingRecord {
+  id: string;
+  field: string;
+  value: unknown;
+}
+
 export interface RecordCellProps {
-  record: any;
+  record: MailingListRecord;
   onUpdateStatus: (
     id: string,
     status: 'active' | 'doNotContact' | 'returnedMail'
@@ -28,10 +61,10 @@ export interface RecordCellProps {
   editingRecord: { id: string; field: string; value: string } | null;
   saveRecordFieldEdit: () => void;
   setEditingRecord: (
-    value: { id: string; field: string; value: any } | null
+    value: EditingRecord | null
   ) => void;
   availableTags: { id: string; name: string }[];
-  onOpenCampaignModal: (campaigns: any[], title: string) => void;
+  onOpenCampaignModal: (campaigns: Campaign[], title: string) => void;
 }
 
 export function SelectCell({
@@ -39,7 +72,7 @@ export function SelectCell({
   selectedRecords,
   onCheckboxToggle,
 }: {
-  record: any;
+  record: MailingListRecord;
   selectedRecords: string[];
   onCheckboxToggle: (id: string) => void;
 }) {
@@ -57,7 +90,7 @@ export function ActionsCell({
   onUpdateStatus,
   onDelete,
 }: {
-  record: any;
+  record: MailingListRecord;
   onUpdateStatus: (
     id: string,
     status: 'active' | 'doNotContact' | 'returnedMail'
@@ -169,7 +202,7 @@ export function TagsCell({
   onRemoveTag,
   availableTags,
 }: {
-  record: any;
+  record: MailingListRecord;
   onAddTag: (listId: string, tagId: string) => void;
   onRemoveTag: (listId: string, tagId: string) => void;
   availableTags: { id: string; name: string }[];
@@ -205,7 +238,7 @@ export function CampaignsCell({
   record,
   onOpenCampaignModal,
 }: {
-  record: any;
+  record: MailingListRecord;
   onOpenCampaignModal: (
     campaigns: { id: string; orderId: string; mailedDate: string }[],
     title: string
@@ -213,7 +246,7 @@ export function CampaignsCell({
 }) {
   // Normalize campaign objects to the shape expected by CampaignUsageTooltip
   const campaigns = Array.isArray(record?.campaigns)
-    ? record.campaigns.map((c: any) => ({
+    ? record.campaigns.map((c: Campaign) => ({
         id: String(c?.id ?? ''),
         orderId: String(
           c?.orderId ?? c?.order_id ?? c?.orderNumber ?? c?.name ?? 'N/A'
@@ -246,7 +279,7 @@ const EditableField = ({
   className,
   suffix = '',
 }: {
-  record: any;
+  record: MailingListRecord;
   field: string;
   value: string;
   editingRecord: { id: string; field: string; value: string } | null;
@@ -286,7 +319,7 @@ export function EditableNameCell({
   setEditingRecord,
   saveRecordFieldEdit,
 }: {
-  record: any
+  record: MailingListRecord
   nameFormat: 'lastFirst' | 'firstLast'
   editingRecord: { id: string; field: string; value: string } | null
   onRecordFieldEdit: (id: string, field: string, value: string) => void
@@ -352,13 +385,13 @@ export function EditableTextCell({
   setEditingRecord,
   saveRecordFieldEdit,
 }: {
-  record: any;
+  record: MailingListRecord;
   field: string;
   value: string;
   editingRecord: { id: string; field: string; value: string } | null;
   onRecordFieldEdit: (id: string, field: string, value: string) => void;
   setEditingRecord: (
-    value: { id: string; field: string; value: any } | null
+    value: EditingRecord | null
   ) => void;
   saveRecordFieldEdit: () => void;
 }) {

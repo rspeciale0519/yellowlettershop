@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     console.log('Authenticated user:', user.email)
 
-    let mailingList: any
+    let mailingList: { id: string; name: string; user_id: string; team_id?: string; record_count: number; source_type?: string }
     let targetListId: string
 
     if (isNewList) {
@@ -285,7 +285,7 @@ export async function POST(request: NextRequest) {
 // transformation helper moved to lib/mailing-lists/transform.ts
 
 // Helper function to validate record data (simplified)
-function validateRecord(record: Record<string, any>) {
+function validateRecord(record: Record<string, unknown>) {
   const errors = []
   
   // At least one name field is required
