@@ -11,6 +11,7 @@ interface MediaDialogsProps {
   setUploadOpen: (v: boolean) => void
   isUploading: boolean
   onUpload: (files: File[], tags: string[]) => Promise<void>
+  initialFiles?: File[]
 
   lightboxOpen: boolean
   setLightboxOpen: (v: boolean) => void
@@ -37,7 +38,7 @@ interface MediaDialogsProps {
 
 export function MediaDialogs(props: MediaDialogsProps) {
   const {
-    uploadOpen, setUploadOpen, isUploading, onUpload,
+    uploadOpen, setUploadOpen, isUploading, onUpload, initialFiles,
     lightboxOpen, setLightboxOpen, lightboxAsset, lightboxImages, lightboxIndex, onNavigateImage,
     fileDetailsOpen, setFileDetailsOpen, selectedFile,
     renameOpen, setRenameOpen, fileToRename, onRename,
@@ -46,7 +47,13 @@ export function MediaDialogs(props: MediaDialogsProps) {
 
   return (
     <>
-      <UploadDialog isOpen={uploadOpen} onClose={() => setUploadOpen(false)} onUpload={onUpload} isUploading={isUploading} />
+      <UploadDialog 
+        isOpen={uploadOpen} 
+        onClose={() => setUploadOpen(false)} 
+        onUpload={onUpload} 
+        isUploading={isUploading}
+        initialFiles={initialFiles}
+      />
 
       <ImagePreviewModal
         isOpen={lightboxOpen}

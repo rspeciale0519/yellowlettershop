@@ -4,6 +4,14 @@ import type { CookieOptions } from '@supabase/ssr'
 
 // Protect dashboard routes at the edge for faster unauthenticated redirects
 export async function middleware(req: NextRequest) {
+  // Handle common external service requests to prevent 404 logs
+  if (req.nextUrl.pathname === '/.identity' || req.nextUrl.pathname === '/current-url') {
+    return new NextResponse(JSON.stringify({ status: 'ok' }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
   // Prepare a response that we can mutate cookies on if Supabase refreshes the session
   let res = NextResponse.next({ request: { headers: req.headers } })
 

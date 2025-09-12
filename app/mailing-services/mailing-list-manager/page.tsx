@@ -10,6 +10,7 @@ export default function MailingListsPage() {
     <FeatureAuthGuard
       landingPage={<MailingListManagerLanding />}
       requireAuth={true}
+      redirectToAuth={true}
     >
       <MailingListManagerContent />
     </FeatureAuthGuard>

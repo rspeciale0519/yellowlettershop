@@ -29,9 +29,10 @@ interface UploadDialogProps {
   onClose: () => void
   onUpload: (files: File[], tags: string[]) => Promise<void>
   isUploading: boolean
+  initialFiles?: File[]
 }
 
-export function UploadDialog({ isOpen, onClose, onUpload, isUploading }: UploadDialogProps) {
+export function UploadDialog({ isOpen, onClose, onUpload, isUploading, initialFiles }: UploadDialogProps) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [uploadTags, setUploadTags] = useState("")
   const [uploadError, setUploadError] = useState<string | null>(null)
@@ -132,14 +133,11 @@ export function UploadDialog({ isOpen, onClose, onUpload, isUploading }: UploadD
     setUploadError(null)
     
     const validationErrors: string[] = []
-    const validFiles: File[] = []
     
     files.forEach(file => {
       const error = validateFile(file)
       if (error) {
         validationErrors.push(error)
-      } else {
-        validFiles.push(file)
       }
     })
     
@@ -147,8 +145,28 @@ export function UploadDialog({ isOpen, onClose, onUpload, isUploading }: UploadD
       setUploadError(validationErrors.join(' '))
     }
     
-    setSelectedFiles(validFiles)
-    generateFilePreviews(validFiles)
+    // Filter out validation errors and duplicates
+    const validFiles = files.filter(file => {
+      const error = validateFile(file)
+      if (error) return false
+      
+      // Check current selectedFiles for duplicates (using functional update to get current state)
+      return true // We'll check duplicates in the state update
+    })
+    
+    if (validFiles.length > 0) {
+      // Add new files to existing files, avoiding duplicates
+      setSelectedFiles(prevFiles => {
+        const newFiles = validFiles.filter(file => 
+          !prevFiles.some(existingFile => 
+            existingFile.name === file.name && existingFile.size === file.size
+          )
+        )
+        const combinedFiles = [...prevFiles, ...newFiles]
+        generateFilePreviews(combinedFiles)
+        return combinedFiles
+      })
+    }
   }, [generateFilePreviews])
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -221,6 +239,39 @@ export function UploadDialog({ isOpen, onClose, onUpload, isUploading }: UploadD
     
     setSelectedFiles(prev => prev.filter((_, i) => i !== index))
   }
+
+  // Handle initial files when dialog opens
+  React.useEffect(() => {
+    if (isOpen && initialFiles && initialFiles.length > 0) {
+      setUploadError(null)
+      
+      const validationErrors: string[] = []
+      const validFiles: File[] = []
+      
+      initialFiles.forEach(file => {
+        const error = validateFile(file)
+        if (error) {
+          validationErrors.push(error)
+        } else {
+          validFiles.push(file)
+        }
+      })
+      
+      if (validationErrors.length > 0) {
+        setUploadError(validationErrors.join(' '))
+      }
+      
+      setSelectedFiles(validFiles)
+      generateFilePreviews(validFiles)
+    } else if (!isOpen) {
+      // Clear files when dialog closes
+      setSelectedFiles([])
+      setUploadTags("")
+      setUploadError(null)
+      filePreviews.forEach(url => URL.revokeObjectURL(url))
+      setFilePreviews(new Map())
+    }
+  }, [isOpen, initialFiles])
 
   // Clean up on unmount
   React.useEffect(() => {

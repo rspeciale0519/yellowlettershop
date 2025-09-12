@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
-  User,
+  User as UserIcon,
   CreditCard,
   Settings,
   LogOut,
@@ -25,15 +25,18 @@ import {
   Palette,
   Shield,
   Bell,
+  LayoutDashboard,
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
+import { User } from '@supabase/supabase-js';
+import { handleProtectedAction } from '@/lib/auth/auth-utils';
 
 export function Header() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAtTop, setIsAtTop] = useState(true);
   const [isHydrated, setIsHydrated] = useState(false);
@@ -65,74 +68,79 @@ export function Header() {
   }, [user]);
 
   const navLinks = [
-    { href: '/design/customize', label: 'New Design', icon: Palette },
-    { href: '/templates', label: 'Templates', icon: FileText },
+    { href: '/design/customize', label: 'New Design', icon: Palette, requiresAuth: true },
+    { href: '/templates', label: 'Templates', icon: FileText, requiresAuth: false },
     {
       href: '/mailing-services/build-lists',
       label: 'Build a List',
       icon: List,
+      requiresAuth: true,
     },
     {
       href: '/mailing-services/mailing-list-manager',
       label: 'Mailing List Manager',
       icon: Users,
+      requiresAuth: true,
     },
-    { href: '/#pricing', label: 'Pricing', icon: DollarSign },
+    { href: '/#pricing', label: 'Pricing', icon: DollarSign, requiresAuth: false },
   ];
 
   // Check for existing user session on component mount
   useEffect(() => {
     let subscription: { unsubscribe: () => void } | undefined;
+    
     const init = async () => {
       try {
+        // Use a faster initial check that doesn't block rendering
         const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        setUser(user ?? null);
+          data: { session },
+        } = await supabase.auth.getSession();
+        setUser(session?.user ?? null);
       } catch (error) {
-        console.error('Error fetching auth user:', error);
+        console.error('Error fetching auth session:', error);
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
     };
 
-    init();
-
-    // Subscribe to auth state changes
+    // Don't block initial render - start with optimistic loading state
+    setIsLoading(true);
+    
+    // Set up auth state listener first
     subscription = supabase.auth.onAuthStateChange((event, session) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
+      setIsLoading(false); // Ensure loading is false on any auth change
       
-      // Only redirect on actual sign-in events from authentication flow
-      // Check for auth query parameter to ensure this is from login flow
+      // Let the auth modal handle redirects - just clean up here
       if (event === 'SIGNED_IN' && currentUser) {
         const url = new URL(window.location.href);
         const hasAuthParam = url.searchParams.has('auth');
         
-        // Only redirect if this is from an auth flow (has auth param)
+        // Only clean up auth query parameters, don't redirect
         if (hasAuthParam) {
-          // Clear auth query parameters
-          url.searchParams.delete('auth');
-          window.history.replaceState({}, '', url.pathname);
-          
-          // Only redirect if we're not already on dashboard
-          const currentPath = window.location.pathname;
-          if (!currentPath.startsWith('/dashboard')) {
-            router.push('/dashboard');
-          }
+          // Clear auth query parameters after a brief delay to let modal redirect first
+          setTimeout(() => {
+            if (window.location.search.includes('auth=')) {
+              const cleanUrl = new URL(window.location.href);
+              cleanUrl.searchParams.delete('auth');
+              cleanUrl.searchParams.delete('redirectedFrom');
+              window.history.replaceState({}, '', cleanUrl.pathname + (cleanUrl.search || ''));
+            }
+          }, 100);
         }
       }
     }).data.subscription;
+
+    // Then initialize auth state asynchronously
+    init();
 
     return () => {
       if (subscription) subscription.unsubscribe();
     };
   }, [router]);
 
-  // Handle successful login
-  const handleLoginSuccess = (userData: { id: string; email?: string } | null) => {
-    setUser(userData);
-  };
 
   // Open global auth modal with desired mode
   const openAuth = (
@@ -152,11 +160,46 @@ export function Header() {
       .signOut()
       .then(() => {
         setUser(null);
-        window.location.href = '/';
+        // Use router.push to avoid theme flickering from full page reload
+        router.push('/');
       })
       .catch((error) => {
         console.error('Error during sign out:', error);
       });
+  };
+
+  // Handle New Campaign button click
+  const handleNewCampaign = () => {
+    handleProtectedAction(
+      () => {
+        router.push('/new-campaign');
+      },
+      router,
+      'login',
+      '/new-campaign'
+    );
+  };
+
+  // Handle protected navigation link clicks
+  const handleNavClick = (e: React.MouseEvent, link: typeof navLinks[0]) => {
+    // Special handling for Pricing link - always go to homepage with pricing anchor
+    if (link.label === 'Pricing') {
+      e.preventDefault();
+      router.push('/#pricing');
+      return;
+    }
+
+    if (link.requiresAuth) {
+      e.preventDefault();
+      handleProtectedAction(
+        () => {
+          router.push(link.href);
+        },
+        router,
+        'login',
+        link.href
+      );
+    }
   };
 
   return (
@@ -199,21 +242,35 @@ export function Header() {
         <nav className='hidden md:flex items-center gap-6 text-sm font-medium'>
           {navLinks.map((link) => {
             const IconComponent = link.icon;
+            
+            // Special handling for Pricing link
+            if (link.label === 'Pricing') {
+              return (
+                <button
+                  key={link.href}
+                  className='flex items-center gap-2 transition-all duration-200 ease-in-out hover:text-yellow-500 group bg-transparent border-none cursor-pointer text-sm font-medium'
+                  onClick={() => {
+                    console.log('Pricing button clicked');
+                    window.location.href = '/#pricing';
+                  }}
+                >
+                  <IconComponent className='h-4 w-4 transition-all duration-200 ease-in-out text-inherit group-hover:text-yellow-500' />
+                  <span className='transition-all duration-200 ease-in-out text-inherit group-hover:text-yellow-500'>
+                    {link.label}
+                  </span>
+                </button>
+              );
+            }
+            
             return (
               <Link
                 key={link.href}
                 href={link.href}
                 className='flex items-center gap-2 transition-all duration-200 ease-in-out hover:text-yellow-500 group'
-                onClick={
-                  link.href === '#pricing'
-                    ? (e) => {
-                        e.preventDefault();
-                        document
-                          .getElementById('pricing')
-                          ?.scrollIntoView({ behavior: 'smooth' });
-                      }
-                    : undefined
-                }
+                onClick={(e) => {
+                  console.log('Desktop nav clicked:', link.label, link.href);
+                  handleNavClick(e, link);
+                }}
               >
                 <IconComponent className='h-4 w-4 transition-all duration-200 ease-in-out text-inherit group-hover:text-yellow-500' />
                 <span className='transition-all duration-200 ease-in-out text-inherit group-hover:text-yellow-500'>
@@ -225,116 +282,126 @@ export function Header() {
         </nav>
 
         <div className='flex items-center gap-4'>
-          {isHydrated && !isLoading ? (
+          {/* Always show New Campaign button */}
+          <Button
+            className='hidden sm:inline-flex'
+            style={{ backgroundColor: '#E0B431', color: '#000' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F6CF62'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E0B431'}
+            onClick={handleNewCampaign}
+          >
+            New Campaign
+          </Button>
+          
+          {/* Show loading state before hydration completes */}
+          {!isHydrated || isLoading ? (
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-muted animate-pulse" />
+              <div className="w-20 h-9 rounded bg-muted animate-pulse" />
+              <div className="w-24 h-9 rounded bg-muted animate-pulse" />
+            </div>
+          ) : user ? (
             <>
-              {user ? (
-                <>
+              <Button variant="outline" size="icon" asChild>
+                <Link href="/dashboard/notifications">
+                  <Bell className="h-4 w-4" />
+                </Link>
+              </Button>
+              <ThemeToggle />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <Button
-                    asChild
-                    className='hidden sm:inline-flex bg-yellow-500 hover:bg-yellow-600 text-gray-900'
+                    variant='ghost'
+                    className='relative h-10 w-10 rounded-full'
                   >
-                    <Link href='/new-campaign'>New Campaign</Link>
+                    <Avatar className='h-10 w-10'>
+                      <AvatarImage
+                        src={
+                          (user.user_metadata?.avatar_url as string) ||
+                          '/placeholder-user.jpg'
+                        }
+                        alt={
+                          (user.user_metadata?.name as string) ||
+                          (user.email as string) ||
+                          'User'
+                        }
+                      />
+                      <AvatarFallback>
+                        <UserIcon className='h-6 w-6' />
+                      </AvatarFallback>
+                    </Avatar>
                   </Button>
-                  <Button variant="outline" size="icon" asChild>
-                    <Link href="/dashboard/notifications">
-                      <Bell className="h-4 w-4" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className='w-56'
+                  align='end'
+                  forceMount
+                >
+                  <DropdownMenuLabel className='font-normal'>
+                    <div className='flex flex-col space-y-1'>
+                      <p className='text-sm font-medium leading-none'>
+                        {(user.user_metadata?.name as string) || 'User'}
+                      </p>
+                      <p className='text-xs leading-none text-muted-foreground'>
+                        {user.email as string}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard" className="flex items-center cursor-pointer">
+                      <LayoutDashboard className='mr-2 h-4 w-4' />
+                      <span>Dashboard</span>
                     </Link>
-                  </Button>
-                  <ThemeToggle />
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant='ghost'
-                        className='relative h-10 w-10 rounded-full'
-                      >
-                        <Avatar className='h-10 w-10'>
-                          <AvatarImage
-                            src={
-                              (user.user_metadata?.avatar_url as string) ||
-                              '/placeholder-user.jpg'
-                            }
-                            alt={
-                              (user.user_metadata?.name as string) ||
-                              (user.email as string) ||
-                              'User'
-                            }
-                          />
-                          <AvatarFallback>
-                            <User className='h-6 w-6' />
-                          </AvatarFallback>
-                        </Avatar>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      className='w-56'
-                      align='end'
-                      forceMount
-                    >
-                      <DropdownMenuLabel className='font-normal'>
-                        <div className='flex flex-col space-y-1'>
-                          <p className='text-sm font-medium leading-none'>
-                            {(user.user_metadata?.name as string) || 'User'}
-                          </p>
-                          <p className='text-xs leading-none text-muted-foreground'>
-                            {user.email as string}
-                          </p>
-                        </div>
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link href="/dashboard/profile" className="flex items-center cursor-pointer">
-                          <User className='mr-2 h-4 w-4' />
-                          <span>Profile</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/dashboard/security" className="flex items-center cursor-pointer">
-                          <Shield className='mr-2 h-4 w-4' />
-                          <span>Security</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <CreditCard className='mr-2 h-4 w-4' />
-                        <span>Identity Cards</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Settings className='mr-2 h-4 w-4' />
-                        <span>Settings</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleLogout}>
-                        <LogOut className='mr-2 h-4 w-4' />
-                        <span>Log out</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </>
-              ) : (
-                <>
-                  <ThemeToggle />
-                  <Button
-                    variant='outline'
-                    className='hidden sm:inline-flex bg-transparent'
-                    onClick={() => openAuth('login')}
-                  >
-                    Sign In
-                  </Button>
-                  <Button
-                    className='hidden sm:inline-flex bg-yellow-500 hover:bg-yellow-600 text-gray-900'
-                    onClick={() => openAuth('signup')}
-                  >
-                    Get Started
-                  </Button>
-                </>
-              )}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/profile" className="flex items-center cursor-pointer">
+                      <UserIcon className='mr-2 h-4 w-4' />
+                      <span>Profile</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/security" className="flex items-center cursor-pointer">
+                      <Shield className='mr-2 h-4 w-4' />
+                      <span>Security</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <CreditCard className='mr-2 h-4 w-4' />
+                    <span>Identity Cards</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Settings className='mr-2 h-4 w-4' />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className='mr-2 h-4 w-4' />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </>
           ) : (
-            // Show placeholder during hydration to prevent layout shift
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 bg-transparent" /> {/* ThemeToggle placeholder */}
-              <div className="w-20 h-9 bg-transparent" /> {/* Button placeholder */}
-              <div className="w-24 h-9 bg-transparent" /> {/* Button placeholder */}
-            </div>
+            <>
+              <ThemeToggle />
+              <Button
+                variant='outline'
+                className='hidden sm:inline-flex bg-transparent'
+                onClick={() => openAuth('login')}
+              >
+                Sign In
+              </Button>
+              <Button
+                className='hidden sm:inline-flex'
+                style={{ backgroundColor: '#E0B431', color: '#000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F6CF62'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E0B431'}
+                onClick={() => openAuth('signup')}
+              >
+                Get Started
+              </Button>
+            </>
           )}
 
           <div className='md:hidden'>
@@ -354,6 +421,14 @@ export function Header() {
                         key={link.href}
                         href={link.href}
                         className='flex w-full items-center gap-3 py-2 text-lg font-semibold'
+                        onClick={(e) => {
+                          if (link.label === 'Pricing') {
+                            e.preventDefault();
+                            router.push('/#pricing');
+                          } else {
+                            handleNavClick(e, link);
+                          }
+                        }}
                       >
                         <IconComponent className='h-5 w-5' />
                         {link.label}
@@ -370,21 +445,25 @@ export function Header() {
                         Sign In
                       </Button>
                       <Button
-                        className='w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900'
+                        className='w-full'
+                        style={{ backgroundColor: '#E0B431', color: '#000' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F6CF62'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E0B431'}
                         onClick={() => openAuth('signup')}
                       >
                         Get Started
                       </Button>
                     </>
                   )}
-                  {isHydrated && user && (
-                    <Button
-                      asChild
-                      className='w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900'
-                    >
-                      <Link href='/new-campaign'>New Campaign</Link>
-                    </Button>
-                  )}
+                  <Button
+                    className='w-full'
+                    style={{ backgroundColor: '#E0B431', color: '#000' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F6CF62'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E0B431'}
+                    onClick={handleNewCampaign}
+                  >
+                    New Campaign
+                  </Button>
                 </div>
               </SheetContent>
             </Sheet>

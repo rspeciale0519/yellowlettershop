@@ -125,6 +125,7 @@ export function MediaGrid({
                   onShowDetails={handleShowDetails}
                   onRename={() => {}}
                   onOpenRenameModal={handleOpenRenameModal}
+                  onViewFile={handleImageClick}
                 />
               </div>
             )}

@@ -31,6 +31,7 @@ export default function MediaPageContent() {
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
+  const [preSelectedFiles, setPreSelectedFiles] = useState<File[]>([])
 
   // Load assets
   useEffect(() => {
@@ -82,6 +83,29 @@ export default function MediaPageContent() {
     },
   })
 
+  // File validation (reused from upload dialog)
+  const validateFile = (file: File): string | null => {
+    const maxSize = 10 * 1024 * 1024 // 10MB
+    if (file.size > maxSize) {
+      return `File "${file.name}" is too large. Maximum size is 10MB.`
+    }
+    
+    const allowedTypes = [
+      'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp',
+      'application/pdf',
+      'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain', 'application/rtf',
+      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/csv'
+    ]
+    
+    if (!allowedTypes.includes(file.type)) {
+      return `File "${file.name}" has an unsupported format. Please use images, PDFs, documents, or spreadsheets.`
+    }
+    
+    return null
+  }
+
   // Upload handling
   const handleUpload = useCallback(async (files: File[], tags: string[]) => {
     try {
@@ -99,9 +123,35 @@ export default function MediaPageContent() {
     }
   }, [uploadMultipleAssets, getAssets, getAssetStats])
 
+  // Handle files selected from empty state - open upload modal
+  const handleFilesSelected = useCallback((files: File[]) => {
+    const validationErrors: string[] = []
+    const validFiles: File[] = []
+    
+    files.forEach(file => {
+      const error = validateFile(file)
+      if (error) {
+        validationErrors.push(error)
+      } else {
+        validFiles.push(file)
+      }
+    })
+    
+    if (validationErrors.length > 0) {
+      toast.error(validationErrors.join(' '))
+    }
+    
+    // Set pre-selected files and open dialog
+    setPreSelectedFiles(validFiles)
+    setUploadDialogOpen(true)
+  }, [])
+
   return (
     <div className="container mx-auto py-8 space-y-6">
-      <MediaHeader viewMode={viewMode} setViewMode={setViewMode} onOpenUpload={() => setUploadDialogOpen(true)} />
+      <MediaHeader viewMode={viewMode} setViewMode={setViewMode} onOpenUpload={() => {
+        setPreSelectedFiles([])
+        setUploadDialogOpen(true)
+      }} />
 
       <EnhancedFilterBar
         searchQuery={searchQuery}
@@ -153,6 +203,8 @@ export default function MediaPageContent() {
           onItemClick={sel.handleItemClick}
           onSelectAll={sel.handleSelectAll}
           allSelected={sel.allSelected}
+          onFilesSelected={handleFilesSelected}
+          isUploading={isUploading}
         />
       </div>
 
@@ -161,6 +213,7 @@ export default function MediaPageContent() {
         setUploadOpen={setUploadDialogOpen}
         isUploading={isUploading}
         onUpload={handleUpload}
+        initialFiles={preSelectedFiles}
         lightboxOpen={modals.lightboxOpen}
         setLightboxOpen={modals.setLightboxOpen}
         lightboxAsset={modals.lightboxAsset}

@@ -320,7 +320,13 @@ export function PricingSection() {
               <p className="text-lg text-gray-700 dark:text-gray-300 mb-6">
                 Ask us about Customized Digital Marketing & Addressable GeoFencing
               </p>
-              <Button size="lg" className="bg-yellow-500 hover:bg-yellow-600 text-gray-900">
+              <Button 
+                size="lg" 
+                className=""
+                style={{ backgroundColor: '#E0B431', color: '#000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F6CF62'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E0B431'}
+              >
                 Learn More
               </Button>
             </CardContent>
@@ -335,7 +341,13 @@ export function PricingSection() {
 
           {/* Call to Action */}
           <div className="mt-12 text-center">
-            <Button size="lg" className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 mr-4">
+            <Button 
+              size="lg" 
+              className="mr-4"
+              style={{ backgroundColor: '#E0B431', color: '#000' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F6CF62'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E0B431'}
+            >
               Start Your Campaign
             </Button>
             <Button size="lg" variant="outline">

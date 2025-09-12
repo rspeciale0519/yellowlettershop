@@ -17,7 +17,8 @@ import {
   Copy, 
   Trash, 
   FileText,
-  Loader2
+  Loader2,
+  Eye
 } from 'lucide-react'
 import { UserAsset } from '@/types/supabase'
 import { useAssets } from '@/hooks/use-assets'
@@ -29,9 +30,10 @@ interface FileActionsProps {
   onShowDetails?: (asset: UserAsset) => void
   onRename?: (asset: UserAsset, newName: string) => void
   onOpenRenameModal?: (asset: UserAsset) => void
+  onViewFile?: (asset: UserAsset) => void
 }
 
-export function FileActions({ asset, onDelete, onShowDetails, onRename, onOpenRenameModal }: FileActionsProps) {
+export function FileActions({ asset, onDelete, onShowDetails, onRename, onOpenRenameModal, onViewFile }: FileActionsProps) {
   const { getSignedUrl } = useAssets()
   const [isDownloading, setIsDownloading] = useState(false)
   const [isCopyingLink, setIsCopyingLink] = useState(false)
@@ -137,6 +139,13 @@ export function FileActions({ asset, onDelete, onShowDetails, onRename, onOpenRe
     }
   }
 
+  const handleViewFile = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (onViewFile) {
+      onViewFile(asset)
+    }
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -152,6 +161,13 @@ export function FileActions({ asset, onDelete, onShowDetails, onRename, onOpenRe
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
         <DropdownMenuSeparator />
+        
+        {asset.file_type === "image" && onViewFile && (
+          <DropdownMenuItem onClick={handleViewFile}>
+            <Eye className="mr-2 h-4 w-4" />
+            View File
+          </DropdownMenuItem>
+        )}
         
         <DropdownMenuItem onClick={handleShowDetails}>
           <FileText className="mr-2 h-4 w-4" />

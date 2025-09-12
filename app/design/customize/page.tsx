@@ -1,6 +1,10 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/utils/supabase/client'
+import { User } from '@supabase/supabase-js'
+import { Loader2 } from 'lucide-react'
 import { DesignerHeader } from "@/components/designer/designer-header"
 import { ToolsSidebar } from "@/components/designer/tools-sidebar"
 import { TextToolPanel } from "@/components/designer/text-tool-panel"
@@ -56,6 +60,8 @@ const initialElements: DesignElement[] = [
 ]
 
 export default function DesignCustomizerPage() {
+  const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [activeTool, setActiveTool] = useState<Tool>("text")
   const [elements, setElements] = useState<DesignElement[]>(initialElements)
   const [selectedElement, setSelectedElement] = useState<string | null>(null)
@@ -63,6 +69,34 @@ export default function DesignCustomizerPage() {
   const [historyIndex, setHistoryIndex] = useState(0)
   const [zoom, setZoom] = useState(100)
   const [activePage, setActivePage] = useState<"front" | "back">("front")
+  const router = useRouter()
+  const supabase = createClient()
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { user }, error } = await supabase.auth.getUser()
+        
+        console.log('Auth check result:', { user, error })
+        
+        if (!user || error) {
+          console.log('No user found, redirecting to login')
+          router.replace('/?auth=login&redirectedFrom=/design/customize')
+          return
+        }
+        
+        console.log('User authenticated:', user.email)
+        setUser(user)
+      } catch (error) {
+        console.error('Error checking authentication:', error)
+        router.replace('/?auth=login&redirectedFrom=/design/customize')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    checkAuth()
+  }, [router, supabase.auth])
 
   const updateElement = (id: string, updates: Partial<DesignElement>) => {
     const newElements = elements.map((el) => (el.id === id ? { ...el, ...updates } : el))
@@ -106,6 +140,21 @@ export default function DesignCustomizerPage() {
       default:
         return <div className="p-4">Select a tool</div>
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex items-center gap-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Loading...</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return null // Will redirect in useEffect
   }
 
   return (

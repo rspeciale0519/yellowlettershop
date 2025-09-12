@@ -97,7 +97,13 @@ function BuildListsContent() {
             <Save className="h-4 w-4 mr-2" />
             Save Criteria
           </Button>
-          <Button size="lg" className="bg-yellow-500 hover:bg-yellow-600 text-gray-900">
+          <Button 
+            size="lg" 
+            className=""
+            style={{ backgroundColor: '#E0B431', color: '#000' }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F6CF62'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E0B431'}
+          >
             <ShoppingCart className="h-4 w-4 mr-2" />
             Purchase List
           </Button>
@@ -112,6 +118,7 @@ export default function BuildListsPage() {
     <FeatureAuthGuard
       landingPage={<BuildListLanding />}
       requireAuth={true}
+      redirectToAuth={true}
     >
       <BuildListsContent />
     </FeatureAuthGuard>

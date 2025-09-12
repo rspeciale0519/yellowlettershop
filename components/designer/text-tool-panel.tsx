@@ -46,7 +46,12 @@ export function TextToolPanel({ elements, selectedElementId, onSelectElement, on
         </div>
       </ScrollArea>
       <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-        <Button className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900">
+        <Button 
+          className="w-full"
+          style={{ backgroundColor: '#E0B431', color: '#000' }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F6CF62'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E0B431'}
+        >
           <Plus className="h-4 w-4 mr-2" />
           New Text Field
         </Button>

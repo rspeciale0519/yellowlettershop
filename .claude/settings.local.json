@@ -130,7 +130,9 @@
       "Bash(taskkill:*)",
       "Bash(if exist \".next\\cache\" rmdir /s /q \".next\\cache\")",
       "Bash(if [ -d \".next/cache\" ])",
-      "Bash(then rm -rf .next/cache)"
+      "Bash(then rm -rf .next/cache)",
+      "Bash(ls:*)",
+      "Bash(dir)"
     ],
     "deny": [],
     "ask": [

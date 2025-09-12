@@ -56,8 +56,13 @@ export function AuthFlowModalController() {
     : '';
   const redirectedFrom = searchParams.get('redirectedFrom') || undefined;
 
-  const [isOpen, setIsOpen] = useState<boolean>(!!authParam);
-  const [mode, setMode] = useState<AuthMode>(authParam || 'login');
+  // Only log when auth param is actually present to reduce noise
+  if (authParam) {
+    console.log('AuthFlowModalController - authParamValue:', authParamValue, 'authParam:', authParam, 'redirectedFrom:', redirectedFrom);
+  }
+
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [mode, setMode] = useState<AuthMode>('login');
 
   // Shared state
   const [isLoading, setIsLoading] = useState(false);
@@ -83,31 +88,53 @@ export function AuthFlowModalController() {
   // Forgot state
   const [forgotEmail, setForgotEmail] = useState('');
 
-  // Keep modal in sync with query param
+  // Keep modal in sync with query param with optimization to prevent excessive re-renders
   useEffect(() => {
     const incomingValue = searchParams.get('auth');
     const incoming: AuthMode | '' = isAuthMode(incomingValue)
       ? incomingValue
       : '';
+    
+    // Only log when there's an actual change to reduce noise
+    if (incoming && incoming !== mode) {
+      console.log('Auth mode changing:', mode, '->', incoming);
+    }
+    
     if (incoming) {
-      setMode(incoming || 'login');
-      if (!isOpen) setIsOpen(true);
+      // Only update if values are actually different
+      if (mode !== incoming) {
+        setMode(incoming);
+      }
+      // Always open modal when there's an auth param, regardless of current state
+      setIsOpen(true);
     } else {
-      setIsOpen(false);
+      // Only close if modal was opened by query param (not user action)
+      // This prevents the race condition with our custom close handler
+      if (searchParams.has('auth') === false) {
+        setIsOpen(false);
+      }
     }
-  }, [searchParams]);
+  }, [authParam, mode]); // Removed isOpen dependency to prevent race condition
 
-  // Clean up query when modal closes
-  useEffect(() => {
-    if (!isOpen && searchParams.get('auth')) {
-      const url = new URL(window.location.href);
-      url.searchParams.delete('auth');
-      url.searchParams.delete('redirectedFrom');
-      router.replace(url.pathname + (url.search ? url.search : '') + url.hash, {
-        scroll: false,
-      });
+  // Custom close handler to avoid race conditions
+  const handleModalClose = (open: boolean) => {
+    if (!open) {
+      // Close modal immediately
+      setIsOpen(false);
+      
+      // Clean up query parameters if they exist
+      if (searchParams.get('auth')) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('auth');
+        url.searchParams.delete('redirectedFrom');
+        router.replace(url.pathname + (url.search ? url.search : '') + url.hash, {
+          scroll: false,
+        });
+      }
+    } else {
+      setIsOpen(true);
     }
-  }, [isOpen]);
+  };
 
   const title = useMemo(() => {
     switch (mode) {
@@ -143,7 +170,7 @@ export function AuthFlowModalController() {
     }
   }, [mode]);
 
-  const destAfterAuth = '/dashboard';
+  const destAfterAuth = redirectedFrom || '/dashboard';
 
   // Actions
   const loginWithEmail = async (e: React.FormEvent) => {
@@ -163,7 +190,10 @@ export function AuthFlowModalController() {
         return;
       }
       setIsOpen(false);
-      router.push(destAfterAuth);
+      // Small delay to ensure auth state propagates before navigation
+      setTimeout(() => {
+        router.push(destAfterAuth);
+      }, 150);
     } catch (err) {
       console.error(err);
       setError('Login failed. Please check your credentials and try again.');
@@ -210,7 +240,10 @@ export function AuthFlowModalController() {
         return;
       }
       if (data.session) {
-        router.push('/dashboard');
+        // Small delay to ensure auth state propagates before navigation
+        setTimeout(() => {
+          router.push(destAfterAuth);
+        }, 150);
       } else {
         setMessage(
           'Check your email for a confirmation link to complete your registration.'
@@ -318,21 +351,29 @@ export function AuthFlowModalController() {
           !!url.hash &&
           (url.hash.includes('access_token') ||
             url.hash.includes('refresh_token'));
+        
         if (hasCode) {
           const code = url.searchParams.get('code');
           if (!code) return;
-          await supabase.auth.exchangeCodeForSession(code);
-          // Remove sensitive params after exchange but keep auth + redirectedFrom
-          const clean = new URL(window.location.href);
-          clean.searchParams.delete('code');
-          clean.searchParams.delete('type');
-          router.replace(
-            clean.pathname +
-              (clean.search ? clean.search : '') +
-              (clean.hash || ''),
-            { scroll: false }
-          );
+          
+          // Don't block UI - handle code exchange asynchronously
+          supabase.auth.exchangeCodeForSession(code).then(() => {
+            // Remove sensitive params after exchange but keep auth + redirectedFrom
+            const clean = new URL(window.location.href);
+            clean.searchParams.delete('code');
+            clean.searchParams.delete('type');
+            router.replace(
+              clean.pathname +
+                (clean.search ? clean.search : '') +
+                (clean.hash || ''),
+              { scroll: false }
+            );
+          }).catch((e) => {
+            console.warn('Code exchange failed:', e);
+            // Allow user to proceed with manual login
+          });
         } else if (hasHashToken) {
+          // Handle hash-based tokens
           const { data } = supabase.auth.onAuthStateChange(
             (_event: AuthChangeEvent, session: Session | null) => {
               if (session) {
@@ -351,20 +392,23 @@ export function AuthFlowModalController() {
         // no-op; user may still proceed to login
       }
     };
+    
+    // Don't await this - let it run in the background
     run();
+    
     // run once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Global auth state change handler for redirects
+  // Global auth state change handler for modal state only
   useEffect(() => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
         setIsOpen(false);
-        // Note: Redirect logic disabled to prevent conflicts with Header component
-        // All auth redirects are now handled by the Header component only
+        // Redirect logic is handled by individual auth functions (loginWithEmail, signUp, etc.)
+        // This just closes the modal
       } else if (event === 'SIGNED_OUT') {
         // Handle sign out if needed
         if (pathname.startsWith('/dashboard')) {
@@ -374,10 +418,10 @@ export function AuthFlowModalController() {
     });
 
     return () => subscription.unsubscribe();
-  }, [router, redirectedFrom, destAfterAuth, pathname]);
+  }, [router, pathname]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleModalClose}>
       <DialogContent
         className='sm:max-w-md w-full mx-4'
         aria-describedby='auth-description'
@@ -522,6 +566,9 @@ export function AuthFlowModalController() {
               <Button
                 type='submit'
                 className='w-full h-12'
+                style={{ backgroundColor: '#E0B431', color: '#000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F6CF62'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E0B431'}
                 disabled={isLoading || isGoogleLoading}
               >
                 {isLoading ? (
@@ -627,6 +674,9 @@ export function AuthFlowModalController() {
             <Button
               type='submit'
               className='w-full'
+              style={{ backgroundColor: '#E0B431', color: '#000' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F6CF62'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E0B431'}
               disabled={isLoading || isGoogleLoading}
             >
               {isLoading ? (
@@ -679,7 +729,14 @@ export function AuthFlowModalController() {
                 />
               </div>
             </div>
-            <Button type='submit' className='w-full' disabled={isLoading}>
+            <Button 
+              type='submit' 
+              className='w-full' 
+              style={{ backgroundColor: '#E0B431', color: '#000' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F6CF62'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E0B431'}
+              disabled={isLoading}
+            >
               {isLoading ? (
                 <>
                   <Loader2 className='mr-2 h-4 w-4 animate-spin' /> Sending...
@@ -761,7 +818,14 @@ export function AuthFlowModalController() {
                 />
               </div>
             </div>
-            <Button type='submit' className='w-full' disabled={isLoading}>
+            <Button 
+              type='submit' 
+              className='w-full' 
+              style={{ backgroundColor: '#E0B431', color: '#000' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F6CF62'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E0B431'}
+              disabled={isLoading}
+            >
               {isLoading ? (
                 <>
                   <Loader2 className='mr-2 h-4 w-4 animate-spin' /> Updating...
@@ -801,6 +865,9 @@ export function AuthFlowModalController() {
             </Alert>
             <Button
               className='w-full'
+              style={{ backgroundColor: '#E0B431', color: '#000' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F6CF62'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E0B431'}
               onClick={() => {
                 const url = new URL(window.location.href);
                 url.searchParams.set('auth', 'login');

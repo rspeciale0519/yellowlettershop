@@ -2,6 +2,7 @@
 
 import { EnhancedMediaGrid } from "@/components/media/enhanced-media-grid"
 import { MediaListView } from "@/components/media/media-list-view"
+import { EmptyStateDropzone } from "@/components/media/empty-state-dropzone"
 
 interface MediaBrowserProps {
   viewMode: "grid" | "list"
@@ -20,6 +21,8 @@ interface MediaBrowserProps {
   onItemClick: (id: string, index: number, e: React.MouseEvent) => void
   onSelectAll: () => void
   allSelected: boolean
+  onFilesSelected?: (files: File[]) => void
+  isUploading?: boolean
 }
 
 export function MediaBrowser(props: MediaBrowserProps) {
@@ -40,13 +43,16 @@ export function MediaBrowser(props: MediaBrowserProps) {
     onItemClick,
     onSelectAll,
     allSelected,
+    onFilesSelected,
+    isUploading,
   } = props
 
   if (filteredMediaFiles.length === 0) {
     return (
-      <div className="text-center py-12">
-        <p className="text-muted-foreground">No files found. Try adjusting your filters or upload some files.</p>
-      </div>
+      <EmptyStateDropzone 
+        onFilesSelected={onFilesSelected || (() => {})}
+        isUploading={isUploading}
+      />
     )
   }
 

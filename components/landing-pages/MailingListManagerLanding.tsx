@@ -96,7 +96,10 @@ export function MailingListManagerLanding() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
                 size="lg" 
-                className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 text-lg px-8 py-6"
+                className="text-lg px-8 py-6"
+                style={{ backgroundColor: '#E0B431', color: '#000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F6CF62'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E0B431'}
                 onClick={() => openAuth('signup')}
               >
                 Start Free Trial

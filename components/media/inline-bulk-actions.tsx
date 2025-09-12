@@ -21,13 +21,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
   Command,
   CommandEmpty,
   CommandGroup,
@@ -47,7 +40,6 @@ import {
   X,
   CheckSquare,
   Square,
-  ChevronDown,
   Plus,
   Check,
 } from "lucide-react"
@@ -192,29 +184,38 @@ export function InlineBulkActions({
         </div>
 
         <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-7">
-                Actions
-                <ChevronDown className="h-3 w-3 ml-1" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setTagDialogOpen(true)}>
-                <Tag className="h-4 w-4 mr-2" />
-                Manage Tags
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={onBulkDownload} disabled={isDownloading}>
-                <Download className="h-4 w-4 mr-2" />
-                {isDownloading ? 'Creating zip...' : allSelected ? 'Download All' : 'Download Selected'}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setDeleteDialogOpen(true)} className="text-destructive">
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete Selected
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setTagDialogOpen(true)}
+            className="h-7"
+          >
+            <Tag className="h-3 w-3 mr-1" />
+            Tag
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onBulkDownload}
+            disabled={isDownloading}
+            className="h-7"
+          >
+            <Download className="h-3 w-3 mr-1" />
+            {isDownloading ? 'Creating...' : 'Download'}
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setDeleteDialogOpen(true)}
+            className="h-7 text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-3 w-3 mr-1" />
+            Delete
+          </Button>
+
+          <div className="w-px h-4 bg-border mx-1" />
 
           <Button
             variant="ghost"
