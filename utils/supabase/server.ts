@@ -1,44 +1,31 @@
-import { createServerClient as createSSRServerClient, type CookieOptions } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
-import 'server-only'
 
-// Server-side Supabase client for API routes and server components
-export async function createServerClient() {
-  // This function should only be called on the server
-  if (typeof window !== 'undefined') {
-    throw new Error('createServerClient should only be called on the server side')
-  }
-
+/**
+ * Server-side Supabase client for Next.js App Router.
+ * Must be called with `await` inside a Server Component or Route Handler.
+ */
+export async function createClient() {
   const cookieStore = await cookies()
-  return createSSRServerClient(
+
+  return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
+        getAll() {
+          return cookieStore.getAll()
         },
-        set(name: string, value: string, options: CookieOptions) {
+        setAll(cookiesToSet) {
           try {
-            cookieStore.set({ name, value, ...options })
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options),
+            )
           } catch {
-            // ignore when cookies are read-only (e.g., RSC)
-          }
-        },
-        remove(name: string, options: CookieOptions) {
-          try {
-            cookieStore.set({ name, value: '', ...options, maxAge: 0 })
-          } catch {
-            // ignore when cookies are read-only (e.g., RSC)
+            // Called from a Server Component — cookies can't be mutated; safe to ignore
           }
         },
       },
-    }
+    },
   )
 }
-
-// Alias for backward compatibility with existing imports
-export const createClient = createServerClient
-
-// Alternative export name used in lib/supabase imports
-export const createSupabaseServerClient = createServerClient
