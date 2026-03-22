@@ -9,8 +9,7 @@ import {
 } from '@/components/ui/card';
 import { UploadCloud, PaletteIcon, ArrowRight, Palette, Search } from 'lucide-react';
 import { PricingSection } from '@/components/pricing/pricing-section';
-import { AmbientBackground } from '@/components/ambient-background';
-import { HandwritingBackground } from '@/components/handwriting-background/HandwritingBackground';
+import { BackgroundSwitcher } from '@/components/background-switcher/BackgroundSwitcher';
 
 export default async function HomePage() {
   // Check if user is authenticated and redirect to dashboard
@@ -27,8 +26,7 @@ export default async function HomePage() {
   }
   return (
     <div className='relative flex flex-col min-h-screen'>
-      <AmbientBackground />
-      <HandwritingBackground />
+      <BackgroundSwitcher />
       <main className='relative flex-1' style={{ zIndex: 10 }}>
         <section className='w-full py-20 md:py-32 lg:py-40'>
           <div className='container px-4 md:px-6'>

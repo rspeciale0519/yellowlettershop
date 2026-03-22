@@ -3,8 +3,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { useHandwritingLoop } from './useHandwritingLoop'
 import { useAtramentCanvas } from './useAtramentCanvas'
+import type { BgStyle } from './HandwritingBackground.types'
 
-export function HandwritingBackground() {
+interface Props {
+  bgStyle?: BgStyle
+}
+
+export function HandwritingBackground({ bgStyle = 'parchment' }: Props) {
   const svgContainerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isMobile, setIsMobile] = useState(false)
@@ -26,6 +31,11 @@ export function HandwritingBackground() {
       className="pointer-events-none fixed inset-0"
       style={{ zIndex: -5 }}
     >
+      {/* Layer 0: Switchable paper background (light mode only, skipped when bgStyle='none') */}
+      {bgStyle !== 'none' && (
+        <div className={`landing-${bgStyle}`} style={{ zIndex: -1 }} />
+      )}
+
       {/* Layer 1: Vara.js animated cursive text fragments */}
       <div
         ref={svgContainerRef}
@@ -37,11 +47,7 @@ export function HandwritingBackground() {
       <canvas
         ref={canvasRef}
         className="absolute inset-0"
-        style={{
-          zIndex: 1,
-          pointerEvents: 'none',
-          cursor: 'crosshair',
-        }}
+        style={{ zIndex: 1, pointerEvents: 'none', cursor: 'crosshair' }}
         role="presentation"
       />
     </div>

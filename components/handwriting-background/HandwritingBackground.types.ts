@@ -1,3 +1,5 @@
+export type BgStyle = 'parchment' | 'grain' | 'gradient' | 'ruled' | 'none'
+
 export interface HandwritingConfig {
   maxConcurrentFragments: number
   minFontSize: number
