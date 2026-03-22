@@ -37,3 +37,47 @@ export function parseISODate(s?: string | null): Date | undefined {
   const d = new Date(s)
   return Number.isNaN(d.getTime()) ? undefined : d
 }
+
+// Smooth scroll utility for scrolling to elements by ID or element reference
+export function smoothScrollToElement(
+  target: string | HTMLElement,
+  options: ScrollIntoViewOptions = {
+    behavior: 'smooth',
+    block: 'start',
+    inline: 'nearest'
+  }
+): boolean {
+  try {
+    let element: HTMLElement | null = null
+    
+    if (typeof target === 'string') {
+      element = document.getElementById(target)
+    } else {
+      element = target
+    }
+    
+    if (element) {
+      element.scrollIntoView(options)
+      return true
+    }
+    
+    return false
+  } catch (error) {
+    console.warn('Error scrolling to element:', error)
+    return false
+  }
+}
+
+// Smooth scroll with delay utility - useful for scrolling after state updates
+export function smoothScrollToElementWithDelay(
+  target: string | HTMLElement,
+  delay: number = 100,
+  options?: ScrollIntoViewOptions
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const success = smoothScrollToElement(target, options)
+      resolve(success)
+    }, delay)
+  })
+}

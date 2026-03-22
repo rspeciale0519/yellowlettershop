@@ -171,8 +171,7 @@ export function useAssets() {
     }
   }, [])
 
-  const getAssetStats = useCallback(async (userId?: string): Promise<AssetUsageStats> => {
-    setIsLoading(true)
+  const getAssetStats = useCallback(async (userId?: string): Promise<AssetUsageStats | null> => {
     try {
       const url = userId ? `/api/assets/stats?userId=${userId}` : '/api/assets/stats'
       const response = await fetch(url)
@@ -185,8 +184,9 @@ export function useAssets() {
       const assetStats = await response.json()
       setStats(assetStats)
       return assetStats
-    } finally {
-      setIsLoading(false)
+    } catch (error) {
+      console.error('Error getting asset stats:', error)
+      return null
     }
   }, [])
 

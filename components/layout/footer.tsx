@@ -1,10 +1,16 @@
+"use client"
+
 import Link from "next/link"
 import Image from "next/image"
+import { usePathname } from "next/navigation"
 
 export function Footer() {
+  const pathname = usePathname()
+  const isDashboard = pathname?.startsWith('/dashboard')
+
   return (
-    <footer className="w-full border-t bg-gray-100 dark:bg-gray-900">
-      <div className="container grid items-center gap-8 px-4 py-12 md:grid-cols-3 md:px-6">
+    <footer className={`border-t bg-gray-100 dark:bg-gray-900 ${isDashboard ? 'lg:ml-64 lg:w-[calc(100%-16rem)]' : 'w-full'}`}>
+      <div className="w-full grid items-center gap-8 px-4 py-12 md:grid-cols-3 md:px-6">
         <div className="flex items-center justify-center md:justify-start">
           <Link href="/" className="flex items-center gap-2">
             <Image src="/yls-logo.png" alt="Yellow Letter Shop Logo" width={180} height={40} />

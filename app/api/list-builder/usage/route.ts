@@ -1,13 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ListBuilderService } from '@/lib/list-builder/list-builder-service'
+import { withAuth } from '@/lib/auth/middleware'
 
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request: NextRequest, { userId }) => {
   try {
     const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
+    const requestedUserId = searchParams.get('userId')
+    
+    const targetUserId = requestedUserId || userId
 
     const listBuilder = new ListBuilderService()
-    const stats = await listBuilder.getUsageStats(userId || undefined)
+    const stats = await listBuilder.getUsageStats(targetUserId)
 
     return NextResponse.json(stats)
 
@@ -18,4 +21,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

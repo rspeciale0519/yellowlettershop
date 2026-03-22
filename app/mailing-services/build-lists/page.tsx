@@ -7,7 +7,8 @@ import { CriteriaAccordion } from "@/components/list-builder/criteria-accordion"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Save, ShoppingCart, Trash2, Loader2, RefreshCw } from "lucide-react"
-import { useBuildListsPage } from "./hooks/useBuildListsPage"
+import Link from "next/link"
+import { useBuildListsPage, type Category } from "./hooks/useBuildListsPage"
 import { FilterPanel } from "./components/FilterPanel"
 
 function BuildListsContent() {
@@ -40,7 +41,10 @@ function BuildListsContent() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start px-4 lg:px-8">
         {/* Sidebar */}
         <aside className="lg:col-span-1 space-y-6 sticky top-24">
-          <CriteriaAccordion activeCategory={activeCategory} onCategoryChange={setActiveCategory} />
+          <CriteriaAccordion
+            activeCategory={activeCategory}
+            onCategoryChange={(categoryId: string) => setActiveCategory(categoryId as Category)}
+          />
           <ListSummary
             listName={listName}
             onNameChange={setListName}
@@ -98,14 +102,17 @@ function BuildListsContent() {
             Save Criteria
           </Button>
           <Button 
+            asChild
             size="lg" 
             className=""
             style={{ backgroundColor: '#E0B431', color: '#000' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F6CF62'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E0B431'}
           >
-            <ShoppingCart className="h-4 w-4 mr-2" />
-            Purchase List
+            <Link href="/orders/new?source=list_builder">
+              <ShoppingCart className="h-4 w-4 mr-2" />
+              Purchase List
+            </Link>
           </Button>
         </div>
       </div>

@@ -20,6 +20,7 @@ import {
   Menu,
   X,
   LogOut,
+  CreditCard,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -48,6 +49,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Saved Templates", href: "/dashboard/templates", icon: FileText },
     { name: "Order History", href: "/dashboard/orders", icon: ShoppingBag },
+    { name: "Contact Cards", href: "/dashboard/contact-cards", icon: CreditCard },
     { name: "Profile", href: "/dashboard/profile", icon: User },
     { name: "Security", href: "/dashboard/security", icon: Shield },
     { name: "User Management", href: "/dashboard/users", icon: Users },
@@ -59,7 +61,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   ]
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background">
+    <div className="flex min-h-screen bg-background">
       {/* Mobile Overlay */}
       {isSidebarOpen && !isDesktop && (
         <div
@@ -70,7 +72,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-card shadow-lg transition-transform duration-300 ease-in-out lg:static lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-card shadow-lg transition-transform duration-300 ease-in-out lg:translate-x-0 ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -81,8 +83,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             </Button>
           </div>
           <ScrollArea className="flex-1 py-4">
-            <div className="px-4 py-6 border-b">
-              <Link href="/dashboard" className="text-2xl font-bold text-foreground">
+            <div className="h-[4.3125rem] border-b flex items-center justify-center">
+              <Link href="/dashboard" className="text-2xl font-bold text-foreground -mt-[0.875rem]">
                 YLS Dashboard
               </Link>
             </div>
@@ -101,13 +103,13 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     onClick={closeSidebar}
                     className={`group flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                       isActive
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        ? "bg-[#F6CF62] text-black"
+                        : "text-muted-foreground hover:bg-[#F6CF62] hover:text-black"
                     }`}
                   >
                     <item.icon
                       className={`mr-3 h-5 w-5 flex-shrink-0 ${
-                        isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground"
+                        isActive ? "text-black" : "text-muted-foreground group-hover:text-black"
                       }`}
                     />
                     {item.name}
@@ -128,7 +130,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col lg:ml-64">
         {/* Mobile-only Header */}
         <header className="flex h-16 items-center justify-between border-b bg-card px-4 shadow-sm lg:hidden">
           <div className="flex items-center">
@@ -148,7 +150,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 overflow-auto bg-muted/30 p-4 lg:p-6">{children}</main>
+        <main className="flex-1 bg-muted/30 p-4 lg:p-6">{children}</main>
       </div>
     </div>
   )

@@ -40,6 +40,7 @@ export function Header() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAtTop, setIsAtTop] = useState(true);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [avatarTimestamp, setAvatarTimestamp] = useState(Date.now());
   const supabase = createClient();
   const router = useRouter();
 
@@ -60,6 +61,7 @@ export function Header() {
       const { avatarUrl } = event.detail;
       if (user) {
         setUser({ ...user, user_metadata: { ...user.user_metadata, avatar_url: avatarUrl } });
+        setAvatarTimestamp(Date.now());
       }
     };
     
@@ -317,14 +319,16 @@ export function Header() {
                     <Avatar className='h-10 w-10'>
                       <AvatarImage
                         src={
-                          (user.user_metadata?.avatar_url as string) ||
-                          '/placeholder-user.jpg'
+                          user.user_metadata?.avatar_url 
+                            ? `${user.user_metadata.avatar_url}?t=${avatarTimestamp}`
+                            : '/placeholder-user.jpg'
                         }
                         alt={
                           (user.user_metadata?.name as string) ||
                           (user.email as string) ||
                           'User'
                         }
+                        key={user.user_metadata?.avatar_url}
                       />
                       <AvatarFallback>
                         <UserIcon className='h-6 w-6' />
@@ -366,9 +370,11 @@ export function Header() {
                       <span>Security</span>
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <CreditCard className='mr-2 h-4 w-4' />
-                    <span>Identity Cards</span>
+                  <DropdownMenuItem asChild>
+                    <Link href="/dashboard/contact-cards" className="flex items-center cursor-pointer">
+                      <CreditCard className='mr-2 h-4 w-4' />
+                      <span>Contact Cards</span>
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
                     <Settings className='mr-2 h-4 w-4' />

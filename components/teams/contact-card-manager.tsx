@@ -33,13 +33,7 @@ import {
   Phone
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { 
-  getContactCards, 
-  createContactCard, 
-  updateContactCard, 
-  deleteContactCard, 
-  setDefaultContactCard 
-} from '@/lib/supabase/teams'
+import { createClient } from '@/utils/supabase/client'
 import type { ContactCard } from '@/types/supabase'
 
 export function ContactCardManager() {
@@ -47,6 +41,7 @@ export function ContactCardManager() {
   const [loading, setLoading] = useState(true)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editingCard, setEditingCard] = useState<ContactCard | null>(null)
+  const [user, setUser] = useState<any>(null)
   const [formData, setFormData] = useState({
     name: '',
     company: '',
@@ -63,13 +58,43 @@ export function ContactCardManager() {
   })
 
   useEffect(() => {
-    loadContactCards()
+    initializeUser()
   }, [])
+
+  const initializeUser = async () => {
+    try {
+      const supabase = createClient()
+      const { data: { user: currentUser }, error } = await supabase.auth.getUser()
+      
+      if (error) {
+        throw error
+      }
+      
+      setUser(currentUser)
+      await loadContactCards()
+    } catch (error) {
+      console.error('Error getting user:', error)
+      toast.error('Authentication error')
+      setLoading(false)
+    }
+  }
 
   const loadContactCards = async () => {
     try {
-      const cards = await getContactCards()
-      setContactCards(cards)
+      const supabase = createClient()
+      
+      const { data: cards, error } = await supabase
+        .from('contact_cards')
+        .select('*')
+        .eq('is_soft_deleted', false)
+        .order('is_default', { ascending: false })
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        throw error
+      }
+      
+      setContactCards(cards || [])
     } catch (error) {
       console.error('Error loading contact cards:', error)
       toast.error('Failed to load contact cards')
@@ -120,12 +145,50 @@ export function ContactCardManager() {
   }
 
   const handleSave = async () => {
+    if (!user) {
+      toast.error('Please wait for authentication to complete')
+      return
+    }
+    
     try {
+      const supabase = createClient()
+      
       if (editingCard) {
-        await updateContactCard(editingCard.id, formData)
+        // If setting as default, remove default from other cards first
+        if (formData.is_default) {
+          await supabase
+            .from('contact_cards')
+            .update({ is_default: false })
+            .neq('id', editingCard.id)
+        }
+        
+        const { error } = await supabase
+          .from('contact_cards')
+          .update({
+            ...formData,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', editingCard.id)
+        
+        if (error) throw error
         toast.success('Contact card updated successfully')
       } else {
-        await createContactCard(formData)
+        // If setting as default, remove default from other cards first
+        if (formData.is_default) {
+          await supabase
+            .from('contact_cards')
+            .update({ is_default: false })
+        }
+        
+        const { error } = await supabase
+          .from('contact_cards')
+          .insert({
+            ...formData,
+            user_id: user?.id,
+            team_id: null // For now, we'll set team_id to null for individual users
+          })
+        
+        if (error) throw error
         toast.success('Contact card created successfully')
       }
       
@@ -134,7 +197,8 @@ export function ContactCardManager() {
       resetForm()
     } catch (error) {
       console.error('Error saving contact card:', error)
-      toast.error('Failed to save contact card')
+      console.error('Error details:', error?.message, error?.details, error?.hint)
+      toast.error(error?.message || 'Failed to save contact card')
     }
   }
 
@@ -142,18 +206,63 @@ export function ContactCardManager() {
     if (!confirm('Are you sure you want to delete this contact card?')) return
 
     try {
-      await deleteContactCard(id)
+      const supabase = createClient()
+      
+      // Check if this is the user's last contact card
+      const { data: cardCount, error: countError } = await supabase
+        .from('contact_cards')
+        .select('id', { count: 'exact' })
+        .eq('is_soft_deleted', false)
+      
+      if (countError) throw countError
+      
+      if (cardCount && cardCount.length <= 1) {
+        toast.error('Cannot delete the last contact card. At least one contact card is required.')
+        return
+      }
+      
+      // Soft delete the contact card
+      const { error } = await supabase
+        .from('contact_cards')
+        .update({
+          is_soft_deleted: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+      
+      if (error) throw error
+      
       toast.success('Contact card deleted successfully')
       await loadContactCards()
     } catch (error) {
       console.error('Error deleting contact card:', error)
-      toast.error('Failed to delete contact card')
+      toast.error(error instanceof Error ? error.message : 'Failed to delete contact card')
     }
   }
 
   const handleSetDefault = async (id: string) => {
     try {
-      await setDefaultContactCard(id)
+      const supabase = createClient()
+      
+      // Remove default from all other cards first
+      const { error: removeDefaultError } = await supabase
+        .from('contact_cards')
+        .update({ is_default: false })
+        .neq('id', id)
+      
+      if (removeDefaultError) throw removeDefaultError
+      
+      // Set this card as default
+      const { error: setDefaultError } = await supabase
+        .from('contact_cards')
+        .update({ 
+          is_default: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+      
+      if (setDefaultError) throw setDefaultError
+      
       toast.success('Default contact card updated')
       await loadContactCards()
     } catch (error) {

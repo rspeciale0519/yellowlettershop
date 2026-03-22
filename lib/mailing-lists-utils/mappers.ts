@@ -55,8 +55,8 @@ export function mapSupabaseListToUI(
     recordCount: list.record_count ?? 0,
     createdAt: list.created_at,
     createdBy: list.created_by,
-    modifiedDate: list.modified_at,
-    modifiedBy: list.modified_by,
+    modifiedDate: list.modified_at as string | undefined,
+    modifiedBy: list.modified_by as string | undefined,
     tags: mapTags(list.tags),
     campaigns: mapCampaigns(list.campaigns),
   };

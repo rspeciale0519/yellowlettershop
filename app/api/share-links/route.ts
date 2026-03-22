@@ -47,7 +47,8 @@ export async function POST(request: NextRequest) {
       .maybeSingle()
 
     if (existingLink) {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${request.nextUrl.protocol}//${request.nextUrl.host}`
+      // Always use the current request URL to ensure the correct base URL
+      const baseUrl = `${request.nextUrl.protocol}//${request.nextUrl.host}`
       return NextResponse.json({
         shareUrl: `${baseUrl}/share/${existingLink.share_token}`,
         shareToken: existingLink.share_token,
@@ -93,7 +94,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${request.nextUrl.protocol}//${request.nextUrl.host}`
+    // Always use the current request URL to ensure the correct base URL
+    const baseUrl = `${request.nextUrl.protocol}//${request.nextUrl.host}`
     
     return NextResponse.json({
       shareUrl: `${baseUrl}/share/${shareLink.share_token}`,

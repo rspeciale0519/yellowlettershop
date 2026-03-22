@@ -3,7 +3,7 @@ import { createServerClient } from '@/utils/supabase/server'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { assetId: string } }
+  { params }: { params: Promise<{ assetId: string }> }
 ) {
   try {
     const supabase = await createServerClient()
@@ -16,7 +16,7 @@ export async function GET(
       )
     }
 
-    const assetId = params.assetId
+    const { assetId } = await params
     const { searchParams } = new URL(request.url)
     const expiresIn = parseInt(searchParams.get('expiresIn') || '3600')
 

@@ -19,9 +19,9 @@ interface TableViewProps {
   availableTags: { id: string; name: string }[]
   onOpenCampaignModal: (campaigns: any[], title: string) => void
   selectedRecords: string[]
-  onCheckboxToggle: (id: string) => void
+  onCheckboxToggle: (recordId: string, checked: boolean) => void
   selectAll: boolean
-  onSelectAllChange: (checked: boolean | "indeterminate") => void
+  onSelectAllChange: (checked: boolean) => void
   editingName: { id: string; value: string } | null
   onNameEdit: (id: string, name: string) => void
   saveNameEdit: () => void

@@ -11,54 +11,137 @@ import Stripe from 'stripe';
 import { stripe } from '@/lib/payments/stripe-config';
 import { createClient } from '@/utils/supabase/service';
 import type { PaymentStatus, SubscriptionStatus } from '@/types/supabase-comprehensive';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { 
+  validateWebhookIp, 
+  checkWebhookRateLimit, 
+  logWebhookSecurity 
+} from '@/lib/webhooks/security';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+const stripeWebhookIps = [
+  '18.245.8.0/26',
+  '3.130.192.231/32',
+  '13.235.14.237/32',
+  '13.235.122.149/32',
+  '18.211.135.69/32',
+  '3.89.151.48/32',
+  '54.187.174.169/32',
+  '54.187.205.235/32',
+  '54.187.216.72/32'
+];
 
 if (!webhookSecret) {
   throw new Error('STRIPE_WEBHOOK_SECRET environment variable is required');
 }
 
+// Use Node.js runtime for crypto operations and webhook signature verification
+export const runtime = 'nodejs';
+
 export async function POST(request: NextRequest) {
-  if (!stripe) {
-    return NextResponse.json(
-      { error: 'Stripe not configured' },
-      { status: 500 }
-    );
-  }
+  const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0] || 
+                   request.headers.get('x-real-ip') || 
+                   request.ip || 'unknown';
 
   try {
-    // Get the raw body for signature verification
+    // 1. Validate Stripe IP allowlist (in production)
+    if (process.env.NODE_ENV === 'production' && !validateWebhookIp(request, stripeWebhookIps)) {
+      logWebhookSecurity(request, '/api/payments/webhooks/stripe', { 
+        valid: false, 
+        error: 'IP not in allowlist' 
+      });
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // 2. Check rate limiting
+    const rateLimitResult = checkWebhookRateLimit(clientIp, 60, 60000); // 60 requests per minute
+    if (!rateLimitResult.allowed) {
+      logWebhookSecurity(request, '/api/payments/webhooks/stripe', { 
+        valid: false, 
+        error: 'Rate limit exceeded' 
+      });
+      return NextResponse.json(
+        { error: 'Rate limit exceeded' },
+        { 
+          status: 429,
+          headers: {
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
+            'X-RateLimit-Reset': new Date(rateLimitResult.resetTime).toISOString()
+          }
+        }
+      );
+    }
+
+    if (!stripe) {
+      return NextResponse.json(
+        { error: 'Stripe not configured' },
+        { status: 500 }
+      );
+    }
+
+    // 3. Get the raw body for signature verification
     const body = await request.text();
     const signature = headers().get('stripe-signature');
 
     if (!signature) {
+      logWebhookSecurity(request, '/api/payments/webhooks/stripe', { 
+        valid: false, 
+        error: 'Missing Stripe signature' 
+      });
       return NextResponse.json(
         { error: 'Missing Stripe signature' },
         { status: 400 }
       );
     }
 
-    // Verify webhook signature
+    // 4. Verify webhook signature with enhanced error handling
     let event: Stripe.Event;
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     } catch (error) {
-      console.error('Webhook signature verification failed:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Unknown signature error';
+      console.error('Webhook signature verification failed:', errorMsg);
+      
+      logWebhookSecurity(request, '/api/payments/webhooks/stripe', { 
+        valid: false, 
+        error: `Invalid signature: ${errorMsg}` 
+      });
+      
       return NextResponse.json(
         { error: 'Invalid webhook signature' },
         { status: 400 }
       );
     }
 
+    // 5. Log successful validation
+    logWebhookSecurity(request, '/api/payments/webhooks/stripe', { 
+      valid: true 
+    });
+
     console.log(`Received webhook event: ${event.type} (${event.id})`);
 
-    // Process the event
-    await processWebhookEvent(event);
-
-    return NextResponse.json({ received: true });
+    // 6. Process the event with idempotency check
+    const processResult = await processWebhookEvent(event);
+    
+    return NextResponse.json({ 
+      received: true, 
+      event_type: event.type,
+      event_id: event.id,
+      processed: processResult 
+    });
 
   } catch (error) {
-    console.error('Webhook processing error:', error);
+    const errorMsg = error instanceof Error ? error.message : 'Unknown processing error';
+    console.error('Webhook processing error:', errorMsg);
+    
+    logWebhookSecurity(request, '/api/payments/webhooks/stripe', { 
+      valid: false, 
+      error: `Processing failed: ${errorMsg}` 
+    });
+    
     return NextResponse.json(
       { error: 'Webhook processing failed' },
       { status: 500 }
@@ -67,10 +150,34 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Process individual webhook events
+ * Process individual webhook events with idempotency
  */
-async function processWebhookEvent(event: Stripe.Event): Promise<void> {
+async function processWebhookEvent(event: Stripe.Event): Promise<boolean> {
   const supabase = createClient();
+
+  // Check if this event has already been processed (idempotency)
+  const { data: existingEvent } = await supabase
+    .from('webhook_events')
+    .select('id, processed_at')
+    .eq('stripe_event_id', event.id)
+    .single();
+
+  if (existingEvent?.processed_at) {
+    console.log(`Event ${event.id} already processed, skipping`);
+    return true;
+  }
+
+  // Record the event processing attempt
+  if (!existingEvent) {
+    await supabase
+      .from('webhook_events')
+      .insert({
+        stripe_event_id: event.id,
+        event_type: event.type,
+        processed_at: null,
+        created_at: new Date().toISOString()
+      });
+  }
 
   switch (event.type) {
     // Payment Intent Events
@@ -122,6 +229,14 @@ async function processWebhookEvent(event: Stripe.Event): Promise<void> {
       console.log(`Unhandled webhook event type: ${event.type}`);
       break;
   }
+
+  // Mark event as successfully processed
+  await supabase
+    .from('webhook_events')
+    .update({ processed_at: new Date().toISOString() })
+    .eq('stripe_event_id', event.id);
+
+  return true;
 }
 
 /**
@@ -129,13 +244,18 @@ async function processWebhookEvent(event: Stripe.Event): Promise<void> {
  */
 async function handlePaymentIntentSucceeded(
   paymentIntent: Stripe.PaymentIntent,
-  supabase: any
+  supabase: SupabaseClient
 ): Promise<void> {
   const status: PaymentStatus = paymentIntent.capture_method === 'manual' 
     ? (paymentIntent.charges.data[0]?.captured ? 'captured' : 'authorized')
     : 'captured';
 
-  const updateData: any = {
+  const updateData: {
+    status: PaymentStatus;
+    payment_method_id: string | null;
+    authorized_at?: string;
+    captured_at?: string;
+  } = {
     status,
     payment_method_id: paymentIntent.payment_method as string || null,
   };
@@ -158,7 +278,7 @@ async function handlePaymentIntentSucceeded(
 
 async function handlePaymentIntentFailed(
   paymentIntent: Stripe.PaymentIntent,
-  supabase: any
+  supabase: SupabaseClient
 ): Promise<void> {
   const { error } = await supabase
     .from('payment_transactions')
@@ -175,7 +295,7 @@ async function handlePaymentIntentFailed(
 
 async function handlePaymentIntentCanceled(
   paymentIntent: Stripe.PaymentIntent,
-  supabase: any
+  supabase: SupabaseClient
 ): Promise<void> {
   const { error } = await supabase
     .from('payment_transactions')
@@ -195,7 +315,7 @@ async function handlePaymentIntentCanceled(
  */
 async function handleSubscriptionCreated(
   subscription: Stripe.Subscription,
-  supabase: any
+  supabase: SupabaseClient
 ): Promise<void> {
   const userId = subscription.metadata.userId;
   const teamId = subscription.metadata.teamId;
@@ -239,7 +359,7 @@ async function handleSubscriptionCreated(
 
 async function handleSubscriptionUpdated(
   subscription: Stripe.Subscription,
-  supabase: any
+  supabase: SupabaseClient
 ): Promise<void> {
   const userId = subscription.metadata.userId;
   const teamId = subscription.metadata.teamId;
@@ -247,7 +367,7 @@ async function handleSubscriptionUpdated(
   const status = mapStripeStatusToDb(subscription.status);
 
   if (teamId) {
-    const updateData: any = { plan };
+    const updateData: { plan: string } = { plan };
     
     const { error } = await supabase
       .from('teams')
@@ -274,7 +394,7 @@ async function handleSubscriptionUpdated(
 
 async function handleSubscriptionDeleted(
   subscription: Stripe.Subscription,
-  supabase: any
+  supabase: SupabaseClient
 ): Promise<void> {
   const userId = subscription.metadata.userId;
   const teamId = subscription.metadata.teamId;
@@ -312,7 +432,7 @@ async function handleSubscriptionDeleted(
  */
 async function handleInvoicePaymentSucceeded(
   invoice: Stripe.Invoice,
-  supabase: any
+  supabase: SupabaseClient
 ): Promise<void> {
   if (invoice.subscription) {
     // Log successful payment for analytics
@@ -337,7 +457,7 @@ async function handleInvoicePaymentSucceeded(
 
 async function handleInvoicePaymentFailed(
   invoice: Stripe.Invoice,
-  supabase: any
+  supabase: SupabaseClient
 ): Promise<void> {
   if (invoice.subscription) {
     // Update subscription status to past_due
@@ -378,10 +498,10 @@ async function handleInvoicePaymentFailed(
  */
 async function handleCustomerUpdated(
   customer: Stripe.Customer,
-  supabase: any
+  supabase: SupabaseClient
 ): Promise<void> {
   // Update customer information in profiles
-  const updateData: any = {};
+  const updateData: { full_name?: string } = {};
   
   if (customer.name) {
     updateData.full_name = customer.name;
@@ -404,7 +524,7 @@ async function handleCustomerUpdated(
  */
 async function handlePaymentMethodAttached(
   paymentMethod: Stripe.PaymentMethod,
-  supabase: any
+  supabase: SupabaseClient
 ): Promise<void> {
   // Log payment method attachment for analytics
   const { error } = await supabase

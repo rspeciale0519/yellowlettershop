@@ -44,7 +44,7 @@ export function useListFilters({
 }: UseListFiltersProps) {
   // Search and filtering state
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('name');
+  const [sortBy, setSortBy] = useState({ column: 'name', direction: 'asc' as 'asc' | 'desc' });
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [quickFilter, setQuickFilter] = useState('all');
   const [filterState, setFilterState] = useState<FilterState>({
@@ -158,16 +158,13 @@ export function useListFilters({
       'created_by': 'created_by',
       'modified_by': 'modified_by'
     };
-    
-    const mappedSortColumn = sortColumnMap[sortBy] || sortBy;
-    const isDescending = sortBy.endsWith('_desc');
-    const cleanSortColumn = sortBy.replace('_desc', '');
-    const finalSortColumn = sortColumnMap[cleanSortColumn] || cleanSortColumn;
-    
-    // Parse sortBy and determine direction
-    const sortByObj = { 
+
+    const finalSortColumn = sortColumnMap[sortBy.column] || sortBy.column;
+
+    // Use sortBy object directly
+    const sortByObj = {
       column: finalSortColumn,
-      direction: isDescending ? 'desc' : sortDirection
+      direction: sortBy.direction
     };
     
     // Merge additional filters into advanced criteria
@@ -235,8 +232,11 @@ export function useListFilters({
     setCurrentPage(1);
   }, []);
 
-  const handleSort = useCallback((newSortBy: string) => {
-    setSortBy(newSortBy);
+  const handleSort = useCallback((newSortColumn: string) => {
+    setSortBy(prev => ({
+      column: newSortColumn,
+      direction: prev.column === newSortColumn && prev.direction === 'asc' ? 'desc' : 'asc'
+    }));
     setCurrentPage(1);
   }, []);
   

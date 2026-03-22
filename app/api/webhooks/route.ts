@@ -3,6 +3,9 @@ import { headers } from 'next/headers'
 import crypto from 'crypto'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
+// Use Node.js runtime for crypto operations
+export const runtime = 'nodejs';
+
 // =================================================================================
 // Webhook Event Types
 // =================================================================================

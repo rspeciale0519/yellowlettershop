@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Search, Filter, ArrowUpDown, Download, Eye, Package } from "lucide-react"
+import { Search, Filter, ArrowUpDown, Download, Eye, Package, RefreshCw } from "lucide-react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -62,7 +63,7 @@ export default function OrdersPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Order History</h1>
         <Button asChild>
-          <a href="/dashboard/orders/new">Place New Order</a>
+          <a href="/orders/new?source=dashboard_create_new">Place New Order</a>
         </Button>
       </div>
 
@@ -115,7 +116,7 @@ export default function OrdersPage() {
               : "You haven't placed any orders yet"}
           </p>
           <Button className="mt-4" asChild>
-            <a href="/dashboard/orders/new">Place New Order</a>
+            <a href="/orders/new?source=dashboard_create_new">Place New Order</a>
           </Button>
         </div>
       ) : (
@@ -144,6 +145,12 @@ export default function OrdersPage() {
                   <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end space-x-2">
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/orders/new?reorderId=${order.id}&source=previous_orders_reorder`}>
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                          Reorder
+                        </Link>
+                      </Button>
                       <Button variant="outline" size="sm">
                         <Eye className="mr-2 h-4 w-4" />
                         Details
@@ -209,26 +216,26 @@ export default function OrdersPage() {
                     <CardHeader>
                       <CardTitle>Shipping Information</CardTitle>
                       <CardDescription>
-                        {order.shipping.trackingNumber ? "Tracking available" : "No tracking available yet"}
+                        {order.shipping?.trackingNumber ? "Tracking available" : "No tracking available yet"}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
                         <div>
                           <h4 className="font-medium">Shipping Method</h4>
-                          <p className="text-sm text-muted-foreground">{order.shipping.method}</p>
+                          <p className="text-sm text-muted-foreground">{order.shipping?.method}</p>
                         </div>
                         <div>
                           <h4 className="font-medium">Shipping Address</h4>
-                          <p className="text-sm text-muted-foreground">{order.shipping.address}</p>
+                          <p className="text-sm text-muted-foreground">{order.shipping?.address}</p>
                         </div>
-                        {order.shipping.trackingNumber && (
+                        {order.shipping?.trackingNumber && (
                           <div>
                             <h4 className="font-medium">Tracking Number</h4>
-                            <p className="text-sm text-muted-foreground">{order.shipping.trackingNumber}</p>
+                            <p className="text-sm text-muted-foreground">{order.shipping?.trackingNumber}</p>
                             <Button variant="link" className="h-auto p-0 text-sm" asChild>
                               <a
-                                href={`https://tools.usps.com/go/TrackConfirmAction?tLabels=${order.shipping.trackingNumber}`}
+                                href={`https://tools.usps.com/go/TrackConfirmAction?tLabels=${order.shipping?.trackingNumber}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                               >

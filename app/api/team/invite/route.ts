@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { TeamService, InviteTeamMemberRequest } from '@/lib/team/team-service'
+import { withAuth, authorizeTeamAccess } from '@/lib/auth/middleware'
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request: NextRequest, { userId }) => {
   try {
     const { teamId, ...inviteData }: { teamId: string } & InviteTeamMemberRequest = await request.json()
 
@@ -9,6 +10,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: 'Team ID, email, and role are required' },
         { status: 400 }
+      )
+    }
+
+    const hasAccess = await authorizeTeamAccess(userId, teamId)
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: 'Unauthorized access to team' },
+        { status: 403 }
       )
     }
 
@@ -24,4 +33,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

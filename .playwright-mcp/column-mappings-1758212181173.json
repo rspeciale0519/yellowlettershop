@@ -1,0 +1,609 @@
+{
+  "mappings": {
+    "first_name": "OWNER 1 FIRST NAME",
+    "last_name": "OWNER 1 LAST NAME",
+    "address_line_1": "MAIL ADDRESS",
+    "city": "MAIL CITY",
+    "state": "MAIL STATE",
+    "zip_code": "MAIL ZIP CODE",
+    "address_line_2": null,
+    "email": null,
+    "phone": null,
+    "company": null,
+    "property_type": null,
+    "bedrooms": null,
+    "bathrooms": null,
+    "square_feet": null,
+    "year_built": null,
+    "estimated_value": null,
+    "loan_amount": null,
+    "loan_type": null,
+    "interest_rate": null,
+    "age": null,
+    "income": null,
+    "marital_status": null
+  },
+  "sourceColumns": [
+    "OWNER 1 LABEL NAME",
+    "OWNER 1 LAST NAME",
+    "OWNER 1 FIRST NAME",
+    "OWNER 1 MIDDLE NAME",
+    "OWNER 1 SUFFIX",
+    "OWNER 2 LABEL NAME",
+    "OWNER 2 LAST NAME",
+    "OWNER 2 FIRST NAME",
+    "OWNER 2 MIDDLE NAME",
+    "OWNER 2 SUFFIX",
+    "OWNER CARE OF NAME",
+    "MAIL ADDRESS",
+    "MAIL CITY",
+    "MAIL STATE",
+    "MAIL ZIP CODE",
+    "MAIL ZIP+4",
+    "MAIL ZIP/ZIP+4",
+    "MAIL CARRIER ROUTE",
+    "MAIL COUNTRY",
+    "PROPERTY ADDRESS",
+    "PROPERTY HOUSE NUMBER",
+    "PROPERTY HOUSE NUMBER PREFIX",
+    "PROPERTY HOUSE NUMBER SUFFIX",
+    "PROPERTY HOUSE NUMBER 2",
+    "PROPERTY PRE DIRECTION",
+    "PROPERTY STREET NAME",
+    "PROPERTY STREET NAME SUFFIX",
+    "PROPERTY POST DIRECTION",
+    "PROPERTY UNIT NUMBER",
+    "PROPERTY CITY",
+    "PROPERTY STATE",
+    "PROPERTY ZIP CODE",
+    "PROPERTY ZIP+4",
+    "PROPERTY ZIP/ZIP+4",
+    "PROPERTY CARRIER ROUTE",
+    "COUNTY",
+    "EQUITY (%)",
+    "PROPERTY TYPE",
+    "ZIP CODE"
+  ],
+  "timestamp": "2025-09-18T16:16:21.170Z",
+  "statistics": [
+    {
+      "columnName": "OWNER 1 LABEL NAME",
+      "totalRows": 10,
+      "filledRows": 10,
+      "emptyRows": 0,
+      "uniqueValues": 10,
+      "sampleValues": [
+        "Frances B Dupre",
+        "Bryant E Wilkinson",
+        "Jerry E Holder",
+        "Xinan Zhang",
+        "Reid M Williams"
+      ],
+      "dataType": "text",
+      "completeness": 100
+    },
+    {
+      "columnName": "OWNER 1 LAST NAME",
+      "totalRows": 10,
+      "filledRows": 10,
+      "emptyRows": 0,
+      "uniqueValues": 10,
+      "sampleValues": [
+        "Dupre",
+        "Wilkinson",
+        "Holder",
+        "Zhang",
+        "Williams"
+      ],
+      "dataType": "text",
+      "completeness": 100
+    },
+    {
+      "columnName": "OWNER 1 FIRST NAME",
+      "totalRows": 10,
+      "filledRows": 10,
+      "emptyRows": 0,
+      "uniqueValues": 10,
+      "sampleValues": [
+        "Frances",
+        "Bryant",
+        "Jerry",
+        "Xinan",
+        "Reid"
+      ],
+      "dataType": "text",
+      "completeness": 100
+    },
+    {
+      "columnName": "OWNER 1 MIDDLE NAME",
+      "totalRows": 10,
+      "filledRows": 7,
+      "emptyRows": 3,
+      "uniqueValues": 6,
+      "sampleValues": [
+        "B",
+        "E",
+        "M",
+        "A",
+        "F"
+      ],
+      "dataType": "text",
+      "completeness": 70
+    },
+    {
+      "columnName": "OWNER 1 SUFFIX",
+      "totalRows": 10,
+      "filledRows": 1,
+      "emptyRows": 9,
+      "uniqueValues": 1,
+      "sampleValues": [
+        "Jr"
+      ],
+      "dataType": "text",
+      "completeness": 10
+    },
+    {
+      "columnName": "OWNER 2 LABEL NAME",
+      "totalRows": 10,
+      "filledRows": 3,
+      "emptyRows": 7,
+      "uniqueValues": 3,
+      "sampleValues": [
+        "Glenn Harris",
+        "Pennington V Osdell",
+        "Agnes G Bercegeay"
+      ],
+      "dataType": "text",
+      "completeness": 30
+    },
+    {
+      "columnName": "OWNER 2 LAST NAME",
+      "totalRows": 10,
+      "filledRows": 3,
+      "emptyRows": 7,
+      "uniqueValues": 3,
+      "sampleValues": [
+        "Harris",
+        "Osdell",
+        "Bercegeay"
+      ],
+      "dataType": "text",
+      "completeness": 30
+    },
+    {
+      "columnName": "OWNER 2 FIRST NAME",
+      "totalRows": 10,
+      "filledRows": 3,
+      "emptyRows": 7,
+      "uniqueValues": 3,
+      "sampleValues": [
+        "Glenn",
+        "Pennington",
+        "Agnes"
+      ],
+      "dataType": "text",
+      "completeness": 30
+    },
+    {
+      "columnName": "OWNER 2 MIDDLE NAME",
+      "totalRows": 10,
+      "filledRows": 2,
+      "emptyRows": 8,
+      "uniqueValues": 2,
+      "sampleValues": [
+        "V",
+        "G"
+      ],
+      "dataType": "text",
+      "completeness": 20
+    },
+    {
+      "columnName": "OWNER 2 SUFFIX",
+      "totalRows": 10,
+      "filledRows": 0,
+      "emptyRows": 10,
+      "uniqueValues": 0,
+      "sampleValues": [],
+      "dataType": "text",
+      "completeness": 0
+    },
+    {
+      "columnName": "OWNER CARE OF NAME",
+      "totalRows": 10,
+      "filledRows": 0,
+      "emptyRows": 10,
+      "uniqueValues": 0,
+      "sampleValues": [],
+      "dataType": "text",
+      "completeness": 0
+    },
+    {
+      "columnName": "MAIL ADDRESS",
+      "totalRows": 10,
+      "filledRows": 10,
+      "emptyRows": 0,
+      "uniqueValues": 10,
+      "sampleValues": [
+        "Po Box 125",
+        "14384 Woodrun Blvd",
+        "40464 Kathy St",
+        "18067 Old Trail Dr",
+        "3520 W 8th Pl"
+      ],
+      "dataType": "address",
+      "completeness": 100
+    },
+    {
+      "columnName": "MAIL CITY",
+      "totalRows": 10,
+      "filledRows": 10,
+      "emptyRows": 0,
+      "uniqueValues": 7,
+      "sampleValues": [
+        "Belle Rose",
+        "Gonzales",
+        "Prairieville",
+        "Anacortes",
+        "Donaldsonville"
+      ],
+      "dataType": "text",
+      "completeness": 100
+    },
+    {
+      "columnName": "MAIL STATE",
+      "totalRows": 10,
+      "filledRows": 10,
+      "emptyRows": 0,
+      "uniqueValues": 2,
+      "sampleValues": [
+        "LA",
+        "WA"
+      ],
+      "dataType": "text",
+      "completeness": 100
+    },
+    {
+      "columnName": "MAIL ZIP CODE",
+      "totalRows": 10,
+      "filledRows": 10,
+      "emptyRows": 0,
+      "uniqueValues": 7,
+      "sampleValues": [
+        "70341",
+        "70737",
+        "70769",
+        "98221",
+        "70346"
+      ],
+      "dataType": "number",
+      "completeness": 100
+    },
+    {
+      "columnName": "MAIL ZIP+4",
+      "totalRows": 10,
+      "filledRows": 8,
+      "emptyRows": 2,
+      "uniqueValues": 8,
+      "sampleValues": [
+        "125",
+        "6847",
+        "5586",
+        "4500",
+        "2827"
+      ],
+      "dataType": "number",
+      "completeness": 80
+    },
+    {
+      "columnName": "MAIL ZIP/ZIP+4",
+      "totalRows": 10,
+      "filledRows": 10,
+      "emptyRows": 0,
+      "uniqueValues": 10,
+      "sampleValues": [
+        "70341-0125",
+        "70737-",
+        "70737-6847",
+        "70769-5586",
+        "98221-4500"
+      ],
+      "dataType": "text",
+      "completeness": 100
+    },
+    {
+      "columnName": "MAIL CARRIER ROUTE",
+      "totalRows": 10,
+      "filledRows": 10,
+      "emptyRows": 0,
+      "uniqueValues": 10,
+      "sampleValues": [
+        "B002",
+        "R011",
+        "R013",
+        "R003",
+        "C008"
+      ],
+      "dataType": "text",
+      "completeness": 100
+    },
+    {
+      "columnName": "MAIL COUNTRY",
+      "totalRows": 10,
+      "filledRows": 0,
+      "emptyRows": 10,
+      "uniqueValues": 0,
+      "sampleValues": [],
+      "dataType": "text",
+      "completeness": 0
+    },
+    {
+      "columnName": "PROPERTY ADDRESS",
+      "totalRows": 10,
+      "filledRows": 9,
+      "emptyRows": 1,
+      "uniqueValues": 9,
+      "sampleValues": [
+        "14384 Woodrun Blvd",
+        "40464 Kathy St",
+        "18067 Old Trail Dr",
+        "Ronald Rd",
+        "609 Pine St"
+      ],
+      "dataType": "address",
+      "completeness": 90
+    },
+    {
+      "columnName": "PROPERTY HOUSE NUMBER",
+      "totalRows": 10,
+      "filledRows": 10,
+      "emptyRows": 0,
+      "uniqueValues": 9,
+      "sampleValues": [
+        "0",
+        "14384",
+        "40464",
+        "18067",
+        "609"
+      ],
+      "dataType": "number",
+      "completeness": 100
+    },
+    {
+      "columnName": "PROPERTY HOUSE NUMBER PREFIX",
+      "totalRows": 10,
+      "filledRows": 0,
+      "emptyRows": 10,
+      "uniqueValues": 0,
+      "sampleValues": [],
+      "dataType": "text",
+      "completeness": 0
+    },
+    {
+      "columnName": "PROPERTY HOUSE NUMBER SUFFIX",
+      "totalRows": 10,
+      "filledRows": 0,
+      "emptyRows": 10,
+      "uniqueValues": 0,
+      "sampleValues": [],
+      "dataType": "text",
+      "completeness": 0
+    },
+    {
+      "columnName": "PROPERTY HOUSE NUMBER 2",
+      "totalRows": 10,
+      "filledRows": 0,
+      "emptyRows": 10,
+      "uniqueValues": 0,
+      "sampleValues": [],
+      "dataType": "text",
+      "completeness": 0
+    },
+    {
+      "columnName": "PROPERTY PRE DIRECTION",
+      "totalRows": 10,
+      "filledRows": 0,
+      "emptyRows": 10,
+      "uniqueValues": 0,
+      "sampleValues": [],
+      "dataType": "text",
+      "completeness": 0
+    },
+    {
+      "columnName": "PROPERTY STREET NAME",
+      "totalRows": 10,
+      "filledRows": 9,
+      "emptyRows": 1,
+      "uniqueValues": 9,
+      "sampleValues": [
+        "Woodrun",
+        "Kathy",
+        "Old Trail",
+        "Ronald",
+        "Pine"
+      ],
+      "dataType": "text",
+      "completeness": 90
+    },
+    {
+      "columnName": "PROPERTY STREET NAME SUFFIX",
+      "totalRows": 10,
+      "filledRows": 8,
+      "emptyRows": 2,
+      "uniqueValues": 4,
+      "sampleValues": [
+        "Blvd",
+        "St",
+        "Dr",
+        "Rd"
+      ],
+      "dataType": "text",
+      "completeness": 80
+    },
+    {
+      "columnName": "PROPERTY POST DIRECTION",
+      "totalRows": 10,
+      "filledRows": 0,
+      "emptyRows": 10,
+      "uniqueValues": 0,
+      "sampleValues": [],
+      "dataType": "text",
+      "completeness": 0
+    },
+    {
+      "columnName": "PROPERTY UNIT NUMBER",
+      "totalRows": 10,
+      "filledRows": 0,
+      "emptyRows": 10,
+      "uniqueValues": 0,
+      "sampleValues": [],
+      "dataType": "text",
+      "completeness": 0
+    },
+    {
+      "columnName": "PROPERTY CITY",
+      "totalRows": 10,
+      "filledRows": 9,
+      "emptyRows": 1,
+      "uniqueValues": 5,
+      "sampleValues": [
+        "Gonzales",
+        "Prairieville",
+        "Donaldsonville",
+        "Sorrento",
+        "Saint Amant"
+      ],
+      "dataType": "text",
+      "completeness": 90
+    },
+    {
+      "columnName": "PROPERTY STATE",
+      "totalRows": 10,
+      "filledRows": 10,
+      "emptyRows": 0,
+      "uniqueValues": 1,
+      "sampleValues": [
+        "LA"
+      ],
+      "dataType": "text",
+      "completeness": 100
+    },
+    {
+      "columnName": "PROPERTY ZIP CODE",
+      "totalRows": 10,
+      "filledRows": 9,
+      "emptyRows": 1,
+      "uniqueValues": 5,
+      "sampleValues": [
+        "70737",
+        "70769",
+        "70346",
+        "70778",
+        "70774"
+      ],
+      "dataType": "number",
+      "completeness": 90
+    },
+    {
+      "columnName": "PROPERTY ZIP+4",
+      "totalRows": 10,
+      "filledRows": 6,
+      "emptyRows": 4,
+      "uniqueValues": 6,
+      "sampleValues": [
+        "6847",
+        "5586",
+        "2827",
+        "3909",
+        "7347"
+      ],
+      "dataType": "number",
+      "completeness": 60
+    },
+    {
+      "columnName": "PROPERTY ZIP/ZIP+4",
+      "totalRows": 10,
+      "filledRows": 10,
+      "emptyRows": 0,
+      "uniqueValues": 10,
+      "sampleValues": [
+        "-",
+        "70737-",
+        "70737-6847",
+        "70769-5586",
+        "70769-"
+      ],
+      "dataType": "text",
+      "completeness": 100
+    },
+    {
+      "columnName": "PROPERTY CARRIER ROUTE",
+      "totalRows": 10,
+      "filledRows": 8,
+      "emptyRows": 2,
+      "uniqueValues": 8,
+      "sampleValues": [
+        "R011",
+        "R013",
+        "R003",
+        "C003",
+        "R081"
+      ],
+      "dataType": "text",
+      "completeness": 80
+    },
+    {
+      "columnName": "COUNTY",
+      "totalRows": 10,
+      "filledRows": 10,
+      "emptyRows": 0,
+      "uniqueValues": 1,
+      "sampleValues": [
+        "Ascension"
+      ],
+      "dataType": "text",
+      "completeness": 100
+    },
+    {
+      "columnName": "EQUITY (%)",
+      "totalRows": 10,
+      "filledRows": 1,
+      "emptyRows": 9,
+      "uniqueValues": 1,
+      "sampleValues": [
+        "100"
+      ],
+      "dataType": "number",
+      "completeness": 10
+    },
+    {
+      "columnName": "PROPERTY TYPE",
+      "totalRows": 10,
+      "filledRows": 10,
+      "emptyRows": 0,
+      "uniqueValues": 3,
+      "sampleValues": [
+        "Residential (Nec)",
+        "Sfr",
+        "Manufactured Home"
+      ],
+      "dataType": "text",
+      "completeness": 100
+    },
+    {
+      "columnName": "ZIP CODE",
+      "totalRows": 10,
+      "filledRows": 9,
+      "emptyRows": 1,
+      "uniqueValues": 5,
+      "sampleValues": [
+        "70737",
+        "70769",
+        "70346",
+        "70778",
+        "70774"
+      ],
+      "dataType": "number",
+      "completeness": 90
+    }
+  ]
+}

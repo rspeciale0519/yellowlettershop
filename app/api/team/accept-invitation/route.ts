@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { TeamService } from '@/lib/team/team-service'
+import { withAuth } from '@/lib/auth/middleware'
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request: NextRequest, { userId }) => {
   try {
     const { invitationId } = await request.json()
 
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest) {
     }
 
     const teamService = new TeamService()
-    const member = await teamService.acceptInvitation(invitationId)
+    const member = await teamService.acceptInvitation(invitationId, userId)
 
     return NextResponse.json(member)
 
@@ -24,4 +25,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})
