@@ -35,6 +35,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
           updated_at: new Date().toISOString()
         })
         .eq('id', orderId)
+        .eq('user_id', userId)
 
       return NextResponse.json({ orderId })
     }
