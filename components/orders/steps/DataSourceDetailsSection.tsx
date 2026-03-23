@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Upload, File, CheckCircle } from 'lucide-react'
 import { OrderState } from '@/types/orders'
 import { useRef, useState } from 'react'
+import { ManualEntryForm } from './ManualEntryForm'
 
 interface DataSourceDetailsSectionProps {
   activeTab: string
@@ -13,6 +14,7 @@ interface DataSourceDetailsSectionProps {
   hasListData: boolean
   orderState: OrderState
   onFileUpload?: (file: File) => void
+  onDataComplete?: (listData: any) => void
 }
 
 export function DataSourceDetailsSection({
@@ -20,7 +22,8 @@ export function DataSourceDetailsSection({
   onTabChange,
   hasListData,
   orderState,
-  onFileUpload
+  onFileUpload,
+  onDataComplete
 }: DataSourceDetailsSectionProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isDragActive, setIsDragActive] = useState(false)
@@ -182,8 +185,25 @@ export function DataSourceDetailsSection({
 
           {currentSource === 'manual' && (
             <div className="space-y-4">
-              <h4 className="text-md font-medium">Manual Entry</h4>
-              <p className="text-muted-foreground">Enter contact information manually.</p>
+              <h4 className="text-md font-medium">Enter Recipients Manually</h4>
+              <ManualEntryForm
+                records={
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  (orderState.dataAndMapping?.listData as any)?.manualRecords ??
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  (orderState.listData as any)?.manualRecords ??
+                  []
+                }
+                onRecordsChange={(records) => {
+                  onDataComplete?.({
+                    source: 'manual',
+                    useMailingData: true,
+                    dataSource: 'manual_entry',
+                    manualRecords: records,
+                    totalRecords: records.length
+                  })
+                }}
+              />
             </div>
           )}
         </TabsContent>

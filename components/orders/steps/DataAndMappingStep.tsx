@@ -129,6 +129,7 @@ export function DataAndMappingStep({ orderState, onUpdateState }: OrderStepProps
             hasListData={hasListData}
             orderState={orderState}
             onFileUpload={handleFileUpload}
+            onDataComplete={handleDataComplete}
           />
         </CardContent>
       </Card>
