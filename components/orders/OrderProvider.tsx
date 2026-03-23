@@ -166,53 +166,6 @@ export function OrderProvider({ children, initialState }: OrderProviderProps) {
         }
         break
 
-      case 'list_data':
-        requiredFields.push('useMailingData')
-        if (orderState.listData.useMailingData) {
-          requiredFields.push('dataSource')
-          if (!orderState.listData.dataSource) {
-            errors.push('Please select a data source')
-          } else {
-            completedFields.push('dataSource')
-
-            // Validate based on data source
-            switch (orderState.listData.dataSource) {
-              case 'upload':
-                if (!orderState.listData.uploadedFile) {
-                  errors.push('Please upload a file')
-                } else {
-                  completedFields.push('uploadedFile')
-                }
-                break
-              case 'mlm_select':
-                if (!orderState.listData.selectedListId) {
-                  errors.push('Please select a mailing list')
-                } else {
-                  completedFields.push('selectedListId')
-                }
-                break
-              case 'manual_entry':
-                if (!orderState.listData.manualRecords || orderState.listData.manualRecords.length === 0) {
-                  errors.push('Please add at least one recipient')
-                } else {
-                  completedFields.push('manualRecords')
-                }
-                break
-            }
-          }
-        }
-        break
-
-      case 'column_mapping':
-        if (!orderState.columnMapping) {
-          errors.push('Column mapping is required')
-        } else if (!orderState.columnMapping.mappedFields) {
-          errors.push('Please map your columns to YLS fields')
-        } else {
-          completedFields.push('columnMapping')
-        }
-        break
-
       case 'address_validation':
         if (!orderState.accuzipValidation) {
           errors.push('Address validation is required')
@@ -256,66 +209,6 @@ export function OrderProvider({ children, initialState }: OrderProviderProps) {
         if (mailingOptions?.serviceLevel === 'full_service') {
           const campaignOptions = orderState.campaignSettings?.campaignOptions || orderState.campaignOptions
           if (!campaignOptions) {
-            errors.push('Please configure campaign options')
-          } else {
-            completedFields.push('campaignOptions')
-          }
-        }
-        break
-
-      case 'review_and_approval':
-        if (!orderState.approval) {
-          errors.push('Please review and approve the order')
-        } else if (!orderState.approval.designLocked || !orderState.approval.termsAccepted) {
-          errors.push('Please confirm design lock and accept terms')
-        } else {
-          completedFields.push('approval')
-        }
-        break
-
-      case 'accuzip_validation':
-        if (!orderState.accuzipValidation) {
-          errors.push('Address validation is required')
-        } else if (orderState.accuzipValidation.deliverableRecords === 0) {
-          errors.push('No deliverable records found')
-        } else {
-          completedFields.push('accuzipValidation')
-        }
-        break
-
-      case 'contact_cards':
-        requiredFields.push('contactCard')
-        if (!orderState.contactCard) {
-          errors.push('Please select a contact card')
-        } else {
-          completedFields.push('contactCard')
-        }
-        break
-
-      case 'design':
-        requiredFields.push('design')
-        if (!orderState.design) {
-          errors.push('Please create or select a design')
-        } else {
-          completedFields.push('design')
-        }
-        break
-
-      case 'mailing_options':
-        requiredFields.push('mailingOptions')
-        if (!orderState.mailingOptions) {
-          errors.push('Please select mailing options')
-        } else if (!orderState.mailingOptions.serviceLevel) {
-          errors.push('Please select a service level')
-        } else {
-          completedFields.push('mailingOptions')
-        }
-        break
-
-      case 'campaign_setup':
-        if (orderState.mailingOptions?.serviceLevel === 'full_service') {
-          requiredFields.push('campaignOptions')
-          if (!orderState.campaignOptions) {
             errors.push('Please configure campaign options')
           } else {
             completedFields.push('campaignOptions')
