@@ -199,7 +199,7 @@ export default function NewOrderPage() {
 }
 
 function OrderContent({ orderState, router }: { orderState: OrderState, router: any }) {
-  const { updateOrderState, validateCurrentStep } = useOrderWorkflow()
+  const { updateOrderState, validateCurrentStep, nextStep, previousStep, saveDraft } = useOrderWorkflow()
 
   const renderCurrentStep = (step: number, orderState: OrderState) => {
     const stepConfig = ORDER_STEPS.find(s => s.id === step)
@@ -208,9 +208,9 @@ function OrderContent({ orderState, router }: { orderState: OrderState, router: 
     const commonProps = {
       orderState,
       onUpdateState: updateOrderState,
-      onNext: () => {},
-      onBack: () => {},
-      onSaveDraft: () => {},
+      onNext: nextStep,
+      onBack: previousStep,
+      onSaveDraft: saveDraft,
       validation: validateCurrentStep()
     }
 

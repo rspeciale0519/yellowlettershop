@@ -85,3 +85,6 @@ logs
 # Task files
 # tasks.json
 # tasks/ 
+
+# Git worktrees
+.worktrees/
