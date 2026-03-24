@@ -67,6 +67,7 @@ export function AddressValidationStep({ orderState, onUpdateState }: OrderStepPr
 
     setIsValidating(true)
     setValidationError(null)
+    setJobId(null)
     onUpdateState({ addressValidation: undefined, accuzipValidation: undefined })
 
     try {
@@ -90,14 +91,17 @@ export function AddressValidationStep({ orderState, onUpdateState }: OrderStepPr
       const interval = setInterval(async () => {
         try {
           const statusRes = await fetch(`/api/accuzip/status/${newJobId}`)
+          if (!statusRes.ok) {
+            throw new Error(`Status check failed: ${statusRes.status}`)
+          }
           const status = await statusRes.json() as {
             status: string
             totalRecords?: number
           }
 
           if (status.status === 'completed' || status.status === 'failed') {
-            clearInterval(interval)
             setPollInterval(null)
+            clearInterval(interval)
 
             if (status.status === 'failed') {
               setIsValidating(false)
@@ -140,8 +144,8 @@ export function AddressValidationStep({ orderState, onUpdateState }: OrderStepPr
             setIsValidating(false)
           }
         } catch {
-          clearInterval(interval)
           setPollInterval(null)
+          clearInterval(interval)
           setIsValidating(false)
           setValidationError('Error checking validation status. Please try again.')
         }
