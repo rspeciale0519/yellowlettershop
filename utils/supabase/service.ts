@@ -16,3 +16,6 @@ export function createClient() {
     },
   )
 }
+
+// Alias used by payment, auth, and asset services
+export const createServiceClient = createClient

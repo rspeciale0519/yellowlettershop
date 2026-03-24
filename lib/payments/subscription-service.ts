@@ -10,7 +10,7 @@
 
 import Stripe from 'stripe';
 import { stripe, SUBSCRIPTION_PLANS } from './stripe-config';
-import { PaymentServiceError } from './payment-service';
+import { PaymentServiceError } from './types';
 import { createServiceClient } from '@/utils/supabase/service';
 import type { 
   SubscriptionPlan,

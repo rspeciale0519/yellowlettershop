@@ -29,3 +29,7 @@ export async function createClient() {
     },
   )
 }
+
+// Aliases for files that import under different names
+export const createServerClient = createClient
+export const createSupabaseServerClient = createClient

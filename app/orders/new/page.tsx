@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { OrderProvider } from '@/components/orders/OrderProvider'
 import { OrderStepper } from '@/components/orders/OrderStepper'
@@ -18,6 +18,18 @@ import { ArrowLeft } from 'lucide-react'
 import { useOrderWorkflow } from '@/components/orders/OrderProvider'
 
 export default function NewOrderPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+      </div>
+    }>
+      <NewOrderPageInner />
+    </Suspense>
+  )
+}
+
+function NewOrderPageInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
