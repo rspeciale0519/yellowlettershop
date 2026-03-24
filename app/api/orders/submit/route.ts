@@ -25,16 +25,19 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
 
     const supabase = createClient()
 
+    const draftId = typeof (orderState as Record<string, unknown>).orderId === 'string'
+      ? (orderState as Record<string, unknown>).orderId as string
+      : null
+
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .insert({ user_id: userId, order_state: orderState })
+      .insert({ user_id: userId, order_state: orderState, draft_id: draftId })
       .select('id')
       .single()
 
     if (orderError) throw orderError
 
-    const draftId = (orderState as Record<string, unknown>).orderId
-    if (typeof draftId === 'string') {
+    if (draftId) {
       await supabase
         .from('order_drafts')
         .update({ status: 'submitted' })

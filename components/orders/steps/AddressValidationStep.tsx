@@ -88,7 +88,17 @@ export function AddressValidationStep({ orderState, onUpdateState }: OrderStepPr
       const { jobId: newJobId } = await uploadRes.json() as { jobId: string }
       setJobId(newJobId)
 
+      const startTime = Date.now()
+
       const interval = setInterval(async () => {
+        if (Date.now() - startTime > 5 * 60 * 1000) {
+          setPollInterval(null)
+          clearInterval(interval)
+          setIsValidating(false)
+          setValidationError('Validation is taking longer than expected. Please try again.')
+          return
+        }
+
         try {
           const statusRes = await fetch(`/api/accuzip/status/${newJobId}`)
           if (!statusRes.ok) {

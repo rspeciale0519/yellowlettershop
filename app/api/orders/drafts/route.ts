@@ -27,7 +27,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
         return NextResponse.json({ error: 'Draft not found' }, { status: 404 })
       }
 
-      await supabase
+      const { error: updateError } = await supabase
         .from('order_drafts')
         .update({
           order_state: orderState,
@@ -36,6 +36,8 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
         })
         .eq('id', orderId)
         .eq('user_id', userId)
+
+      if (updateError) throw updateError
 
       return NextResponse.json({ orderId })
     }

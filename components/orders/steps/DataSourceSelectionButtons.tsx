@@ -18,7 +18,7 @@ export function DataSourceSelectionButtons({
     onDataComplete({
       source: 'upload',
       useMailingData: true,
-      dataSource: 'file_upload'
+      dataSource: 'upload'
     })
   }
 

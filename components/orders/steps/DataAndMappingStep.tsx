@@ -88,14 +88,12 @@ export function DataAndMappingStep({ orderState, onUpdateState }: OrderStepProps
     const uploadData = {
       source: 'upload',
       useMailingData: true,
-      dataSource: 'file_upload',
+      dataSource: 'upload',
       uploadedFile: file  // Store the actual File object, not just metadata
     }
 
     // Update state with file information
     handleDataComplete(uploadData)
-
-    console.log('File uploaded successfully:', file.name)
   }
 
   return (

@@ -195,11 +195,22 @@ export function DataSourceDetailsSection({
                   []
                 }
                 onRecordsChange={(records) => {
+                  // Normalize camelCase → snake_case for AccuZip compatibility
+                  const normalized = records.map(r => ({
+                    first_name: (r as any).firstName,
+                    last_name: (r as any).lastName,
+                    address_line_1: (r as any).addressLine1,
+                    address_line_2: (r as any).addressLine2,
+                    city: (r as any).city,
+                    state: (r as any).state,
+                    zip_code: (r as any).zipCode,
+                    id: (r as any).id
+                  }))
                   onDataComplete?.({
                     source: 'manual',
                     useMailingData: true,
                     dataSource: 'manual_entry',
-                    manualRecords: records,
+                    manualRecords: normalized,
                     totalRecords: records.length
                   })
                 }}
