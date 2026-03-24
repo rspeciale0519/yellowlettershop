@@ -21,9 +21,9 @@ const RecipientSchema = z.object({
   zipCode:      z.string().regex(/^\d{5}(-\d{4})?$/, 'Enter a valid ZIP (e.g. 12345)')
 })
 
-export type ManualRecord = z.infer<typeof RecipientSchema>
+export type ManualRecord = z.infer<typeof RecipientSchema> & { id: string }
 
-const EMPTY: ManualRecord = {
+const EMPTY: Omit<ManualRecord, 'id'> = {
   firstName: '', lastName: '', addressLine1: '', addressLine2: '',
   city: '', state: '', zipCode: ''
 }
@@ -34,10 +34,10 @@ interface ManualEntryFormProps {
 }
 
 export function ManualEntryForm({ records, onRecordsChange }: ManualEntryFormProps) {
-  const [fields, setFields] = useState<ManualRecord>(EMPTY)
-  const [errors, setErrors] = useState<Partial<Record<keyof ManualRecord, string>>>({})
+  const [fields, setFields] = useState<Omit<ManualRecord, 'id'>>(EMPTY)
+  const [errors, setErrors] = useState<Partial<Record<keyof Omit<ManualRecord, 'id'>, string>>>({})
 
-  const set = (key: keyof ManualRecord, value: string) => {
+  const set = (key: keyof Omit<ManualRecord, 'id'>, value: string) => {
     setFields(prev => ({ ...prev, [key]: value }))
     if (errors[key]) setErrors(prev => ({ ...prev, [key]: undefined }))
   }
@@ -46,17 +46,17 @@ export function ManualEntryForm({ records, onRecordsChange }: ManualEntryFormPro
     const result = RecipientSchema.safeParse(fields)
     if (!result.success) {
       const map: typeof errors = {}
-      result.error.errors.forEach(e => { map[e.path[0] as keyof ManualRecord] = e.message })
+      result.error.errors.forEach(e => { map[e.path[0] as keyof Omit<ManualRecord, 'id'>] = e.message })
       setErrors(map)
       return
     }
-    onRecordsChange([...records, result.data])
+    onRecordsChange([...records, { ...result.data, id: crypto.randomUUID() }])
     setFields(EMPTY)
     setErrors({})
   }
 
-  const handleRemove = (idx: number) =>
-    onRecordsChange(records.filter((_, i) => i !== idx))
+  const handleRemove = (id: string) =>
+    onRecordsChange(records.filter(r => r.id !== id))
 
   return (
     <div className="space-y-6">
@@ -146,14 +146,14 @@ export function ManualEntryForm({ records, onRecordsChange }: ManualEntryFormPro
             </TableRow>
           </TableHeader>
           <TableBody>
-            {records.map((r, i) => (
-              <TableRow key={i}>
+            {records.map((r) => (
+              <TableRow key={r.id}>
                 <TableCell>{r.firstName} {r.lastName}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {r.addressLine1}, {r.city}, {r.state} {r.zipCode}
                 </TableCell>
                 <TableCell>
-                  <Button variant="ghost" size="icon" onClick={() => handleRemove(i)}>
+                  <Button variant="ghost" size="icon" onClick={() => handleRemove(r.id)}>
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </TableCell>
