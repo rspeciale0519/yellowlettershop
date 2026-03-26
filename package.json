@@ -13,6 +13,8 @@
     "typecheck:ui": "tsc --noEmit -p tsconfig.typecheck.json"
   },
   "dependencies": {
+    "@hello-pangea/dnd": "^18.0.1",
+    "@playwright/mcp": "^0.0.37",
     "@radix-ui/react-accordion": "1.2.2",
     "@radix-ui/react-alert-dialog": "1.1.4",
     "@radix-ui/react-aspect-ratio": "1.1.1",
@@ -44,6 +46,7 @@
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.56.1",
     "@types/react-window": "^1.8.8",
+    "atrament": "^5.1.0",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -53,8 +56,9 @@
     "embla-carousel-react": "8.5.1",
     "exceljs": "^4.4.0",
     "input-otp": "1.4.1",
+    "jszip": "^3.10.1",
     "lucide-react": "^0.454.0",
-    "next": "^15.5.2",
+    "next": "^15.5.14",
     "next-themes": "latest",
     "react": "^18.3.1",
     "react-day-picker": "9.8.0",
@@ -70,6 +74,7 @@
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "uuid": "^11.1.0",
+    "vara": "^1.4.1",
     "vaul": "^0.9.6",
     "zod": "^3.24.1"
   },
@@ -87,6 +92,7 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/vara": "^1.1.4",
     "chai": "^6.0.1",
     "dotenv": "^17.2.1",
     "eslint": "^9.32.0",
@@ -96,7 +102,7 @@
     "jsdom": "^21.1.0",
     "mocha": "^11.7.1",
     "postcss": "^8.5",
-    "supabase": "^2.39.2",
+    "supabase": "^2.83.0",
     "tailwindcss": "^3.4.17",
     "ts-node": "^10.9.2",
     "typescript": "^5"

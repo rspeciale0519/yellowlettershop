@@ -252,9 +252,12 @@ export async function bulkImportRecords(listId: string, records: Partial<Mailing
   const recordsWithMetadata = records.map(record => ({
     ...record,
     mailing_list_id: listId,
-    usage_count: 0,
     validation_status: 'pending' as const,
-    additional_data: record.additional_data || {}
+    record_data: (record as any).additional_data || {},
+    validation_results: {},
+    skip_trace_status: 'not_requested' as const,
+    skip_trace_data: {},
+    times_mailed: 0
   }))
   
   const { data, error } = await supabase

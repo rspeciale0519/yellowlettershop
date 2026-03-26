@@ -57,8 +57,20 @@ export async function PATCH(
     if (updates.sort_order !== undefined) updateData.sort_order = updates.sort_order
     if (updates.metadata !== undefined) updateData.metadata = updates.metadata
 
-    // Only allow category and visibility changes for non-system tags
-    if (!existingTag.is_system) {
+    // Check for restricted field changes on system tags
+    if (existingTag.is_system) {
+      if (updates.category !== undefined && updates.category !== existingTag.category) {
+        return NextResponse.json({
+          error: 'Cannot change category for system tags'
+        }, { status: 400 })
+      }
+      if (updates.visibility !== undefined && updates.visibility !== existingTag.visibility) {
+        return NextResponse.json({
+          error: 'Cannot change visibility for system tags'
+        }, { status: 400 })
+      }
+    } else {
+      // Only allow category and visibility changes for non-system tags
       if (updates.category !== undefined) updateData.category = updates.category
       if (updates.visibility !== undefined) updateData.visibility = updates.visibility
     }

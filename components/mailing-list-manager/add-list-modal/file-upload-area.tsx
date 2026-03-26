@@ -64,10 +64,10 @@ export function FileUploadArea({
       role="button"
       tabIndex={0}
       className={`border-2 border-dashed rounded-lg p-8 text-center ${
-        isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/20"
-      } cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary`}
-      onDragOver={(e) => { e.preventDefault(); onDragOver?.(e); }}
-      onDragLeave={(e) => { onDragLeave?.(e); }}
+        isDragging ? "border-[#F6CF62] bg-[#F6CF62]/10" : "border-muted-foreground/20"
+      } cursor-pointer hover:border-[#F6CF62] hover:bg-[#F6CF62]/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F6CF62]`}
+      onDragOver={(e) => { e.preventDefault(); onDragOver(e); }}
+      onDragLeave={() => { onDragLeave(); }}
       onDrop={(e) => { e.preventDefault(); onDrop?.(e); }}
       onClick={triggerFileInput}
       onKeyDown={(e) => {

@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import type { ListCriteria } from '@/lib/supabase/mailing-lists';
 import { fetchRecords } from '@/lib/api/accuzip';
+import { withAuth } from '@/lib/auth/middleware';
 
-export async function POST(req: Request) {
+export const POST = withAuth(async (req: NextRequest, { userId }) => {
   try {
     let body: unknown;
     try {
@@ -55,4 +56,4 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-}
+})

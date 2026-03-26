@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { parse } from 'csv-parse/sync'
-import { parseExcelBuffer, sheetToObjects } from '@/lib/utils/excel-parser'
+
+export const dynamic = 'force-dynamic'
 
 interface ParsedData {
   headers: string[]
@@ -155,6 +156,7 @@ function getAllRowsCSV(buffer: ArrayBuffer): string[][] {
 }
 
 async function getAllRowsExcelOrODS(buffer: ArrayBuffer): Promise<string[][]> {
+  const { parseExcelBuffer } = await import('@/lib/utils/excel-parser')
   const workbook = await parseExcelBuffer(buffer)
   
   if (workbook.sheets.length === 0) {
@@ -169,6 +171,7 @@ async function getAllRowsExcelOrODS(buffer: ArrayBuffer): Promise<string[][]> {
 }
 
 async function parseExcelOrODS(buffer: ArrayBuffer, fileType: string): Promise<ParsedData> {
+  const { parseExcelBuffer } = await import('@/lib/utils/excel-parser')
   const workbook = await parseExcelBuffer(buffer)
   
   if (workbook.sheets.length === 0) {

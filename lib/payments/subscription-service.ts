@@ -10,8 +10,8 @@
 
 import Stripe from 'stripe';
 import { stripe, SUBSCRIPTION_PLANS } from './stripe-config';
-import { PaymentServiceError } from './payment-service';
-import { createClient } from '@/utils/supabase/service';
+import { PaymentServiceError } from './types';
+import { createServiceClient } from '@/utils/supabase/service';
 import type { 
   SubscriptionPlan,
   SubscriptionStatus,
@@ -47,7 +47,7 @@ export interface SubscriptionDetails {
  * Subscription Service Class
  */
 export class SubscriptionService {
-  private supabase = createClient();
+  private supabase = createServiceClient();
 
   /**
    * Create new subscription for user or team
@@ -125,17 +125,17 @@ export class SubscriptionService {
       // Update user/team profile with subscription details
       if (teamId) {
         await this.updateTeamSubscription(teamId, {
-          stripeSubscriptionId: subscription.id,
+          stripe_subscription_id: subscription.id,
           stripeCustomerId: customerId,
           plan: planKey as SubscriptionPlan,
           status: this.mapStripeStatusToDb(subscription.status),
         });
       } else {
         await this.updateUserSubscription(userId, {
-          stripeSubscriptionId: subscription.id,
+          stripe_subscription_id: subscription.id,
           stripeCustomerId: customerId,
-          subscriptionPlan: planKey as SubscriptionPlan,
-          subscriptionStatus: this.mapStripeStatusToDb(subscription.status),
+          subscription_plan: planKey as SubscriptionPlan,
+          subscription_status: this.mapStripeStatusToDb(subscription.status),
         });
       }
 
@@ -236,8 +236,8 @@ export class SubscriptionService {
         });
       } else if (userId) {
         await this.updateUserSubscription(userId, {
-          subscriptionPlan: newPlanKey as SubscriptionPlan,
-          subscriptionStatus: this.mapStripeStatusToDb(updatedSubscription.status),
+          subscription_plan: newPlanKey as SubscriptionPlan,
+          subscription_status: this.mapStripeStatusToDb(updatedSubscription.status),
         });
       }
 
@@ -288,7 +288,7 @@ export class SubscriptionService {
         });
       } else if (userId) {
         await this.updateUserSubscription(userId, {
-          subscriptionStatus: newStatus as SubscriptionStatus,
+          subscription_status: newStatus as SubscriptionStatus,
         });
       }
     } catch (error) {
@@ -332,7 +332,7 @@ export class SubscriptionService {
         });
       } else if (userId) {
         await this.updateUserSubscription(userId, {
-          subscriptionStatus: this.mapStripeStatusToDb(subscription.status),
+          subscription_status: this.mapStripeStatusToDb(subscription.status),
         });
       }
 
@@ -403,7 +403,7 @@ export class SubscriptionService {
     }
 
     try {
-      const invoice = await stripe.invoices.retrieveUpcoming({
+      const invoice = await stripe.invoices.upcoming({
         customer: params.customerId,
         subscription: params.subscriptionId,
         subscription_items: params.newPriceId ? [{
@@ -512,8 +512,8 @@ export class SubscriptionService {
       status: subscription.status,
       plan,
       billingInterval,
-      currentPeriodStart: new Date(subscription.current_period_start * 1000),
-      currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+      currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
+      currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
       priceId: subscription.items.data[0]?.price.id || '',
       amount: subscription.items.data[0]?.price.unit_amount || 0,

@@ -20,9 +20,11 @@ interface MediaGridProps {
   handleDeleteClick: (asset: any) => void
   handleShowDetails: (asset: any) => void
   handleOpenRenameModal: (asset: any) => void
+  handleManageTags: (asset: any) => void
   selectedFiles: Set<string>
   onFileSelect: (fileId: string, selected: boolean) => void
   bulkSelectMode: boolean
+  thumbnailSize: 'small' | 'medium' | 'large'
 }
 
 export function MediaGrid({
@@ -33,9 +35,11 @@ export function MediaGrid({
   handleDeleteClick,
   handleShowDetails,
   handleOpenRenameModal,
+  handleManageTags,
   selectedFiles,
   onFileSelect,
-  bulkSelectMode
+  bulkSelectMode,
+  thumbnailSize
 }: MediaGridProps) {
   const getFileIcon = (type: string) => {
     switch (type) {
@@ -52,8 +56,60 @@ export function MediaGrid({
     }
   }
 
+  // Get grid layout based on thumbnail size
+  const getGridClasses = () => {
+    switch (thumbnailSize) {
+      case 'small':
+        return 'grid gap-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10'
+      case 'medium':
+        return 'grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6'
+      case 'large':
+      default:
+        return 'grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+    }
+  }
+
+  // Get card content based on thumbnail size
+  const getCardContent = (file: UserAsset) => {
+    if (thumbnailSize === 'small') {
+      return (
+        <div className="space-y-1">
+          <h3 className="text-xs font-medium truncate" title={file.filename}>
+            {file.filename}
+          </h3>
+        </div>
+      )
+    }
+
+    if (thumbnailSize === 'medium') {
+      return (
+        <div className="space-y-1">
+          <h3 className="text-sm font-medium truncate" title={file.filename}>
+            {file.filename}
+          </h3>
+          <div className="text-xs text-muted-foreground">
+            {formatFileSize(file.file_size)}
+          </div>
+        </div>
+      )
+    }
+
+    // Large size (default)
+    return (
+      <div className="space-y-1">
+        <h3 className="font-semibold truncate" title={file.filename}>
+          {file.filename}
+        </h3>
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>{formatFileSize(file.file_size)}</span>
+          <span>{new Date(file.created_at).toLocaleDateString()}</span>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className={getGridClasses()}>
       {filteredMediaFiles.map((file) => {
         const isNewlyUploaded = newlyUploadedIds.has(file.id)
         const isSelected = selectedFiles.has(file.id)
@@ -69,7 +125,9 @@ export function MediaGrid({
               : ""
           }`}
         >
-          <div className="relative aspect-[3/2] bg-muted cursor-pointer">
+          <div className={`relative bg-muted cursor-pointer ${
+            thumbnailSize === 'small' ? 'aspect-square' : 'aspect-[3/2]'
+          }`}>
             {/* Bulk select checkbox */}
             {bulkSelectMode && (
               <div 
@@ -126,20 +184,13 @@ export function MediaGrid({
                   onRename={() => {}}
                   onOpenRenameModal={handleOpenRenameModal}
                   onViewFile={handleImageClick}
+                  onManageTags={handleManageTags}
                 />
               </div>
             )}
           </div>
-          <CardContent className="p-4">
-            <div className="space-y-1">
-              <h3 className="font-semibold truncate" title={file.filename}>
-                {file.filename}
-              </h3>
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>{formatFileSize(file.file_size)}</span>
-                <span>{new Date(file.created_at).toLocaleDateString()}</span>
-              </div>
-            </div>
+          <CardContent className={thumbnailSize === 'small' ? 'p-2' : 'p-4'}>
+            {getCardContent(file)}
           </CardContent>
         </Card>
         )

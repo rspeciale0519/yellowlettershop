@@ -69,6 +69,9 @@ yarn-error.log*
 .temp/
 .tmp/
 .turbo/
+temp/
+simple-test.csv
+test-mailing-list.csv
 
 # Testing
 coverage/
@@ -82,3 +85,6 @@ logs
 # Task files
 # tasks.json
 # tasks/ 
+
+# Git worktrees
+.worktrees/

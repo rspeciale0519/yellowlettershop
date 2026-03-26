@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client'
-import { Vendor, VendorPerformanceMetric } from '@/types/supabase'
+import { Vendor, VendorPerformance } from '@/types/supabase'
 import { recordChange } from '@/lib/version-history/change-tracker'
 import { v4 as uuidv4 } from 'uuid'
 

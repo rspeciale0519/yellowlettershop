@@ -27,17 +27,21 @@ export interface AccessRequest {
   withdrawn_at?: string
 }
 
+export interface TemplatePermission {
+  resource_type: ResourceType
+  resource_id: string
+  permission_level: PermissionLevel
+  duration_days?: number
+}
+
 export interface PermissionTemplate {
   id: string
-  team_id: string
+  team_id?: string
   name: string
   description?: string
   is_active: boolean
-  template_permissions: {
-    resource_type: ResourceType
-    permission_level: PermissionLevel
-    duration_days?: number
-  }[]
+  template_permissions: TemplatePermission[]
+  usage_count: number
   created_at: string
   updated_at: string
   created_by: string

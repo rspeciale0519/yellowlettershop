@@ -4,14 +4,6 @@ import type { CookieOptions } from '@supabase/ssr'
 
 // Protect dashboard routes at the edge for faster unauthenticated redirects
 export async function middleware(req: NextRequest) {
-  // Handle common external service requests to prevent 404 logs
-  if (req.nextUrl.pathname === '/.identity' || req.nextUrl.pathname === '/current-url') {
-    return new NextResponse(JSON.stringify({ status: 'ok' }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
-
   // Prepare a response that we can mutate cookies on if Supabase refreshes the session
   let res = NextResponse.next({ request: { headers: req.headers } })
 
@@ -35,29 +27,28 @@ export async function middleware(req: NextRequest) {
 
   try {
     const { data: { user }, error } = await supabase.auth.getUser()
-    
-    // Only redirect if there's definitely no user and no session error
-    if (!user && !error?.message?.includes('Auth session missing')) {
+
+    // If no authenticated user, redirect to login regardless of error type
+    if (!user) {
       const url = req.nextUrl.clone()
       url.pathname = '/'
       url.searchParams.set('auth', 'login')
       url.searchParams.set('redirectedFrom', req.nextUrl.pathname)
       return NextResponse.redirect(url)
     }
-    
-    // If there's a session missing error, let the request through 
-    // and let the dashboard layout handle the error
-    if (error?.message?.includes('Auth session missing')) {
-      console.debug('Middleware: Session missing error, allowing request through')
-    }
   } catch (error) {
-    // On any error, let the request through and let the layout handle it
+    // On any error, redirect to login for security
     console.error('Middleware auth error:', error)
+    const url = req.nextUrl.clone()
+    url.pathname = '/'
+    url.searchParams.set('auth', 'login')
+    url.searchParams.set('redirectedFrom', req.nextUrl.pathname)
+    return NextResponse.redirect(url)
   }
 
   return res
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*'],
+  matcher: ['/dashboard/:path*']
 }

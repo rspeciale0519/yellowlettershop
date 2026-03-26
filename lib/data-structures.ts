@@ -33,13 +33,24 @@ export interface MailingRecord {
 }
 
 // Order types
+export interface OrderItem {
+  name: string
+  quantity: number
+  price: number
+}
+
 export interface Order {
   id: string
   customer: string
   date: string
   status: string
   total: number
-  items: number
+  items: OrderItem[]
+  shipping?: {
+    trackingNumber?: string
+    method?: string
+    address?: string
+  }
 }
 
 // Template types

@@ -103,35 +103,44 @@ export function MailingListManagerModals({
   return (
     <>
       <AddListModal
-        isOpen={addListOpen}
-        onClose={() => setAddListOpen(false)}
-        onAdd={async () => {
+        open={addListOpen}
+        onOpenChange={setAddListOpen}
+        onSuccess={async () => {
           await mutateLists();
+          setAddListOpen(false);
         }}
       />
 
       <AddRecordModal
-        isOpen={addRecordOpen}
-        onClose={() => setAddRecordOpen(false)}
-        listId={selectedList?.id ?? ''}
-        onAdd={refreshCurrentListRecords}
+        open={addRecordOpen}
+        onOpenChange={setAddRecordOpen}
+        onSuccess={async () => {
+          await refreshCurrentListRecords();
+          setAddRecordOpen(false);
+        }}
+        lists={lists || []}
+        onCreateNewList={async () => {
+          setAddListOpen(true);
+          setAddRecordOpen(false);
+        }}
       />
 
       <EditListModal
-        isOpen={editListId !== null}
-        onClose={() => setEditListId(null)}
-        listId={editListId ?? ''}
-        onUpdate={async () => {
+        open={editListId !== null}
+        onOpenChange={(open) => !open && setEditListId(null)}
+        listId={editListId}
+        onSuccess={async () => {
           await mutateLists();
           if (viewMode === 'records') {
             await refreshCurrentListRecords();
           }
+          setEditListId(null);
         }}
       />
 
       <DeleteConfirmModal
-        isOpen={deleteId !== null}
-        onClose={() => setDeleteId(null)}
+        open={deleteId !== null}
+        onOpenChange={(open) => !open && setDeleteId(null)}
         onConfirm={async () => {
           if (deleteId) {
             try {
@@ -161,7 +170,12 @@ export function MailingListManagerModals({
             }
           }
         }}
-        itemType={deleteType}
+        title={deleteType === 'list' ? 'Delete Mailing List' : 'Delete Record'}
+        description={
+          deleteType === 'list'
+            ? 'Are you sure you want to delete this mailing list? This action cannot be undone.'
+            : 'Are you sure you want to delete this record? This action cannot be undone.'
+        }
       />
 
       <CSVImportModal

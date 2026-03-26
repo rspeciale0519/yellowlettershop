@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { FileText, Search, Plus, MoreHorizontal, Filter, ArrowUpDown, Pencil, Copy, Trash, Eye } from "lucide-react"
+import { FileText, Search, Plus, MoreHorizontal, Filter, ArrowUpDown, Pencil, Copy, Trash, Eye, Package } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -191,6 +191,13 @@ export default function TemplatesPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link href={`/orders/new?templateId=${template.id}&source=template_gallery`}>
+                          <Package className="mr-2 h-4 w-4" />
+                          Use Template
+                        </Link>
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem>
                         <Eye className="mr-2 h-4 w-4" />

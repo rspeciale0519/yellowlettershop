@@ -165,6 +165,7 @@ export default function MailingListManagerContent() {
         }
         onUploadClick={() => setCsvImportOpen(true)}
         isViewChangeDisabled={false}
+        selectedListId={selectedList?.id}
       />
 
       <FilterBar
@@ -241,12 +242,17 @@ export default function MailingListManagerContent() {
           }
         }}
         setEditingName={setEditingName}
+        onNameEdit={(id: string, name: string) => {
+          setEditingName({ id, value: name });
+        }}
+        onAddTagToRecord={addTagToRecord}
+        onRemoveTagFromRecord={removeTagFromRecord}
         onOpenCSVImport={handleOpenCSVImport}
         onOpenDeduplication={handleOpenDeduplication}
         onOpenVersionHistory={handleOpenVersionHistory}
         onUpdateRecord={handleUpdateRecord}
         onUpdateRecordStatus={(recordId: string, status: string) =>
-          handleUpdateRecord(recordId, { status: status as any })
+          handleUpdateRecord(recordId, { response_status: status })
         }
         onRecordFieldEdit={(id: string, field: string, value: any) => {
           setEditingRecord({ id, field, value });
@@ -266,29 +272,38 @@ export default function MailingListManagerContent() {
 
       {/* Modals */}
       <AddListModal
-        isOpen={addListOpen}
-        onClose={() => setAddListOpen(false)}
-        onAdd={async (listData) => {
+        open={addListOpen}
+        onOpenChange={setAddListOpen}
+        onSuccess={async () => {
           await mutateLists();
+          setAddListOpen(false);
         }}
       />
 
       <AddRecordModal
-        isOpen={addRecordOpen}
-        onClose={() => setAddRecordOpen(false)}
-        listId={selectedList?.id ?? ''}
-        onAdd={refreshCurrentListRecords}
+        open={addRecordOpen}
+        onOpenChange={setAddRecordOpen}
+        onSuccess={async () => {
+          await refreshCurrentListRecords();
+          setAddRecordOpen(false);
+        }}
+        lists={lists || []}
+        onCreateNewList={async () => {
+          setAddListOpen(true);
+          setAddRecordOpen(false);
+        }}
       />
 
       <EditListModal
-        isOpen={editListId !== null}
-        onClose={() => setEditListId(null)}
-        listId={editListId ?? ''}
-        onUpdate={async () => {
+        open={editListId !== null}
+        onOpenChange={(open) => !open && setEditListId(null)}
+        listId={editListId}
+        onSuccess={async () => {
           await mutateLists();
           if (viewMode === 'records') {
             await refreshCurrentListRecords();
           }
+          setEditListId(null);
         }}
       />
 
@@ -355,7 +370,6 @@ export default function MailingListManagerContent() {
             }
           }
         }}
-        itemType={deleteType}
       />
 
       <CSVImportModal
@@ -390,7 +404,7 @@ export default function MailingListManagerContent() {
         onClose={() => setVersionHistoryOpen(false)}
         listId={selectedList?.id ?? ''}
         listName={selectedList?.name ?? ''}
-        currentVersion={selectedList?.version ?? 1}
+        currentVersion={1}
         onVersionRestore={async () => {
           await mutateLists();
         }}

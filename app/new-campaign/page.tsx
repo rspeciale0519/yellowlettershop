@@ -80,7 +80,7 @@ export default function NewCampaignPage() {
           </CardHeader>
           <CardContent>
             <Button className="w-full" asChild>
-              <Link href="/dashboard/campaigns/create">
+              <Link href="/orders/new?source=dashboard_create_new">
                 Start Campaign
               </Link>
             </Button>

@@ -20,7 +20,7 @@ export type UpdateCriteria = <K extends keyof ListCriteria>(
 export function useBuildListsPage() {
   const [listName, setListName] = useState('My New Mailing List');
   const [criteria, setCriteria] = useState<ListCriteria>(initialCriteria);
-  const [activeCategory, setActiveCategory] = useState<string>('geography');
+  const [activeCategory, setActiveCategory] = useState<Category>('geography');
 
   // Use the real-time estimate hook
   const { recordCount, cost: totalCost, loading: estimateLoading, error: estimateError, refreshEstimate } = useListEstimate(criteria, {

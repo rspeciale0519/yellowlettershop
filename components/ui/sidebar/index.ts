@@ -1,14 +1,26 @@
+export { SidebarProvider, useSidebar } from './SidebarContext'
+export type { SidebarContext } from './SidebarContext'
+
 export {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarHeader,
+  SidebarInput,
+  SidebarInset,
+  SidebarRail,
+  SidebarSeparator,
+  SidebarTrigger,
+} from './SidebarCore'
+
+export {
   SidebarGroup,
   SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
-  SidebarHeader,
-  SidebarInput,
-  SidebarInset,
+} from './SidebarGroup'
+
+export {
   SidebarMenu,
   SidebarMenuAction,
   SidebarMenuBadge,
@@ -18,11 +30,4 @@ export {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  SidebarProvider,
-  SidebarRail,
-  SidebarSeparator,
-  SidebarTrigger,
-  useSidebar,
-} from './SidebarComponents'
-
-export type { SidebarContext } from './SidebarContext'
+} from './SidebarMenu'

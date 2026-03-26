@@ -29,6 +29,14 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 47 75% 67%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 10.6% 64.9%;
   }
 
   .dark {
@@ -56,6 +64,14 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+    --sidebar-background: 222.2 84% 4.9%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 210 40% 98%;
+    --sidebar-primary-foreground: 222.2 47.4% 11.2%;
+    --sidebar-accent: 47 75% 67%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 212.7 26.8% 83.9%;
   }
 }
 
@@ -192,6 +208,59 @@ html {
   background-color: hsl(var(--theme-accent));
 }
  
+/* Landing page parchment underlay — sits inside the fixed handwriting wrapper */
+.landing-parchment {
+  position: absolute;
+  inset: 0;
+  background-color: #FEFAE4;
+  background-image: linear-gradient(
+    to bottom,
+    transparent calc(100% - 1px),
+    rgba(155, 128, 60, 0.14) calc(100% - 1px)
+  );
+  background-size: 100% 32px;
+  background-repeat: repeat;
+}
+
+/* Warm white + subtle paper grain (SVG fractal noise) */
+.landing-grain {
+  position: absolute;
+  inset: 0;
+  background-color: #FAFAF7;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+  background-size: 300px 300px;
+  background-repeat: repeat;
+}
+
+/* Pale yellow gradient fading to white */
+.landing-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, #FFFBEB 0%, #FFFFFF 100%);
+}
+
+/* Plain white with ruled lines only */
+.landing-ruled {
+  position: absolute;
+  inset: 0;
+  background-color: #FFFFFF;
+  background-image: linear-gradient(
+    to bottom,
+    transparent calc(100% - 1px),
+    rgba(155, 128, 60, 0.14) calc(100% - 1px)
+  );
+  background-size: 100% 32px;
+  background-repeat: repeat;
+}
+
+/* Hide all paper backgrounds in dark mode */
+.dark .landing-parchment,
+.dark .landing-grain,
+.dark .landing-gradient,
+.dark .landing-ruled {
+  display: none;
+}
+
 /* Ambient background styles */
 .ambient-bg {
   position: fixed;

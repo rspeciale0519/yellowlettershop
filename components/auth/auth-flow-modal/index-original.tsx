@@ -1,0 +1,887 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import type { CheckedState } from '@radix-ui/react-checkbox';
+import { Separator } from '@/components/ui/separator';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { GoogleIcon } from '@/components/icons/google-icon';
+import {
+  Mail,
+  Lock,
+  AlertCircle,
+  Loader2,
+  Eye,
+  EyeOff,
+  CheckCircle2,
+} from 'lucide-react';
+import { AuthChangeEvent, Session } from '@supabase/supabase-js';
+import { createClient } from '@/utils/supabase/client';
+
+// Centralized modal that reacts to the `?auth=` query param across the app
+// Supported values: login, signup, forgot, reset, verify, change
+
+type AuthMode = 'login' | 'signup' | 'forgot' | 'reset' | 'verify' | 'change';
+const AUTH_MODES: AuthMode[] = [
+  'login',
+  'signup',
+  'forgot',
+  'reset',
+  'verify',
+  'change',
+];
+const isAuthMode = (value: any): value is AuthMode =>
+  AUTH_MODES.includes(value);
+
+export function AuthFlowModalController() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const supabase = createClient();
+
+  const authParamValue = searchParams.get('auth');
+  const authParam: AuthMode | '' = isAuthMode(authParamValue)
+    ? authParamValue
+    : '';
+  const redirectedFrom = searchParams.get('redirectedFrom') || undefined;
+
+  // Only log when auth param is actually present to reduce noise
+  if (authParam) {
+    console.log('AuthFlowModalController - authParamValue:', authParamValue, 'authParam:', authParam, 'redirectedFrom:', redirectedFrom);
+  }
+
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [mode, setMode] = useState<AuthMode>('login');
+
+  // Shared state
+  const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+
+  // Login state
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
+
+  // Signup state
+  const [signupEmail, setSignupEmail] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
+  const [agree, setAgree] = useState(false);
+
+  // Reset/Change state
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Forgot state
+  const [forgotEmail, setForgotEmail] = useState('');
+
+  // Keep modal in sync with query param with optimization to prevent excessive re-renders
+  useEffect(() => {
+    const incomingValue = searchParams.get('auth');
+    const incoming: AuthMode | '' = isAuthMode(incomingValue)
+      ? incomingValue
+      : '';
+    
+    // Only log when there's an actual change to reduce noise
+    if (incoming && incoming !== mode) {
+      console.log('Auth mode changing:', mode, '->', incoming);
+    }
+    
+    if (incoming) {
+      // Only update if values are actually different
+      if (mode !== incoming) {
+        setMode(incoming);
+      }
+      // Always open modal when there's an auth param, regardless of current state
+      setIsOpen(true);
+    } else {
+      // Only close if modal was opened by query param (not user action)
+      // This prevents the race condition with our custom close handler
+      if (searchParams.has('auth') === false) {
+        setIsOpen(false);
+      }
+    }
+  }, [authParam, mode]); // Removed isOpen dependency to prevent race condition
+
+  // Custom close handler to avoid race conditions
+  const handleModalClose = (open: boolean) => {
+    if (!open) {
+      // Close modal immediately
+      setIsOpen(false);
+      
+      // Clean up query parameters if they exist
+      if (searchParams.get('auth')) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('auth');
+        url.searchParams.delete('redirectedFrom');
+        router.replace(url.pathname + (url.search ? url.search : '') + url.hash, {
+          scroll: false,
+        });
+      }
+    } else {
+      setIsOpen(true);
+    }
+  };
+
+  const title = useMemo(() => {
+    switch (mode) {
+      case 'signup':
+        return 'Create your account';
+      case 'forgot':
+        return 'Forgot password';
+      case 'reset':
+        return 'Set a new password';
+      case 'verify':
+        return 'Email verified';
+      case 'change':
+        return 'Change password';
+      default:
+        return 'Welcome Back';
+    }
+  }, [mode]);
+
+  const description = useMemo(() => {
+    switch (mode) {
+      case 'signup':
+        return 'Start using Yellow Letter Shop';
+      case 'forgot':
+        return "Enter your email and we'll send a reset link";
+      case 'reset':
+        return 'Enter and confirm your new password';
+      case 'verify':
+        return "You're good to go. Sign in to continue.";
+      case 'change':
+        return 'Update your password';
+      default:
+        return 'Sign in to your Yellow Letter Shop account to continue';
+    }
+  }, [mode]);
+
+  const destAfterAuth = redirectedFrom || '/dashboard';
+
+  // Actions
+  const loginWithEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: loginPassword,
+      });
+      if (error) {
+        setError(
+          error.message ||
+            'Login failed. Please check your credentials and try again.'
+        );
+        return;
+      }
+      setIsOpen(false);
+      // Small delay to ensure auth state propagates before navigation
+      setTimeout(() => {
+        router.push(destAfterAuth);
+      }, 150);
+    } catch (err) {
+      console.error(err);
+      setError('Login failed. Please check your credentials and try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loginWithGoogle = async () => {
+    setError(null);
+    setIsGoogleLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}${destAfterAuth}` },
+      });
+      if (error)
+        setError(error.message || 'Google login failed. Please try again.');
+    } catch (err) {
+      console.error(err);
+      setError('Google login failed. Please try again.');
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
+  const signUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setMessage(null);
+    if (!agree) {
+      setError('Please accept the Terms to continue.');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: signupEmail,
+        password: signupPassword,
+        options: { emailRedirectTo: `${window.location.origin}/?auth=verify` },
+      });
+      if (error) {
+        setError(error.message || 'Sign up failed. Please try again.');
+        return;
+      }
+      if (data.session) {
+        // Small delay to ensure auth state propagates before navigation
+        setTimeout(() => {
+          router.push(destAfterAuth);
+        }, 150);
+      } else {
+        setMessage(
+          'Check your email for a confirmation link to complete your registration.'
+        );
+      }
+    } catch (err) {
+      console.error(err);
+      setError('Unexpected error during sign up. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const sendReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setMessage(null);
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+        redirectTo: `${window.location.origin}/?auth=reset`,
+      });
+      if (error) {
+        setError(
+          error.message || 'Failed to send reset link. Please try again.'
+        );
+        return;
+      }
+      setMessage(
+        `If an account exists for ${forgotEmail}, a reset link has been sent.`
+      );
+    } catch (err) {
+      console.error(err);
+      setError('Unexpected error sending reset link. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setMessage(null);
+    if (newPassword.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+      if (error) {
+        setError(
+          error.message || 'Failed to update password. Please try again.'
+        );
+        return;
+      }
+      setMessage(
+        'Password updated. You can now sign in with your new password.'
+      );
+      setTimeout(() => {
+        // Switch to login mode and clean up query
+        const url = new URL(window.location.href);
+        url.searchParams.set('auth', 'login');
+        router.replace(url.pathname + '?' + url.searchParams.toString(), {
+          scroll: false,
+        });
+      }, 1200);
+    } catch (err) {
+      console.error(err);
+      setError('Unexpected error updating password. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // If user lands on verify link and is already authenticated, move on
+  useEffect(() => {
+    const checkVerified = async () => {
+      if (mode !== 'verify') return;
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          router.replace(destAfterAuth);
+        }
+      } catch {}
+    };
+    checkVerified();
+  }, [mode]);
+
+  // Exchange code for session on landing (email confirm or password recovery links)
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const url = new URL(window.location.href);
+        const hasCode = !!url.searchParams.get('code');
+        const hasHashToken =
+          !!url.hash &&
+          (url.hash.includes('access_token') ||
+            url.hash.includes('refresh_token'));
+        
+        if (hasCode) {
+          const code = url.searchParams.get('code');
+          if (!code) return;
+          
+          // Don't block UI - handle code exchange asynchronously
+          supabase.auth.exchangeCodeForSession(code).then(() => {
+            // Remove sensitive params after exchange but keep auth + redirectedFrom
+            const clean = new URL(window.location.href);
+            clean.searchParams.delete('code');
+            clean.searchParams.delete('type');
+            router.replace(
+              clean.pathname +
+                (clean.search ? clean.search : '') +
+                (clean.hash || ''),
+              { scroll: false }
+            );
+          }).catch((e) => {
+            console.warn('Code exchange failed:', e);
+            // Allow user to proceed with manual login
+          });
+        } else if (hasHashToken) {
+          // Handle hash-based tokens
+          const { data } = supabase.auth.onAuthStateChange(
+            (_event: AuthChangeEvent, session: Session | null) => {
+              if (session) {
+                const clean = new URL(window.location.href);
+                clean.hash = '';
+                router.replace(
+                  clean.pathname + (clean.search ? clean.search : ''),
+                  { scroll: false }
+                );
+                data.subscription.unsubscribe();
+              }
+            }
+          );
+        }
+      } catch (e) {
+        // no-op; user may still proceed to login
+      }
+    };
+    
+    // Don't await this - let it run in the background
+    run();
+    
+    // run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Global auth state change handler for modal state only
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        setIsOpen(false);
+        // Redirect logic is handled by individual auth functions (loginWithEmail, signUp, etc.)
+        // This just closes the modal
+      } else if (event === 'SIGNED_OUT') {
+        // Handle sign out if needed
+        if (pathname.startsWith('/dashboard')) {
+          router.push('/');
+        }
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router, pathname]);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleModalClose}>
+      <DialogContent
+        className='sm:max-w-md w-full mx-4'
+        aria-describedby='auth-description'
+      >
+        <DialogHeader className='space-y-3'>
+          <DialogTitle className='text-2xl font-bold text-center'>
+            {title}
+          </DialogTitle>
+          <DialogDescription id='auth-description' className='text-center'>
+            {description}
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Status messages */}
+        {error && (
+          <Alert variant='destructive' className='mb-4'>
+            <AlertCircle className='h-4 w-4' />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        {message && (
+          <Alert className='mb-4'>
+            <AlertDescription>{message}</AlertDescription>
+          </Alert>
+        )}
+
+        {/* LOGIN */}
+        {mode === 'login' && (
+          <div className='space-y-6 py-2'>
+            <Button
+              type='button'
+              variant='outline'
+              className='w-full h-12'
+              onClick={loginWithGoogle}
+              disabled={isLoading || isGoogleLoading}
+              aria-label='Sign in with Google'
+            >
+              {isGoogleLoading ? (
+                <Loader2 className='mr-2 h-5 w-5 animate-spin' />
+              ) : (
+                <GoogleIcon className='mr-2 h-5 w-5' />
+              )}
+              {isGoogleLoading ? 'Signing in...' : 'Continue with Google'}
+            </Button>
+
+            <div className='relative'>
+              <div className='absolute inset-0 flex items-center'>
+                <Separator className='w-full' />
+              </div>
+              <div className='relative flex justify-center text-xs uppercase'>
+                <span className='bg-background px-2 text-muted-foreground'>
+                  Or continue with email
+                </span>
+              </div>
+            </div>
+
+            <form onSubmit={loginWithEmail} className='space-y-4' noValidate>
+              <div className='space-y-2'>
+                <Label htmlFor='login-email'>Email Address</Label>
+                <div className='relative'>
+                  <Mail className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400' />
+                  <Input
+                    id='login-email'
+                    type='email'
+                    placeholder='Enter your email'
+                    value={loginEmail}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setLoginEmail(e.target.value)
+                    }
+                    autoComplete='email'
+                    required
+                    className='pl-10 h-12'
+                  />
+                </div>
+              </div>
+
+              <div className='space-y-2'>
+                <Label htmlFor='login-password'>Password</Label>
+                <div className='relative'>
+                  <Lock className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400' />
+                  <Input
+                    id='login-password'
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder='Enter your password'
+                    value={loginPassword}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                      setLoginPassword(e.target.value)
+                    }
+                    autoComplete='current-password'
+                    required
+                    className='pl-10 pr-10 h-12'
+                  />
+                  <Button
+                    type='button'
+                    variant='ghost'
+                    size='sm'
+                    className='absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0'
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={
+                      showPassword ? 'Hide password' : 'Show password'
+                    }
+                  >
+                    {showPassword ? (
+                      <EyeOff className='h-4 w-4 text-gray-400' />
+                    ) : (
+                      <Eye className='h-4 w-4 text-gray-400' />
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              <div className='flex items-center justify-between'>
+                <div className='flex items-center space-x-2'>
+                  <Checkbox
+                    id='remember-me'
+                    checked={rememberMe}
+                    onCheckedChange={(checked: CheckedState) =>
+                      setRememberMe(!!checked)
+                    }
+                  />
+                  <Label htmlFor='remember-me' className='text-sm'>
+                    Remember me
+                  </Label>
+                </div>
+                <Button
+                  type='button'
+                  variant='link'
+                  className='p-0 h-auto text-sm'
+                  onClick={() => {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('auth', 'forgot');
+                    router.replace(
+                      url.pathname + '?' + url.searchParams.toString(),
+                      { scroll: false }
+                    );
+                  }}
+                >
+                  Forgot password?
+                </Button>
+              </div>
+
+              <Button
+                type='submit'
+                className='w-full h-12'
+                style={{ backgroundColor: '#E0B431', color: '#000' }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F6CF62'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E0B431'}
+                disabled={isLoading || isGoogleLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className='mr-2 h-4 w-4 animate-spin' /> Signing
+                    in...
+                  </>
+                ) : (
+                  'Sign In'
+                )}
+              </Button>
+            </form>
+
+            <div className='text-center'>
+              <p className='text-sm'>
+                Don't have an account? {''}
+                <Button
+                  type='button'
+                  variant='link'
+                  className='p-0 h-auto text-sm font-semibold'
+                  onClick={() => {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set('auth', 'signup');
+                    router.replace(
+                      url.pathname + '?' + url.searchParams.toString(),
+                      { scroll: false }
+                    );
+                  }}
+                >
+                  Create Account
+                </Button>
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* SIGNUP */}
+        {mode === 'signup' && (
+          <form onSubmit={signUp} className='space-y-4' noValidate>
+            <div className='space-y-2'>
+              <Label htmlFor='signup-email'>Email</Label>
+              <div className='relative'>
+                <Mail className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400' />
+                <Input
+                  id='signup-email'
+                  type='email'
+                  placeholder='Email'
+                  className='pl-10'
+                  value={signupEmail}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setSignupEmail(e.target.value)
+                  }
+                  required
+                  autoComplete='email'
+                />
+              </div>
+            </div>
+            <div className='space-y-2'>
+              <Label htmlFor='signup-password'>
+                Password (min 6 characters)
+              </Label>
+              <div className='relative'>
+                <Lock className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400' />
+                <Input
+                  id='signup-password'
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder='Password'
+                  className='pl-10 pr-10'
+                  value={signupPassword}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setSignupPassword(e.target.value)
+                  }
+                  required
+                  minLength={6}
+                  autoComplete='new-password'
+                />
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='sm'
+                  className='absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0'
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    <EyeOff className='h-4 w-4 text-gray-400' />
+                  ) : (
+                    <Eye className='h-4 w-4 text-gray-400' />
+                  )}
+                </Button>
+              </div>
+            </div>
+            <div className='flex items-center space-x-2'>
+              <Checkbox
+                id='agree'
+                checked={agree}
+                onCheckedChange={(v: CheckedState) => setAgree(!!v)}
+              />
+              <label htmlFor='agree' className='text-sm'>
+                I agree to the Terms and Privacy Policy
+              </label>
+            </div>
+            <Button
+              type='submit'
+              className='w-full'
+              style={{ backgroundColor: '#E0B431', color: '#000' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F6CF62'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E0B431'}
+              disabled={isLoading || isGoogleLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' /> Creating
+                  account...
+                </>
+              ) : (
+                'Create Account'
+              )}
+            </Button>
+            <div className='text-center'>
+              <Button
+                type='button'
+                variant='link'
+                className='p-0 h-auto text-sm'
+                onClick={() => {
+                  const url = new URL(window.location.href);
+                  url.searchParams.set('auth', 'login');
+                  router.replace(
+                    url.pathname + '?' + url.searchParams.toString(),
+                    { scroll: false }
+                  );
+                }}
+              >
+                Back to sign in
+              </Button>
+            </div>
+          </form>
+        )}
+
+        {/* FORGOT PASSWORD */}
+        {mode === 'forgot' && (
+          <form onSubmit={sendReset} className='space-y-4' noValidate>
+            <div className='space-y-2'>
+              <Label htmlFor='forgot-email'>Email</Label>
+              <div className='relative'>
+                <Mail className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400' />
+                <Input
+                  id='forgot-email'
+                  type='email'
+                  placeholder='Email'
+                  className='pl-10'
+                  value={forgotEmail}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setForgotEmail(e.target.value)
+                  }
+                  required
+                  autoComplete='email'
+                />
+              </div>
+            </div>
+            <Button 
+              type='submit' 
+              className='w-full' 
+              style={{ backgroundColor: '#E0B431', color: '#000' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F6CF62'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E0B431'}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' /> Sending...
+                </>
+              ) : (
+                'Send Reset Link'
+              )}
+            </Button>
+            <div className='text-center'>
+              <Button
+                type='button'
+                variant='link'
+                className='p-0 h-auto text-sm'
+                onClick={() => {
+                  const url = new URL(window.location.href);
+                  url.searchParams.set('auth', 'login');
+                  router.replace(
+                    url.pathname + '?' + url.searchParams.toString(),
+                    { scroll: false }
+                  );
+                }}
+              >
+                Back to sign in
+              </Button>
+            </div>
+          </form>
+        )}
+
+        {/* RESET or CHANGE PASSWORD */}
+        {(mode === 'reset' || mode === 'change') && (
+          <form onSubmit={updatePassword} className='space-y-4' noValidate>
+            <div className='space-y-2'>
+              <Label htmlFor='new-password'>New Password</Label>
+              <div className='relative'>
+                <Lock className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400' />
+                <Input
+                  id='new-password'
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder='Enter a new password'
+                  className='pl-10 pr-10'
+                  required
+                  value={newPassword}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setNewPassword(e.target.value)
+                  }
+                  autoComplete='new-password'
+                />
+                <Button
+                  type='button'
+                  variant='ghost'
+                  size='sm'
+                  className='absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 p-0'
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? (
+                    <EyeOff className='h-4 w-4 text-gray-400' />
+                  ) : (
+                    <Eye className='h-4 w-4 text-gray-400' />
+                  )}
+                </Button>
+              </div>
+            </div>
+            <div className='space-y-2'>
+              <Label htmlFor='confirm-password'>Confirm Password</Label>
+              <div className='relative'>
+                <Lock className='absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400' />
+                <Input
+                  id='confirm-password'
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder='Confirm your new password'
+                  className='pl-10 pr-10'
+                  required
+                  value={confirmPassword}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setConfirmPassword(e.target.value)
+                  }
+                  autoComplete='new-password'
+                />
+              </div>
+            </div>
+            <Button 
+              type='submit' 
+              className='w-full' 
+              style={{ backgroundColor: '#E0B431', color: '#000' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F6CF62'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E0B431'}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' /> Updating...
+                </>
+              ) : (
+                'Update Password'
+              )}
+            </Button>
+            <div className='text-center'>
+              <Button
+                type='button'
+                variant='link'
+                className='p-0 h-auto text-sm'
+                onClick={() => {
+                  const url = new URL(window.location.href);
+                  url.searchParams.set('auth', 'login');
+                  router.replace(
+                    url.pathname + '?' + url.searchParams.toString(),
+                    { scroll: false }
+                  );
+                }}
+              >
+                Back to sign in
+              </Button>
+            </div>
+          </form>
+        )}
+
+        {/* VERIFY */}
+        {mode === 'verify' && (
+          <div className='space-y-4 py-2'>
+            <Alert>
+              <AlertDescription className='flex items-center'>
+                <CheckCircle2 className='h-4 w-4 mr-2 text-green-600' /> Your
+                email has been verified.
+              </AlertDescription>
+            </Alert>
+            <Button
+              className='w-full'
+              style={{ backgroundColor: '#E0B431', color: '#000' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F6CF62'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E0B431'}
+              onClick={() => {
+                const url = new URL(window.location.href);
+                url.searchParams.set('auth', 'login');
+                router.replace(
+                  url.pathname + '?' + url.searchParams.toString(),
+                  { scroll: false }
+                );
+              }}
+            >
+              Sign in
+            </Button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}

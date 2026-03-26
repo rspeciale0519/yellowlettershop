@@ -19,16 +19,15 @@ export default async function Layout({
       error
     } = await supabase.auth.getUser();
 
-    // If no user and no auth session missing error, redirect to login
-    // This should be rare since middleware should catch most cases
-    if (!user && !error?.message.includes('Auth session missing')) {
+    // If no authenticated user, redirect to login (fallback protection)
+    if (!user) {
       redirect('/?auth=login');
     }
 
   } catch (error) {
-    // Log unexpected errors but continue to render dashboard
-    // Let the client-side auth handle any additional checks
-    console.debug('Dashboard auth check error:', error);
+    // On any error, redirect to login for security
+    console.error('Dashboard auth check error:', error);
+    redirect('/?auth=login');
   }
 
   return <DashboardLayout>{children}</DashboardLayout>;

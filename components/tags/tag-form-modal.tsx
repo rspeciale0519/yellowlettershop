@@ -82,21 +82,25 @@ export function TagFormModal({ isOpen, onClose, editingTag, onSuccess }: TagForm
     try {
       const url = editingTag ? `/api/tags/${editingTag.id}` : '/api/tags'
       const method = editingTag ? 'PATCH' : 'POST'
-      
+
       const response = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       })
 
-      if (!response.ok) throw new Error('Failed to save tag')
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        throw new Error(errorData.error || 'Failed to save tag')
+      }
 
       toast.success(editingTag ? 'Tag updated successfully' : 'Tag created successfully')
       onClose()
       onSuccess?.()
     } catch (error) {
       console.error('Error saving tag:', error)
-      toast.error('Failed to save tag')
+      const errorMessage = error instanceof Error ? error.message : 'Failed to save tag'
+      toast.error(errorMessage)
     }
   }
 
@@ -106,7 +110,19 @@ export function TagFormModal({ isOpen, onClose, editingTag, onSuccess }: TagForm
         <DialogHeader>
           <DialogTitle>{editingTag ? 'Edit Tag' : 'Create New Tag'}</DialogTitle>
         </DialogHeader>
-        
+
+        {editingTag?.is_system && (
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span className="font-medium text-sm text-blue-800">System Tag</span>
+            </div>
+            <p className="text-xs text-blue-700 mt-1">
+              Only name, description, and color can be modified for system tags.
+            </p>
+          </div>
+        )}
+
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Name</Label>
@@ -131,7 +147,11 @@ export function TagFormModal({ isOpen, onClose, editingTag, onSuccess }: TagForm
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Category</Label>
-              <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+              <Select
+                value={formData.category}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}
+                disabled={editingTag?.is_system}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -143,11 +163,18 @@ export function TagFormModal({ isOpen, onClose, editingTag, onSuccess }: TagForm
                   ))}
                 </SelectContent>
               </Select>
+              {editingTag?.is_system && (
+                <p className="text-xs text-muted-foreground">Category cannot be changed for system tags</p>
+              )}
             </div>
             
             <div className="space-y-2">
               <Label>Visibility</Label>
-              <Select value={formData.visibility} onValueChange={(value: 'public' | 'private' | 'system') => setFormData(prev => ({ ...prev, visibility: value }))}>
+              <Select
+                value={formData.visibility}
+                onValueChange={(value: 'public' | 'private' | 'system') => setFormData(prev => ({ ...prev, visibility: value }))}
+                disabled={editingTag?.is_system}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -156,6 +183,9 @@ export function TagFormModal({ isOpen, onClose, editingTag, onSuccess }: TagForm
                   <SelectItem value="public">Team Public</SelectItem>
                 </SelectContent>
               </Select>
+              {editingTag?.is_system && (
+                <p className="text-xs text-muted-foreground">Visibility cannot be changed for system tags</p>
+              )}
             </div>
           </div>
           

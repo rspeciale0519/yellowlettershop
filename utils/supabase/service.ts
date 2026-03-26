@@ -1,19 +1,21 @@
-import 'server-only'
-import { createClient } from '@supabase/supabase-js'
+import { createClient as supabaseCreateClient } from '@supabase/supabase-js'
 
-// Server-only Supabase client that uses the service role key
-// IMPORTANT: Never expose the service role key to the browser
-export function createServiceClient() {
-  if (typeof window !== 'undefined') {
-    throw new Error('createServiceClient should only be called on the server side')
-  }
-
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-  if (!url || !serviceKey) {
-    throw new Error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY')
-  }
-
-  return createClient(url, serviceKey)
+/**
+ * Service-role Supabase client. Bypasses Row Level Security.
+ * Use only in server-side code for admin operations.
+ */
+export function createClient() {
+  return supabaseCreateClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    },
+  )
 }
+
+// Alias used by payment, auth, and asset services
+export const createServiceClient = createClient

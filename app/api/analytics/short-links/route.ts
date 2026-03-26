@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { EngagementTracker } from '@/lib/analytics/engagement-tracker'
+import { withAuth } from '@/lib/auth/middleware'
 
-export async function POST(request: NextRequest) {
+export const POST = withAuth(async (request: NextRequest, { userId }) => {
   try {
     const { originalUrl, options } = await request.json()
 
@@ -24,9 +25,9 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})
 
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request: NextRequest, { userId }) => {
   try {
     const { searchParams } = new URL(request.url)
     const campaignId = searchParams.get('campaignId')
@@ -50,4 +51,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

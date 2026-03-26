@@ -132,11 +132,56 @@
       "Bash(if [ -d \".next/cache\" ])",
       "Bash(then rm -rf .next/cache)",
       "Bash(ls:*)",
-      "Bash(dir)"
+      "Bash(dir)",
+      "Bash(npm --version)",
+      "Bash(xargs:*)",
+      "Bash(paste:*)",
+      "Bash(for file in \"components/mailing-list-manager/customizable-table.tsx\" \"components/mailing-list-manager/records-table.tsx\" \"components/mailing-list-manager/lists-table.tsx\")",
+      "Bash(done)",
+      "Bash(for file in \"app/dashboard/media/page-original.tsx\" \"app/dashboard/profile/page.tsx\")",
+      "Bash(for file in \"lib/payments/payment-service.ts\" \"lib/list-builder/list-builder-service.ts\" \"types/supabase.ts\")",
+      "Bash(for file in \"components/media/media-page-content.tsx\" \"components/list-builder/demographics-filters.tsx\")",
+      "Bash(do if [ -f \"$file\" ])",
+      "Bash(else echo \"$file: NOT FOUND\")",
+      "Bash(for file in \"components/list-builder/property-filters.tsx\" \"components/list-builder/geography-filters.tsx\" \"components/list-builder/criteria-accordion.tsx\")",
+      "Bash(dir \"C:\\Users\\rob\\Documents\\Software\\SaaS\\YLS\\new-001\\components\\ui\\sidebar\")",
+      "Bash(npm run typecheck:*)",
+      "Bash(copy \"components\\tags\\enhanced-tag-manager-content-clean.tsx\" \"components\\tags\\enhanced-tag-manager-content.tsx\")",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_type",
+      "mcp__playwright__browser_snapshot",
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_evaluate",
+      "mcp__playwright__browser_fill_form",
+      "mcp__playwright__browser_press_key",
+      "mcp__playwright__browser_close",
+      "mcp__playwright__browser_file_upload",
+      "mcp__playwright__browser_drag",
+      "mcp__playwright__browser_hover",
+      "mcp__playwright__browser_network_requests",
+      "Skill(commit-commands:commit-push-pr)",
+      "Bash(git checkout:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(npm show:*)",
+      "Bash(agent-browser open:*)",
+      "Bash(npx playwright:*)",
+      "Bash(grep -r \"from ''''@/utils/supabase\" --include=\"*.ts\" --include=\"*.tsx\" --exclude-dir=node_modules --exclude-dir=.next)",
+      "Bash(grep -rn \"from ''''@/utils/supabase/server''''\" --include=*.ts --include=*.tsx --exclude-dir=node_modules --exclude-dir=.next .)",
+      "Bash(grep -rn \"from ''''@/utils/supabase/service''''\" --include=*.ts --include=*.tsx --exclude-dir=node_modules --exclude-dir=.next .)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" auth status)"
     ],
     "deny": [],
     "ask": [
       "Bash(find:*)"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "playwright"
+  ],
+  "spinnerTipsEnabled": true
 }

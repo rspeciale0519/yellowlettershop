@@ -26,7 +26,7 @@ if (!stripePublishableKey) {
  */
 export const stripe = stripeSecretKey
   ? new Stripe(stripeSecretKey, {
-      apiVersion: '2024-12-18.acacia', // Latest API version
+      apiVersion: '2025-08-27.basil', // Latest stable API version
       typescript: true,
       telemetry: false, // Disable telemetry for better performance
     })
@@ -38,11 +38,11 @@ export const stripe = stripeSecretKey
  */
 let stripePromise: Promise<Stripe | null> | null = null;
 
-export const getStripe = () => {
+export const getStripe = (): Promise<import('@stripe/stripe-js').Stripe | null> => {
   if (!stripePromise) {
     stripePromise = loadStripe(stripePublishableKey!);
   }
-  return stripePromise;
+  return stripePromise as Promise<import('@stripe/stripe-js').Stripe | null>;
 };
 
 /**

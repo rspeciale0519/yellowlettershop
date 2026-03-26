@@ -9,6 +9,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+
+export const dynamic = 'force-dynamic';
 import { campaignPaymentService } from '@/lib/campaigns/payment-integration';
 import { PaymentServiceError } from '@/lib/payments/payment-service';
 import { z } from 'zod';
@@ -44,17 +46,17 @@ const cancelPaymentSchema = z.object({
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { campaignId: string } }
+  { params }: { params: Promise<{ campaignId: string }> }
 ) {
   try {
-    const { campaignId } = params;
-    
+    const { campaignId } = await params;
+
     // Parse and validate request body
     const body = await request.json();
     const validatedData = initiatePaymentSchema.parse(body);
 
     // Get authenticated user
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -140,15 +142,15 @@ export async function POST(
  */
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { campaignId: string } }
+  { params }: { params: Promise<{ campaignId: string }> }
 ) {
   try {
-    const { campaignId } = params;
+    const { campaignId } = await params;
     const body = await request.json();
     const action = body.action; // 'confirm' or 'capture'
 
     // Get authenticated user
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -232,17 +234,17 @@ export async function PUT(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { campaignId: string } }
+  { params }: { params: Promise<{ campaignId: string }> }
 ) {
   try {
-    const { campaignId } = params;
-    
+    const { campaignId } = await params;
+
     // Parse request body for cancellation details
     const body = await request.json();
     const validatedData = cancelPaymentSchema.parse(body);
 
     // Get authenticated user
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -301,13 +303,13 @@ export async function DELETE(
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { campaignId: string } }
+  { params }: { params: Promise<{ campaignId: string }> }
 ) {
   try {
-    const { campaignId } = params;
+    const { campaignId } = await params;
 
     // Get authenticated user
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {

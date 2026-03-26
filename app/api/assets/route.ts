@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData()
     const file = formData.get('file') as File
-    
+
     if (!file) {
       return NextResponse.json(
         { error: 'File is required' },
@@ -128,8 +128,8 @@ export async function POST(request: NextRequest) {
     }
 
     const fileId = uuidv4()
-    const fileName = formData.get('name') as string || file.name
-    const fileExtension = file.name.split('.').pop()
+    const fileName = formData.get('name') as string || file.name || 'untitled'
+    const fileExtension = file.name?.split('.').pop() || 'bin'
     const filePath = `${user.id}/${fileId}.${fileExtension}`
 
     // Ensure bucket exists (idempotent)
@@ -174,13 +174,47 @@ export async function POST(request: NextRequest) {
     const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/sign/assets/${filePath}`
 
     // Helper function to get category from MIME type
-    const getCategoryFromMimeType = (mimeType: string): string => {
+    const getCategoryFromMimeType = (mimeType: string | undefined): string => {
+      if (!mimeType) return 'other'
+
+      // Images
       if (mimeType.startsWith('image/')) return 'image'
+
+      // Videos
       if (mimeType.startsWith('video/')) return 'video'
+
+      // Audio
       if (mimeType.startsWith('audio/')) return 'audio'
-      if (mimeType.includes('pdf')) return 'document'
+
+      // PDFs
+      if (mimeType.includes('pdf')) return 'pdf'
+
+      // Excel files
+      if (mimeType.includes('spreadsheet') ||
+          mimeType.includes('excel') ||
+          mimeType === 'application/vnd.ms-excel' ||
+          mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+        return 'spreadsheet'
+      }
+
+      // CSV files (group under spreadsheet for filtering)
+      if (mimeType === 'text/csv' || mimeType.includes('csv')) {
+        return 'spreadsheet'
+      }
+
+      // Word documents
+      if (mimeType.includes('msword') ||
+          mimeType.includes('wordprocessingml.document') ||
+          mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+        return 'document'
+      }
+
+      // Other text/document types
       if (mimeType.includes('text/') || mimeType.includes('document')) return 'document'
+
+      // Fonts
       if (mimeType.includes('font')) return 'font'
+
       return 'other'
     }
 
@@ -191,10 +225,10 @@ export async function POST(request: NextRequest) {
       team_id: formData.get('teamId') as string || null,
       uploaded_by: user.id,
       filename: fileName,
-      original_filename: file.name,
+      original_filename: file.name || fileName,
       file_type: getCategoryFromMimeType(file.type),
-      mime_type: file.type,
-      file_size: file.size,
+      mime_type: file.type || 'application/octet-stream',
+      file_size: file.size || 0,
       file_path: filePath,
       file_url: publicUrl,
       is_public: formData.get('isPublic') === 'true',

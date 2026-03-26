@@ -82,7 +82,7 @@ export default function DashboardPage() {
               </Link>
               <MediaUpload />
               <Link
-                href="/dashboard/orders/new"
+                href="/orders/new?source=dashboard_create_new"
                 className="flex items-center rounded-md border p-3 text-sm transition-colors hover:bg-muted"
               >
                 <Package className="mr-3 h-4 w-4 text-primary" />

@@ -18,7 +18,18 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function ApiKeysPage() {
   // Rename the state variable to avoid naming conflict
-  const [apiKeysList, setApiKeysList] = useState([])
+  interface ApiKey {
+    id: string;
+    name: string;
+    key: string;
+    created: string;
+    lastUsed: string | null;
+    expiresAt: string;
+    permissions: string[];
+    status: string;
+  }
+
+  const [apiKeysList, setApiKeysList] = useState<ApiKey[]>([])
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({})
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [newKeyName, setNewKeyName] = useState("")

@@ -10,15 +10,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { 
-  MoreHorizontal, 
-  Download, 
-  Edit, 
-  Copy, 
-  Trash, 
+import {
+  MoreHorizontal,
+  Download,
+  Edit,
+  Copy,
+  Trash,
   FileText,
   Loader2,
-  Eye
+  Eye,
+  Tag
 } from 'lucide-react'
 import { UserAsset } from '@/types/supabase'
 import { useAssets } from '@/hooks/use-assets'
@@ -31,9 +32,10 @@ interface FileActionsProps {
   onRename?: (asset: UserAsset, newName: string) => void
   onOpenRenameModal?: (asset: UserAsset) => void
   onViewFile?: (asset: UserAsset) => void
+  onManageTags?: (asset: UserAsset) => void
 }
 
-export function FileActions({ asset, onDelete, onShowDetails, onRename, onOpenRenameModal, onViewFile }: FileActionsProps) {
+export function FileActions({ asset, onDelete, onShowDetails, onRename, onOpenRenameModal, onViewFile, onManageTags }: FileActionsProps) {
   const { getSignedUrl } = useAssets()
   const [isDownloading, setIsDownloading] = useState(false)
   const [isCopyingLink, setIsCopyingLink] = useState(false)
@@ -146,6 +148,13 @@ export function FileActions({ asset, onDelete, onShowDetails, onRename, onOpenRe
     }
   }
 
+  const handleManageTags = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (onManageTags) {
+      onManageTags(asset)
+    }
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -192,8 +201,13 @@ export function FileActions({ asset, onDelete, onShowDetails, onRename, onOpenRe
           <Edit className="mr-2 h-4 w-4" />
           Rename
         </DropdownMenuItem>
-        
-        <DropdownMenuItem 
+
+        <DropdownMenuItem onClick={handleManageTags}>
+          <Tag className="mr-2 h-4 w-4" />
+          Tags
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
           onClick={handleCopyLink}
           disabled={isCopyingLink}
         >

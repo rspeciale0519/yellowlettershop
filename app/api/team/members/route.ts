@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { TeamService } from '@/lib/team/team-service'
+import { withAuth, authorizeTeamAccess } from '@/lib/auth/middleware'
 
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (request: NextRequest, { userId }) => {
   try {
     const { searchParams } = new URL(request.url)
     const teamId = searchParams.get('teamId')
@@ -10,6 +11,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(
         { error: 'Team ID is required' },
         { status: 400 }
+      )
+    }
+
+    const hasAccess = await authorizeTeamAccess(userId, teamId)
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: 'Unauthorized access to team' },
+        { status: 403 }
       )
     }
 
@@ -25,9 +34,9 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})
 
-export async function PATCH(request: NextRequest) {
+export const PATCH = withAuth(async (request: NextRequest, { userId }) => {
   try {
     const { teamId, memberId, permissions, role } = await request.json()
 
@@ -35,6 +44,14 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json(
         { error: 'Team ID, member ID, and permissions are required' },
         { status: 400 }
+      )
+    }
+
+    const hasAccess = await authorizeTeamAccess(userId, teamId)
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: 'Unauthorized access to team' },
+        { status: 403 }
       )
     }
 
@@ -50,9 +67,9 @@ export async function PATCH(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})
 
-export async function DELETE(request: NextRequest) {
+export const DELETE = withAuth(async (request: NextRequest, { userId }) => {
   try {
     const { teamId, memberId } = await request.json()
 
@@ -60,6 +77,14 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json(
         { error: 'Team ID and member ID are required' },
         { status: 400 }
+      )
+    }
+
+    const hasAccess = await authorizeTeamAccess(userId, teamId)
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: 'Unauthorized access to team' },
+        { status: 403 }
       )
     }
 
@@ -75,4 +100,4 @@ export async function DELETE(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

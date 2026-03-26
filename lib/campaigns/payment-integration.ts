@@ -40,8 +40,10 @@ export interface CampaignOrderData {
  * Campaign Payment Integration Service
  */
 export class CampaignPaymentService {
-  private supabase = createClient();
   private paymentService = new PaymentService();
+
+  // Deferred: createClient() calls cookies() and must run inside a request scope
+  private async db() { return createClient(); }
 
   /**
    * Calculate pricing for a campaign and create payment intent
@@ -64,7 +66,7 @@ export class CampaignPaymentService {
     } = params;
 
     // Get user profile for pricing calculation
-    const { data: profile, error: profileError } = await this.supabase
+    const { data: profile, error: profileError } = await (await this.db())
       .from('user_profiles')
       .select('subscription_plan')
       .eq('user_id', userId)
@@ -155,7 +157,7 @@ export class CampaignPaymentService {
     const { campaignId, userId, paymentIntentId } = params;
 
     // Verify the payment transaction exists and belongs to the user
-    const { data: transaction, error: transactionError } = await this.supabase
+    const { data: transaction, error: transactionError } = await (await this.db())
       .from('payment_transactions')
       .select('*')
       .eq('stripe_payment_intent_id', paymentIntentId)
@@ -171,7 +173,7 @@ export class CampaignPaymentService {
     await this.updateCampaignStatus(campaignId, userId, 'paid');
 
     // Update transaction status
-    await this.supabase
+    await (await this.db())
       .from('payment_transactions')
       .update({
         status: 'authorized' as PaymentStatus,
@@ -203,7 +205,7 @@ export class CampaignPaymentService {
     const { campaignId, userId, approvedByUserId } = params;
 
     // Get campaign and payment details
-    const { data: campaign, error: campaignError } = await this.supabase
+    const { data: campaign, error: campaignError } = await (await this.db())
       .from('campaigns')
       .select('*')
       .eq('id', campaignId)
@@ -215,7 +217,7 @@ export class CampaignPaymentService {
     }
 
     // Get associated payment transaction
-    const { data: transaction, error: transactionError } = await this.supabase
+    const { data: transaction, error: transactionError } = await (await this.db())
       .from('payment_transactions')
       .select('*')
       .eq('campaign_id', campaignId)
@@ -241,7 +243,7 @@ export class CampaignPaymentService {
     });
 
     // Create audit log entry
-    await this.supabase
+    await (await this.db())
       .from('user_analytics')
       .insert({
         user_id: userId,
@@ -267,7 +269,7 @@ export class CampaignPaymentService {
     const { campaignId, userId, reason, refundAmount } = params;
 
     // Get payment transaction
-    const { data: transaction, error: transactionError } = await this.supabase
+    const { data: transaction, error: transactionError } = await (await this.db())
       .from('payment_transactions')
       .select('*')
       .eq('campaign_id', campaignId)
@@ -292,7 +294,7 @@ export class CampaignPaymentService {
     await this.updateCampaignStatus(campaignId, userId, 'cancelled');
 
     // Log the cancellation
-    await this.supabase
+    await (await this.db())
       .from('user_analytics')
       .insert({
         user_id: userId,
@@ -373,7 +375,7 @@ export class CampaignPaymentService {
     userId: string, 
     status: CampaignStatus
   ): Promise<void> {
-    const { error } = await this.supabase
+    const { error } = await (await this.db())
       .from('campaigns')
       .update({ 
         status,
@@ -417,7 +419,7 @@ export class CampaignPaymentService {
     // This would trigger the campaign processing workflow
     // For example: address validation, list preparation, design finalization
     
-    await this.supabase
+    await (await this.db())
       .from('user_analytics')
       .insert({
         user_id: userId,
