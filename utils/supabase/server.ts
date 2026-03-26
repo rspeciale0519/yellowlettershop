@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient as _supabaseCreateServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 /**
@@ -8,7 +8,7 @@ import { cookies } from 'next/headers'
 export async function createClient() {
   const cookieStore = await cookies()
 
-  return createServerClient(
+  return _supabaseCreateServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -31,5 +31,5 @@ export async function createClient() {
 }
 
 // Aliases for files that import under different names
-export const createServerClient = createClient
-export const createSupabaseServerClient = createClient
+export { createClient as createServerClient }
+export { createClient as createSupabaseServerClient }
