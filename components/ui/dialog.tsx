@@ -37,11 +37,20 @@ const DialogContent = React.forwardRef<
     <DialogOverlay />
     <DialogPrimitive.Content
       ref={ref}
+      onOpenAutoFocus={(e) => {
+        // Prevent aggressive auto-focus that can interfere with password managers
+        e.preventDefault()
+      }}
+      onFocusOutside={(e) => {
+        // Prevent the focus trap from recapturing focus when it moves to a
+        // browser extension overlay (LastPass, 1Password, Dashlane, etc.).
+        // Without this, the focus trap steals focus back and dismisses the
+        // password manager dropdown before the user can interact with it.
+        e.preventDefault()
+      }}
       onPointerDownOutside={(e) => {
-        // In a modal, the overlay covers the viewport. Clicks outside DialogContent
-        // hit either the overlay (should close) or a browser extension element like
-        // a password manager dropdown (should NOT close — let the user interact).
-        // Only allow closing when the click target is the overlay itself.
+        // Only close the dialog when clicking the overlay backdrop, not when
+        // interacting with browser extension elements rendered outside the dialog.
         const target = e.target as HTMLElement
         if (!target?.closest?.('[data-radix-dialog-overlay]') &&
             !target?.hasAttribute?.('data-radix-dialog-overlay')) {
