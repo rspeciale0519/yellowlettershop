@@ -286,7 +286,7 @@ export function AuthFlowModalController({}: AuthFlowModalControllerProps) {
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleModalClose}>
+    <Dialog open={isOpen} onOpenChange={handleModalClose} modal={false}>
       <DialogContent className="sm:max-w-md w-full mx-4" aria-describedby="auth-description">
         <DialogHeader className="space-y-3">
           <DialogTitle className="text-2xl font-bold text-center">
