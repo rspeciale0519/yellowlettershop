@@ -10,7 +10,7 @@ export function ThemeScript() {
       dangerouslySetInnerHTML={{
         __html: `
           try {
-            var theme = localStorage.getItem('theme')
+            var theme = localStorage.getItem('yls-theme')
             var systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
             var resolvedTheme = theme === 'system' || !theme ? systemTheme : theme
             
