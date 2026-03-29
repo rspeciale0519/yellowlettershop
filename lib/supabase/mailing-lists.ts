@@ -195,54 +195,14 @@ export async function updateMailingListRecord(id: string, updates: UpdateMailing
 }
 
 export async function deleteMailingListRecord(id: string): Promise<void> {
-  console.log('deleteMailingListRecord called with id:', id, 'type:', typeof id)
   const supabase = createClient()
-  
-  // Check if user is authenticated
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  console.log('User authenticated:', !!user, authError ? authError.message : 'no auth error')
-  
-  // First, let's see if the record exists at all
-  const { data: existingRecord, error: findError } = await supabase
-    .from('mailing_list_records')
-    .select('id, mailing_list_id')
-    .eq('id', id)
-    .single()
-  
-  console.log('Record lookup result:', { existingRecord, findError })
-  
-  if (findError && findError.code !== 'PGRST116') {
-    console.error('Error looking up record:', findError)
-    throw findError
-  }
-  
-  if (!existingRecord) {
-    console.warn('Record not found with ID:', id)
-    // Let's try to find any records with similar IDs
-    const { data: allRecords } = await supabase
-      .from('mailing_list_records')
-      .select('id')
-      .limit(10)
-    console.log('Sample record IDs in database:', allRecords?.map(r => r.id))
-    throw new Error(`Record with ID ${id} not found`)
-  }
-  
-  console.log('Record found, proceeding with deletion...')
-  
-  const { data, error } = await supabase
+
+  const { error } = await supabase
     .from('mailing_list_records')
     .delete()
     .eq('id', id)
-    .select() // Return the deleted record to confirm deletion
-  
-  console.log('Delete result:', { data, error })
-  
-  if (error) {
-    console.error('Delete error details:', error)
-    throw error
-  }
-  
-  console.log('Successfully deleted record:', data)
+
+  if (error) throw error
 }
 
 export async function bulkImportRecords(listId: string, records: Partial<MailingListRecord>[]): Promise<MailingListRecord[]> {

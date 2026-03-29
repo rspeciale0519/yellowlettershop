@@ -3,6 +3,7 @@
  */
 
 import type { PaymentStatus } from '@/types/supabase';
+import type { SubscriptionStatus } from '@/types/supabase-comprehensive';
 
 // Payment service errors
 export class PaymentServiceError extends Error {
@@ -71,4 +72,24 @@ export interface UpdateSubscriptionParams {
   priceId?: string;
   quantity?: number;
   metadata?: Record<string, string>;
+}
+
+/**
+ * Map Stripe subscription status strings to our internal SubscriptionStatus type.
+ * Shared between SubscriptionService and the Stripe webhook route.
+ */
+export function mapStripeStatusToDb(stripeStatus: string): SubscriptionStatus {
+  switch (stripeStatus) {
+    case 'active':
+      return 'active';
+    case 'canceled':
+    case 'cancelled':
+      return 'cancelled';
+    case 'past_due':
+      return 'past_due';
+    case 'unpaid':
+      return 'unpaid';
+    default:
+      return 'active';
+  }
 }

@@ -118,8 +118,6 @@ export default function MailingListManagerContent() {
     totalRecords: 0,
   });
 
-  // Cleanup effect
-  // Cleanup effect
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
@@ -318,30 +316,14 @@ export default function MailingListManagerContent() {
         }
         onConfirm={async () => {
           if (deleteId) {
-            console.log(`Attempting to delete ${deleteType} with ID:`, deleteId);
             try {
               if (deleteType === 'list') {
-                console.log('Calling deleteMailingList...');
                 await deleteMailingList(deleteId);
-                console.log('List deleted successfully, refreshing lists...');
                 await mutateLists();
               } else {
-                console.log('Calling deleteMailingListRecord...');
                 await deleteMailingListRecord(deleteId);
-                console.log('Record deleted successfully, refreshing all records...');
-                console.log('Current viewMode:', viewMode);
-                console.log('isMountedRef.current:', isMountedRef.current);
-                
-                // Refresh all records since we're showing records from all lists
+
                 if (viewMode === 'records' && isMountedRef.current) {
-                  console.log('About to fetch records with parameters:', {
-                    limit: itemsPerPage || 50,
-                    offset: ((currentPage || 1) - 1) * (itemsPerPage || 50),
-                    search: searchQuery || '',
-                    status: statusFilter !== 'all' ? statusFilter : undefined,
-                    tags: tagFilters && tagFilters.length > 0 ? tagFilters : undefined,
-                  });
-                  
                   const result = await getMailingListRecords(undefined, {
                     limit: itemsPerPage || 50,
                     offset: ((currentPage || 1) - 1) * (itemsPerPage || 50),
@@ -349,23 +331,16 @@ export default function MailingListManagerContent() {
                     status: statusFilter !== 'all' ? statusFilter : undefined,
                     tags: tagFilters && tagFilters.length > 0 ? tagFilters : undefined,
                   });
-                  
-                  console.log('Fetch result:', result);
-                  
+
                   if (isMountedRef.current) {
-                    console.log('Setting records:', result.data?.length || 0, 'records');
                     setRecords(result.data || []);
                     setTotalRecords(result.count || 0);
                   }
-                  console.log('Records refreshed successfully');
-                } else {
-                  console.log('Skipping record refresh - not in records view or component unmounted');
                 }
               }
               setDeleteId(null);
             } catch (error) {
               console.error(`Failed to delete ${deleteType}:`, error);
-              // Consider showing an error toast to the user
               setDeleteId(null);
             }
           }

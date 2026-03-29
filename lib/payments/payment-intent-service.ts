@@ -4,7 +4,7 @@
  */
 
 import Stripe from 'stripe';
-import { stripe, STRIPE_CONFIG } from './stripe-config';
+import { stripe, requireStripe, STRIPE_CONFIG } from './stripe-config';
 import { createServiceClient } from '@/utils/supabase/service';
 import { CustomerService } from './customer-service';
 import { 
@@ -24,13 +24,7 @@ export class PaymentIntentService {
    * Create payment intent for order authorization
    */
   async createPaymentIntent(params: CreatePaymentIntentParams): Promise<PaymentIntent> {
-    if (!stripe) {
-      throw new PaymentServiceError(
-        'Stripe not configured',
-        'STRIPE_NOT_CONFIGURED',
-        500
-      );
-    }
+    requireStripe();
 
     const {
       userId,
@@ -108,13 +102,7 @@ export class PaymentIntentService {
    * Capture payment intent (complete the payment)
    */
   async capturePayment(params: CapturePaymentParams): Promise<PaymentIntent> {
-    if (!stripe) {
-      throw new PaymentServiceError(
-        'Stripe not configured',
-        'STRIPE_NOT_CONFIGURED',
-        500
-      );
-    }
+    requireStripe();
 
     const { paymentIntentId, amount, metadata = {} } = params;
 
@@ -160,13 +148,7 @@ export class PaymentIntentService {
    * Refund payment
    */
   async refundPayment(params: RefundPaymentParams): Promise<Stripe.Refund> {
-    if (!stripe) {
-      throw new PaymentServiceError(
-        'Stripe not configured',
-        'STRIPE_NOT_CONFIGURED',
-        500
-      );
-    }
+    requireStripe();
 
     const { paymentIntentId, amount, reason = 'requested_by_customer', metadata = {} } = params;
 
@@ -210,13 +192,7 @@ export class PaymentIntentService {
    * Get payment intent details
    */
   async getPaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent> {
-    if (!stripe) {
-      throw new PaymentServiceError(
-        'Stripe not configured',
-        'STRIPE_NOT_CONFIGURED',
-        500
-      );
-    }
+    requireStripe();
 
     try {
       return await stripe.paymentIntents.retrieve(paymentIntentId);

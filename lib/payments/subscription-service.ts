@@ -9,8 +9,8 @@
  */
 
 import Stripe from 'stripe';
-import { stripe, SUBSCRIPTION_PLANS } from './stripe-config';
-import { PaymentServiceError } from './types';
+import { stripe, requireStripe, SUBSCRIPTION_PLANS } from './stripe-config';
+import { PaymentServiceError, mapStripeStatusToDb } from './types';
 import { createServiceClient } from '@/utils/supabase/service';
 import type { 
   SubscriptionPlan,
@@ -53,13 +53,7 @@ export class SubscriptionService {
    * Create new subscription for user or team
    */
   async createSubscription(params: CreateSubscriptionParams): Promise<SubscriptionDetails> {
-    if (!stripe) {
-      throw new PaymentServiceError(
-        'Stripe not configured',
-        'STRIPE_NOT_CONFIGURED',
-        500
-      );
-    }
+    requireStripe();
 
     const {
       userId,
@@ -128,14 +122,14 @@ export class SubscriptionService {
           stripe_subscription_id: subscription.id,
           stripeCustomerId: customerId,
           plan: planKey as SubscriptionPlan,
-          status: this.mapStripeStatusToDb(subscription.status),
+          status: mapStripeStatusToDb(subscription.status),
         });
       } else {
         await this.updateUserSubscription(userId, {
           stripe_subscription_id: subscription.id,
           stripeCustomerId: customerId,
           subscription_plan: planKey as SubscriptionPlan,
-          subscription_status: this.mapStripeStatusToDb(subscription.status),
+          subscription_status: mapStripeStatusToDb(subscription.status),
         });
       }
 
@@ -162,13 +156,7 @@ export class SubscriptionService {
     newBillingInterval?: 'monthly' | 'yearly';
     prorationBehavior?: 'create_prorations' | 'none' | 'always_invoice';
   }): Promise<SubscriptionDetails> {
-    if (!stripe) {
-      throw new PaymentServiceError(
-        'Stripe not configured',
-        'STRIPE_NOT_CONFIGURED',
-        500
-      );
-    }
+    requireStripe();
 
     const {
       subscriptionId,
@@ -232,12 +220,12 @@ export class SubscriptionService {
       if (teamId) {
         await this.updateTeamSubscription(teamId, {
           plan: newPlanKey as SubscriptionPlan,
-          status: this.mapStripeStatusToDb(updatedSubscription.status),
+          status: mapStripeStatusToDb(updatedSubscription.status),
         });
       } else if (userId) {
         await this.updateUserSubscription(userId, {
           subscription_plan: newPlanKey as SubscriptionPlan,
-          subscription_status: this.mapStripeStatusToDb(updatedSubscription.status),
+          subscription_status: mapStripeStatusToDb(updatedSubscription.status),
         });
       }
 
@@ -263,13 +251,7 @@ export class SubscriptionService {
    * Cancel subscription
    */
   async cancelSubscription(subscriptionId: string, cancelAtPeriodEnd = true): Promise<void> {
-    if (!stripe) {
-      throw new PaymentServiceError(
-        'Stripe not configured',
-        'STRIPE_NOT_CONFIGURED',
-        500
-      );
-    }
+    requireStripe();
 
     try {
       const subscription = await stripe.subscriptions.update(subscriptionId, {
@@ -308,13 +290,7 @@ export class SubscriptionService {
    * Reactivate cancelled subscription
    */
   async reactivateSubscription(subscriptionId: string): Promise<SubscriptionDetails> {
-    if (!stripe) {
-      throw new PaymentServiceError(
-        'Stripe not configured',
-        'STRIPE_NOT_CONFIGURED',
-        500
-      );
-    }
+    requireStripe();
 
     try {
       const subscription = await stripe.subscriptions.update(subscriptionId, {
@@ -328,11 +304,11 @@ export class SubscriptionService {
 
       if (teamId) {
         await this.updateTeamSubscription(teamId, {
-          status: this.mapStripeStatusToDb(subscription.status),
+          status: mapStripeStatusToDb(subscription.status),
         });
       } else if (userId) {
         await this.updateUserSubscription(userId, {
-          subscription_status: this.mapStripeStatusToDb(subscription.status),
+          subscription_status: mapStripeStatusToDb(subscription.status),
         });
       }
 
@@ -358,13 +334,7 @@ export class SubscriptionService {
    * Get subscription details
    */
   async getSubscription(subscriptionId: string): Promise<SubscriptionDetails> {
-    if (!stripe) {
-      throw new PaymentServiceError(
-        'Stripe not configured',
-        'STRIPE_NOT_CONFIGURED',
-        500
-      );
-    }
+    requireStripe();
 
     try {
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
@@ -394,13 +364,7 @@ export class SubscriptionService {
     newPriceId?: string;
     prorationDate?: number;
   }) {
-    if (!stripe) {
-      throw new PaymentServiceError(
-        'Stripe not configured',
-        'STRIPE_NOT_CONFIGURED',
-        500
-      );
-    }
+    requireStripe();
 
     try {
       const invoice = await stripe.invoices.upcoming({
@@ -482,22 +446,6 @@ export class SubscriptionService {
 
     if (error) {
       console.error('Failed to update team subscription:', error);
-    }
-  }
-
-  private mapStripeStatusToDb(stripeStatus: string): SubscriptionStatus {
-    switch (stripeStatus) {
-      case 'active':
-        return 'active';
-      case 'canceled':
-      case 'cancelled':
-        return 'cancelled';
-      case 'past_due':
-        return 'past_due';
-      case 'unpaid':
-        return 'unpaid';
-      default:
-        return 'active'; // Default fallback
     }
   }
 

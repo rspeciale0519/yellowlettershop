@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, Suspense } from 'react'
+import { Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { OrderProvider } from '@/components/orders/OrderProvider'
 import { OrderStepper } from '@/components/orders/OrderStepper'
@@ -12,7 +12,6 @@ import { CampaignSettingsStep } from '@/components/orders/steps/CampaignSettings
 import { ReviewApprovalStep } from '@/components/orders/steps/ReviewApprovalStep'
 import { PaymentStep } from '@/components/orders/steps/PaymentStep'
 import { ORDER_STEPS, OrderEntryPoint, OrderState } from '@/types/orders'
-import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import { useOrderWorkflow } from '@/components/orders/OrderProvider'
@@ -32,9 +31,6 @@ export default function NewOrderPage() {
 function NewOrderPageInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
   // Determine entry point from URL parameters
   const getEntryPoint = (): OrderEntryPoint => {
     const source = searchParams.get('source')
@@ -162,44 +158,6 @@ function NewOrderPageInner() {
     return baseState
   }
 
-
-  useEffect(() => {
-    setIsLoading(false)
-  }, [])
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Setting up your order...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-2xl mx-auto">
-          <Alert variant="destructive">
-            <AlertDescription>
-              {error}
-            </AlertDescription>
-          </Alert>
-          <div className="mt-4 flex space-x-3">
-            <Button variant="outline" onClick={() => router.back()}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Go Back
-            </Button>
-            <Button onClick={() => window.location.reload()}>
-              Try Again
-            </Button>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <OrderProvider initialState={initializeOrderState()}>
