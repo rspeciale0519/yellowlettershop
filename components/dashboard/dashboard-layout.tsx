@@ -21,10 +21,12 @@ import {
   X,
   LogOut,
   CreditCard,
+  ShieldAlert,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useMediaQuery } from "@/hooks/use-media-query"
+import { useAdmin } from "@/hooks/use-admin"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -34,6 +36,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname()
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const isDesktop = useMediaQuery("(min-width: 1024px)")
+  const { isAdmin } = useAdmin()
 
   useEffect(() => {
     setIsSidebarOpen(isDesktop)
@@ -52,7 +55,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: "Contact Cards", href: "/dashboard/contact-cards", icon: CreditCard },
     { name: "Profile", href: "/dashboard/profile", icon: User },
     { name: "Security", href: "/dashboard/security", icon: Shield },
-    { name: "User Management", href: "/dashboard/users", icon: Users },
+    { name: "Team Management", href: "/dashboard/team-management", icon: Users },
     { name: "Media Library", href: "/dashboard/media", icon: ImageIcon },
     { name: "Tag Manager", href: "/dashboard/tags", icon: Tag },
     { name: "Activity Logs", href: "/dashboard/activity", icon: Activity },
@@ -117,6 +120,30 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 )
               })}
             </nav>
+
+            {/* Admin Panel Link */}
+            {isAdmin && (
+              <div className="px-2 pt-4 border-t mt-4">
+                <Link
+                  href="/dashboard/admin"
+                  onClick={closeSidebar}
+                  className={`group flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                    pathname?.startsWith("/dashboard/admin")
+                      ? "bg-red-500/10 text-red-600 dark:text-red-400"
+                      : "text-muted-foreground hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400"
+                  }`}
+                >
+                  <ShieldAlert
+                    className={`mr-3 h-5 w-5 flex-shrink-0 ${
+                      pathname?.startsWith("/dashboard/admin")
+                        ? "text-red-600 dark:text-red-400"
+                        : "text-muted-foreground group-hover:text-red-600 dark:group-hover:text-red-400"
+                    }`}
+                  />
+                  Admin Panel
+                </Link>
+              </div>
+            )}
           </ScrollArea>
           <div className="border-t p-4">
             <Button variant="outline" className="w-full justify-start" asChild>
