@@ -7,6 +7,7 @@
 
 import Stripe from 'stripe';
 import { loadStripe } from '@stripe/stripe-js';
+import { PaymentServiceError } from './types';
 
 // Environment validation
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
@@ -31,6 +32,17 @@ export const stripe = stripeSecretKey
       telemetry: false, // Disable telemetry for better performance
     })
   : null;
+
+/**
+ * Returns the Stripe client or throws if not configured.
+ * Use this instead of manual null-checks in every method.
+ */
+export function requireStripe(): Stripe {
+  if (!stripe) {
+    throw new PaymentServiceError('Stripe not configured', 'STRIPE_NOT_CONFIGURED', 500);
+  }
+  return stripe;
+}
 
 /**
  * Client-side Stripe instance (lazy-loaded)

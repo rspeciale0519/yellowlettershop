@@ -10,6 +10,7 @@ import { headers } from 'next/headers';
 import Stripe from 'stripe';
 import { stripe } from '@/lib/payments/stripe-config';
 import { createClient } from '@/utils/supabase/service';
+import { mapStripeStatusToDb } from '@/lib/payments/types';
 import type { PaymentStatus, SubscriptionStatus } from '@/types/supabase-comprehensive';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { 
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
 
     // 3. Get the raw body for signature verification
     const body = await request.text();
-    const signature = headers().get('stripe-signature');
+    const signature = (await headers()).get('stripe-signature');
 
     if (!signature) {
       logWebhookSecurity(request, '/api/payments/webhooks/stripe', { 
@@ -541,25 +542,6 @@ async function handlePaymentMethodAttached(
 
   if (error) {
     console.error('Failed to log payment method attachment:', error);
-  }
-}
-
-/**
- * Utility Functions
- */
-function mapStripeStatusToDb(stripeStatus: string): SubscriptionStatus {
-  switch (stripeStatus) {
-    case 'active':
-      return 'active';
-    case 'canceled':
-    case 'cancelled':
-      return 'cancelled';
-    case 'past_due':
-      return 'past_due';
-    case 'unpaid':
-      return 'unpaid';
-    default:
-      return 'active'; // Default fallback
   }
 }
 

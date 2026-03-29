@@ -4,7 +4,7 @@
  */
 
 import Stripe from 'stripe';
-import { stripe } from './stripe-config';
+import { stripe, requireStripe } from './stripe-config';
 import { createServiceClient } from '@/utils/supabase/service';
 import { PaymentServiceError } from './types';
 
@@ -15,13 +15,7 @@ export class CustomerService {
    * Ensure customer exists in Stripe and database
    */
   async ensureCustomer(userId: string, userEmail?: string): Promise<string> {
-    if (!stripe) {
-      throw new PaymentServiceError(
-        'Stripe not configured',
-        'STRIPE_NOT_CONFIGURED',
-        500
-      );
-    }
+    requireStripe();
 
     // Check if customer already exists
     const { data: profile, error: profileError } = await this.supabase
@@ -102,13 +96,7 @@ export class CustomerService {
    * Get customer details from Stripe
    */
   async getCustomer(customerId: string): Promise<Stripe.Customer> {
-    if (!stripe) {
-      throw new PaymentServiceError(
-        'Stripe not configured',
-        'STRIPE_NOT_CONFIGURED',
-        500
-      );
-    }
+    requireStripe();
 
     try {
       const customer = await stripe.customers.retrieve(customerId);
@@ -144,13 +132,7 @@ export class CustomerService {
       metadata?: Record<string, string>;
     }
   ): Promise<Stripe.Customer> {
-    if (!stripe) {
-      throw new PaymentServiceError(
-        'Stripe not configured',
-        'STRIPE_NOT_CONFIGURED',
-        500
-      );
-    }
+    requireStripe();
 
     try {
       return await stripe.customers.update(customerId, updates);

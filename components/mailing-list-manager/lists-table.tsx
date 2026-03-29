@@ -8,9 +8,9 @@ import { Edit, Trash, X, ChevronUp, ChevronDown, Upload, UserX, RotateCcw } from
 import { TagsDropdown } from "./tags-dropdown"
 import { CampaignUsageTooltip } from "./campaign-usage-tooltip"
 import { CustomizableTable, type ColumnDef } from "./customizable-table"
-import { formatDate } from "@/lib/dashboard-utils"
+import { formatDate } from "@/lib/utils"
 import { useLocalStorage } from "@/hooks/use-local-storage"
-import { useEffect, useMemo } from "react"
+import { useMemo } from "react"
 
 interface ListsTableProps {
   lists: any[]
@@ -59,16 +59,6 @@ export const ListsTable = ({
   onOpenDeduplication,
   onOpenVersionHistory,
 }: ListsTableProps) => {
-  // Add this at the top of the ListsTable component function
-  useEffect(() => {
-    // Cleanup function to ensure any ResizeObserver is disconnected
-    return () => {
-      // This is a no-op if no ResizeObserver is used, but helps prevent memory leaks
-      if (typeof window !== "undefined" && window.ResizeObserver) {
-        // Just a safety measure
-      }
-    }
-  }, [])
   // State for name format preference
   const [nameFormat, setNameFormat] = useLocalStorage<"lastFirst" | "firstLast">(
     "table-name-format-mailing-lists",

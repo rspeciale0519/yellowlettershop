@@ -99,6 +99,7 @@ export function VersionHistoryModal({
         );
       }
       setVersions(result.versions);
+    } catch (error) {
       console.error('Failed to load version history:', error);
       toast({
         title: 'Failed to load history',
