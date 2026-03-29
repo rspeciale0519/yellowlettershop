@@ -24,7 +24,7 @@ export async function requireAdmin(
   const supabase = createServiceClient();
   const { data: profile, error } = await supabase
     .from('user_profiles')
-    .select('role, full_name')
+    .select('role, first_name, last_name')
     .eq('user_id', user.id)
     .single();
 
@@ -46,7 +46,7 @@ export async function requireAdmin(
     user,
     userId: user.id,
     role: profile.role as AdminRole,
-    fullName: profile.full_name,
+    fullName: [profile.first_name, profile.last_name].filter(Boolean).join(' ') || null,
     email: user.email ?? '',
   };
 }
