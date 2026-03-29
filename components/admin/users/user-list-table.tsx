@@ -5,16 +5,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Eye, MoreHorizontal, Ban, CheckCircle2, KeyRound } from 'lucide-react';
+import { Eye, MoreHorizontal, Ban, CheckCircle2, KeyRound, Users } from 'lucide-react';
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { AdminEmptyState } from '@/components/admin/admin-empty-state';
 
 interface UserRow {
   user_id: string;
-  full_name: string | null;
-  email?: string | null;
+  first_name: string | null;
+  last_name: string | null;
   role: string;
   account_status: string;
   created_at: string;
@@ -32,10 +33,13 @@ const statusBadge: Record<string, { label: string; className: string }> = {
   banned: { label: 'Banned', className: 'bg-red-500/10 text-red-600' },
 };
 
-function getInitials(name: string | null, email: string | null): string {
-  if (name) return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-  if (email) return email[0].toUpperCase();
-  return '?';
+function getInitials(first: string | null, last: string | null): string {
+  const initials = [first?.[0], last?.[0]].filter(Boolean).join('').toUpperCase();
+  return initials || '?';
+}
+
+function getFullName(first: string | null, last: string | null): string {
+  return [first, last].filter(Boolean).join(' ') || 'No name';
 }
 
 export function UserListTable({ users, onStatusChange, onResetPassword }: UserListTableProps) {
@@ -53,8 +57,12 @@ export function UserListTable({ users, onStatusChange, onResetPassword }: UserLi
       <TableBody>
         {users.length === 0 && (
           <TableRow>
-            <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-              No users found.
+            <TableCell colSpan={5}>
+              <AdminEmptyState
+                icon={Users}
+                title="No users found"
+                description="No users match your current filters. Try adjusting your search or filter criteria."
+              />
             </TableCell>
           </TableRow>
         )}
@@ -66,12 +74,12 @@ export function UserListTable({ users, onStatusChange, onResetPassword }: UserLi
                 <div className="flex items-center gap-3">
                   <Avatar className="h-8 w-8">
                     <AvatarFallback className="text-xs">
-                      {getInitials(user.full_name, user.email ?? null)}
+                      {getInitials(user.first_name, user.last_name)}
                     </AvatarFallback>
                   </Avatar>
                   <div>
-                    <p className="font-medium text-sm">{user.full_name ?? 'No name'}</p>
-                    <p className="text-xs text-muted-foreground">{user.email ?? user.user_id}</p>
+                    <p className="font-medium text-sm">{getFullName(user.first_name, user.last_name)}</p>
+                    <p className="text-xs text-muted-foreground">{user.user_id.slice(0, 12)}</p>
                   </div>
                 </div>
               </TableCell>

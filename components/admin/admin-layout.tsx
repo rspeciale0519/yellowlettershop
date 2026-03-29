@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { useMediaQuery } from '@/hooks/use-media-query';
+import { useTheme } from 'next-themes';
 import { adminNavItems } from './admin-nav-items';
 
 interface AdminLayoutProps {
@@ -19,6 +20,18 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const isDesktop = useMediaQuery('(min-width: 1024px)');
+  const { setTheme, theme: currentTheme } = useTheme();
+
+  // Force dark mode in admin panel, restore on unmount
+  useEffect(() => {
+    const previousTheme = currentTheme;
+    setTheme('dark');
+    return () => {
+      if (previousTheme && previousTheme !== 'dark') {
+        setTheme(previousTheme);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     setIsSidebarOpen(isDesktop);

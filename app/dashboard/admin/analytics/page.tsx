@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { MetricsCards } from '@/components/admin/analytics/metrics-cards';
 import { RevenueChart } from '@/components/admin/analytics/revenue-chart';
 import { TopCustomersTable } from '@/components/admin/analytics/top-customers-table';
+import { StatCardGridSkeleton, ChartSkeleton } from '@/components/admin/admin-skeleton';
 import { createClient } from '@/utils/supabase/client';
 
 type Days = 7 | 30 | 90;
@@ -57,7 +58,7 @@ export default function AdminAnalyticsPage() {
   useEffect(() => { fetchRevenue(); }, [fetchRevenue]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-admin-fade-in">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Analytics</h1>
@@ -66,11 +67,7 @@ export default function AdminAnalyticsPage() {
 
       {/* Metrics */}
       {isLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-[120px] rounded-lg bg-muted animate-pulse" />
-          ))}
-        </div>
+        <StatCardGridSkeleton count={4} />
       ) : metrics ? (
         <MetricsCards metrics={metrics as Parameters<typeof MetricsCards>[0]['metrics']} />
       ) : null}

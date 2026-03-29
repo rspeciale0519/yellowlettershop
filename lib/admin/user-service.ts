@@ -21,7 +21,7 @@ export async function listUsers(filters: AdminUserFilters): Promise<UserListResu
 
   if (filters.search) {
     query = query.or(
-      `full_name.ilike.%${filters.search}%,email.ilike.%${filters.search}%`
+      `first_name.ilike.%${filters.search}%,last_name.ilike.%${filters.search}%`
     );
   }
   if (filters.role) {
@@ -150,18 +150,14 @@ export async function resetUserPassword(
 ): Promise<void> {
   const supabase = createServiceClient();
 
-  const { data: profile } = await supabase
-    .from('user_profiles')
-    .select('email')
-    .eq('user_id', userId)
-    .single();
-
-  if (!profile?.email) throw new Error('User email not found');
+  // Get email from auth system (not user_profiles — that table has no email column)
+  const { data: { user: authUser } } = await supabase.auth.admin.getUserById(userId);
+  if (!authUser?.email) throw new Error('User email not found');
 
   // Trigger Supabase password reset email
   const { error } = await supabase.auth.admin.generateLink({
     type: 'recovery',
-    email: profile.email,
+    email: authUser.email,
   });
 
   if (error) throw new Error(`Failed to send reset: ${error.message}`);

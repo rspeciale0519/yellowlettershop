@@ -7,7 +7,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Edit, History } from 'lucide-react';
+import { Edit, History, DollarSign } from 'lucide-react';
+import { AdminEmptyState } from '@/components/admin/admin-empty-state';
 import type { PricingConfig } from '@/lib/admin/types';
 
 interface PricingTableProps {
@@ -49,8 +50,12 @@ export function PricingTable({ items, onEdit, onToggleActive, onViewHistory }: P
       <TableBody>
         {items.length === 0 && (
           <TableRow>
-            <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-              No pricing entries in this category.
+            <TableCell colSpan={8}>
+              <AdminEmptyState
+                icon={DollarSign}
+                title="No pricing entries"
+                description="No pricing entries in this category yet. Click 'New Entry' to create one."
+              />
             </TableCell>
           </TableRow>
         )}

@@ -8,6 +8,7 @@ import { Plus } from 'lucide-react';
 import { PricingTable } from '@/components/admin/pricing/pricing-table';
 import { PricingForm } from '@/components/admin/pricing/pricing-form';
 import { PricingHistory } from '@/components/admin/pricing/pricing-history';
+import { TableSkeleton } from '@/components/admin/admin-skeleton';
 import type { PricingConfig, PricingCategory, CreatePricingInput, UpdatePricingInput } from '@/lib/admin/types';
 import { createClient } from '@/utils/supabase/client';
 
@@ -109,7 +110,7 @@ export default function AdminPricingPage() {
   const currentItems = pricing[activeTab] ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-admin-fade-in">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Pricing Management</h1>
@@ -141,7 +142,7 @@ export default function AdminPricingPage() {
               </CardHeader>
               <CardContent>
                 {isLoading ? (
-                  <p className="text-sm text-muted-foreground py-8 text-center">Loading pricing data...</p>
+                  <TableSkeleton rows={4} columns={8} />
                 ) : (
                   <PricingTable
                     items={currentItems}

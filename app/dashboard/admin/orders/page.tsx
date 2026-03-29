@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/select';
 import { Search, ShoppingBag, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import { OrderListTable } from '@/components/admin/orders/order-list-table';
+import { TableSkeleton } from '@/components/admin/admin-skeleton';
 import { createClient } from '@/utils/supabase/client';
 
 export default function AdminOrdersPage() {
@@ -48,7 +49,7 @@ export default function AdminOrdersPage() {
   const totalPages = Math.ceil(total / limit);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-admin-fade-in">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Order Management</h1>
         <p className="text-muted-foreground mt-1">View and manage all customer orders.</p>
@@ -92,7 +93,7 @@ export default function AdminOrdersPage() {
       <Card className="border-0 shadow-sm">
         <CardContent className="p-0">
           {isLoading ? (
-            <p className="text-sm text-muted-foreground py-12 text-center">Loading orders...</p>
+            <TableSkeleton rows={5} columns={7} />
           ) : (
             <OrderListTable orders={orders as Parameters<typeof OrderListTable>[0]['orders']} />
           )}
