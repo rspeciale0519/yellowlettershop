@@ -20,18 +20,12 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const isDesktop = useMediaQuery('(min-width: 1024px)');
-  const { setTheme, theme: currentTheme } = useTheme();
+  const { setTheme } = useTheme();
 
-  // Force dark mode in admin panel, restore on unmount
+  // Force dark mode in admin panel
   useEffect(() => {
-    const previousTheme = currentTheme;
     setTheme('dark');
-    return () => {
-      if (previousTheme && previousTheme !== 'dark') {
-        setTheme(previousTheme);
-      }
-    };
-  }, []);
+  }, [setTheme]);
 
   useEffect(() => {
     setIsSidebarOpen(isDesktop);
