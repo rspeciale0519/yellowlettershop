@@ -6,7 +6,8 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Eye } from 'lucide-react';
+import { Eye, ShoppingBag } from 'lucide-react';
+import { AdminEmptyState } from '@/components/admin/admin-empty-state';
 
 interface OrderRow {
   id: string;
@@ -61,8 +62,12 @@ export function OrderListTable({ orders }: OrderListTableProps) {
       <TableBody>
         {orders.length === 0 && (
           <TableRow>
-            <TableCell colSpan={7} className="text-center text-muted-foreground py-12">
-              No orders found matching your filters.
+            <TableCell colSpan={7}>
+              <AdminEmptyState
+                icon={ShoppingBag}
+                title="No orders yet"
+                description="Orders will appear here once customers start placing them."
+              />
             </TableCell>
           </TableRow>
         )}

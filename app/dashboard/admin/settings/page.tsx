@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { RefreshCw, Server, CreditCard, MapPin, Clock } from 'lucide-react';
+import { HealthCardSkeleton } from '@/components/admin/admin-skeleton';
 import { createClient } from '@/utils/supabase/client';
 
 interface ServiceStatus {
@@ -64,7 +65,7 @@ export default function AdminSettingsPage() {
   useEffect(() => { fetchHealth(); }, [fetchHealth]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-admin-fade-in">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">System Settings</h1>
@@ -100,7 +101,7 @@ export default function AdminSettingsPage() {
         {isLoading ? (
           <div className="grid gap-4 md:grid-cols-3">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-[140px] rounded-lg bg-muted animate-pulse" />
+              <HealthCardSkeleton key={i} />
             ))}
           </div>
         ) : health ? (

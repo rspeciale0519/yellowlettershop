@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/select';
 import { Search, Users, UserCheck, UserX } from 'lucide-react';
 import { UserListTable } from '@/components/admin/users/user-list-table';
+import { StatCardGridSkeleton, TableSkeleton } from '@/components/admin/admin-skeleton';
 import { createClient } from '@/utils/supabase/client';
 
 export default function AdminUsersPage() {
@@ -75,7 +76,7 @@ export default function AdminUsersPage() {
   const totalPages = Math.ceil(total / limit);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-admin-fade-in">
       <div>
         <h1 className="text-3xl font-bold">User Management</h1>
         <p className="text-muted-foreground mt-1">Manage all platform users.</p>
@@ -141,7 +142,7 @@ export default function AdminUsersPage() {
       <Card>
         <CardContent className="p-0">
           {isLoading ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">Loading users...</p>
+            <TableSkeleton rows={5} columns={5} />
           ) : (
             <UserListTable
               users={users as Parameters<typeof UserListTable>[0]['users']}

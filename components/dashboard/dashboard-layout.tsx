@@ -38,6 +38,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const isDesktop = useMediaQuery("(min-width: 1024px)")
   const { isAdmin } = useAdmin()
 
+  // Admin routes use their own layout — skip the dashboard sidebar entirely
+  if (pathname?.startsWith("/dashboard/admin")) {
+    return <>{children}</>
+  }
+
   useEffect(() => {
     setIsSidebarOpen(isDesktop)
   }, [isDesktop])

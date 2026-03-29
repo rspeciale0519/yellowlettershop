@@ -83,7 +83,7 @@ export default function AdminHomePage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-admin-fade-in">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
@@ -91,7 +91,7 @@ export default function AdminHomePage() {
       </div>
 
       {/* Quick Stats — linked to detail pages */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 admin-stagger">
         {stats.map((stat) => (
           <Link key={stat.title} href={stat.href}>
             <Card className="relative overflow-hidden group hover:shadow-md hover:border-red-500/20 transition-all cursor-pointer">
