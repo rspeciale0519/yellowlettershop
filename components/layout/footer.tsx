@@ -17,18 +17,15 @@ export function Footer() {
           </Link>
         </div>
         <nav className="flex flex-wrap items-center justify-center gap-4 text-sm font-medium md:gap-6">
-          <Link href="/dashboard" className="transition-colors hover:text-yellow-500">
-            Dashboard
+          <Link href="/templates" className="transition-colors hover:text-yellow-500">
+            Templates
           </Link>
-          <Link href="/mailing-lists" className="transition-colors hover:text-yellow-500">
-            Mailing Lists
+          <Link href="/#pricing" className="transition-colors hover:text-yellow-500">
+            Pricing
           </Link>
-          <Link href="/about" className="transition-colors hover:text-yellow-500">
-            About
-          </Link>
-          <Link href="/contact" className="transition-colors hover:text-yellow-500">
+          <a href="mailto:support@yellowlettershop.com" className="transition-colors hover:text-yellow-500">
             Contact
-          </Link>
+          </a>
         </nav>
         <div className="flex items-center justify-center md:justify-end">
           <p className="text-sm text-gray-500 dark:text-gray-400">
