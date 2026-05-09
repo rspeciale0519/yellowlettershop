@@ -2,7 +2,16 @@
   "mcpServers": {
     "playwright": {
       "command": "cmd",
-      "args": ["/c", "npx", "mcp-server-playwright", "--allowed-origins=https://localhost"]
+      "args": [
+        "/c",
+        "npx",
+        "mcp-server-playwright",
+        "--allowed-origins=https://localhost"
+      ]
+    },
+    "stripe": {
+      "type": "http",
+      "url": "https://mcp.stripe.com"
     }
   }
 }

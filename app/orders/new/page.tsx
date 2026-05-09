@@ -12,6 +12,7 @@ import { CampaignSettingsStep } from '@/components/orders/steps/CampaignSettings
 import { ReviewApprovalStep } from '@/components/orders/steps/ReviewApprovalStep'
 import { PaymentStep } from '@/components/orders/steps/PaymentStep'
 import { ORDER_STEPS, OrderEntryPoint, OrderState } from '@/types/orders'
+import type { DesignerDocument, DesignElement } from '@/types/designer'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import { useOrderWorkflow } from '@/components/orders/OrderProvider'
@@ -76,6 +77,31 @@ function NewOrderPageInner() {
 
     // Customize based on entry point
     switch (entryPoint) {
+      case 'design_tool_save': {
+        const pendingDesign = typeof window !== 'undefined'
+          ? window.sessionStorage.getItem('yls.pendingOrderDesign')
+          : null
+        let designJson: DesignerDocument | null = null
+
+        try {
+          designJson = pendingDesign ? (JSON.parse(pendingDesign) as DesignerDocument) : null
+        } catch {
+          designJson = null
+        }
+
+        if (designJson) {
+          const design = {
+            designId: 'local-design-draft',
+            designJson,
+            variablesUsed: extractVariablesFromDesign(designJson),
+            isCustomDesign: true
+          }
+          baseState.designAndContent = { design }
+          baseState.design = design
+        }
+        break
+      }
+
       case 'template_gallery':
         if (templateId) {
           baseState.designAndContent = {
@@ -158,6 +184,22 @@ function NewOrderPageInner() {
     return baseState
   }
 
+  const extractVariablesFromDesign = (designJson: DesignerDocument): string[] => {
+    const variables = new Set<string>()
+    const pages = designJson.pages || {}
+
+    Object.values(pages).forEach((elements: DesignElement[]) => {
+      if (!Array.isArray(elements)) return
+      elements.forEach((element) => {
+        if (element.type !== 'text' || typeof element.content !== 'string') return
+        const matches = element.content.match(/\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}/g)
+        matches?.forEach((match) => variables.add(match.replace(/[{}]/g, '')))
+      })
+    })
+
+    return Array.from(variables).sort()
+  }
+
 
   return (
     <OrderProvider initialState={initializeOrderState()}>
@@ -168,7 +210,7 @@ function NewOrderPageInner() {
   )
 }
 
-function OrderContent({ orderState, router }: { orderState: OrderState, router: any }) {
+function OrderContent({ orderState, router }: { orderState: OrderState, router: ReturnType<typeof useRouter> }) {
   const { updateOrderState, validateCurrentStep, nextStep, previousStep, saveDraft } = useOrderWorkflow()
 
   const renderCurrentStep = (step: number, orderState: OrderState) => {
@@ -226,6 +268,7 @@ function OrderContent({ orderState, router }: { orderState: OrderState, router: 
                   {orderState.entryPoint === 'list_builder' && 'Building targeted list'}
                   {orderState.entryPoint === 'previous_orders_reorder' && 'Reordering previous campaign'}
                   {orderState.entryPoint === 'quick_order' && 'Single mail piece'}
+                  {orderState.entryPoint === 'design_tool_save' && 'Using your saved design'}
                   {orderState.entryPoint === 'dashboard_create_new' && 'Complete order workflow'}
                 </p>
               </div>

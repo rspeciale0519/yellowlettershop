@@ -4,12 +4,23 @@ import { withAuth } from '@/lib/auth/middleware'
 import { createClient } from '@/utils/supabase/service'
 
 const SaveDesignSchema = z.object({
-  designState: z.any(),
+  designState: z.object({
+    designId: z.string().uuid().optional(),
+    templateId: z.string().min(1),
+    templateName: z.string().min(1),
+    orientation: z.enum(['portrait', 'landscape']),
+    pages: z.record(z.enum(['front', 'back']), z.array(z.object({}).passthrough())),
+    updatedAt: z.string()
+  }).passthrough(),
   orderId: z.string().uuid().optional(),
-  templateId: z.string().uuid().optional(),
+  templateId: z.string().optional(),
   name: z.string().optional(),
   description: z.string().optional()
 })
+
+function nullableUuid(value?: string) {
+  return value && z.string().uuid().safeParse(value).success ? value : null
+}
 
 export const POST = withAuth(async (req: NextRequest, { userId }) => {
   try {
@@ -25,7 +36,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
     const designData = {
       user_id: userId,
       order_id: validatedData.orderId || null,
-      template_id: validatedData.templateId || null,
+      template_id: nullableUuid(validatedData.templateId),
       name: validatedData.name || `Design ${new Date().toLocaleString()}`,
       description: validatedData.description || null,
       design_state: validatedData.designState,
@@ -88,7 +99,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
 })
 
 // Extract variable placeholders from design state
-function extractVariablesFromDesign(designState: any): string[] {
+function extractVariablesFromDesign(designState: z.infer<typeof SaveDesignSchema>['designState']): string[] {
   const variables = new Set<string>()
   
   // Convert design state to JSON string to search for variable patterns

@@ -12,15 +12,16 @@ interface TextToolPanelProps {
   selectedElementId: string | null
   onSelectElement: (id: string) => void
   onUpdateElement: (id: string, updates: Partial<DesignElement>) => void
+  onAddText?: () => void
 }
 
-export function TextToolPanel({ elements, selectedElementId, onSelectElement, onUpdateElement }: TextToolPanelProps) {
+export function TextToolPanel({ elements, selectedElementId, onSelectElement, onUpdateElement, onAddText }: TextToolPanelProps) {
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <h3 className="text-lg font-semibold">Text</h3>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Edit your text below, or click on the field you'd like to edit directly on your design.
+          Edit your text below, or click a field directly on your design.
         </p>
       </div>
       <ScrollArea className="flex-1">
@@ -48,6 +49,8 @@ export function TextToolPanel({ elements, selectedElementId, onSelectElement, on
       <div className="p-4 border-t border-gray-200 dark:border-gray-700">
         <Button 
           className="w-full"
+          onClick={onAddText}
+          disabled={!onAddText}
           style={{ backgroundColor: '#E0B431', color: '#000' }}
           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F6CF62'}
           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E0B431'}

@@ -3,6 +3,7 @@ import { createServerClient } from '@/utils/supabase/server'
 import { v4 as uuidv4 } from 'uuid'
 import { createServiceClient } from '@/utils/supabase/service'
 import { generateSafeFilename, validateFilename } from '@/lib/utils/filename'
+import { isMissingUserAssetsTable, listStorageImageAssets, storageAssetId, withSignedAssetUrl } from '@/lib/assets/storage-fallback'
 
 export async function GET(request: NextRequest) {
   try {
@@ -52,7 +53,13 @@ export async function GET(request: NextRequest) {
 
     const { data: assets, error } = await query
 
-    if (error) throw error
+    if (error) {
+      if (isMissingUserAssetsTable(error) && category === 'image') {
+        const serviceSupabase = createServiceClient()
+        return NextResponse.json(await listStorageImageAssets(serviceSupabase, 'assets', user.id))
+      }
+      throw error
+    }
     
     // Generate signed URLs for private assets
     const assetsWithSignedUrls = await Promise.all(
@@ -128,9 +135,44 @@ export async function POST(request: NextRequest) {
     }
 
     const fileId = uuidv4()
-    const fileName = formData.get('name') as string || file.name || 'untitled'
+    const fileName = ((formData.get('name') as string) || file.name || 'untitled').trim()
     const fileExtension = file.name?.split('.').pop() || 'bin'
     const filePath = `${user.id}/${fileId}.${fileExtension}`
+    const fileType = getCategoryFromMimeType(file.type)
+
+    const duplicateCheck = serviceSupabase
+      .from('user_assets')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('file_type', fileType)
+      .ilike('filename', fileName)
+      .limit(1)
+    const { data: duplicateAssets, error: duplicateError } = await duplicateCheck
+
+    if (duplicateError && !isMissingUserAssetsTable(duplicateError)) {
+      return NextResponse.json(
+        { error: duplicateError.message || 'Unable to validate image name', context: 'name.check' },
+        { status: 500 }
+      )
+    }
+
+    if (duplicateAssets?.length) {
+      return NextResponse.json(
+        { error: 'You already have an image with this name', context: 'name.duplicate' },
+        { status: 409 }
+      )
+    }
+
+    if (isMissingUserAssetsTable(duplicateError) && fileType === 'image') {
+      const storageAssets = await listStorageImageAssets(serviceSupabase, bucketName, user.id)
+      const duplicateStorageAsset = storageAssets.some((asset) => asset.filename.trim().toLowerCase() === fileName.toLowerCase())
+      if (duplicateStorageAsset) {
+        return NextResponse.json(
+          { error: 'You already have an image with this name', context: 'name.duplicate' },
+          { status: 409 }
+        )
+      }
+    }
 
     // Ensure bucket exists (idempotent)
     try {
@@ -159,7 +201,7 @@ export async function POST(request: NextRequest) {
     // Upload file to storage (service role bypasses storage.objects RLS)
     const { error: uploadError } = await serviceSupabase.storage
       .from(bucketName)
-      .upload(filePath, file)
+      .upload(filePath, file, { metadata: { friendlyName: fileName } })
 
     if (uploadError) {
       console.error('Storage upload error:', uploadError)
@@ -173,8 +215,7 @@ export async function POST(request: NextRequest) {
     // Store a placeholder URL that indicates signed URL generation
     const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/sign/assets/${filePath}`
 
-    // Helper function to get category from MIME type
-    const getCategoryFromMimeType = (mimeType: string | undefined): string => {
+    function getCategoryFromMimeType(mimeType: string | undefined): string {
       if (!mimeType) return 'other'
 
       // Images
@@ -226,7 +267,7 @@ export async function POST(request: NextRequest) {
       uploaded_by: user.id,
       filename: fileName,
       original_filename: file.name || fileName,
-      file_type: getCategoryFromMimeType(file.type),
+      file_type: fileType,
       mime_type: file.type || 'application/octet-stream',
       file_size: file.size || 0,
       file_path: filePath,
@@ -249,6 +290,16 @@ export async function POST(request: NextRequest) {
 
     if (dbError) {
       console.error('DB insert error:', dbError)
+      if (isMissingUserAssetsTable(dbError) && assetData.file_type === 'image') {
+        const storageOnlyAsset = await withSignedAssetUrl(serviceSupabase, bucketName, {
+          ...assetData,
+          id: storageAssetId(assetData.file_path),
+          team_id: assetData.team_id ?? null,
+          file_url: assetData.file_url,
+          metadata: { ...assetData.metadata, storageOnly: true }
+        })
+        return NextResponse.json(storageOnlyAsset)
+      }
       return NextResponse.json(
         { error: dbError.message || 'DB insert failed', context: 'db.insert' },
         { status: 500 }
