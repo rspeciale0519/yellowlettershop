@@ -89,8 +89,6 @@ export function Header() {
 
   // Check for existing user session on component mount
   useEffect(() => {
-    let subscription: { unsubscribe: () => void } | undefined;
-    
     const init = async () => {
       try {
         // Use a faster initial check that doesn't block rendering
@@ -110,7 +108,7 @@ export function Header() {
     setIsLoading(true);
     
     // Set up auth state listener first
-    subscription = supabase.auth.onAuthStateChange((event, session) => {
+    const subscription = supabase.auth.onAuthStateChange((event, session) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
       setIsLoading(false); // Ensure loading is false on any auth change
@@ -228,16 +226,11 @@ export function Header() {
           <Image
             src='/yls-logo.png'
             alt='Yellow Letter Shop Logo'
-            width={180}
-            height={40}
-            className='hidden sm:block'
-          />
-          <Image
-            src='/yls-logo.png'
-            alt='Yellow Letter Shop Logo'
-            width={32}
-            height={32}
-            className='sm:hidden'
+            width={688}
+            height={227}
+            className='h-10 w-auto sm:h-12'
+            style={{ width: 'auto' }}
+            priority
           />
         </Link>
 

@@ -1,14 +1,32 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import Image from "next/image"
+import type { DesignerOrientation } from "@/types/designer"
 
 interface PagesPanelProps {
   activePage: "front" | "back"
   onPageChange: (page: "front" | "back") => void
+  orientation?: DesignerOrientation
 }
 
-export function PagesPanel({ activePage, onPageChange }: PagesPanelProps) {
+function PageThumbnail({ label, orientation = "portrait" }: { label: "Front" | "Back"; orientation?: DesignerOrientation }) {
+  const sizeClass = orientation === "portrait" ? "h-32 w-24" : "h-24 w-32"
+
+  return (
+    <div className={`relative overflow-hidden rounded-md bg-white shadow-sm ring-1 ring-gray-300 ${sizeClass}`}>
+      <div className="absolute left-0 top-0 h-full w-1.5 bg-yellow-400" />
+      <div className="absolute inset-3 border border-dashed border-gray-200" />
+      <div className="absolute left-4 top-5 h-2 w-12 rounded bg-gray-800" />
+      <div className="absolute left-4 top-10 h-1.5 w-16 rounded bg-gray-300" />
+      <div className="absolute left-4 top-14 h-1.5 w-10 rounded bg-gray-300" />
+      <div className="absolute bottom-4 left-4 right-4 border-t border-gray-200 pt-2 text-[10px] font-semibold text-gray-500">
+        {label}
+      </div>
+    </div>
+  )
+}
+
+export function PagesPanel({ activePage, onPageChange, orientation }: PagesPanelProps) {
   return (
     <div className="space-y-4">
       <h3 className="text-sm font-semibold text-center">Pages</h3>
@@ -20,15 +38,7 @@ export function PagesPanel({ activePage, onPageChange }: PagesPanelProps) {
           }`}
           onClick={() => onPageChange("front")}
         >
-          <div className="w-24 h-32 bg-gray-200 dark:bg-gray-700 rounded-md flex items-center justify-center">
-            <Image
-              src="/placeholder.svg?height=100&width=80&text=Front"
-              alt="Front page preview"
-              width={80}
-              height={100}
-              unoptimized // Added unoptimized prop
-            />
-          </div>
+          <PageThumbnail label="Front" orientation={orientation} />
           <span className="text-xs">Front</span>
         </Button>
         <Button
@@ -38,15 +48,7 @@ export function PagesPanel({ activePage, onPageChange }: PagesPanelProps) {
           }`}
           onClick={() => onPageChange("back")}
         >
-          <div className="w-24 h-32 bg-gray-200 dark:bg-gray-700 rounded-md flex items-center justify-center">
-            <Image
-              src="/placeholder.svg?height=100&width=80&text=Back"
-              alt="Back page preview"
-              width={80}
-              height={100}
-              unoptimized // Added unoptimized prop
-            />
-          </div>
+          <PageThumbnail label="Back" orientation={orientation} />
           <span className="text-xs">Back</span>
         </Button>
       </div>

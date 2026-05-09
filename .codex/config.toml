@@ -1,0 +1,8 @@
+[mcp_servers.playwright]
+args = [
+    "/c",
+    "npx",
+    "mcp-server-playwright",
+    "--allowed-origins=https://localhost",
+]
+command = "cmd"

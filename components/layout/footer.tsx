@@ -17,7 +17,7 @@ export function Footer() {
       <div className="w-full grid items-center gap-8 px-4 py-12 md:grid-cols-3 md:px-6">
         <div className="flex items-center justify-center md:justify-start">
           <Link href="/" className="flex items-center gap-2">
-            <Image src="/yls-logo.png" alt="Yellow Letter Shop Logo" width={180} height={40} />
+            <Image src="/yls-logo.png" alt="Yellow Letter Shop Logo" width={688} height={227} className="h-12 w-auto" style={{ width: 'auto' }} />
           </Link>
         </div>
         <nav className="flex flex-wrap items-center justify-center gap-4 text-sm font-medium md:gap-6">
