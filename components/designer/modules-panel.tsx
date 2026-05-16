@@ -108,11 +108,13 @@ export function ModulesPanel({
           </button>
         ))}
       </div>
-      <div className="space-y-2">
-        {visibleModules.map((item) => (
-          <ModuleCard key={item.id} item={item} onAddModule={onAddModule} />
-        ))}
-      </div>
+      {activeFilter.id !== "images" && (
+        <div className="space-y-2">
+          {visibleModules.map((item) => (
+            <ModuleCard key={item.id} item={item} onAddModule={onAddModule} />
+          ))}
+        </div>
+      )}
       {activeFilter.id === "images" && (
         <div className="space-y-3 rounded-lg border border-slate-700 bg-slate-950/70 p-3">
           <div>
