@@ -315,7 +315,7 @@ Tick Phase 2. `/git-workflow-planning:checkpoint 2 protocol content` (fallback `
 
 ## Phase 3: Hook scripts (Node)
 
-- [ ] **Step 3.1: Write the hooks verifier (red)**
+- [x] **Step 3.1: Write the hooks verifier (red)**
 
 Create `.claude/hooks/verify/verify-hooks.js`:
 ```javascript
@@ -375,12 +375,12 @@ if (fails.length){ console.log('HOOKS FAIL:\n'+fails.join('\n')); process.exit(1
 console.log('HOOKS OK'); process.exit(0);
 ```
 
-- [ ] **Step 3.2: Run it — expect RED**
+- [x] **Step 3.2: Run it — expect RED**
 
 Run: `node .claude/hooks/verify/verify-hooks.js`
 Expected: exit 1 (hooks not implemented).
 
-- [ ] **Step 3.3: Implement `.claude/hooks/brain-lib.js`** (replace stub)
+- [x] **Step 3.3: Implement `.claude/hooks/brain-lib.js`** (replace stub)
 
 ```javascript
 'use strict';
@@ -450,7 +450,7 @@ module.exports = { ylsRoot, P, stateDir, ensureDir, readJson, writeJson, nowIso,
   unconsumed, latestJournal, journalBlocks, scanSecrets };
 ```
 
-- [ ] **Step 3.4: Implement `.claude/hooks/session-start.js`**
+- [x] **Step 3.4: Implement `.claude/hooks/session-start.js`**
 
 ```javascript
 'use strict';
@@ -486,7 +486,7 @@ try {
 } catch (e) { console.error('[brain] session-start failed open: '+e.message); process.exit(0); }
 ```
 
-- [ ] **Step 3.5: Implement `.claude/hooks/post-tool-use.js`**
+- [x] **Step 3.5: Implement `.claude/hooks/post-tool-use.js`**
 
 ```javascript
 'use strict';
@@ -508,7 +508,7 @@ try {
 } catch (e) { console.error('[brain] post-tool-use failed open: '+e.message); process.exit(0); }
 ```
 
-- [ ] **Step 3.6: Implement `.claude/hooks/stop.js`**
+- [x] **Step 3.6: Implement `.claude/hooks/stop.js`**
 
 ```javascript
 'use strict';
@@ -553,7 +553,7 @@ try {
 } catch (e) { console.error('[brain] stop failed open: '+e.message); process.exit(0); }
 ```
 
-- [ ] **Step 3.7: Implement `.claude/hooks/consolidate.js`** (H4 helper — invoked by the agent when prompted; not a wired hook)
+- [x] **Step 3.7: Implement `.claude/hooks/consolidate.js`** (H4 helper — invoked by the agent when prompted; not a wired hook)
 
 > Uses `execFileSync` with an argument array (NO shell, NO string interpolation) per the yls security convention.
 
@@ -591,12 +591,12 @@ try {
 } catch (e) { console.error('[brain] consolidate helper error (non-fatal): '+e.message); process.exit(0); }
 ```
 
-- [ ] **Step 3.8: Run hooks verifier — expect GREEN**
+- [x] **Step 3.8: Run hooks verifier — expect GREEN**
 
 Run: `node .claude/hooks/verify/verify-hooks.js`
 Expected: exit 0, `HOOKS OK`. If any sub-check fails, fix the named script to match its spec behavior and re-run until green.
 
-- [ ] **Step 3.9: Roadmap + checkpoint**
+- [x] **Step 3.9: Roadmap + checkpoint**
 
 Tick Phase 3. `/git-workflow-planning:checkpoint 3 node hooks` (fallback `git add -A && git commit -m "brain: phase 3 node enforcement hooks"`).
 
@@ -688,7 +688,7 @@ Tick Phase 5. `/git-workflow-planning:finish` (fallback `git add -A && git commi
 - [x] Phase 0: Verify environment
 - [x] Phase 1: Vault scaffold + gitignore
 - [x] Phase 2: Protocol content
-- [ ] Phase 3: Node hooks
+- [x] Phase 3: Node hooks
 - [ ] Phase 4: settings.json wiring
 - [ ] Phase 5: End-to-end + acceptance
 
