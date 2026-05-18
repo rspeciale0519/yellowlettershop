@@ -57,3 +57,9 @@ Append-only timeline. Entry format: `## [YYYY-MM-DD] <op> | <title>`.
   Code-verified 49 BUILT/12 PARTIAL/3 UNVERIFIED; memory overrides stale
   dev-docs (5 deltas + 5 flagged). Commits 6b5ec5b…c6f38d5. ALL VERIFY
   GREEN. See journal/2026-05-18 [13:55].
+
+## [2026-05-18] consolidation | Post knowledge-layer
+- Mechanical reconcile = no app-source drift (clean). Promoted
+  testing-red-green-verifier-gates provisional→established (independent
+  reapplication). Repaired poisoned .brainstate watermark; brain-lib
+  ledger-ts hardening logged as next/open. See journal/2026-05-18 [14:00].

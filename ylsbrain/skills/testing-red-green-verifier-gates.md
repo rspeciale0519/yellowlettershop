@@ -2,7 +2,7 @@
 type: skill
 area: testing
 status: active
-confidence: provisional
+confidence: established
 updated: 2026-05-18
 sources: [[journal/2026-05-18]]
 ---
@@ -48,9 +48,21 @@ pass/fail gate.
   `ALL VERIFY GREEN` (each exit 0); 3 real plan defects caught at their gate
   (sandbox data-loss, UTC covering, post-tool-use `cwd` omission caught by an
   implementer BLOCK); final acceptance ACCEPTED on all spec §12 criteria.
+- [[journal/2026-05-18]] [13:55] (independent): `verify-knowledge.js` gated the
+  knowledge-layer build — RED pre-content (4 docs+3 clauses missing, exit 1) →
+  `KNOWLEDGE OK`; full suite `ALL VERIFY GREEN`; review-found `features.md`
+  defect routed back through the implementer (`c6f38d5`), not hand-patched.
 
 ## Revision log
 - [2026-05-18] Created from first consolidation. Single (but multi-phase,
   strongly evidenced) task context — the brain bootstrap. `provisional` per
   the Evidence rule; promote to `established` when the pattern is reapplied in
   a separate, independent task/session.
+- [2026-05-18] Promoted `provisional`→`established`. Independent reapplication
+  in a separate task (the knowledge-layer build, not the bootstrap):
+  `verify-knowledge.js` written + run RED before content (predicted exact
+  fail-list, exit 1) → GREEN after synthesis; prior suite re-run as regression
+  (`STRUCTURE/SCHEMA/HOOKS/SETTINGS/KNOWLEDGE OK` → `ALL VERIFY GREEN`); the
+  "route the review-found defect back through the implementer" sub-pattern was
+  reapplied (features.md self-containment fix, `c6f38d5`, not hand-patched).
+  Genuinely independent signal per the Evidence rule. See [[journal/2026-05-18]] [13:55].

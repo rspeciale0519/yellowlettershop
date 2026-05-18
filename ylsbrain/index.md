@@ -3,7 +3,7 @@ Catalog of the yls brain. SessionStart reads this.
 
 ## Skills
 - [[skills/build-safe-destructive-git]] — `build` · provisional · prove-before-destroy for git branches/worktrees/stashes.
-- [[skills/testing-red-green-verifier-gates]] — `testing` · provisional · red→green standalone verifiers as phase gates.
+- [[skills/testing-red-green-verifier-gates]] — `testing` · established · red→green standalone verifiers as phase gates.
 
 ## Knowledge
 - [[knowledge/orientation]] — what YLS is, transactional model, current state, next.
