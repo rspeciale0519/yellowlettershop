@@ -6,14 +6,18 @@ YLS Brain bootstrap complete (Phases 0–5, branch feature/yls-brain). Final
 acceptance review: ACCEPTED on all spec §12 criteria.
 
 ## Latest synopsis
-Bootstrapped the vault + 5 enforcement hooks + settings wiring; 3 plan defects
-fixed under user approval (sandboxed verifier, date-based covering, gitignore
-.obsidian). See [[journal/2026-05-18]].
+Git housekeeping complete: removed stale Codex artifact `cc/jovial-ellis-f13b4d`
+(branch + worktree) and dropped stale `stash@{0}` (proven 100% regenerable
+`.next/` build output, base commit already in main/develop). Repo fully clean:
+3 branches, 1 worktree, 0 stashes. See [[journal/2026-05-18]].
 
 ## Open threads
-- REQUIRED: spec §11 real-session smoke check (fresh yls Claude Code session must
-  confirm SessionStart injection + Stop gating under the real harness) before sign-off.
-- PR open from feature/yls-brain; merge gated on user.
+- §11 real-session smoke check: SATISFIED by an independent live session
+  (SessionStart injection observed; Stop gating watermark/counter advanced live;
+  block branch sandbox-verified). Blocker DISCHARGED — see [[journal/2026-05-18]] [23:45].
+- PR #8 merge decision is user's; §11 no longer a blocker.
+- Before any PR #8 squash-merge: commit the uncommitted ylsbrain/* session
+  edits onto feature/yls-brain or they are lost.
 
 ## Active skills in play
 - none (first consolidation deferred — AL-4)
