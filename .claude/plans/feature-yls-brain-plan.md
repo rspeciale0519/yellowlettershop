@@ -148,7 +148,7 @@ Tick Phase 1. `/git-workflow-planning:checkpoint 1 vault scaffold` (fallback `gi
 
 ## Phase 2: Protocol content
 
-- [ ] **Step 2.1: Write the schema verifier (red)**
+- [x] **Step 2.1: Write the schema verifier (red)**
 
 Create `.claude/hooks/verify/verify-schema.js`:
 ```javascript
@@ -176,12 +176,12 @@ if (fail.length) { console.log('SCHEMA FAIL:\n'+fail.join('\n')); process.exit(1
 console.log('SCHEMA OK'); process.exit(0);
 ```
 
-- [ ] **Step 2.2: Run it — expect RED**
+- [x] **Step 2.2: Run it — expect RED**
 
 Run: `node .claude/hooks/verify/verify-schema.js`
 Expected: exit 1, `SCHEMA FAIL:` (placeholder files lack tokens).
 
-- [ ] **Step 2.3: Write `ylsbrain/CLAUDE.md`** (full content)
+- [x] **Step 2.3: Write `ylsbrain/CLAUDE.md`** (full content)
 
 Replace `ylsbrain/CLAUDE.md` with exactly:
 ```markdown
@@ -241,7 +241,7 @@ Proposal-only, user-approved; cross-project write needs explicit authorization.
 - AL-5: brain-in-repo is a confidentiality/entanglement tradeoff; heuristic PII scan is partial.
 ```
 
-- [ ] **Step 2.4: Write `ylsbrain/STATE.md`**
+- [x] **Step 2.4: Write `ylsbrain/STATE.md`**
 
 ```markdown
 # yls brain — STATE
@@ -260,7 +260,7 @@ Brain bootstrap — no engineering tasks recorded yet.
 - none
 ```
 
-- [ ] **Step 2.5: Write `ylsbrain/index.md`**
+- [x] **Step 2.5: Write `ylsbrain/index.md`**
 
 ```markdown
 # Index
@@ -276,7 +276,7 @@ _None yet._
 _None yet._
 ```
 
-- [ ] **Step 2.6: Write `ylsbrain/log.md`**
+- [x] **Step 2.6: Write `ylsbrain/log.md`**
 
 ```markdown
 # Log
@@ -286,7 +286,7 @@ Append-only timeline. Entry format: `## [YYYY-MM-DD] <op> | <title>`.
 - Vault structure, schema, hooks created.
 ```
 
-- [ ] **Step 2.7: Append the pointer section to `yls/CLAUDE.md`**
+- [x] **Step 2.7: Append the pointer section to `yls/CLAUDE.md`**
 
 Append exactly (do not modify any existing content):
 ```markdown
@@ -302,12 +302,12 @@ last did before new work. On task completion: append a journal entry
 user's task, never instead of it. Full schema: `ylsbrain/CLAUDE.md`.
 ```
 
-- [ ] **Step 2.8: Run schema verifier — expect GREEN**
+- [x] **Step 2.8: Run schema verifier — expect GREEN**
 
 Run: `node .claude/hooks/verify/verify-schema.js`
 Expected: exit 0, `SCHEMA OK`.
 
-- [ ] **Step 2.9: Roadmap + checkpoint**
+- [x] **Step 2.9: Roadmap + checkpoint**
 
 Tick Phase 2. `/git-workflow-planning:checkpoint 2 protocol content` (fallback `git add -A && git commit -m "brain: phase 2 protocol + schema content"`).
 
@@ -687,7 +687,7 @@ Tick Phase 5. `/git-workflow-planning:finish` (fallback `git add -A && git commi
 
 - [x] Phase 0: Verify environment
 - [x] Phase 1: Vault scaffold + gitignore
-- [ ] Phase 2: Protocol content
+- [x] Phase 2: Protocol content
 - [ ] Phase 3: Node hooks
 - [ ] Phase 4: settings.json wiring
 - [ ] Phase 5: End-to-end + acceptance
