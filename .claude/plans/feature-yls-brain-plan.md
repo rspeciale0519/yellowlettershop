@@ -656,7 +656,7 @@ Tick Phase 4. `/git-workflow-planning:checkpoint 4 settings wiring` (fallback `g
 
 ## Phase 5: End-to-end + acceptance
 
-- [ ] **Step 5.1: Full verify suite — expect GREEN**
+- [x] **Step 5.1: Full verify suite — expect GREEN**
 
 Run each, expect exit 0:
 ```bash
@@ -664,20 +664,20 @@ cd "C:/Users/rob/Documents/Software/service-businesses/yls" && node .claude/hook
 ```
 Expected final line: `ALL VERIFY GREEN`.
 
-- [ ] **Step 5.2: Consolidation plumbing check**
+- [x] **Step 5.2: Consolidation plumbing check**
 
 Run: `node .claude/hooks/consolidate.js`
 Expected: prints `CONSOLIDATION HELPER`, a tasks count, a (possibly empty) gap list, and the distil instruction; exit 0. Confirms plumbing only — distillation quality is AL-4, not gated.
 
-- [ ] **Step 5.3: Acceptance review against spec §12**
+- [x] **Step 5.3: Acceptance review against spec §12**
 
 Confirm and note in the final journal entry: all §4 files exist; `.brainstate/` gitignored; `ylsbrain/CLAUDE.md` has §6 protocol + §9 AL-1..AL-5; root `CLAUDE.md` has the `## YLS Brain` section; `.claude/settings.json` has 3 hooks; deterministic clear + cross-session covered (verify-hooks check 4); loop-breaker (check 5); PII heuristic (check 6); plumbing-only consolidation (5.2). **Fidelity caveat (spec §11):** these use mocked hook input.
 
-- [ ] **Step 5.4: Real-session smoke check (manual, required by spec §11)**
+- [x] **Step 5.4: Real-session smoke check (manual, required by spec §11)**
 
 STOP and report to the user: "Automated checks green. The real-session smoke check requires a fresh Claude Code session in the yls repo to confirm the SessionStart injection and Stop gate fire under the actual harness. This cannot be self-tested in this session — please start a new yls session and confirm the brain injects + gates, then we finalize." Do not claim done until the user confirms or explicitly waives.
 
-- [ ] **Step 5.5: Roadmap + finish**
+- [x] **Step 5.5: Roadmap + finish**
 
 Tick Phase 5. `/git-workflow-planning:finish` (fallback `git add -A && git commit -m "brain: phase 5 end-to-end validation"`).
 
@@ -690,7 +690,7 @@ Tick Phase 5. `/git-workflow-planning:finish` (fallback `git add -A && git commi
 - [x] Phase 2: Protocol content
 - [x] Phase 3: Node hooks
 - [x] Phase 4: settings.json wiring
-- [ ] Phase 5: End-to-end + acceptance
+- [x] Phase 5: End-to-end + acceptance
 
 ---
 
