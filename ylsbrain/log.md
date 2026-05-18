@@ -21,3 +21,7 @@ Append-only timeline. Entry format: `## [YYYY-MM-DD] <op> | <title>`.
 - Independent live session confirmed SessionStart injection + Stop gating via
   brain.json/ledger/sentinel cross-checked vs hook source. PR #8 merge now
   user's call, §11 no longer blocking. See journal/2026-05-18 [23:45].
+
+## [2026-05-18] housekeeping | ylsbrain session edits committed + pushed
+- abec7d5 on feature/yls-brain pushed to origin. Branch merge-ready; §11
+  evidence durable in PR #8. See journal/2026-05-18 [23:52].

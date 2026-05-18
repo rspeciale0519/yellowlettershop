@@ -15,9 +15,8 @@ Git housekeeping complete: removed stale Codex artifact `cc/jovial-ellis-f13b4d`
 - §11 real-session smoke check: SATISFIED by an independent live session
   (SessionStart injection observed; Stop gating watermark/counter advanced live;
   block branch sandbox-verified). Blocker DISCHARGED — see [[journal/2026-05-18]] [23:45].
-- PR #8 merge decision is user's; §11 no longer a blocker.
-- Before any PR #8 squash-merge: commit the uncommitted ylsbrain/* session
-  edits onto feature/yls-brain or they are lost.
+- ylsbrain session edits committed (abec7d5) + pushed to origin/feature/yls-brain;
+  branch is merge-ready. PR #8 squash-merge decision is user's; §11 no longer a blocker.
 
 ## Active skills in play
 - none (first consolidation deferred — AL-4)
