@@ -2,21 +2,28 @@
 Updated: 2026-05-18
 
 ## Current focus
-YLS Brain bootstrap complete (Phases 0–5, branch feature/yls-brain). Final
-acceptance review: ACCEPTED on all spec §12 criteria.
+None active. YLS Brain shipped: bootstrap merged to `develop` (`9e05ba0`,
+PR #8 squash); spec §11 discharged; first consolidation done (2 skills).
 
 ## Latest synopsis
-Git housekeeping complete: removed stale Codex artifact `cc/jovial-ellis-f13b4d`
-(branch + worktree) and dropped stale `stash@{0}` (proven 100% regenerable
-`.next/` build output, base commit already in main/develop). Repo fully clean:
-3 branches, 1 worktree, 0 stashes. See [[journal/2026-05-18]].
+First consolidation: distilled the 2026-05-18 journal into 2 provisional
+skills ([[skill-build-safe-destructive-git]],
+[[skill-testing-red-green-verifier-gates]]); gap check flagged only the
+benign UTC/local date-skew artifact. See [[journal/2026-05-18]] [04:10].
 
 ## Open threads
-- §11 real-session smoke check: SATISFIED by an independent live session
-  (SessionStart injection observed; Stop gating watermark/counter advanced live;
-  block branch sandbox-verified). Blocker DISCHARGED — see [[journal/2026-05-18]] [23:45].
-- ylsbrain session edits committed (abec7d5) + pushed to origin/feature/yls-brain;
-  branch is merge-ready. PR #8 squash-merge decision is user's; §11 no longer a blocker.
+- none (clean state — awaiting next task)
 
 ## Active skills in play
-- none (first consolidation deferred — AL-4)
+- [[skills/build-safe-destructive-git]] — before any git delete/drop/reset
+- [[skills/testing-red-green-verifier-gates]] — gating non-Mocha deliverables
+
+## Notes
+- Known benign: consolidate.js gap check perpetually flags `9e05ba0`
+  (local date 2026-05-17) since journals are UTC-dated (`2026-05-18.md`) —
+  artifact of the date-based-covering decision, not a real coverage gap.
+- Seam: both skills are `provisional`; no Developer-brain promotion yet
+  (promotion needs `established` + cross-project authorization — §8).
+- Hazard (recorded as feedback memory): concurrent CC sessions doing git
+  branch ops in one working tree caused a mid-consolidation checkout→main;
+  recovered, no loss. Serialize or use worktrees.

@@ -25,3 +25,9 @@ Append-only timeline. Entry format: `## [YYYY-MM-DD] <op> | <title>`.
 ## [2026-05-18] housekeeping | ylsbrain session edits committed + pushed
 - abec7d5 on feature/yls-brain pushed to origin. Branch merge-ready; §11
   evidence durable in PR #8. See journal/2026-05-18 [23:52].
+
+## [2026-05-18] consolidation | First consolidation — 2 skills distilled
+- skills/build-safe-destructive-git + skills/testing-red-green-verifier-gates
+  (both provisional); STATE trimmed; index refreshed; gap check = only the
+  benign UTC/local date-skew artifact. Recovered from a concurrent-session
+  checkout→main mid-pass (no loss). See journal/2026-05-18 [04:10].
