@@ -63,3 +63,9 @@ Append-only timeline. Entry format: `## [YYYY-MM-DD] <op> | <title>`.
   testing-red-green-verifier-gates provisional→established (independent
   reapplication). Repaired poisoned .brainstate watermark; brain-lib
   ledger-ts hardening logged as next/open. See journal/2026-05-18 [14:00].
+
+## [2026-05-18] design | Portable Project Brain System spec'd (external)
+- Brainstorm→spec for generalizing the brain into vendored per-project
+  system at external _brain/ repo (aa02b74). One-tier+Seam stub; YLS→
+  instance #1 (future); principle D (structure≠truth) institutionalized.
+  No YLS code changed. See journal/2026-05-18 [17:44].
