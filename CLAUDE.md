@@ -126,6 +126,7 @@ From package.json:
 - **Bug fixes**: `fix/issue-description`
 - **Target branch**: `main` for production deployment
 - **Current branch**: `feat/mod-phase-1b-demographics-split`
+- **Parallel sessions / worktrees**: when running more than one Claude Code or dev session on this repo, give each its own worktree via the helper — `./scripts/wt.ps1 new <branch>` (sibling container `../yls.worktrees/`, one folder per branch). Never hand-run `git worktree add`, and never run concurrent sessions sharing one working tree (their shared Git HEAD collides mid-task).
 
 ## Architecture Patterns
 
