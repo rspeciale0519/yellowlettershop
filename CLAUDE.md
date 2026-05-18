@@ -287,3 +287,13 @@ For development assistance, architectural questions, or technical support:
 ---
 
 *This guide is maintained as a living document. Update it when adding new features, changing architecture, or modifying development workflows.*
+
+## YLS Brain (ylsbrain/) — mandatory protocol
+
+A self-improving engineering memory lives in `ylsbrain/`. Hooks enforce it
+(SessionStart injects state; Stop gates a per-task journal entry). On every
+session: read the injected STATE + latest journal pointer and state what we
+last did before new work. On task completion: append a journal entry
+(Synopsis / What worked + Evidence / What did NOT work / Artifacts / Next) per
+`ylsbrain/CLAUDE.md`. NO secrets/PII in entries. Consolidation runs after the
+user's task, never instead of it. Full schema: `ylsbrain/CLAUDE.md`.
