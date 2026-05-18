@@ -2,17 +2,20 @@
 Updated: 2026-05-18
 
 ## Current focus
-None active. YLS Brain shipped: bootstrap merged to `develop` (`9e05ba0`,
-PR #8 squash); spec §11 discharged; first consolidation done (2 skills).
+None active. YLS Brain fully shipped: bootstrap → `develop` (`9e05ba0`,
+PR #8 squash); §11 discharged; first consolidation done (2 skills);
+promoted to `main`/production (`d00ef4e`, Merge branch 'develop').
 
 ## Latest synopsis
-First consolidation: distilled the 2026-05-18 journal into 2 provisional
-skills ([[skill-build-safe-destructive-git]],
-[[skill-testing-red-green-verifier-gates]]); gap check flagged only the
-benign UTC/local date-skew artifact. See [[journal/2026-05-18]] [04:10].
+Recovered the concurrent-session tree collision (no data loss) and promoted
+`develop`→`main`: production now carries the full brain + consolidation.
+Brain live on BOTH branches. See [[journal/2026-05-18]] [04:20].
 
 ## Open threads
-- none (clean state — awaiting next task)
+- Propose per-session `git worktree` setup so the concurrent-shared-tree
+  hazard can't recur ([[concurrent-sessions-worktrees]]).
+- Optional cleanup: `docs/temp/ylsbrain-STATE.consolidation-draft.md` (served
+  its purpose; candidate for archive).
 
 ## Active skills in play
 - [[skills/build-safe-destructive-git]] — before any git delete/drop/reset

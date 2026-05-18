@@ -31,3 +31,8 @@ Append-only timeline. Entry format: `## [YYYY-MM-DD] <op> | <title>`.
   (both provisional); STATE trimmed; index refreshed; gap check = only the
   benign UTC/local date-skew artifact. Recovered from a concurrent-session
   checkout→main mid-pass (no loss). See journal/2026-05-18 [04:10].
+
+## [2026-05-18] promotion | develop → main (brain live in production)
+- Recovered concurrent-session tree collision (no loss), then promoted:
+  origin/main d00ef4e (Merge branch 'develop') carries full brain +
+  consolidation. Brain now on both branches. See journal/2026-05-18 [04:20].
