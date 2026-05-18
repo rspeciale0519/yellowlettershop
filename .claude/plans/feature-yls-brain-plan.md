@@ -51,12 +51,12 @@
 
 ## Phase 0: Verify environment assumptions
 
-- [ ] **Step 0.1: Branch (Rule 8 Trigger 1)**
+- [x] **Step 0.1: Branch (Rule 8 Trigger 1)**
 
 Run `/git-workflow-planning:start feature yls-brain` (fallback: `cd` to yls, `git rev-parse --verify --quiet refs/heads/develop && git checkout -b feature/yls-brain develop || git checkout -b feature/yls-brain main`).
 Verify: `git -C "C:/Users/rob/Documents/Software/service-businesses/yls" branch --show-current` → `feature/yls-brain`.
 
-- [ ] **Step 0.2: Verify node + settings reality**
+- [x] **Step 0.2: Verify node + settings reality**
 
 Run:
 ```bash
@@ -64,7 +64,11 @@ cd "C:/Users/rob/Documents/Software/service-businesses/yls" && node -v && ls -la
 ```
 Expected: a node version prints; record whether `.claude/settings.json` exists and whether any `"hooks"` key already exists. **Decision rule:** if `.claude/settings.json` is absent, Phase 4 creates it containing only a `hooks` key; if present, Phase 4 merges a `hooks` key without touching other keys. `settings.local.json` is never modified. Write the finding into the Phase-4 task notes before proceeding.
 
-- [ ] **Step 0.3: Checkpoint**
+> **PHASE-0 FINDING (2026-05-17):** `node v22.22.2`. `.claude/settings.json` = **ABSENT**. `.claude/settings.local.json` = EXISTS, no `"hooks"` key anywhere. **DECISION → Phase 4 takes the CREATE path** (Step 4.1: create `.claude/settings.json` with only the `hooks` key; do NOT run the `_apply-settings.js` merge path). `settings.local.json` is NEVER modified.
+>
+> **BRANCH NOTE:** `feature/yls-brain` was based on `develop` (per plan + CLAUDE.md strategy). The brain plan/spec docs lived only on `main`, so `.claude/plans/feature-yls-brain{,-plan}.md` were restored from `main` onto this branch for traceability/roadmap-ticking.
+
+- [x] **Step 0.3: Checkpoint**
 
 Tick Phase 0. `/git-workflow-planning:checkpoint 0 verify environment` (fallback `git commit --allow-empty -m "brain: phase 0 environment verified"`).
 
@@ -72,7 +76,7 @@ Tick Phase 0. `/git-workflow-planning:checkpoint 0 verify environment` (fallback
 
 ## Phase 1: Vault scaffold + gitignore
 
-- [ ] **Step 1.1: Write the structure verifier (red)**
+- [x] **Step 1.1: Write the structure verifier (red)**
 
 Create `.claude/hooks/verify/verify-structure.js`:
 ```javascript
@@ -93,18 +97,18 @@ if (missing.length) { console.log('MISSING:\n' + missing.join('\n')); process.ex
 console.log('STRUCTURE OK'); process.exit(0);
 ```
 
-- [ ] **Step 1.2: Run it — expect RED**
+- [x] **Step 1.2: Run it — expect RED**
 
 Run: `node .claude/hooks/verify/verify-structure.js`
 Expected: exit 1, `MISSING:` listing all entries.
 
-- [ ] **Step 1.3: Create directories + tracked .gitkeeps**
+- [x] **Step 1.3: Create directories + tracked .gitkeeps**
 
 ```bash
 cd "C:/Users/rob/Documents/Software/service-businesses/yls" && mkdir -p ylsbrain/journal ylsbrain/skills ylsbrain/archive .claude/hooks/verify && : > ylsbrain/journal/.gitkeep && : > ylsbrain/skills/.gitkeep && : > ylsbrain/archive/.gitkeep
 ```
 
-- [ ] **Step 1.4: Append gitignore entries**
+- [x] **Step 1.4: Append gitignore entries**
 
 Append to `yls/.gitignore` (exact lines, only if not already present):
 ```
@@ -114,7 +118,7 @@ ylsbrain/.obsidian/workspace*.json
 ylsbrain/.obsidian/cache
 ```
 
-- [ ] **Step 1.5: Create placeholder vault files (content comes in Phase 2)**
+- [x] **Step 1.5: Create placeholder vault files (content comes in Phase 2)**
 
 Create each with a single seed line so structure passes (Phase 2 fills them):
 - `ylsbrain/CLAUDE.md` → `# YLS Brain — Schema (populated in Phase 2)`
@@ -122,7 +126,7 @@ Create each with a single seed line so structure passes (Phase 2 fills them):
 - `ylsbrain/index.md` → `# Index`
 - `ylsbrain/log.md` → `# Log`
 
-- [ ] **Step 1.6: Create the shared lib stub (full impl in Phase 3)**
+- [x] **Step 1.6: Create the shared lib stub (full impl in Phase 3)**
 
 Create `.claude/hooks/brain-lib.js`:
 ```javascript
@@ -131,12 +135,12 @@ Create `.claude/hooks/brain-lib.js`:
 module.exports = {};
 ```
 
-- [ ] **Step 1.7: Run verifier — expect GREEN**
+- [x] **Step 1.7: Run verifier — expect GREEN**
 
 Run: `node .claude/hooks/verify/verify-structure.js`
 Expected: exit 0, `STRUCTURE OK`.
 
-- [ ] **Step 1.8: Roadmap + checkpoint**
+- [x] **Step 1.8: Roadmap + checkpoint**
 
 Tick Phase 1. `/git-workflow-planning:checkpoint 1 vault scaffold` (fallback `git add -A && git commit -m "brain: phase 1 vault scaffold + gitignore"`).
 
@@ -144,7 +148,7 @@ Tick Phase 1. `/git-workflow-planning:checkpoint 1 vault scaffold` (fallback `gi
 
 ## Phase 2: Protocol content
 
-- [ ] **Step 2.1: Write the schema verifier (red)**
+- [x] **Step 2.1: Write the schema verifier (red)**
 
 Create `.claude/hooks/verify/verify-schema.js`:
 ```javascript
@@ -172,12 +176,12 @@ if (fail.length) { console.log('SCHEMA FAIL:\n'+fail.join('\n')); process.exit(1
 console.log('SCHEMA OK'); process.exit(0);
 ```
 
-- [ ] **Step 2.2: Run it — expect RED**
+- [x] **Step 2.2: Run it — expect RED**
 
 Run: `node .claude/hooks/verify/verify-schema.js`
 Expected: exit 1, `SCHEMA FAIL:` (placeholder files lack tokens).
 
-- [ ] **Step 2.3: Write `ylsbrain/CLAUDE.md`** (full content)
+- [x] **Step 2.3: Write `ylsbrain/CLAUDE.md`** (full content)
 
 Replace `ylsbrain/CLAUDE.md` with exactly:
 ```markdown
@@ -237,7 +241,7 @@ Proposal-only, user-approved; cross-project write needs explicit authorization.
 - AL-5: brain-in-repo is a confidentiality/entanglement tradeoff; heuristic PII scan is partial.
 ```
 
-- [ ] **Step 2.4: Write `ylsbrain/STATE.md`**
+- [x] **Step 2.4: Write `ylsbrain/STATE.md`**
 
 ```markdown
 # yls brain — STATE
@@ -256,7 +260,7 @@ Brain bootstrap — no engineering tasks recorded yet.
 - none
 ```
 
-- [ ] **Step 2.5: Write `ylsbrain/index.md`**
+- [x] **Step 2.5: Write `ylsbrain/index.md`**
 
 ```markdown
 # Index
@@ -272,7 +276,7 @@ _None yet._
 _None yet._
 ```
 
-- [ ] **Step 2.6: Write `ylsbrain/log.md`**
+- [x] **Step 2.6: Write `ylsbrain/log.md`**
 
 ```markdown
 # Log
@@ -282,7 +286,7 @@ Append-only timeline. Entry format: `## [YYYY-MM-DD] <op> | <title>`.
 - Vault structure, schema, hooks created.
 ```
 
-- [ ] **Step 2.7: Append the pointer section to `yls/CLAUDE.md`**
+- [x] **Step 2.7: Append the pointer section to `yls/CLAUDE.md`**
 
 Append exactly (do not modify any existing content):
 ```markdown
@@ -298,12 +302,12 @@ last did before new work. On task completion: append a journal entry
 user's task, never instead of it. Full schema: `ylsbrain/CLAUDE.md`.
 ```
 
-- [ ] **Step 2.8: Run schema verifier — expect GREEN**
+- [x] **Step 2.8: Run schema verifier — expect GREEN**
 
 Run: `node .claude/hooks/verify/verify-schema.js`
 Expected: exit 0, `SCHEMA OK`.
 
-- [ ] **Step 2.9: Roadmap + checkpoint**
+- [x] **Step 2.9: Roadmap + checkpoint**
 
 Tick Phase 2. `/git-workflow-planning:checkpoint 2 protocol content` (fallback `git add -A && git commit -m "brain: phase 2 protocol + schema content"`).
 
@@ -311,7 +315,7 @@ Tick Phase 2. `/git-workflow-planning:checkpoint 2 protocol content` (fallback `
 
 ## Phase 3: Hook scripts (Node)
 
-- [ ] **Step 3.1: Write the hooks verifier (red)**
+- [x] **Step 3.1: Write the hooks verifier (red)**
 
 Create `.claude/hooks/verify/verify-hooks.js`:
 ```javascript
@@ -371,12 +375,12 @@ if (fails.length){ console.log('HOOKS FAIL:\n'+fails.join('\n')); process.exit(1
 console.log('HOOKS OK'); process.exit(0);
 ```
 
-- [ ] **Step 3.2: Run it — expect RED**
+- [x] **Step 3.2: Run it — expect RED**
 
 Run: `node .claude/hooks/verify/verify-hooks.js`
 Expected: exit 1 (hooks not implemented).
 
-- [ ] **Step 3.3: Implement `.claude/hooks/brain-lib.js`** (replace stub)
+- [x] **Step 3.3: Implement `.claude/hooks/brain-lib.js`** (replace stub)
 
 ```javascript
 'use strict';
@@ -446,7 +450,7 @@ module.exports = { ylsRoot, P, stateDir, ensureDir, readJson, writeJson, nowIso,
   unconsumed, latestJournal, journalBlocks, scanSecrets };
 ```
 
-- [ ] **Step 3.4: Implement `.claude/hooks/session-start.js`**
+- [x] **Step 3.4: Implement `.claude/hooks/session-start.js`**
 
 ```javascript
 'use strict';
@@ -482,7 +486,7 @@ try {
 } catch (e) { console.error('[brain] session-start failed open: '+e.message); process.exit(0); }
 ```
 
-- [ ] **Step 3.5: Implement `.claude/hooks/post-tool-use.js`**
+- [x] **Step 3.5: Implement `.claude/hooks/post-tool-use.js`**
 
 ```javascript
 'use strict';
@@ -504,7 +508,7 @@ try {
 } catch (e) { console.error('[brain] post-tool-use failed open: '+e.message); process.exit(0); }
 ```
 
-- [ ] **Step 3.6: Implement `.claude/hooks/stop.js`**
+- [x] **Step 3.6: Implement `.claude/hooks/stop.js`**
 
 ```javascript
 'use strict';
@@ -549,7 +553,7 @@ try {
 } catch (e) { console.error('[brain] stop failed open: '+e.message); process.exit(0); }
 ```
 
-- [ ] **Step 3.7: Implement `.claude/hooks/consolidate.js`** (H4 helper — invoked by the agent when prompted; not a wired hook)
+- [x] **Step 3.7: Implement `.claude/hooks/consolidate.js`** (H4 helper — invoked by the agent when prompted; not a wired hook)
 
 > Uses `execFileSync` with an argument array (NO shell, NO string interpolation) per the yls security convention.
 
@@ -587,12 +591,12 @@ try {
 } catch (e) { console.error('[brain] consolidate helper error (non-fatal): '+e.message); process.exit(0); }
 ```
 
-- [ ] **Step 3.8: Run hooks verifier — expect GREEN**
+- [x] **Step 3.8: Run hooks verifier — expect GREEN**
 
 Run: `node .claude/hooks/verify/verify-hooks.js`
 Expected: exit 0, `HOOKS OK`. If any sub-check fails, fix the named script to match its spec behavior and re-run until green.
 
-- [ ] **Step 3.9: Roadmap + checkpoint**
+- [x] **Step 3.9: Roadmap + checkpoint**
 
 Tick Phase 3. `/git-workflow-planning:checkpoint 3 node hooks` (fallback `git add -A && git commit -m "brain: phase 3 node enforcement hooks"`).
 
@@ -600,7 +604,7 @@ Tick Phase 3. `/git-workflow-planning:checkpoint 3 node hooks` (fallback `git ad
 
 ## Phase 4: settings.json wiring
 
-- [ ] **Step 4.1: Apply the Phase-0 decision**
+- [x] **Step 4.1: Apply the Phase-0 decision**
 
 Using the Phase-0 finding: if `.claude/settings.json` is **absent**, create it with exactly:
 ```json
@@ -626,7 +630,7 @@ console.log('merged hooks into existing settings.json');
 ```
 then run `cd "C:/Users/rob/Documents/Software/service-businesses/yls" && node .claude/hooks/_apply-settings.js`. `settings.local.json` is NOT modified.
 
-- [ ] **Step 4.2: Validate JSON + hook paths**
+- [x] **Step 4.2: Validate JSON + hook paths**
 
 Create `.claude/hooks/verify/verify-settings.js`:
 ```javascript
@@ -644,7 +648,7 @@ console.log('SETTINGS OK'); process.exit(0);
 Run: `node .claude/hooks/verify/verify-settings.js`
 Expected: exit 0, `SETTINGS OK`.
 
-- [ ] **Step 4.3: Roadmap + checkpoint**
+- [x] **Step 4.3: Roadmap + checkpoint**
 
 Tick Phase 4. `/git-workflow-planning:checkpoint 4 settings wiring` (fallback `git add -A && git commit -m "brain: phase 4 settings.json hook wiring"`).
 
@@ -652,7 +656,7 @@ Tick Phase 4. `/git-workflow-planning:checkpoint 4 settings wiring` (fallback `g
 
 ## Phase 5: End-to-end + acceptance
 
-- [ ] **Step 5.1: Full verify suite — expect GREEN**
+- [x] **Step 5.1: Full verify suite — expect GREEN**
 
 Run each, expect exit 0:
 ```bash
@@ -660,20 +664,20 @@ cd "C:/Users/rob/Documents/Software/service-businesses/yls" && node .claude/hook
 ```
 Expected final line: `ALL VERIFY GREEN`.
 
-- [ ] **Step 5.2: Consolidation plumbing check**
+- [x] **Step 5.2: Consolidation plumbing check**
 
 Run: `node .claude/hooks/consolidate.js`
 Expected: prints `CONSOLIDATION HELPER`, a tasks count, a (possibly empty) gap list, and the distil instruction; exit 0. Confirms plumbing only — distillation quality is AL-4, not gated.
 
-- [ ] **Step 5.3: Acceptance review against spec §12**
+- [x] **Step 5.3: Acceptance review against spec §12**
 
 Confirm and note in the final journal entry: all §4 files exist; `.brainstate/` gitignored; `ylsbrain/CLAUDE.md` has §6 protocol + §9 AL-1..AL-5; root `CLAUDE.md` has the `## YLS Brain` section; `.claude/settings.json` has 3 hooks; deterministic clear + cross-session covered (verify-hooks check 4); loop-breaker (check 5); PII heuristic (check 6); plumbing-only consolidation (5.2). **Fidelity caveat (spec §11):** these use mocked hook input.
 
-- [ ] **Step 5.4: Real-session smoke check (manual, required by spec §11)**
+- [x] **Step 5.4: Real-session smoke check (manual, required by spec §11)**
 
 STOP and report to the user: "Automated checks green. The real-session smoke check requires a fresh Claude Code session in the yls repo to confirm the SessionStart injection and Stop gate fire under the actual harness. This cannot be self-tested in this session — please start a new yls session and confirm the brain injects + gates, then we finalize." Do not claim done until the user confirms or explicitly waives.
 
-- [ ] **Step 5.5: Roadmap + finish**
+- [x] **Step 5.5: Roadmap + finish**
 
 Tick Phase 5. `/git-workflow-planning:finish` (fallback `git add -A && git commit -m "brain: phase 5 end-to-end validation"`).
 
@@ -681,12 +685,12 @@ Tick Phase 5. `/git-workflow-planning:finish` (fallback `git add -A && git commi
 
 ## Phase Checklist (Rule 7 roadmap)
 
-- [ ] Phase 0: Verify environment
-- [ ] Phase 1: Vault scaffold + gitignore
-- [ ] Phase 2: Protocol content
-- [ ] Phase 3: Node hooks
-- [ ] Phase 4: settings.json wiring
-- [ ] Phase 5: End-to-end + acceptance
+- [x] Phase 0: Verify environment
+- [x] Phase 1: Vault scaffold + gitignore
+- [x] Phase 2: Protocol content
+- [x] Phase 3: Node hooks
+- [x] Phase 4: settings.json wiring
+- [x] Phase 5: End-to-end + acceptance
 
 ---
 
