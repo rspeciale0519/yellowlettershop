@@ -604,7 +604,7 @@ Tick Phase 3. `/git-workflow-planning:checkpoint 3 node hooks` (fallback `git ad
 
 ## Phase 4: settings.json wiring
 
-- [ ] **Step 4.1: Apply the Phase-0 decision**
+- [x] **Step 4.1: Apply the Phase-0 decision**
 
 Using the Phase-0 finding: if `.claude/settings.json` is **absent**, create it with exactly:
 ```json
@@ -630,7 +630,7 @@ console.log('merged hooks into existing settings.json');
 ```
 then run `cd "C:/Users/rob/Documents/Software/service-businesses/yls" && node .claude/hooks/_apply-settings.js`. `settings.local.json` is NOT modified.
 
-- [ ] **Step 4.2: Validate JSON + hook paths**
+- [x] **Step 4.2: Validate JSON + hook paths**
 
 Create `.claude/hooks/verify/verify-settings.js`:
 ```javascript
@@ -648,7 +648,7 @@ console.log('SETTINGS OK'); process.exit(0);
 Run: `node .claude/hooks/verify/verify-settings.js`
 Expected: exit 0, `SETTINGS OK`.
 
-- [ ] **Step 4.3: Roadmap + checkpoint**
+- [x] **Step 4.3: Roadmap + checkpoint**
 
 Tick Phase 4. `/git-workflow-planning:checkpoint 4 settings wiring` (fallback `git add -A && git commit -m "brain: phase 4 settings.json hook wiring"`).
 
@@ -689,7 +689,7 @@ Tick Phase 5. `/git-workflow-planning:finish` (fallback `git add -A && git commi
 - [x] Phase 1: Vault scaffold + gitignore
 - [x] Phase 2: Protocol content
 - [x] Phase 3: Node hooks
-- [ ] Phase 4: settings.json wiring
+- [x] Phase 4: settings.json wiring
 - [ ] Phase 5: End-to-end + acceptance
 
 ---
