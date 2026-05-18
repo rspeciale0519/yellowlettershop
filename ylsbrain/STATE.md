@@ -2,21 +2,24 @@
 Updated: 2026-05-18
 
 ## Current focus
-YLS Brain **knowledge-layer** design (user task: "brain learns the entire
-app — purpose, all features, plans for unbuilt features"). Brainstorm
-converged: Approach A, **lean 4-doc** scope (orientation + superseded
-ledger + code-verified features + roadmap), memory-overrides-docs,
-codebase-verified build status, living-via-consolidation. Spec not yet
-written. Branch: direct to `develop`.
+None active. YLS Brain **knowledge layer SHIPPED** to `develop` (lean
+4-doc: [[knowledge/orientation]] + [[knowledge/superseded]] +
+[[knowledge/features]] + [[knowledge/roadmap]]; `kind: knowledge` schema
++ mechanical git-diff consolidation clause + `verify-knowledge.js` gate).
+Code-verified: 49 BUILT / 12 PARTIAL / 3 UNVERIFIED. Read
+[[knowledge/orientation]] first for whole-app context.
 
 ## Latest synopsis
-Mid-brainstorm on the knowledge layer. Detour completed first: fixed a
-cwd-fragile brain hook launch-path bug (`f69508e` — all 3 hooks now
-`$CLAUDE_PROJECT_DIR`-anchored, verified). See [[journal/2026-05-18]] [02:28].
+Knowledge layer delivered end-to-end via superpowers flow (brainstorm →
+spec → plan → subagent-driven build); gate GREEN, build-status
+re-verified. Memory overrides the 13-mo-stale dev-docs; 5 doc-vs-truth
+deltas + 5 flagged net-new conflicts ledgered. See [[journal/2026-05-18]] [13:55].
 
 ## Open threads
-- Knowledge-layer spec: write to spec doc → self-review → user review →
-  writing-plans. Lean 4-doc scope agreed.
+- **5 FLAG-TO-USER conflicts** in [[knowledge/superseded]] F1–F5 recorded
+  provisionally (code-reality = truth) — await user confirmation:
+  AccuZip validation simulated; MelissaData no purchase wiring; Mailgun
+  outbound absent; templates static vs DB; user orders dashboard mock.
 
 ## Active skills in play
 - [[skills/build-safe-destructive-git]] — before any git delete/drop/reset
@@ -27,6 +30,11 @@ cwd-fragile brain hook launch-path bug (`f69508e` — all 3 hooks now
   (fixed `f69508e`); a persisted shell `cd` otherwise breaks Stop-hook
   resolution. Vault-root resolution itself is already cwd-robust
   (`brain-lib.js` `ylsRoot` → `input.cwd`/`__dirname`).
+- `dev-docs/` are an April-2025 baseline and materially STALE (revenue
+  model, design engine, roles, AccuZip billing). On any app-knowledge
+  question defer to [[knowledge/superseded]]; it is authoritative over
+  the docs. Knowledge-layer freshness is reconciled mechanically at
+  consolidation (`git log --name-only` since watermark — see CLAUDE.md).
 - Known benign: AL-5 PII heuristic false-positives on 40-char git SHAs
   quoted in the journal (`[0-9a-fA-F]{40,}`); non-blocking, regex not
   tightened (deferred).

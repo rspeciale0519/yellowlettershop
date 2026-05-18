@@ -50,3 +50,10 @@ Append-only timeline. Entry format: `## [YYYY-MM-DD] <op> | <title>`.
 - f69508e — all 3 hook launch paths anchored to $CLAUDE_PROJECT_DIR;
   persisted shell `cd` no longer breaks Stop-hook resolution. Verified
   from dev-docs/ (the break cwd). See journal/2026-05-18 [02:28].
+
+## [2026-05-18] feature | YLS Brain knowledge layer shipped
+- knowledge/{orientation,superseded,features,roadmap}.md + kind:knowledge
+  schema + mechanical consolidation clause + verify-knowledge.js gate.
+  Code-verified 49 BUILT/12 PARTIAL/3 UNVERIFIED; memory overrides stale
+  dev-docs (5 deltas + 5 flagged). Commits 6b5ec5b…c6f38d5. ALL VERIFY
+  GREEN. See journal/2026-05-18 [13:55].
