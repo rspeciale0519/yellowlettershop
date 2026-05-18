@@ -48,7 +48,7 @@ yls/ylsbrain/                  (Obsidian vault, tracked in the yls git repo)
 ├── journal/YYYY-MM-DD.md      per-day file; per-task `### [HH:MM]` sections
 ├── skills/<area>-<slug>.md    distilled, in-place-evolving procedural memory
 ├── archive/                   superseded pages, tombstoned (never delete — Rule 1)
-└── .brainstate/               GITIGNORED transient: session sentinels + work-ledger
+└── .brainstate/               GITIGNORED transient: brain.json (global watermark) + session sentinels + work-ledger
 yls/.claude/hooks/             Node hook scripts
 yls/.claude/settings.json      COMMITTED hooks key (durable enforcement)
 yls/CLAUDE.md                  + one ~15-line "## YLS Brain" pointer section
@@ -103,14 +103,29 @@ Current focus · Latest-synopsis pointer + 1-line digest · Open threads · Acti
 
 **Integration:** append one ~15-line `## YLS Brain` section to root `yls/CLAUDE.md` (rule + pointer; no rewrite of the living doc). Optional one-line `AGENTS.md` pointer. Vault knowledge stays in Obsidian markdown, never `.claude/skills/`.
 
-## 7. Enforcement Hooks (Node scripts, `yls/.claude/hooks/`, wired in committed `.claude/settings.json`)
+## 7. Enforcement Hooks (Node scripts, `yls/.claude/hooks/`, wired via a `hooks` key in committed `.claude/settings.json`)
 
-- **H1 SessionStart (inject, non-blocking):** write session sentinel to `.brainstate/`; prune old sentinels; inject compact protocol + `STATE.md` + latest pointer (≤~40 lines, cache-disciplined); if consolidation overdue, **escalate** the payload ("CONSOLIDATION OVERDUE — do before new work"). Pure file reads.
-- **H2 PostToolUse (work-ledger, non-blocking, near-instant):** on Edit/Write/git-commit, append a marker to `.brainstate/<session>.ledger`; also serves as the N-task consolidation counter.
-- **H3 Stop (conditional hard-gate):** block **only if** (ledger shows substantive work since last journal entry) AND (no covering entry) AND (per-session block-count < 2). Else pass silently. Block message states exactly what to append. Escapes: no-op entry satisfies; **loop-breaker** fails open after 2 blocks with a loud warning; any internal script error **fails open** with a warning.
-- **H4 Consolidation (mid-session N-task threshold via ledger, default N=5 tunable; and next-SessionStart overdue check — NOT SessionEnd):** prompt journal→skills distillation; cluster recurring worked→skill, didn't→pitfalls; contradiction→revise/deprecate+tombstone; journal-vs-git **gap check**; trim STATE; refresh index. Non-blocking; SessionEnd only writes the overdue flag.
+> **Assumption to verify first (Phase 0 of the plan):** confirm whether yls has a committed `.claude/settings.json` and how a new `hooks` key interacts with the existing `.claude/settings.local.json` permission allowlist. If only `.local` exists, create a committed `settings.json` for hooks (durability) without disturbing the local allowlist. Verify; do not assume.
 
-**Invariants:** hooks are deterministic file ops only (no model calls → no token cost, fast); absolute quoted paths; fail-open over session-trap; brain commits are separate `brain:`-prefixed commits; per-day journal files + last-writer-append to limit worktree/develop-main merge conflicts.
+### 7.1 Ledger & watermark lifecycle (the core of the gate — fully specified)
+
+State in gitignored `ylsbrain/.brainstate/`:
+- `brain.json` — **global, cross-session**: `{ lastCoveredTs, lastConsolidationTs, taskCountSinceConsolidation }`.
+- `<session-id>.ledger` — append-only `<iso-ts>\t<tool>\t<path|summary>` written by H2.
+- `<session-id>.sentinel` — `{ sessionId, startTs, branch, blockCount }`.
+
+- **Unconsumed work** = ledger lines across **all** session ledgers with `ts > brain.json.lastCoveredTs`. Baseline is **journal-global**, so a task spanning sessions stays covered (resolves the cross-session gap).
+- **Covering entry** = a journal `### [HH:MM]` block whose timestamp ≥ the *oldest* unconsumed ledger ts.
+- **On a passing Stop** (covering entry present & structurally compliant): set `lastCoveredTs` = newest ledger ts now; `taskCountSinceConsolidation += 1`. Deterministic clear — no perpetual block.
+
+### 7.2 Hooks
+
+- **H1 SessionStart (inject, non-blocking):** write `<session-id>.sentinel`; prune sentinels/ledgers >14 days; inject compact protocol + `STATE.md` + latest-journal pointer (≤~40 lines, cache-disciplined). If `taskCountSinceConsolidation ≥ N` (default 5, tunable) or an overdue flag is set, prepend a **one-line** notice: "ℹ Consolidation overdue — after the user's task, offer/run a time-boxed consolidation." Pure file reads.
+- **H2 PostToolUse (work-ledger, non-blocking, near-instant):** on Edit/Write/git-commit, append one ledger line. No model call.
+- **H3 Stop (conditional hard-gate):** block **only if** *unconsumed work exists* AND *no covering entry* AND *sentinel.blockCount < 2*. On block: `blockCount += 1`; message states exactly what to append. Pass paths: covering entry present (advance watermark per §7.1); OR no unconsumed work; OR a one-line no-op entry; OR `blockCount ≥ 2` → **loop-breaker fails open** with a loud warning; OR any internal error → **fails open** with a warning. H3 also runs a **cheap secret/PII heuristic** (regex: `sk_live`, `AKIA[0-9A-Z]{16}`, `BEGIN * PRIVATE KEY`, long hex/base64 blobs, raw email/phone) over the new entry and emits a **non-blocking warning** if matched (partial AL-5 mitigation; heuristic, not a guarantee).
+- **H4 Consolidation (mid-session when `taskCountSinceConsolidation ≥ N`; or next-SessionStart overdue notice — NOT SessionEnd):** the assistant, **only after completing the user's actual request**, offers or runs a **time-boxed** pass bounded to entries since `lastConsolidationTs`: cluster recurring worked→skill, didn't→pitfalls; contradiction→revise/deprecate+tombstone; journal-vs-git **gap check**; trim STATE; refresh index; set `lastConsolidationTs`, reset `taskCountSinceConsolidation`. **Consolidation never preempts or substitutes for the user's stated task.** SessionEnd only sets the overdue flag.
+
+**Invariants:** hooks are deterministic file ops only (no model calls → no token cost, fast); absolute quoted paths; **fail-open over session-trap**; brain commits are separate `brain:`-prefixed commits; per-day journal files + last-writer-append to limit worktree/develop-main merge conflicts.
 
 ## 8. Self-Evolution Loop & Seam
 
@@ -123,8 +138,8 @@ SessionStart (inject/recall) → work (ledger) → task done → Journal (gated)
 - **AL-1:** No hook can verify the *truthfulness/completeness* of self-reported failures; structural non-empty checks raise the floor only.
 - **AL-2:** Enforcement fires **only in Claude Code**; Cursor/Codex/other-tool sessions won't self-maintain the brain. Mitigation: `AGENTS.md` pointer + consolidation journal-vs-git gap check.
 - **AL-3:** Task-boundary detection is heuristic (file/commit signals); the gate can occasionally over/under-fire. Mitigation: no-op escape, loop-breaker, gap check.
-- **AL-4:** Distillation *quality* is agent-dependent; escalating SessionStart pressure raises the floor but does not guarantee genuine learning.
-- **AL-5:** Brain history in the code repo is a confidentiality/entanglement tradeoff; mitigated by separate `brain:` commits + a no-secrets/no-PII journal rule, not eliminated.
+- **AL-4:** Distillation *quality* is agent-dependent; a persistent post-task SessionStart consolidation notice (non-preempting) raises the floor but does not guarantee genuine learning.
+- **AL-5:** Brain history in the code repo is a confidentiality/entanglement tradeoff; partially mitigated by separate `brain:` commits, a no-secrets/no-PII journal rule, **and a heuristic secret/PII scan in H3 (non-blocking warning)** — heuristic only, not eliminated.
 
 ## 10. Not Replicated from Hermes (honest scope)
 
@@ -135,16 +150,19 @@ No SQLite/FTS5 DB, no DSPy/GEPA genetic optimizer, no Honcho user-modeling. "Sel
 Node "verify" checks become the implementation plan's red→green gates:
 - Vault structure present (all §4 paths; `.brainstate/` gitignored).
 - Simulated session: sentinel → ledger marker → journal entry → Stop **passes**.
-- Stop **blocks** when substantive work exists with no covering entry; **loop-breaker** fails open after 2 blocks.
-- Consolidation run produces/updates a skill and flags a journal-vs-git gap.
+- Stop **blocks** when unconsumed work exists with no covering entry; a covering entry advances `lastCoveredTs` and the gate clears (no perpetual block); **loop-breaker** fails open after 2 blocks; cross-session work stays covered.
+- Consolidation **plumbing only**: given a fixture of ≥2 related entries, the overdue notice fires, the gap check flags an uncovered commit, and a skill file produced from the fixture validates against the §5.2 schema. Distillation *quality/correctness* is **not** asserted by verify (AL-4).
+- Secret/PII heuristic emits a warning on a planted-secret fixture entry (and none on a clean one).
 - **Fidelity caveat:** mocked hook-input approximates the harness; a **real-session smoke check** in yls is required before declaring done.
 
 ## 12. Acceptance Criteria
 
 - All §4 vault files/dirs exist; `.brainstate/` + `.obsidian/` gitignored; `ylsbrain/` otherwise tracked.
 - `ylsbrain/CLAUDE.md` encodes §6 protocol + §5 schemas; root `yls/CLAUDE.md` has the ~15-line pointer section; `.claude/settings.json` has the 4 hooks.
-- A simulated task: SessionStart injects state; work logged; Stop gates until a compliant journal entry exists; entry written → passes.
-- A consolidation pass turns ≥2 related journal entries into a skill with a Revision-log line.
+- Phase 0 verified the `.claude/settings.json` vs `.local` interaction before any hook wiring.
+- A simulated task: SessionStart injects state; work logged to the ledger; Stop gates until a compliant journal entry exists; entry written → watermark advances → passes (deterministic clear; cross-session work covered).
+- Consolidation **plumbing** passes (§11): overdue notice fires, gap check flags an uncovered commit, a fixture skill validates against the §5.2 schema. (Distillation quality is AL-4, not gated.)
+- Secret/PII heuristic warns on a planted-secret fixture, silent on a clean one.
 - All §11 verify checks green; real-session smoke check performed.
 - All five accepted limitations documented in `ylsbrain/CLAUDE.md`.
 
