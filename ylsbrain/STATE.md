@@ -7,9 +7,9 @@ PR #8 squash); §11 discharged; first consolidation done (2 skills);
 promoted to `main`/production (`d00ef4e`, Merge branch 'develop').
 
 ## Latest synopsis
-Added the organized-worktree helper `scripts/wt.ps1` (sibling container,
-enforced naming) and archived the recovery scratch draft — both [04:20]
-threads closed. See [[journal/2026-05-18]] [04:34].
+Concurrent-session hazard fully mitigated end-to-end: helper `scripts/wt.ps1`
++ feedback memory + STATE Notes + root CLAUDE.md Branch Strategy line.
+Clean state. See [[journal/2026-05-18]] [04:37].
 
 ## Open threads
 - none (clean state — awaiting next task)

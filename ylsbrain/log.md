@@ -41,3 +41,7 @@ Append-only timeline. Entry format: `## [YYYY-MM-DD] <op> | <title>`.
 - scripts/wt.ps1 (7672662) — sibling container ../yls.worktrees + enforced
   naming; smoke-tested. Recovery draft archived. Both [04:20] threads closed.
   See journal/2026-05-18 [04:34].
+
+## [2026-05-18] docs | Worktree workflow in root CLAUDE.md
+- ae59e91 — Branch Strategy now points at scripts/wt.ps1 + no-shared-tree
+  rule. Concurrent-session hazard mitigated end-to-end. See [04:37].
