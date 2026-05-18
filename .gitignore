@@ -91,3 +91,8 @@ logs
 
 .vercel
 .claude/worktrees/
+
+# yls brain transient/per-user state
+ylsbrain/.brainstate/
+# Entire Obsidian config ignored per spec §12 (incl. vendored plugins, workspace, cache)
+ylsbrain/.obsidian/

@@ -76,7 +76,7 @@ Tick Phase 0. `/git-workflow-planning:checkpoint 0 verify environment` (fallback
 
 ## Phase 1: Vault scaffold + gitignore
 
-- [ ] **Step 1.1: Write the structure verifier (red)**
+- [x] **Step 1.1: Write the structure verifier (red)**
 
 Create `.claude/hooks/verify/verify-structure.js`:
 ```javascript
@@ -97,18 +97,18 @@ if (missing.length) { console.log('MISSING:\n' + missing.join('\n')); process.ex
 console.log('STRUCTURE OK'); process.exit(0);
 ```
 
-- [ ] **Step 1.2: Run it — expect RED**
+- [x] **Step 1.2: Run it — expect RED**
 
 Run: `node .claude/hooks/verify/verify-structure.js`
 Expected: exit 1, `MISSING:` listing all entries.
 
-- [ ] **Step 1.3: Create directories + tracked .gitkeeps**
+- [x] **Step 1.3: Create directories + tracked .gitkeeps**
 
 ```bash
 cd "C:/Users/rob/Documents/Software/service-businesses/yls" && mkdir -p ylsbrain/journal ylsbrain/skills ylsbrain/archive .claude/hooks/verify && : > ylsbrain/journal/.gitkeep && : > ylsbrain/skills/.gitkeep && : > ylsbrain/archive/.gitkeep
 ```
 
-- [ ] **Step 1.4: Append gitignore entries**
+- [x] **Step 1.4: Append gitignore entries**
 
 Append to `yls/.gitignore` (exact lines, only if not already present):
 ```
@@ -118,7 +118,7 @@ ylsbrain/.obsidian/workspace*.json
 ylsbrain/.obsidian/cache
 ```
 
-- [ ] **Step 1.5: Create placeholder vault files (content comes in Phase 2)**
+- [x] **Step 1.5: Create placeholder vault files (content comes in Phase 2)**
 
 Create each with a single seed line so structure passes (Phase 2 fills them):
 - `ylsbrain/CLAUDE.md` → `# YLS Brain — Schema (populated in Phase 2)`
@@ -126,7 +126,7 @@ Create each with a single seed line so structure passes (Phase 2 fills them):
 - `ylsbrain/index.md` → `# Index`
 - `ylsbrain/log.md` → `# Log`
 
-- [ ] **Step 1.6: Create the shared lib stub (full impl in Phase 3)**
+- [x] **Step 1.6: Create the shared lib stub (full impl in Phase 3)**
 
 Create `.claude/hooks/brain-lib.js`:
 ```javascript
@@ -135,12 +135,12 @@ Create `.claude/hooks/brain-lib.js`:
 module.exports = {};
 ```
 
-- [ ] **Step 1.7: Run verifier — expect GREEN**
+- [x] **Step 1.7: Run verifier — expect GREEN**
 
 Run: `node .claude/hooks/verify/verify-structure.js`
 Expected: exit 0, `STRUCTURE OK`.
 
-- [ ] **Step 1.8: Roadmap + checkpoint**
+- [x] **Step 1.8: Roadmap + checkpoint**
 
 Tick Phase 1. `/git-workflow-planning:checkpoint 1 vault scaffold` (fallback `git add -A && git commit -m "brain: phase 1 vault scaffold + gitignore"`).
 
@@ -686,7 +686,7 @@ Tick Phase 5. `/git-workflow-planning:finish` (fallback `git add -A && git commi
 ## Phase Checklist (Rule 7 roadmap)
 
 - [x] Phase 0: Verify environment
-- [ ] Phase 1: Vault scaffold + gitignore
+- [x] Phase 1: Vault scaffold + gitignore
 - [ ] Phase 2: Protocol content
 - [ ] Phase 3: Node hooks
 - [ ] Phase 4: settings.json wiring
