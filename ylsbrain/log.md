@@ -36,3 +36,8 @@ Append-only timeline. Entry format: `## [YYYY-MM-DD] <op> | <title>`.
 - Recovered concurrent-session tree collision (no loss), then promoted:
   origin/main d00ef4e (Merge branch 'develop') carries full brain +
   consolidation. Brain now on both branches. See journal/2026-05-18 [04:20].
+
+## [2026-05-18] tooling | Organized worktree helper + archive cleanup
+- scripts/wt.ps1 (7672662) — sibling container ../yls.worktrees + enforced
+  naming; smoke-tested. Recovery draft archived. Both [04:20] threads closed.
+  See journal/2026-05-18 [04:34].

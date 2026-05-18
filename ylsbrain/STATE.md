@@ -7,15 +7,12 @@ PR #8 squash); §11 discharged; first consolidation done (2 skills);
 promoted to `main`/production (`d00ef4e`, Merge branch 'develop').
 
 ## Latest synopsis
-Recovered the concurrent-session tree collision (no data loss) and promoted
-`develop`→`main`: production now carries the full brain + consolidation.
-Brain live on BOTH branches. See [[journal/2026-05-18]] [04:20].
+Added the organized-worktree helper `scripts/wt.ps1` (sibling container,
+enforced naming) and archived the recovery scratch draft — both [04:20]
+threads closed. See [[journal/2026-05-18]] [04:34].
 
 ## Open threads
-- Propose per-session `git worktree` setup so the concurrent-shared-tree
-  hazard can't recur ([[concurrent-sessions-worktrees]]).
-- Optional cleanup: `docs/temp/ylsbrain-STATE.consolidation-draft.md` (served
-  its purpose; candidate for archive).
+- none (clean state — awaiting next task)
 
 ## Active skills in play
 - [[skills/build-safe-destructive-git]] — before any git delete/drop/reset
@@ -29,4 +26,6 @@ Brain live on BOTH branches. See [[journal/2026-05-18]] [04:20].
   (promotion needs `established` + cross-project authorization — §8).
 - Hazard (recorded as feedback memory): concurrent CC sessions doing git
   branch ops in one working tree caused a mid-consolidation checkout→main;
-  recovered, no loss. Serialize or use worktrees.
+  recovered, no loss. MITIGATED: use `scripts/wt.ps1 new <branch>` for a
+  per-session worktree (sibling `../yls.worktrees/`); never hand-run
+  `git worktree add`. See [[concurrent-sessions-worktrees]].
