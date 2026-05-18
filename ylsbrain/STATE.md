@@ -2,23 +2,34 @@
 Updated: 2026-05-18
 
 ## Current focus
-None active. YLS Brain fully shipped: bootstrap → `develop` (`9e05ba0`,
-PR #8 squash); §11 discharged; first consolidation done (2 skills);
-promoted to `main`/production (`d00ef4e`, Merge branch 'develop').
+YLS Brain **knowledge-layer** design (user task: "brain learns the entire
+app — purpose, all features, plans for unbuilt features"). Brainstorm
+converged: Approach A, **lean 4-doc** scope (orientation + superseded
+ledger + code-verified features + roadmap), memory-overrides-docs,
+codebase-verified build status, living-via-consolidation. Spec not yet
+written. Branch: direct to `develop`.
 
 ## Latest synopsis
-Concurrent-session hazard fully mitigated end-to-end: helper `scripts/wt.ps1`
-+ feedback memory + STATE Notes + root CLAUDE.md Branch Strategy line.
-Clean state. See [[journal/2026-05-18]] [04:37].
+Mid-brainstorm on the knowledge layer. Detour completed first: fixed a
+cwd-fragile brain hook launch-path bug (`f69508e` — all 3 hooks now
+`$CLAUDE_PROJECT_DIR`-anchored, verified). See [[journal/2026-05-18]] [02:28].
 
 ## Open threads
-- none (clean state — awaiting next task)
+- Knowledge-layer spec: write to spec doc → self-review → user review →
+  writing-plans. Lean 4-doc scope agreed.
 
 ## Active skills in play
 - [[skills/build-safe-destructive-git]] — before any git delete/drop/reset
 - [[skills/testing-red-green-verifier-gates]] — gating non-Mocha deliverables
 
 ## Notes
+- Brain hook **launch** paths must be `$CLAUDE_PROJECT_DIR`-anchored
+  (fixed `f69508e`); a persisted shell `cd` otherwise breaks Stop-hook
+  resolution. Vault-root resolution itself is already cwd-robust
+  (`brain-lib.js` `ylsRoot` → `input.cwd`/`__dirname`).
+- Known benign: AL-5 PII heuristic false-positives on 40-char git SHAs
+  quoted in the journal (`[0-9a-fA-F]{40,}`); non-blocking, regex not
+  tightened (deferred).
 - Known benign: consolidate.js gap check perpetually flags `9e05ba0`
   (local date 2026-05-17) since journals are UTC-dated (`2026-05-18.md`) —
   artifact of the date-based-covering decision, not a real coverage gap.

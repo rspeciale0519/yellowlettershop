@@ -45,3 +45,8 @@ Append-only timeline. Entry format: `## [YYYY-MM-DD] <op> | <title>`.
 ## [2026-05-18] docs | Worktree workflow in root CLAUDE.md
 - ae59e91 — Branch Strategy now points at scripts/wt.ps1 + no-shared-tree
   rule. Concurrent-session hazard mitigated end-to-end. See [04:37].
+
+## [2026-05-18] fix | Brain hooks cwd-independent ($CLAUDE_PROJECT_DIR)
+- f69508e — all 3 hook launch paths anchored to $CLAUDE_PROJECT_DIR;
+  persisted shell `cd` no longer breaks Stop-hook resolution. Verified
+  from dev-docs/ (the break cwd). See journal/2026-05-18 [02:28].
