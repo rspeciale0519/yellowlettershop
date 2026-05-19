@@ -75,3 +75,8 @@ Append-only timeline. Entry format: `## [YYYY-MM-DD] <op> | <title>`.
   dogfooded); YLS adopted via brain sync (ef9b5be) — shared engine,
   vault byte-unchanged, ALL VERIFY GREEN. ~12 defects caught in review.
   Phase 7 (docs+tag, in _brain) remains. See journal/2026-05-18 [20:56].
+
+## [2026-05-18] consolidation | Post _brain build / instance #1
+- No app drift (knowledge stays current); no new YLS skill (reasoned);
+  3 Seam candidates flagged; ledger-poisoning open thread CLOSED (adopted
+  engine carries the fix). See journal/2026-05-18 [21:00].
