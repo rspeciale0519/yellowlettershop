@@ -251,6 +251,7 @@ export default function DesignCustomizerPage() {
           activePage={activePage}
           pageBackground={activeBackground}
           onBackgroundChange={handleBackgroundChange}
+          specRects={specRects}
         />
         <CanvasArea
           elements={activeElements}

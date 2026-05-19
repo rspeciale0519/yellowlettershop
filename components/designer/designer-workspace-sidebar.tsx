@@ -7,6 +7,7 @@ import { LayersPanel } from "@/components/designer/layers-panel"
 import { ModulesPanel } from "@/components/designer/modules-panel"
 import { PreflightPanel } from "@/components/designer/preflight-panel"
 import { BackgroundPanel } from "@/components/designer/background-panel"
+import type { SpecRects } from "@/components/designer/mail-spec"
 import type { DesignerFont } from "@/components/designer/designer-fonts"
 import type { CanvasSize, DesignElement, DesignerImageAsset, DesignerPage, PageBackground, Tool, WorkspacePanel } from "@/types/designer"
 
@@ -40,6 +41,7 @@ interface DesignerWorkspaceSidebarProps {
   activePage: DesignerPage
   pageBackground?: PageBackground
   onBackgroundChange: (next: PageBackground | undefined) => void
+  specRects?: SpecRects
 }
 
 const panelOptions: { id: WorkspacePanel; label: string; icon: typeof PackagePlus }[] = [
@@ -124,7 +126,14 @@ export function DesignerWorkspaceSidebar(props: DesignerWorkspaceSidebarProps) {
             onChange={props.onBackgroundChange}
           />
         )}
-        {props.activePanel === "preflight" && <PreflightPanel elements={props.elements} canvasSize={props.canvasSize} />}
+        {props.activePanel === "preflight" && (
+          <PreflightPanel
+            elements={props.elements}
+            canvasSize={props.canvasSize}
+            specRects={props.specRects}
+            onSelectElement={props.onSelectElement}
+          />
+        )}
       </div>
     </aside>
   )
