@@ -181,6 +181,14 @@ export default function DesignCustomizerPage() {
     setActivePanel("modules")
   }
 
+  const handleBackgroundChange = (next: typeof activeBackground) => {
+    doc.commitDocument({
+      ...documentState,
+      backgrounds: { ...documentState.backgrounds, [activePage]: next },
+      updatedAt: new Date().toISOString(),
+    })
+  }
+
   if (isLoading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="mr-2 h-6 w-6 animate-spin" />Loading...</div>
   if (!user) return null
 
@@ -240,6 +248,9 @@ export default function DesignCustomizerPage() {
           onDuplicate={doc.duplicateElement}
           onDelete={doc.deleteElement}
           onReplaceImageRequest={handleReplaceImageRequest}
+          activePage={activePage}
+          pageBackground={activeBackground}
+          onBackgroundChange={handleBackgroundChange}
         />
         <CanvasArea
           elements={activeElements}
