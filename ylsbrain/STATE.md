@@ -2,27 +2,26 @@
 Updated: 2026-05-18
 
 ## Current focus
-**Generalizing the brain** into a portable, per-project system housed in the
-external repo `C:\Users\rob\Documents\Software\_brain\` (own git repo). Design
-locked (7 sections); spec committed `aa02b74` →
-`_brain/docs/spec-project-brain-system.md`. Next: writing-plans →
-`_brain/docs/plan-project-brain-system.md`. YLS becomes **instance #1** during
-implementation (a future YLS task: journal + consolidation + §11 behavioral
-smoke; isolated filesystem copy first, NOT a worktree). Knowledge layer
-remains SHIPPED on `develop` (49 BUILT / 12 PARTIAL / 3 UNVERIFIED — read
-[[knowledge/orientation]] first).
+**Portable `_brain` system BUILT; YLS is now instance #1.** External repo
+`C:\Users\rob\Documents\Software\_brain\` holds the engine/CLI/tests
+(instance #0 dogfooded). YLS adopted via `brain sync` (`ef9b5be`) — runs the
+shared engine, vault content byte-unchanged, `ALL VERIFY GREEN`. Only Phase 7
+left: `_brain` README + `_brain/CLAUDE.md` + final `brain test` + tag
+`v0.1.0` (all in the `_brain` repo, not YLS). Knowledge layer still SHIPPED
+(49 BUILT / 12 PARTIAL / 3 UNVERIFIED — read [[knowledge/orientation]] first).
 
 ## Latest synopsis
-Brainstormed + spec'd the portable Project Brain System (vendored installer +
-`sync`; one-tier + Seam stub; principle D = structure≠truth, audited
-throughout). Spec is external (`_brain/` repo); no YLS code/content changed.
-See [[journal/2026-05-18]] [17:44].
+Built the portable Project Brain System end-to-end (subagent-driven, ~12
+defects caught by controller/gate review) and adopted YLS as instance #1
+(isolated-copy gate first; content preserved; behavioral smoke GREEN). YLS
+engine is now sync-managed from `_brain`. See [[journal/2026-05-18]] [20:56].
 
 ## Open threads
-- **Portable brain system:** spec done (`_brain/` `aa02b74`); next =
-  writing-plans, then implementation. Spec user-review gate pending. YLS
-  instance-#1 adoption is a FUTURE YLS task (own journal + consolidation +
-  behavioral smoke; isolated copy not worktree).
+- **`_brain` Phase 7 (in `_brain` repo, NOT YLS):** README + `_brain/CLAUDE.md`
+  + `brain test` ALL GREEN + tag `v0.1.0`. Then onboarding other projects =
+  `brain init <repo>` (explicit follow-up, out of v1 scope).
+- **YLS engine is sync-managed:** never hand-edit `yls/.claude/hooks/*`
+  (a `brain sync` would flag it as a local-mod). Upgrades flow from `_brain`.
 - **5 FLAG-TO-USER conflicts** in [[knowledge/superseded]] F1–F5 recorded
   provisionally (code-reality = truth) — await user confirmation:
   AccuZip validation simulated; MelissaData no purchase wiring; Mailgun

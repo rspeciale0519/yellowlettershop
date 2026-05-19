@@ -69,3 +69,9 @@ Append-only timeline. Entry format: `## [YYYY-MM-DD] <op> | <title>`.
   system at external _brain/ repo (aa02b74). One-tier+Seam stub; YLS→
   instance #1 (future); principle D (structure≠truth) institutionalized.
   No YLS code changed. See journal/2026-05-18 [17:44].
+
+## [2026-05-18] feature | _brain system built; YLS = instance #1
+- Built portable engine/CLI/tests in external _brain (instance #0
+  dogfooded); YLS adopted via brain sync (ef9b5be) — shared engine,
+  vault byte-unchanged, ALL VERIFY GREEN. ~12 defects caught in review.
+  Phase 7 (docs+tag, in _brain) remains. See journal/2026-05-18 [20:56].
