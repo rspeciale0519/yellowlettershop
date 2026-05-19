@@ -53,4 +53,22 @@ describe('renderDesignToPdf', () => {
     assert.ok(Math.abs(width - 4.25 * 72) < 0.5)
     assert.ok(Math.abs(height - 6.25 * 72) < 0.5)
   })
+
+  it('embeds a data-URL image and a QR element without throwing', async () => {
+    const png =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
+    const withMedia: DesignerDocument = {
+      ...doc,
+      pages: {
+        front: [
+          { id: 'img', name: 'img', type: 'image', x: 5, y: 5, width: 60, height: 60, zIndex: 1, src: png, fit: 'cover' },
+          { id: 'qr', name: 'qr', type: 'qr', x: 80, y: 5, width: 50, height: 50, zIndex: 2, value: 'https://x/{{state}}', foreground: '#000000', background: '#ffffff' },
+        ],
+        back: [],
+      },
+    }
+    const bytes = await renderDesignToPdf(withMedia, ctx, 'postcard_6x9', 'landscape')
+    const pdf = await PDFDocument.load(bytes)
+    assert.equal(pdf.getPageCount(), 2)
+  })
 })
