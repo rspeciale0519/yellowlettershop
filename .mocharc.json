@@ -1,19 +1,7 @@
 {
-  "require": [
-    "ts-node/register",
-    "tsconfig-paths/register",
-    "tests/setup/env-setup.ts",
-    "tests/setup/jsdom.ts",
-    "tests/setup/lucide-react-cjs-stub.js"
-  ],
-  "spec": [
-    "tests/**/*.test.ts",
-    "tests/**/*.test.tsx"
-  ],
-  "extension": [
-    "ts",
-    "tsx"
-  ],
+  "require": ["./tests/setup/register.js"],
+  "spec": ["tests/**/*.test.ts"],
+  "extension": ["ts"],
   "reporter": "spec",
   "timeout": 15000,
   "color": true
