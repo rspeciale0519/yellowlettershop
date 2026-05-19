@@ -93,3 +93,4 @@ Append-only timeline. Entry format: `## [YYYY-MM-DD] <op> | <title>`.
   offers bootstrap (passive, user-initiated). Global file not repo-tracked.
   See journal/2026-05-19 [23:41].
 - 2026-05-19 [03:10] Artwork Designer Overhaul 15-phase impl — branch feature/artwork-designer-overhaul (618006b..2e45a39), local-only; gated green per phase. See journal [03:10].
+- 2026-05-19 [03:40] Consolidation post artwork-designer overhaul — 2 skills added, features.md needs-reconcile, index/STATE refreshed (develop, post 992178b).

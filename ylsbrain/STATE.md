@@ -2,14 +2,15 @@
 Updated: 2026-05-19
 
 ## Current focus
-**Artwork Designer Overhaul COMPLETE on branch `feature/artwork-designer-overhaul`**
-(15 phases, 16 commits `618006b`→`2e45a39`, local-only — not pushed/PR'd;
-awaiting user decision on Rule-8 finish). Every phase gated: full Mocha suite
-green (≈72, 0 regressions), **0 new `typecheck:ui` errors vs the pre-existing
-12-error baseline**, eslint clean (touched), `next build` exit 0, files ≤350
-LOC. Plan: `.claude/plans/feature-artwork-designer-overhaul.md` (Rev 3, all ✅).
-Prior: `_brain` v0.1.0 shipped; knowledge layer reconciled (F1–F5 CONFIRMED).
-Read [[knowledge/orientation]] for whole-app context.
+None active — clean. **Artwork Designer Overhaul SHIPPED to `develop`** (PR #9
+merged, `992178b`; 15 phases `618006b`→`2e45a39` + brain `a0abae6`). Every
+phase gated: full Mocha suite green (≈72, 0 regressions), **0 new
+`typecheck:ui` errors vs the pre-existing 12-error baseline** (delta-gate
+model — repo baseline was pre-RED), eslint clean (touched), `next build`
+exit 0, files ≤350 LOC. Post-merge consolidation done (2 skills +
+features.md `needs-reconcile`). Plan:
+`.claude/plans/feature-artwork-designer-overhaul.md` (Rev 3, all ✅). Prior:
+`_brain` v0.1.0; F1–F5 CONFIRMED. Read [[knowledge/orientation]] for context.
 
 ## Latest synopsis
 Implemented review findings #2–#7 + full drag-drop + shadcn/frontend-design
@@ -22,13 +23,16 @@ two pre-existing repo breakages (absent Mocha harness; pre-RED `typecheck:ui`)
 F1–F5 CONFIRMED [21:26].)
 
 ## Open threads
-- **Artwork designer overhaul: implementation done, NOT integrated.** Branch
-  `feature/artwork-designer-overhaul` is local-only — user must decide push +
-  PR + merge-to-develop (Rule-8 finish). Rollback = don't merge / `git revert`;
-  legacy preserved under `archive/`. Documented deferred follow-ups: true
-  CMYK/PDF-X, embedded handwriting TTF, order↔designer orderId-on-save,
-  broad WCAG sweep, chrome-devtools visual regression (needs authed dev
-  session — `docs/temp/designer-verification-auth.md`).
+- **Artwork designer overhaul: MERGED to develop (`992178b`, PR #9).**
+  Deferred follow-ups (documented, tracked): true CMYK/PDF-X export, embedded
+  handwriting TTF (families map to pdf-lib StandardFonts), order↔designer
+  `orderId`-on-save linkage, broader WCAG contrast sweep, Tooltips on canvas
+  zoom toolbar, **chrome-devtools visual regression NOT yet run** (auth-gated;
+  approach in `docs/temp/designer-verification-auth.md`) — designer UI is
+  *unverified* visually, only logic+build are evidenced.
+- `knowledge/features.md` flipped **needs-reconcile** (Design rows stale post
+  overhaul; D2 FPD→custom still holds). Re-audit Design rows + counts at next
+  full reconcile (`git log --name-only 992178b` for the diff surface).
 - (clean) Project Brain System v0.1.0 shipped; knowledge layer reconciled
   (F1–F5 CONFIRMED 2026-05-19).
 - Standing op-note: **YLS engine is sync-managed** — never hand-edit

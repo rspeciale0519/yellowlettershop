@@ -1,8 +1,8 @@
 ---
 kind: knowledge
 slug: features
-status: current
-updated: 2026-05-18
+status: needs-reconcile
+updated: 2026-05-19
 layer: reference
 sources:
   - dev-docs/features-and-dashboards.md
@@ -17,6 +17,18 @@ sources:
 
 Status legend: **BUILT** = working with code evidence; **PARTIAL** = wired but degraded/mock/no UI; **UNVERIFIED** = not inspected/not found.
 Every row carries a real `path` from the codebase audit. This inventory is self-contained — each feature is enumerated individually below. Counts: BUILT 49 / PARTIAL 12 / UNVERIFIED 3 / PLANNED 0-in-code.
+
+> **NEEDS-RECONCILE (2026-05-19, designer rows):** the Artwork Designer
+> Overhaul (PR #9, merge `992178b`; [[journal/2026-05-19]] [03:10]) materially
+> changed the Design rows: `components/designer/` restructured into
+> `canvas/ inspector/ preflight/ tokens/ preview/` (~50 modules, not "19
+> files"); design **preview is now a real server-side PDF**
+> (`app/api/design/preview` + `_render/*`, pdf-lib) — no longer a stub;
+> added per-page background tool, selectable print sizes/bleed/USPS overlays
+> (`mail-spec.ts`), recipients API (`app/api/designer/recipients`); legacy
+> `tools-sidebar/text-tool-panel/image-tool-panel` archived; checkout uses one
+> unified designer. D2 (FPD→custom) in [[knowledge/superseded]] still holds.
+> Re-audit the Design rows + counts at next full reconcile.
 
 ## BUILT
 
