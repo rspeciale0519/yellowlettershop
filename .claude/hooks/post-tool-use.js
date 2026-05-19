@@ -8,10 +8,11 @@ try {
   if (!/^(Edit|Write|MultiEdit)$/.test(tool)
       && !(tool==='Bash' && /git\s+commit/.test(cmd)))
     process.exit(0);
-  const root = L.ylsRoot(input);
+  const root = L.projectRoot(input);
   const id = input.session_id || 'unknown';
-  const detail = (input.tool_input && (input.tool_input.file_path
+  let detail = (input.tool_input && (input.tool_input.file_path
     || input.tool_input.command)) || tool;
-  L.appendLedger(root, id, tool, String(detail).slice(0,200));
+  detail = String(detail).replace(/[\r\n]+/g, ' ').slice(0, 300);
+  L.appendLedger(root, id, tool, detail);
   process.exit(0);
 } catch (e) { console.error('[brain] post-tool-use failed open: '+e.message); process.exit(0); }

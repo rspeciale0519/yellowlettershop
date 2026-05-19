@@ -1,22 +1,16 @@
 'use strict';
-const fs = require('fs');
-const path = require('path');
-const root = path.resolve(__dirname, '..', '..', '..');
-const checks = {
-  'ylsbrain/CLAUDE.md': ['## Session-Start Ritual','## Per-task Journal','## Skill','## Accepted Limitations','AL-1','AL-5','no-op','Evidence'],
-  'ylsbrain/STATE.md': ['Current focus','Latest synopsis','Open threads'],
-  'ylsbrain/index.md': ['## Skills','## Recent journal'],
-  'ylsbrain/log.md': ['# Log'],
-};
-const rootClaude = path.join(root, 'CLAUDE.md');
-let fail = [];
-for (const [f, toks] of Object.entries(checks)) {
-  const fp = path.join(root, f);
-  if (!fs.existsSync(fp)) { fail.push(f + ' (absent)'); continue; }
-  const c = fs.readFileSync(fp, 'utf8');
-  toks.forEach(t => { if (!c.includes(t)) fail.push(`${f}: missing "${t}"`); });
-}
-if (!fs.existsSync(rootClaude) || !fs.readFileSync(rootClaude,'utf8').includes('## YLS Brain'))
-  fail.push('yls/CLAUDE.md: missing "## YLS Brain" pointer section');
-if (fail.length) { console.log('SCHEMA FAIL:\n'+fail.join('\n')); process.exit(1); }
+const fs=require('fs'); const path=require('path');
+const root=path.resolve(__dirname,'..','..','..');
+let vault='brain';
+try{ vault=JSON.parse(fs.readFileSync(path.join(root,'.brain.json'),'utf8')).vaultDir||'brain'; }catch{}
+let fail=[];
+const claude=path.join(root,vault,'CLAUDE.md');
+const toks=['## Session-Start Ritual','## Per-task Journal','## Skill','## Knowledge layer',
+  '## Consolidation','## Accepted Limitations','no-op','Evidence'];
+if(!fs.existsSync(claude)) fail.push(`${vault}/CLAUDE.md absent`);
+else { const c=fs.readFileSync(claude,'utf8'); toks.forEach(t=>{ if(!c.includes(t)) fail.push(`${vault}/CLAUDE.md: missing "${t}"`); }); }
+const rc=path.join(root,'CLAUDE.md');
+if(!fs.existsSync(rc)||!fs.readFileSync(rc,'utf8').includes('<!-- brain:pointer -->'))
+  fail.push('root CLAUDE.md: missing <!-- brain:pointer --> sentinel');
+if(fail.length){ console.log('SCHEMA FAIL:\n'+fail.join('\n')); process.exit(1); }
 console.log('SCHEMA OK'); process.exit(0);

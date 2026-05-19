@@ -298,3 +298,12 @@ last did before new work. On task completion: append a journal entry
 (Synopsis / What worked + Evidence / What did NOT work / Artifacts / Next) per
 `ylsbrain/CLAUDE.md`. NO secrets/PII in entries. Consolidation runs after the
 user's task, never instead of it. Full schema: `ylsbrain/CLAUDE.md`.
+
+<!-- brain:pointer -->
+## yls Brain (ylsbrain/) — mandatory protocol
+
+A self-improving engineering memory lives in `ylsbrain/`. Hooks enforce it
+(SessionStart injects state; Stop gates a per-task journal entry). State what we
+last did before new work; on task completion append a journal entry per
+`ylsbrain/CLAUDE.md`. NO secrets/PII. Consolidation after the user task only.
+<!-- /brain:pointer -->
