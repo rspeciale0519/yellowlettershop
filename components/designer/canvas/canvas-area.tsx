@@ -10,8 +10,9 @@ import { snapPosition } from "@/components/designer/canvas/snap"
 import { SnapGuides } from "@/components/designer/canvas/snap-guides"
 import { PrintOverlay } from "@/components/designer/canvas/print-overlay"
 import { PageBackgroundLayer } from "@/components/designer/page-background-layer"
+import { dropPointToCanvas, readDragPayload } from "@/components/designer/dnd"
 import type { SpecRects } from "@/components/designer/mail-spec"
-import type { CanvasSize, DesignElement, DesignerMode, PageBackground } from "@/types/designer"
+import type { CanvasSize, DesignElement, DesignerImageAsset, DesignerMode, PageBackground } from "@/types/designer"
 
 export interface CanvasAreaProps {
   elements: DesignElement[]
@@ -27,6 +28,7 @@ export interface CanvasAreaProps {
   onUpdateElement: (id: string, updates: Partial<DesignElement>) => void
   onDeleteElement?: (id: string) => void
   onDropModule?: (moduleId: string, position: { x: number; y: number }) => void
+  onDropAsset?: (asset: DesignerImageAsset, position: { x: number; y: number }) => void
   onReplaceImageRequest?: (id: string) => void
   onDuplicateElement?: (id: string) => void
   onToggleLock?: (id: string) => void
@@ -54,6 +56,7 @@ export function CanvasArea({
   onUpdateElement,
   onDeleteElement = () => undefined,
   onDropModule = () => undefined,
+  onDropAsset = () => undefined,
   onReplaceImageRequest = () => undefined,
   onDuplicateElement = () => undefined,
   onToggleLock = () => undefined,
@@ -100,13 +103,12 @@ export function CanvasArea({
       }}
       onDrop={(event) => {
         event.preventDefault()
-        const moduleId = event.dataTransfer.getData("application/x-yls-module")
+        const payload = readDragPayload(event.dataTransfer)
         const rect = viewportRef.current?.getBoundingClientRect()
-        if (!moduleId || !rect) return
-        onDropModule(moduleId, {
-          x: (event.clientX - rect.left - currentPan.x) / canvasScale,
-          y: (event.clientY - rect.top - currentPan.y) / canvasScale,
-        })
+        if (!payload || !rect) return
+        const position = dropPointToCanvas(event, rect, currentPan, canvasScale)
+        if (payload.kind === "module") onDropModule(payload.moduleId, position)
+        else onDropAsset(payload.asset, position)
       }}
     >
       <div

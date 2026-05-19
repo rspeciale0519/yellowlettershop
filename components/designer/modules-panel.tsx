@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react"
 import { CheckCircle2, ImageIcon, Loader2, UploadCloud } from "lucide-react"
 import type { DesignerModule } from "@/components/designer/module-definitions"
 import { DESIGNER_MODULES } from "@/components/designer/module-definitions"
+import { setDragPayload } from "@/components/designer/dnd"
 import type { DesignerImageAsset, Tool } from "@/types/designer"
 
 interface ModulesPanelProps {
@@ -33,14 +34,10 @@ function ModuleCard({ item, onAddModule }: { item: DesignerModule; onAddModule: 
   return (
     <button
       type="button"
-      className="flex w-full items-center gap-3 rounded-lg border border-slate-700 bg-slate-950/70 p-3 text-left shadow-sm transition hover:border-yellow-400 hover:bg-yellow-400/10"
-      draggable={item.id !== "image"}
+      className="flex w-full cursor-grab items-center gap-3 rounded-lg border border-slate-700 bg-slate-950/70 p-3 text-left shadow-sm transition hover:border-yellow-400 hover:bg-yellow-400/10 active:cursor-grabbing"
+      draggable
       onClick={() => onAddModule(item.id)}
-      onDragStart={(event) => {
-        if (item.id === "image") return
-        event.dataTransfer.setData("application/x-yls-module", item.id)
-        event.dataTransfer.effectAllowed = "copy"
-      }}
+      onDragStart={(event) => setDragPayload(event.dataTransfer, { kind: "module", moduleId: item.id })}
     >
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-yellow-400/15 text-yellow-300">
         <Icon className="h-5 w-5" />
@@ -202,7 +199,9 @@ export function ModulesPanel({
                 <button
                   key={asset.id}
                   type="button"
-                  className="group overflow-hidden rounded-lg border border-slate-700 bg-slate-900 text-left transition hover:border-yellow-400"
+                  className="group cursor-grab overflow-hidden rounded-lg border border-slate-700 bg-slate-900 text-left transition hover:border-yellow-400 active:cursor-grabbing"
+                  draggable
+                  onDragStart={(event) => setDragPayload(event.dataTransfer, { kind: "asset", asset })}
                   onClick={() => onInsertImage(asset)}
                 >
                   <span className="block aspect-[4/3] bg-slate-950">

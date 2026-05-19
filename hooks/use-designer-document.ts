@@ -102,10 +102,10 @@ export function useDesignerDocument(args: UseDesignerDocumentArgs) {
     setMode("select")
   }, [activeElements, activePage, canvasSize.height, canvasSize.width, commitDocument, documentState, setActivePanel, setActiveTool, setImageReplaceTarget, setMode, setSelectedElement])
 
-  const insertImage = useCallback((asset: DesignerImageAsset) => {
+  const placeImageElement = useCallback((asset: DesignerImageAsset, position: { x: number; y: number }) => {
     const nextZ = Math.max(0, ...activeElements.map((element) => element.zIndex)) + 1
     const imageElement = {
-      ...createModuleElement("image", { x: canvasSize.width / 2 - 130, y: canvasSize.height / 2 - 90 }, nextZ),
+      ...createModuleElement("image", position, nextZ),
       src: asset.url, name: asset.name, assetId: asset.id, sourceUrl: asset.sourceUrl,
     } as DesignElement
     commitDocument({
@@ -115,7 +115,16 @@ export function useDesignerDocument(args: UseDesignerDocumentArgs) {
     })
     setSelectedElement(imageElement.id)
     setActivePanel("inspector")
-  }, [activeElements, activePage, canvasSize.height, canvasSize.width, commitDocument, documentState, setActivePanel, setSelectedElement])
+  }, [activeElements, activePage, commitDocument, documentState, setActivePanel, setSelectedElement])
+
+  const insertImage = useCallback((asset: DesignerImageAsset) => {
+    placeImageElement(asset, { x: canvasSize.width / 2 - 130, y: canvasSize.height / 2 - 90 })
+  }, [canvasSize.height, canvasSize.width, placeImageElement])
+
+  // Drop centers the default 260×180 image on the cursor.
+  const dropAsset = useCallback((asset: DesignerImageAsset, position: { x: number; y: number }) => {
+    placeImageElement(asset, { x: position.x - 130, y: position.y - 90 })
+  }, [placeImageElement])
 
   const applyDesignerImage = useCallback((asset: DesignerImageAsset) => {
     if (imageReplaceTarget) {
@@ -231,6 +240,7 @@ export function useDesignerDocument(args: UseDesignerDocumentArgs) {
     updateElement,
     addElement,
     insertImage,
+    dropAsset,
     applyDesignerImage,
     duplicateElement,
     deleteElement,

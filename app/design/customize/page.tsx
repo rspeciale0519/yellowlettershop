@@ -256,6 +256,7 @@ export default function DesignCustomizerPage() {
           onDuplicateElement={doc.duplicateElement}
           onToggleLock={(id) => doc.updateElement(id, { locked: !activeElements.find((element) => element.id === id)?.locked })}
           onDropModule={doc.addElement}
+          onDropAsset={doc.dropAsset}
           canvasSize={canvasSize}
           specRects={specRects}
           background={activeBackground}
