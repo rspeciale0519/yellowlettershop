@@ -45,3 +45,51 @@ Append-only timeline. Entry format: `## [YYYY-MM-DD] <op> | <title>`.
 ## [2026-05-18] docs | Worktree workflow in root CLAUDE.md
 - ae59e91 — Branch Strategy now points at scripts/wt.ps1 + no-shared-tree
   rule. Concurrent-session hazard mitigated end-to-end. See [04:37].
+
+## [2026-05-18] fix | Brain hooks cwd-independent ($CLAUDE_PROJECT_DIR)
+- f69508e — all 3 hook launch paths anchored to $CLAUDE_PROJECT_DIR;
+  persisted shell `cd` no longer breaks Stop-hook resolution. Verified
+  from dev-docs/ (the break cwd). See journal/2026-05-18 [02:28].
+
+## [2026-05-18] feature | YLS Brain knowledge layer shipped
+- knowledge/{orientation,superseded,features,roadmap}.md + kind:knowledge
+  schema + mechanical consolidation clause + verify-knowledge.js gate.
+  Code-verified 49 BUILT/12 PARTIAL/3 UNVERIFIED; memory overrides stale
+  dev-docs (5 deltas + 5 flagged). Commits 6b5ec5b…c6f38d5. ALL VERIFY
+  GREEN. See journal/2026-05-18 [13:55].
+
+## [2026-05-18] consolidation | Post knowledge-layer
+- Mechanical reconcile = no app-source drift (clean). Promoted
+  testing-red-green-verifier-gates provisional→established (independent
+  reapplication). Repaired poisoned .brainstate watermark; brain-lib
+  ledger-ts hardening logged as next/open. See journal/2026-05-18 [14:00].
+
+## [2026-05-18] design | Portable Project Brain System spec'd (external)
+- Brainstorm→spec for generalizing the brain into vendored per-project
+  system at external _brain/ repo (aa02b74). One-tier+Seam stub; YLS→
+  instance #1 (future); principle D (structure≠truth) institutionalized.
+  No YLS code changed. See journal/2026-05-18 [17:44].
+
+## [2026-05-18] feature | _brain system built; YLS = instance #1
+- Built portable engine/CLI/tests in external _brain (instance #0
+  dogfooded); YLS adopted via brain sync (ef9b5be) — shared engine,
+  vault byte-unchanged, ALL VERIFY GREEN. ~12 defects caught in review.
+  Phase 7 (docs+tag, in _brain) remains. See journal/2026-05-18 [20:56].
+
+## [2026-05-18] consolidation | Post _brain build / instance #1
+- No app drift (knowledge stays current); no new YLS skill (reasoned);
+  3 Seam candidates flagged; ledger-poisoning open thread CLOSED (adopted
+  engine carries the fix). See journal/2026-05-18 [21:00].
+
+## [2026-05-19] reconcile | Knowledge F1–F5 CONFIRMED
+- Independently re-verified the 5 doc-vs-code flags vs current code, then
+  user-confirmed → superseded.md F1–F5 provisional→CONFIRMED; features/
+  roadmap wording reconciled; YLS ALL VERIFY GREEN. No app code changed.
+  See journal/2026-05-19 [21:26].
+
+## [2026-05-19] docs | Global Rule 11 — _brain self-discovery (option a)
+- User-authorized stanza in ~/.claude/CLAUDE.md: every session/any repo
+  self-discovers _brain + honors an installed brain; never proactively
+  offers bootstrap (passive, user-initiated). Global file not repo-tracked.
+  See journal/2026-05-19 [23:41].
+- 2026-05-19 [03:10] Artwork Designer Overhaul 15-phase impl — branch feature/artwork-designer-overhaul (618006b..2e45a39), local-only; gated green per phase. See journal [03:10].

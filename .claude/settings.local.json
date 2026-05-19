@@ -230,7 +230,9 @@
       "mcp__chrome-devtools__take_screenshot",
       "mcp__chrome-devtools__list_console_messages",
       "mcp__chrome-devtools__list_pages",
-      "mcp__chrome-devtools__handle_dialog"
+      "mcp__chrome-devtools__handle_dialog",
+      "Bash(xargs wc -l)",
+      "Bash(awk '{print $9, $5\"b\"}')"
     ],
     "deny": [],
     "ask": [

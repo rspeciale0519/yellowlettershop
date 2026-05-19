@@ -35,11 +35,25 @@ confidence provisional->established only on genuinely independent signal
 (different task context or external proof). Contradiction -> status: deprecated +
 tombstone. Never delete -> archive/ + tombstone.
 
+## Knowledge layer
+ylsbrain/knowledge/<slug>.md, slug in {orientation, superseded, features,
+roadmap}; artifact `kind: knowledge`. Frontmatter: kind/slug/status
+(current|partial|needs-reconcile)/updated/layer(orientation|reference|
+roadmap)/sources (POINTERS only — dev-doc paths, code paths, memory:<name>;
+never payloads/secrets). Rules: synthesize + link, never paste/paraphrase
+dev-docs (a restated fact = <=2 sentences + citation). Principled sizing:
+orientation.md <= one screen (~120 lines, hard); the other three are as long
+as the reconciled facts require and no longer — pointers over paraphrase.
+Build status is evidence-gated: BUILT only if entrypoint exists AND non-stub
+logic AND wired end-to-end (cited path); else PARTIAL/PLANNED/UNVERIFIED —
+never assert BUILT on a doc checkbox. Memory overrides dev-docs; the doc
+version goes to superseded.md with both citations + reason.
+
 ## Consolidation
 Periodic (every ~5 tasks or when the SessionStart notice says overdue), AFTER
 the user's current request, time-boxed: distil recurring worked->skill,
 didn't->pitfalls; revise/deprecate contradicted skills; run journal-vs-git gap
-check; trim STATE; refresh index. Never preempt the user's task.
+check; trim STATE; refresh index. Never preempt the user's task. Also reconcile knowledge/: run `git log --name-only <lastConsolidationTs>..HEAD` (+ journal entries since the watermark); for every changed path under app/, app/api/, components/, lib/, supabase/, check whether features.md/roadmap.md/orientation.md still hold — any claim the diff contradicts flips to `status: needs-reconcile` and is corrected or flagged; a doc reading like paraphrased dev-docs is trimmed to pointers.
 
 ## Seam
 When a skill is established AND generalizable beyond yls, propose an app-agnostic

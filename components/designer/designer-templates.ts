@@ -1,4 +1,10 @@
-import type { CanvasSize, DesignerDocument, DesignerOrientation } from "@/types/designer"
+import type { CanvasSize, DesignElement, DesignerDocument, DesignerOrientation } from "@/types/designer"
+import {
+  canvasSizePx,
+  LEGACY_CANVAS,
+  remapElements,
+  type MailFormatId,
+} from "@/components/designer/mail-spec"
 
 export const DESIGNER_STORAGE_KEY = "yls.design.customize.v1"
 
@@ -55,15 +61,36 @@ export const DESIGN_TEMPLATES = [
   },
 ] as const
 
+// Built-in templates were authored in the legacy 862×1112 space. Each maps to
+// a real mail format; coordinates are remapped once into the inches×100 space.
+export const TEMPLATE_FORMATS: Record<string, MailFormatId> = {
+  "real-estate-flyer": "letter_8_5x11",
+  "yellow-letter": "letter_8_5x11",
+  "postcard-offer": "postcard_6x9",
+}
+
+export function templateFormatId(templateId: string): MailFormatId {
+  return TEMPLATE_FORMATS[templateId] ?? "letter_8_5x11"
+}
+
 export function createDesignerDocument(templateId = DESIGN_TEMPLATES[0].id): DesignerDocument {
   const template = DESIGN_TEMPLATES.find((item) => item.id === templateId) ?? DESIGN_TEMPLATES[0]
+  const formatId = templateFormatId(template.id)
+  const target = canvasSizePx(formatId, "portrait")
+  const remap = (els: readonly Record<string, unknown>[]) =>
+    remapElements(
+      els.map((element) => ({ ...element })) as unknown as DesignElement[],
+      LEGACY_CANVAS,
+      target,
+    )
   return {
     templateId: template.id,
     templateName: template.name,
     orientation: "portrait",
+    formatId,
     pages: {
-      front: template.pages.front.map((element) => ({ ...element })),
-      back: template.pages.back.map((element) => ({ ...element })),
+      front: remap(template.pages.front),
+      back: remap(template.pages.back),
     },
     updatedAt: new Date().toISOString(),
   }

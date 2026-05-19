@@ -9,7 +9,27 @@ const SaveDesignSchema = z.object({
     templateId: z.string().min(1),
     templateName: z.string().min(1),
     orientation: z.enum(['portrait', 'landscape']),
+    formatId: z.string().optional(),
     pages: z.record(z.enum(['front', 'back']), z.array(z.object({}).passthrough())),
+    backgrounds: z
+      .record(
+        z.enum(['front', 'back']),
+        z
+          .object({
+            color: z.string().optional(),
+            image: z
+              .object({
+                assetId: z.string().optional(),
+                src: z.string(),
+                sourceUrl: z.string().optional(),
+                fit: z.enum(['cover', 'contain']),
+                opacity: z.number().optional(),
+              })
+              .optional(),
+          })
+          .strict(),
+      )
+      .optional(),
     updatedAt: z.string()
   }).passthrough(),
   orderId: z.string().uuid().optional(),
