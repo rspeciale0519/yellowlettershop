@@ -10,10 +10,11 @@ reconciled** — `[[knowledge/superseded]]` F1–F5 **CONFIRMED 2026-05-19**
 first for whole-app context (49 BUILT / 12 PARTIAL / 3 UNVERIFIED).
 
 ## Latest synopsis
-Confirmed + settled the 5 doc-vs-code flags (F1–F5 → CONFIRMED): independently
-re-verified each vs current code, flipped superseded.md, reconciled
-features/roadmap wording; YLS `ALL VERIFY GREEN` post-edit. See
-[[journal/2026-05-19]] [21:26]. (Prior: `_brain` build + YLS adoption,
+Added global **Rule 11** to `~/.claude/CLAUDE.md` (user-authorized): every
+session in any repo now self-discovers `_brain` + auto-honors an installed
+brain, but never proactively offers to bootstrap (option a — passive,
+user-initiated). Cross-repo discovery gap closed. See [[journal/2026-05-19]]
+[23:41]. (Prior: F1–F5 CONFIRMED [21:26]; `_brain` build + YLS adoption
 [[journal/2026-05-18]] [20:56]/[21:00].)
 
 ## Open threads

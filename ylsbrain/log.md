@@ -86,3 +86,9 @@ Append-only timeline. Entry format: `## [YYYY-MM-DD] <op> | <title>`.
   user-confirmed → superseded.md F1–F5 provisional→CONFIRMED; features/
   roadmap wording reconciled; YLS ALL VERIFY GREEN. No app code changed.
   See journal/2026-05-19 [21:26].
+
+## [2026-05-19] docs | Global Rule 11 — _brain self-discovery (option a)
+- User-authorized stanza in ~/.claude/CLAUDE.md: every session/any repo
+  self-discovers _brain + honors an installed brain; never proactively
+  offers bootstrap (passive, user-initiated). Global file not repo-tracked.
+  See journal/2026-05-19 [23:41].
