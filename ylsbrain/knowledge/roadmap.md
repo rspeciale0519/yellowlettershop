@@ -15,7 +15,7 @@ Reconciles the April-2025 plan to the current transactional direction. Items the
 
 ## Near-term
 
-- **Promote AccuZip validation from simulated → live.** Replace `Math.random()` job path with real API calls when key/path confirmed (`app/api/accuzip/upload/route.ts:135`). Flagged: [[knowledge/superseded]] F1.
+- **Promote AccuZip validation from simulated → live.** The order-flow job path is hardcoded `Math.random()` with no env branch (`app/api/accuzip/upload/route.ts:135`) — wire it to the real AccuZip client that already exists for list-builder (`lib/api/accuzip/count.ts`). Confirmed gap: [[knowledge/superseded]] F1 (CONFIRMED 2026-05-19).
 - **Distributed rate limiting.** Replace in-memory limiter with shared store (dossier §B PARTIAL).
 - **User orders dashboard → real data.** Replace mock `lib/data-structures.ts` read with live queries; admin orders is already real ([[knowledge/superseded]] F5).
 - **Template gallery → DB-backed.** Unify static `data/templates-data.ts` browse with the partial `mail_templates` DB path ([[knowledge/superseded]] F4).

@@ -97,7 +97,7 @@ Area summary: Auth (6), List-builder (1), Mailing-lists (4), Design (5), Orders 
 | Profile | API keys management | UI shell, no create/fetch wiring | `app/dashboard/api-keys/page.tsx` |
 | Integrations | Mailgun | Inbound webhook only (CSV parse = TODO); no outbound send | `app/api/skip-trace/webhook/results/route.ts` |
 
-> Several PARTIAL items are also flagged for user confirmation — see [[knowledge/superseded]] F1–F5.
+> Several PARTIAL items are CONFIRMED doc-vs-code deltas (user-confirmed 2026-05-19) — see [[knowledge/superseded]] F1–F5.
 
 ## PLANNED
 

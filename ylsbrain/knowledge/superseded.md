@@ -15,7 +15,7 @@ sources:
 
 # Superseded — doc-vs-truth ledger
 
-Where the April-2025 dev-docs diverge from project reality. Memory overrides stale docs; provisional flags are codebase-verified pending user confirmation. Pointers only — read the cited source for detail.
+Where the April-2025 dev-docs diverge from project reality. Memory overrides stale docs. D1–D5 are memory-resolved; **F1–F5 are CONFIRMED 2026-05-19** (independently re-verified vs current code, then user-confirmed) — no longer provisional. Pointers only — read the cited source for detail.
 
 ### D1 — Revenue model: subscriptions → transactional
 - **doc said:** Free/Pro/Team/Enterprise subscription tiers + $29/seat (`dev-docs/PRD.md §5`, `dev-docs/features-and-dashboards.md §1.2`).
@@ -45,29 +45,29 @@ Where the April-2025 dev-docs diverge from project reality. Memory overrides sta
 ### F1 — AccuZip validation job: live vs simulated
 - **doc said:** Real AccuZip validation API (`dev-docs/api-accuzip.md`).
 - **truth is:** Validation-job path is simulated via `Math.random()` (`app/api/accuzip/upload/route.ts:135`, `processAccuZipValidation`).
-- **why:** Provisional truth is PARTIAL/simulated; user to confirm whether a live key path is active in production.
-- **status:** FLAGGED — provisional: code-reality is truth, pending user confirmation
+- **why:** PARTIAL/simulated and **environment-independent** — `processAccuZipValidation` is hardcoded `Math.random()` with no env branch, so no `ACCUZIP_API_KEY`/deploy makes the order-flow path real. A real AccuZip HTTP client exists only for the list-builder count/search path (`lib/api/accuzip/count.ts` → `api.accuzip.com/v1`), not the order-flow upload. Confirmed 2026-05-19.
+- **status:** CONFIRMED 2026-05-19 — code-reality is the settled truth (independently re-verified vs current code, then user-confirmed); the doc claim is superseded; the unbuilt portion is tracked in [[knowledge/roadmap]].
 
 ### F2 — MelissaData purchase flow
 - **doc said:** Full list-purchase buy flow (`dev-docs/technical-architecture.md §2.5`).
 - **truth is:** `lib/list-builder/list-builder-service.ts:56` hardcodes $0.10/record; no `app/api/list-builder/purchase/` route; no payment wiring.
-- **why:** List-purchase is PARTIAL with no payment integration; doc's fuller vision unconfirmed.
-- **status:** FLAGGED — provisional: code-reality is truth, pending user confirmation
+- **why:** List-purchase is PARTIAL — estimate only (`$0.10/record` hardcoded "example pricing"), no purchase route, no payment integration. Confirmed 2026-05-19.
+- **status:** CONFIRMED 2026-05-19 — code-reality is the settled truth (independently re-verified vs current code, then user-confirmed); the doc claim is superseded; the unbuilt portion is tracked in [[knowledge/roadmap]].
 
 ### F3 — Mailgun transactional (outbound) email
 - **doc said:** Mailgun send + inbound (`dev-docs/api-integrations.md`).
 - **truth is:** Inbound only; outbound send is a comment stub (`lib/team/team-service.ts:491`); no SDK/send found.
 - **why:** Outbound email is PLANNED/absent; only inbound webhook parsing exists.
-- **status:** FLAGGED — provisional: code-reality is truth, pending user confirmation
+- **status:** CONFIRMED 2026-05-19 — code-reality is the settled truth (independently re-verified vs current code, then user-confirmed); the doc claim is superseded; the unbuilt portion is tracked in [[knowledge/roadmap]].
 
 ### F4 — Templates: DB marketplace vs static gallery
 - **doc said:** DB-backed template marketplace (`dev-docs/features-and-dashboards.md`).
 - **truth is:** `app/templates/page.tsx:9` browses static `data/templates-data.ts`; `app/api/templates/[id]/route.ts` queries `mail_templates` (partial DB path).
 - **why:** Gallery is PARTIAL — static browse plus a partial DB-backed fetch path.
-- **status:** FLAGGED — provisional: code-reality is truth, pending user confirmation
+- **status:** CONFIRMED 2026-05-19 — code-reality is the settled truth (independently re-verified vs current code, then user-confirmed); the doc claim is superseded; the unbuilt portion is tracked in [[knowledge/roadmap]].
 
 ### F5 — User orders dashboard: live vs mock
 - **doc said:** Live real-time user orders dashboard.
 - **truth is:** `app/dashboard/orders/page.tsx:15` reads mock `lib/data-structures.ts`; admin orders dashboard is real.
 - **why:** User orders dashboard is PARTIAL (scaffold/mock); admin path is BUILT.
-- **status:** FLAGGED — provisional: code-reality is truth, pending user confirmation
+- **status:** CONFIRMED 2026-05-19 — code-reality is the settled truth (independently re-verified vs current code, then user-confirmed); the doc claim is superseded; the unbuilt portion is tracked in [[knowledge/roadmap]].
