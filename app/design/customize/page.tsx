@@ -11,7 +11,7 @@ import { HelpButton } from "@/components/designer/help-button"
 import { PagesPanel } from "@/components/designer/pages-panel"
 import { PreviewModal } from "@/components/designer/preview-modal"
 import { DESIGN_TEMPLATES, DESIGNER_STORAGE_KEY, createDesignerDocument } from "@/components/designer/designer-templates"
-import { withFormatId } from "@/components/designer/mail-spec"
+import { specRectsPx, withFormatId } from "@/components/designer/mail-spec"
 import { createClient } from "@/utils/supabase/client"
 import { useDesignerFonts } from "@/hooks/use-designer-fonts"
 import { useDesignerImages } from "@/hooks/use-designer-images"
@@ -75,6 +75,11 @@ export default function DesignCustomizerPage() {
   const { documentState, canvasSize, activeElements } = doc
   const selectedElementData = activeElements.find((element) => element.id === selectedElement) ?? null
   const templateOptions = useMemo(() => DESIGN_TEMPLATES.map(({ id, name }) => ({ id, name })), [])
+  const specRects = useMemo(
+    () => specRectsPx(doc.formatId, documentState.orientation),
+    [doc.formatId, documentState.orientation],
+  )
+  const activeBackground = documentState.backgrounds?.[activePage]
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -182,9 +187,11 @@ export default function DesignCustomizerPage() {
           const index = DESIGN_TEMPLATES.findIndex((template) => template.id === documentState.templateId)
           doc.handleTemplateChange(DESIGN_TEMPLATES[(index + 1) % DESIGN_TEMPLATES.length].id)
         }}
+        onFormatChange={doc.setFormat}
         canUndo={doc.historyIndex > 0}
         canRedo={doc.historyIndex < doc.history.length - 1}
         templateId={documentState.templateId}
+        formatId={doc.formatId}
         templates={templateOptions}
       />
       <div className="flex h-9 items-center gap-2 border-b border-gray-200 bg-white px-4 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
@@ -238,8 +245,12 @@ export default function DesignCustomizerPage() {
           onPanChange={setPan}
           onUpdateElement={doc.updateElement}
           onDeleteElement={doc.deleteElement}
+          onDuplicateElement={doc.duplicateElement}
+          onToggleLock={(id) => doc.updateElement(id, { locked: !activeElements.find((element) => element.id === id)?.locked })}
           onDropModule={doc.addElement}
           canvasSize={canvasSize}
+          specRects={specRects}
+          background={activeBackground}
           onReplaceImageRequest={(id) => { setSelectedElement(id); setImageReplaceTarget(id); setActiveTool("images"); setActivePanel("modules") }}
         />
         <div className="w-48 border-l border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">

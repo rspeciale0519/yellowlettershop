@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Save, Undo, Redo, Eye, LayoutPanelLeft, Replace } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { MAIL_FORMATS, type MailFormatId } from "@/components/designer/mail-spec"
 
 interface DesignerHeaderProps {
   onUndo: () => void
@@ -13,9 +14,11 @@ interface DesignerHeaderProps {
   onToggleOrientation: () => void
   onTemplateChange: (templateId: string) => void
   onCycleTemplate: () => void
+  onFormatChange: (formatId: MailFormatId) => void
   canUndo: boolean
   canRedo: boolean
   templateId: string
+  formatId: MailFormatId
   templates: { id: string; name: string }[]
 }
 
@@ -28,9 +31,11 @@ export function DesignerHeader({
   onToggleOrientation,
   onTemplateChange,
   onCycleTemplate,
+  onFormatChange,
   canUndo,
   canRedo,
   templateId,
+  formatId,
   templates,
 }: DesignerHeaderProps) {
   return (
@@ -47,6 +52,20 @@ export function DesignerHeader({
               {templates.map((template) => (
                 <option key={template.id} value={template.id}>
                   {template.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <select
+              value={formatId}
+              onChange={(event) => onFormatChange(event.target.value as MailFormatId)}
+              className="h-9 rounded-md border border-gray-200 bg-transparent px-2 text-sm font-semibold dark:border-gray-700"
+              aria-label="Mail piece size"
+            >
+              {Object.values(MAIL_FORMATS).map((format) => (
+                <option key={format.id} value={format.id}>
+                  {format.label}
                 </option>
               ))}
             </select>

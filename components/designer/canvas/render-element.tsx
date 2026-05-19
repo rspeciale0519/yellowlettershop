@@ -30,6 +30,10 @@ export function RenderElement({
         style={{
           fontSize: element.fontSize,
           fontWeight: element.fontWeight,
+          fontStyle: element.fontStyle ?? "normal",
+          textDecoration: element.textDecoration ?? "none",
+          lineHeight: element.lineHeight ?? 1.2,
+          letterSpacing: element.letterSpacing != null ? `${element.letterSpacing}px` : undefined,
           fontFamily: getFontFamily(element.fontFamily, fonts),
           color: element.color ?? "#111827",
           textAlign: element.textAlign ?? "left",
@@ -53,12 +57,23 @@ export function RenderElement({
 
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img src={element.src} alt={element.name} className="h-full w-full object-contain" />
+      <img
+        src={element.src}
+        alt={element.name}
+        className={`h-full w-full ${element.fit === "cover" ? "object-cover" : "object-contain"}`}
+      />
     )
   }
 
   if (element.type === "graphic") {
-    const radius = element.shape === "circle" ? "9999px" : element.shape === "badge" ? "12px" : "0"
+    const radius =
+      element.borderRadius != null
+        ? `${element.borderRadius}px`
+        : element.shape === "circle"
+          ? "9999px"
+          : element.shape === "badge"
+            ? "12px"
+            : "0"
     const height = element.shape === "line" ? Math.max(2, element.strokeWidth ?? 4) : "100%"
     return (
       <div

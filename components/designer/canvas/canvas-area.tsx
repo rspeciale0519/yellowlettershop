@@ -1,13 +1,17 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { Hand, MousePointer2, RotateCcw, Trash2, ZoomIn, ZoomOut } from "lucide-react"
+import { Copy, Hand, Lock, MousePointer2, RotateCcw, Trash2, Unlock, ZoomIn, ZoomOut } from "lucide-react"
 import { Rnd } from "react-rnd"
 import { Button } from "@/components/ui/button"
 import type { DesignerFont } from "@/components/designer/designer-fonts"
 import { RenderElement } from "@/components/designer/canvas/render-element"
 import { snapPosition } from "@/components/designer/canvas/snap"
-import type { CanvasSize, DesignElement, DesignerMode } from "@/types/designer"
+import { SnapGuides } from "@/components/designer/canvas/snap-guides"
+import { PrintOverlay } from "@/components/designer/canvas/print-overlay"
+import { PageBackgroundLayer } from "@/components/designer/page-background-layer"
+import type { SpecRects } from "@/components/designer/mail-spec"
+import type { CanvasSize, DesignElement, DesignerMode, PageBackground } from "@/types/designer"
 
 export interface CanvasAreaProps {
   elements: DesignElement[]
@@ -24,7 +28,11 @@ export interface CanvasAreaProps {
   onDeleteElement?: (id: string) => void
   onDropModule?: (moduleId: string, position: { x: number; y: number }) => void
   onReplaceImageRequest?: (id: string) => void
+  onDuplicateElement?: (id: string) => void
+  onToggleLock?: (id: string) => void
   canvasSize?: CanvasSize
+  specRects?: SpecRects
+  background?: PageBackground
   showControls?: boolean
 }
 
@@ -47,7 +55,11 @@ export function CanvasArea({
   onDeleteElement = () => undefined,
   onDropModule = () => undefined,
   onReplaceImageRequest = () => undefined,
+  onDuplicateElement = () => undefined,
+  onToggleLock = () => undefined,
   canvasSize = { width: 862, height: 1112 },
+  specRects,
+  background,
   showControls = true,
 }: CanvasAreaProps) {
   const [editingElement, setEditingElement] = useState<string | null>(null)
@@ -109,14 +121,7 @@ export function CanvasArea({
             setEditingElement(null)
           }}
         >
-          <div className="absolute inset-0 bg-white">
-            <div className="absolute inset-8 border border-dashed border-gray-200" />
-            <div className="absolute left-0 top-0 h-full w-5 bg-yellow-400" />
-            <div className="absolute right-16 top-16 h-32 w-48 rounded-sm border border-gray-300 bg-gray-50" />
-            <div className="absolute bottom-16 left-16 right-16 border-t border-gray-200 pt-6 text-xs uppercase tracking-wide text-gray-400">
-              Direct mail preview
-            </div>
-          </div>
+          <PageBackgroundLayer background={background} />
           {elements
             .filter((element) => !element.hidden)
             .sort((a, b) => a.zIndex - b.zIndex)
@@ -148,26 +153,64 @@ export function CanvasArea({
                   }
                   setEditingElement(element.id)
                 }}
-                style={{ zIndex: element.zIndex, opacity: element.opacity ?? 1 }}
+                style={{
+                  zIndex: element.zIndex,
+                  opacity: element.opacity ?? 1,
+                  transform: element.rotation ? `rotate(${element.rotation}deg)` : undefined,
+                }}
                 className={`border-2 ${
                   selectedElement === element.id ? "border-yellow-500" : "border-transparent hover:border-yellow-500/50"
                 } ${element.locked ? "cursor-not-allowed" : ""}`}
               >
-                {selectedElement === element.id && !element.locked && (
-                  <div className="absolute -right-2 -top-10 z-50 flex rounded-md border border-gray-200 bg-white p-1 shadow-md">
+                {selectedElement === element.id && (
+                  <div
+                    className={`absolute -right-2 z-50 flex rounded-md border border-gray-200 bg-white p-1 shadow-md ${
+                      element.y < 44 ? "-bottom-10" : "-top-10"
+                    }`}
+                  >
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-7 w-7 text-red-500 hover:bg-red-50 hover:text-red-600"
-                      aria-label={`Delete ${element.name}`}
+                      className="h-7 w-7"
+                      aria-label={`${element.locked ? "Unlock" : "Lock"} ${element.name}`}
                       onClick={(event) => {
                         event.stopPropagation()
-                        onDeleteElement(element.id)
+                        onToggleLock(element.id)
                       }}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      {element.locked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
                     </Button>
+                    {!element.locked && (
+                      <>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7"
+                          aria-label={`Duplicate ${element.name}`}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            onDuplicateElement(element.id)
+                          }}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-red-500 hover:bg-red-50 hover:text-red-600"
+                          aria-label={`Delete ${element.name}`}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            onDeleteElement(element.id)
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 )}
                 <RenderElement
@@ -179,6 +222,8 @@ export function CanvasArea({
                 />
               </Rnd>
             ))}
+          <SnapGuides guides={[]} />
+          <PrintOverlay specRects={specRects} />
         </div>
       </div>
 

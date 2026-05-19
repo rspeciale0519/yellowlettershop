@@ -2,7 +2,13 @@
 
 import { useCallback, useState } from "react"
 import { createModuleElement } from "@/components/designer/module-definitions"
-import { CANVAS_SIZES, createDesignerDocument } from "@/components/designer/designer-templates"
+import { createDesignerDocument } from "@/components/designer/designer-templates"
+import {
+  canvasSizePx,
+  LEGACY_FALLBACK_FORMAT,
+  remapElements,
+  type MailFormatId,
+} from "@/components/designer/mail-spec"
 import type {
   DesignElement,
   DesignerDocument,
@@ -47,7 +53,8 @@ export function useDesignerDocument(args: UseDesignerDocumentArgs) {
   const [history, setHistory] = useState<DesignerDocument[]>([])
   const [historyIndex, setHistoryIndex] = useState(0)
 
-  const canvasSize = CANVAS_SIZES[documentState.orientation]
+  const formatId: MailFormatId = documentState.formatId ?? LEGACY_FALLBACK_FORMAT
+  const canvasSize = canvasSizePx(formatId, documentState.orientation)
   const activeElements = documentState.pages[activePage]
 
   const hydrate = useCallback((nextDocument: DesignerDocument) => {
@@ -195,14 +202,31 @@ export function useDesignerDocument(args: UseDesignerDocumentArgs) {
     setSelectedElement(null)
   }, [commitDocument, documentState.orientation, setActivePage, setSelectedElement])
 
+  const setFormat = useCallback((nextFormatId: MailFormatId) => {
+    if (nextFormatId === formatId) return
+    const from = canvasSizePx(formatId, documentState.orientation)
+    const to = canvasSizePx(nextFormatId, documentState.orientation)
+    commitDocument({
+      ...documentState,
+      formatId: nextFormatId,
+      pages: {
+        front: remapElements([...documentState.pages.front], from, to),
+        back: remapElements([...documentState.pages.back], from, to),
+      },
+      updatedAt: new Date().toISOString(),
+    })
+  }, [commitDocument, documentState, formatId])
+
   return {
     documentState,
     setDocumentState,
     history,
     historyIndex,
+    formatId,
     canvasSize,
     activeElements,
     hydrate,
+    setFormat,
     commitDocument,
     updateElement,
     addElement,

@@ -1,5 +1,10 @@
 import type { CanvasSize, DesignElement } from "@/types/designer"
 
+export interface SnapGuide {
+  axis: "x" | "y"
+  position: number
+}
+
 // Pure snap math, extracted verbatim from canvas-area (Phase 2, no behavior
 // change). Phase 5 will additionally surface the active guide lines.
 export function snapPosition(
