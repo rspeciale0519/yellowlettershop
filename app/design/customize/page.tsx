@@ -170,6 +170,13 @@ export default function DesignCustomizerPage() {
     router.push("/orders/new?source=design_tool")
   }
 
+  const handleReplaceImageRequest = (id: string) => {
+    setSelectedElement(id)
+    setImageReplaceTarget(id)
+    setActiveTool("images")
+    setActivePanel("modules")
+  }
+
   if (isLoading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="mr-2 h-6 w-6 animate-spin" />Loading...</div>
   if (!user) return null
 
@@ -228,6 +235,7 @@ export default function DesignCustomizerPage() {
           onToggleLocked={(id) => doc.updateElement(id, { locked: !activeElements.find((element) => element.id === id)?.locked })}
           onDuplicate={doc.duplicateElement}
           onDelete={doc.deleteElement}
+          onReplaceImageRequest={handleReplaceImageRequest}
         />
         <CanvasArea
           elements={activeElements}
@@ -251,7 +259,7 @@ export default function DesignCustomizerPage() {
           canvasSize={canvasSize}
           specRects={specRects}
           background={activeBackground}
-          onReplaceImageRequest={(id) => { setSelectedElement(id); setImageReplaceTarget(id); setActiveTool("images"); setActivePanel("modules") }}
+          onReplaceImageRequest={handleReplaceImageRequest}
         />
         <div className="w-48 border-l border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
           <PagesPanel activePage={activePage} onPageChange={setActivePage} orientation={documentState.orientation} />

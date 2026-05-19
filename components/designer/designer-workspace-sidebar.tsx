@@ -29,6 +29,7 @@ interface DesignerWorkspaceSidebarProps {
   onInsertImage: (asset: DesignerImageAsset) => void
   onSelectElement: (id: string) => void
   onUpdateElement: (id: string, updates: Partial<DesignElement>) => void
+  onReplaceImageRequest?: (id: string) => void
   onMoveLayer: (id: string, direction: "up" | "down") => void
   onReorderLayers: (orderedIds: string[]) => void
   onToggleHidden: (id: string) => void
@@ -102,6 +103,7 @@ export function DesignerWorkspaceSidebar(props: DesignerWorkspaceSidebarProps) {
             fonts={props.fonts}
             canvasSize={props.canvasSize}
             onUpdateElement={props.onUpdateElement}
+            onReplaceImageRequest={props.onReplaceImageRequest}
           />
         )}
         {props.activePanel === "preflight" && <PreflightPanel elements={props.elements} canvasSize={props.canvasSize} />}
