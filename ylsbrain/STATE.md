@@ -2,25 +2,35 @@
 Updated: 2026-05-19
 
 ## Current focus
-None active — clean. **Portable `_brain` system v0.1.0 SHIPPED** (instance #0
-`_brain/` dogfooded; YLS = instance #1 via `brain sync` `ef9b5be`, vault
-byte-unchanged, `ALL VERIFY GREEN`, tag `v0.1.0`). **Knowledge layer fully
-reconciled** — `[[knowledge/superseded]]` F1–F5 **CONFIRMED 2026-05-19**
-(user-confirmed; no provisional items remain). Read [[knowledge/orientation]]
-first for whole-app context (49 BUILT / 12 PARTIAL / 3 UNVERIFIED).
+**Artwork Designer Overhaul COMPLETE on branch `feature/artwork-designer-overhaul`**
+(15 phases, 16 commits `618006b`→`2e45a39`, local-only — not pushed/PR'd;
+awaiting user decision on Rule-8 finish). Every phase gated: full Mocha suite
+green (≈72, 0 regressions), **0 new `typecheck:ui` errors vs the pre-existing
+12-error baseline**, eslint clean (touched), `next build` exit 0, files ≤350
+LOC. Plan: `.claude/plans/feature-artwork-designer-overhaul.md` (Rev 3, all ✅).
+Prior: `_brain` v0.1.0 shipped; knowledge layer reconciled (F1–F5 CONFIRMED).
+Read [[knowledge/orientation]] for whole-app context.
 
 ## Latest synopsis
-Added global **Rule 11** to `~/.claude/CLAUDE.md` (user-authorized): every
-session in any repo now self-discovers `_brain` + auto-honors an installed
-brain, but never proactively offers to bootstrap (option a — passive,
-user-initiated). Cross-repo discovery gap closed. See [[journal/2026-05-19]]
-[23:41]. (Prior: F1–F5 CONFIRMED [21:26]; `_brain` build + YLS adoption
-[[journal/2026-05-18]] [20:56]/[21:00].)
+Implemented review findings #2–#7 + full drag-drop + shadcn/frontend-design
+pass: selectable print-accurate mail sizes w/ bleed/safe/USPS overlays, real
+server-side PDF (pdf-lib), modular deep Inspector, per-page background tool,
+recipient-data Preview dialog, legacy duplicate checkout editor archived →
+one unified designer. See [[journal/2026-05-19]] [03:10]. Discovered+handled
+two pre-existing repo breakages (absent Mocha harness; pre-RED `typecheck:ui`)
+→ user-approved "fix runner + delta-gate" model. (Prior: Rule 11 [23:41];
+F1–F5 CONFIRMED [21:26].)
 
 ## Open threads
-- (clean) Project Brain System v0.1.0 shipped (instances #0 `_brain`, #1 YLS);
-  knowledge layer fully reconciled — F1–F5 CONFIRMED 2026-05-19 (no provisional
-  items remain). Awaiting next task.
+- **Artwork designer overhaul: implementation done, NOT integrated.** Branch
+  `feature/artwork-designer-overhaul` is local-only — user must decide push +
+  PR + merge-to-develop (Rule-8 finish). Rollback = don't merge / `git revert`;
+  legacy preserved under `archive/`. Documented deferred follow-ups: true
+  CMYK/PDF-X, embedded handwriting TTF, order↔designer orderId-on-save,
+  broad WCAG sweep, chrome-devtools visual regression (needs authed dev
+  session — `docs/temp/designer-verification-auth.md`).
+- (clean) Project Brain System v0.1.0 shipped; knowledge layer reconciled
+  (F1–F5 CONFIRMED 2026-05-19).
 - Standing op-note: **YLS engine is sync-managed** — never hand-edit
   `yls/.claude/hooks/*` (a `brain sync` flags it local-mod); upgrades flow
   from `_brain`. Onboarding other projects = `brain init <repo>` (follow-up,
