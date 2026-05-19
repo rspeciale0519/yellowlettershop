@@ -1,8 +1,9 @@
 import type { MailFormatId } from "@/components/designer/mail-spec"
 
-// NOTE: `"colors" | "background"` remain in `Tool` until Phase 12 archives the
-// still-live legacy `tools-sidebar.tsx` (narrowing now would break `next build`).
-export type Tool = "text" | "images" | "graphics" | "qr-codes" | "tables" | "colors" | "background"
+// Phase 12: dead `"colors" | "background"` Tool members removed (the only
+// consumer, legacy tools-sidebar.tsx, is archived). Page backgrounds live in
+// the `"background"` WorkspacePanel below.
+export type Tool = "text" | "images" | "graphics" | "qr-codes" | "tables"
 export type WorkspacePanel = "modules" | "layers" | "inspector" | "preflight" | "background"
 export type DesignerPage = "front" | "back"
 export type DesignerOrientation = "portrait" | "landscape"

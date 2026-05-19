@@ -45,6 +45,7 @@
     "tests",
     "app/api",
     "lib",
-    "scripts"
+    "scripts",
+    "archive"
   ]
 }
