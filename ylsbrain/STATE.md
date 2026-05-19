@@ -1,31 +1,30 @@
 # yls brain — STATE
-Updated: 2026-05-18
+Updated: 2026-05-19
 
 ## Current focus
-**Portable `_brain` system BUILT; YLS is now instance #1.** External repo
-`C:\Users\rob\Documents\Software\_brain\` holds the engine/CLI/tests
-(instance #0 dogfooded). YLS adopted via `brain sync` (`ef9b5be`) — runs the
-shared engine, vault content byte-unchanged, `ALL VERIFY GREEN`. Only Phase 7
-left: `_brain` README + `_brain/CLAUDE.md` + final `brain test` + tag
-`v0.1.0` (all in the `_brain` repo, not YLS). Knowledge layer still SHIPPED
-(49 BUILT / 12 PARTIAL / 3 UNVERIFIED — read [[knowledge/orientation]] first).
+None active — clean. **Portable `_brain` system v0.1.0 SHIPPED** (instance #0
+`_brain/` dogfooded; YLS = instance #1 via `brain sync` `ef9b5be`, vault
+byte-unchanged, `ALL VERIFY GREEN`, tag `v0.1.0`). **Knowledge layer fully
+reconciled** — `[[knowledge/superseded]]` F1–F5 **CONFIRMED 2026-05-19**
+(user-confirmed; no provisional items remain). Read [[knowledge/orientation]]
+first for whole-app context (49 BUILT / 12 PARTIAL / 3 UNVERIFIED).
 
 ## Latest synopsis
-Built the portable Project Brain System end-to-end (subagent-driven, ~12
-defects caught by controller/gate review) and adopted YLS as instance #1
-(isolated-copy gate first; content preserved; behavioral smoke GREEN). YLS
-engine is now sync-managed from `_brain`. See [[journal/2026-05-18]] [20:56].
+Confirmed + settled the 5 doc-vs-code flags (F1–F5 → CONFIRMED): independently
+re-verified each vs current code, flipped superseded.md, reconciled
+features/roadmap wording; YLS `ALL VERIFY GREEN` post-edit. See
+[[journal/2026-05-19]] [21:26]. (Prior: `_brain` build + YLS adoption,
+[[journal/2026-05-18]] [20:56]/[21:00].)
 
 ## Open threads
-- **`_brain` Phase 7 (in `_brain` repo, NOT YLS):** README + `_brain/CLAUDE.md`
-  + `brain test` ALL GREEN + tag `v0.1.0`. Then onboarding other projects =
-  `brain init <repo>` (explicit follow-up, out of v1 scope).
-- **YLS engine is sync-managed:** never hand-edit `yls/.claude/hooks/*`
-  (a `brain sync` would flag it as a local-mod). Upgrades flow from `_brain`.
-- **5 FLAG-TO-USER conflicts** in [[knowledge/superseded]] F1–F5 recorded
-  provisionally (code-reality = truth) — await user confirmation:
-  AccuZip validation simulated; MelissaData no purchase wiring; Mailgun
-  outbound absent; templates static vs DB; user orders dashboard mock.
+- (clean) Project Brain System v0.1.0 shipped (instances #0 `_brain`, #1 YLS);
+  knowledge layer fully reconciled — F1–F5 CONFIRMED 2026-05-19 (no provisional
+  items remain). Awaiting next task.
+- Standing op-note: **YLS engine is sync-managed** — never hand-edit
+  `yls/.claude/hooks/*` (a `brain sync` flags it local-mod); upgrades flow
+  from `_brain`. Onboarding other projects = `brain init <repo>` (follow-up,
+  out of v1 scope). Optional housekeeping: `roadmap.md` still cites the
+  disposable scratch dossier in 2 lines (self-containment nit).
 
 ## Active skills in play
 - [[skills/build-safe-destructive-git]] — before any git delete/drop/reset

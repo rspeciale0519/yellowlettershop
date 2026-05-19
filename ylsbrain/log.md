@@ -80,3 +80,9 @@ Append-only timeline. Entry format: `## [YYYY-MM-DD] <op> | <title>`.
 - No app drift (knowledge stays current); no new YLS skill (reasoned);
   3 Seam candidates flagged; ledger-poisoning open thread CLOSED (adopted
   engine carries the fix). See journal/2026-05-18 [21:00].
+
+## [2026-05-19] reconcile | Knowledge F1–F5 CONFIRMED
+- Independently re-verified the 5 doc-vs-code flags vs current code, then
+  user-confirmed → superseded.md F1–F5 provisional→CONFIRMED; features/
+  roadmap wording reconciled; YLS ALL VERIFY GREEN. No app code changed.
+  See journal/2026-05-19 [21:26].
