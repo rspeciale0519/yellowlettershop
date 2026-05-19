@@ -18,6 +18,7 @@ import { useDesignerImages } from "@/hooks/use-designer-images"
 import { useDesignerShortcuts } from "@/hooks/use-designer-shortcuts"
 import { useDesignerAutosave } from "@/hooks/use-designer-autosave"
 import { useDesignerDocument } from "@/hooks/use-designer-document"
+import { designerRootClass } from "@/components/designer/designer-type"
 import type { DesignElement, DesignerDocument, DesignerMode, DesignerPage, Tool, WorkspacePanel } from "@/types/designer"
 
 type StoredDesignerState = { document: DesignerDocument }
@@ -193,7 +194,7 @@ export default function DesignCustomizerPage() {
   if (!user) return null
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-50">
+    <div className={`flex h-screen flex-col overflow-hidden bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-50 ${designerRootClass}`}>
       <DesignerHeader
         onUndo={doc.handleUndo}
         onRedo={doc.handleRedo}

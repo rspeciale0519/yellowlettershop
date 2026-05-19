@@ -238,24 +238,31 @@ export function CanvasArea({
       </div>
 
       {showControls && (
-        <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-white p-2 shadow-md dark:bg-gray-800">
-          <Button variant={mode === "select" ? "default" : "ghost"} size="icon" onClick={() => onModeChange("select")}>
+        <div
+          role="toolbar"
+          aria-label="Canvas controls"
+          className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-white p-2 shadow-md dark:bg-gray-800"
+        >
+          <Button variant={mode === "select" ? "default" : "ghost"} size="icon" aria-label="Select tool" aria-pressed={mode === "select"} onClick={() => onModeChange("select")}>
             <MousePointer2 className="h-5 w-5" />
           </Button>
-          <Button variant={mode === "pan" ? "default" : "ghost"} size="icon" onClick={() => onModeChange("pan")}>
+          <Button variant={mode === "pan" ? "default" : "ghost"} size="icon" aria-label="Pan canvas" aria-pressed={mode === "pan"} onClick={() => onModeChange("pan")}>
             <Hand className="h-5 w-5" />
           </Button>
           <div className="h-6 w-px bg-gray-200 dark:bg-gray-700" />
-          <Button variant="ghost" size="icon" onClick={() => changeZoom(zoom - 10)}>
+          <Button variant="ghost" size="icon" aria-label="Zoom out" onClick={() => changeZoom(zoom - 10)}>
             <ZoomOut className="h-5 w-5" />
           </Button>
-          <span className="w-14 text-center text-sm font-semibold">{zoom}%</span>
-          <Button variant="ghost" size="icon" onClick={() => changeZoom(zoom + 10)}>
+          <span className="w-14 text-center text-sm font-semibold" aria-live="polite" aria-label={`Zoom ${zoom} percent`}>
+            {zoom}%
+          </span>
+          <Button variant="ghost" size="icon" aria-label="Zoom in" onClick={() => changeZoom(zoom + 10)}>
             <ZoomIn className="h-5 w-5" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
+            aria-label="Reset zoom and position"
             onClick={() => {
               onPanChange({ x: 0, y: 0 })
               changeZoom(70)

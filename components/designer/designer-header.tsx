@@ -112,14 +112,7 @@ export function DesignerHeader({
             <Eye className="h-4 w-4 mr-2" />
             Preview
           </Button>
-          <Button 
-            size="sm" 
-            className=""
-            onClick={onNext}
-            style={{ backgroundColor: '#E0B431', color: '#000' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F6CF62'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E0B431'}
-          >
+          <Button size="sm" variant="brand" onClick={onNext}>
             Next
           </Button>
         </div>

@@ -138,7 +138,7 @@ Slider/Popover/ToggleGroup/Tooltip · existing `zoom`/pan · existing
 | **11 ✅** | **Server PDF assets/fonts + Dialog integration** | Image embedding (service-client bytes), QR (`qrcode`), tables, embedded custom/handwriting fonts (fontkit). Wire returned PDF (front+back) + download + `widthIn×heightIn @300` into the Phase 9 Dialog shell. RGB-now; CMYK documented follow-up. Verify MediaBox=(in+0.25)×72 pt, 2 pages, crop marks, 300-DPI imagery, personalization. | yes |
 | **12 ✅** | **Checkout unification + archival (GATED)** | Refactor `DesignCustomizerStep.tsx` (Option A): remove embedded editor + 3 imports + the `any`; **define checkout↔designer round-trip contract** — CTA → `/design/customize?orderId=…`; designer consumes `orderId`, links it on save, returns via existing `design_tool_save` sessionStorage handoff to the order step; saved-design status + authenticated preview. `git mv` 3 files → `archive/components/designer/` **same commit**. CORE GATE: `next build` + checkout step works + grep shows 3 files only under `archive/`. | gated |
 | **13 ✅** | **Real preflight (#2)** | `preflight/{preflight-rules,preflight-panel,use-image-natural-sizes}`; spec-driven rules (low-DPI = natural px vs printed-in×300, out-of-safe, address/indicia intrusion, placeholder, empty text, tiny font, unknown token). Old `preflight-panel.tsx` → re-export. Tests: `preflight-rules`. | yes |
-| **14** | **Help + a11y + aesthetic polish + final regression** | `button` `brand` variant (kill inline-hex) → header Next + help button; `help-dialog.tsx` (quick start, shortcut ref from `designer-shortcuts`, print-zone legend) + reposition icon-only (no toolbar collision); aria-labels + Tooltip on all canvas controls; contrast uplift (slate AA); scoped `designer-type.ts` (designer root only); **rollback note** (legacy reachable until sign-off). Full chrome-devtools regression (authed session per Phase 0) + lint/typecheck/test/build. `/git-workflow-planning:finish`. | yes |
+| **14 ✅** | **Help + a11y + aesthetic polish + final regression** | `button` `brand` variant (kill inline-hex) → header Next + help button; `help-dialog.tsx` (quick start, shortcut ref from `designer-shortcuts`, print-zone legend) + reposition icon-only (no toolbar collision); aria-labels + Tooltip on all canvas controls; contrast uplift (slate AA); scoped `designer-type.ts` (designer root only); **rollback note** (legacy reachable until sign-off). Full chrome-devtools regression (authed session per Phase 0) + lint/typecheck/test/build. `/git-workflow-planning:finish`. | yes |
 
 ---
 
@@ -162,8 +162,29 @@ Slider/Popover/ToggleGroup/Tooltip · existing `zoom`/pan · existing
 | `archive/components/designer/{tools-sidebar,text-tool-panel,image-tool-panel}.tsx` | move (Rule 1, Phase 12) |
 
 ## New dependencies (install only at the gating phase)
-`react-colorful` (Phase 4) · `pdf-lib`, `@pdf-lib/fontkit` (Phase 10) · licensed
-handwriting TTF asset (Phase 10).
+`react-colorful` (Phase 4) · `pdf-lib` (Phase 10) · `@pdf-lib/fontkit`
+(Phase 11). Handwriting TTF deferred — families map to pdf-lib StandardFonts
+(documented follow-up; no licensing/binary risk taken).
+
+## Rollback / sign-off
+
+All work is isolated on **`feature/artwork-designer-overhaul`** with one
+build-green commit per phase — `develop`/`main` are untouched, so the rollback
+path is simply "do not merge" (or `git revert <phase commit>` for a single
+phase). Legacy designer code is preserved under `archive/` (Rule 1), so the
+old behavior is recoverable. The branch is not pushed/PR'd until explicitly
+approved. New deps (`react-colorful`, `pdf-lib`, `@pdf-lib/fontkit`) are the
+only `package.json` changes.
+
+### Status: ALL 15 PHASES (0–14) COMPLETE ✅
+Every checkpoint: full Mocha suite green (75 tests, 0 regressions), **0 new
+`typecheck:ui` errors** vs the documented pre-existing baseline of 12, ESLint
+clean on touched files, `next build` succeeds, all source files ≤350 LOC.
+Deferred follow-ups (documented, non-blocking): true CMYK/PDF-X export,
+embedded handwriting TTF, order↔designer `orderId` linkage on save, broader
+WCAG contrast sweep, Tooltips on the canvas zoom toolbar, chrome-devtools
+visual regression (needs an authenticated dev session per
+`docs/temp/designer-verification-auth.md`).
 
 ## Verification strategy
 - **Static (every checkpoint):** `npm run lint`, `npm run typecheck:ui`,
