@@ -6,8 +6,9 @@ import { Rnd } from "react-rnd"
 import { Button } from "@/components/ui/button"
 import type { DesignerFont } from "@/components/designer/designer-fonts"
 import { RenderElement } from "@/components/designer/canvas/render-element"
-import { snapPosition } from "@/components/designer/canvas/snap"
+import { computeSnap, snapPosition, type SnapGuide } from "@/components/designer/canvas/snap"
 import { SnapGuides } from "@/components/designer/canvas/snap-guides"
+import { CanvasEmptyState } from "@/components/designer/canvas/canvas-empty-state"
 import { PrintOverlay } from "@/components/designer/canvas/print-overlay"
 import { PageBackgroundLayer } from "@/components/designer/page-background-layer"
 import { dropPointToCanvas, readDragPayload } from "@/components/designer/dnd"
@@ -66,7 +67,9 @@ export function CanvasArea({
   showControls = true,
 }: CanvasAreaProps) {
   const [editingElement, setEditingElement] = useState<string | null>(null)
+  const [activeGuides, setActiveGuides] = useState<SnapGuide[]>([])
   const [panStart, setPanStart] = useState<{ x: number; y: number; panX: number; panY: number } | null>(null)
+  const visibleCount = elements.filter((element) => !element.hidden).length
   const viewportRef = useRef<HTMLDivElement | null>(null)
   const canvasScale = zoom / 100
   const currentPan = pan ?? { x: 0, y: 0 }
@@ -124,6 +127,7 @@ export function CanvasArea({
           }}
         >
           <PageBackgroundLayer background={background} />
+          {visibleCount === 0 && <CanvasEmptyState />}
           {elements
             .filter((element) => !element.hidden)
             .sort((a, b) => a.zIndex - b.zIndex)
@@ -135,7 +139,11 @@ export function CanvasArea({
                 scale={canvasScale}
                 disableDragging={mode === "pan" || element.locked || editingElement === element.id}
                 enableResizing={mode === "select" && !element.locked}
-                onDragStop={(event, data) => onUpdateElement(element.id, snapPosition(element, data.x, data.y, elements, canvasSize))}
+                onDrag={(event, data) => setActiveGuides(computeSnap(element, data.x, data.y, elements, canvasSize).guides)}
+                onDragStop={(event, data) => {
+                  setActiveGuides([])
+                  onUpdateElement(element.id, snapPosition(element, data.x, data.y, elements, canvasSize))
+                }}
                 onResizeStop={(event, direction, ref, delta, position) => {
                   onUpdateElement(element.id, {
                     width: Number.parseInt(ref.style.width, 10),
@@ -224,7 +232,7 @@ export function CanvasArea({
                 />
               </Rnd>
             ))}
-          <SnapGuides guides={[]} />
+          <SnapGuides guides={activeGuides} />
           <PrintOverlay specRects={specRects} />
         </div>
       </div>

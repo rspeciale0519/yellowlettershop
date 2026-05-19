@@ -163,6 +163,10 @@ export default function DesignCustomizerPage() {
     onDuplicate: doc.duplicateElement,
     onUndo: doc.handleUndo,
     onRedo: doc.handleRedo,
+    onNudge: (id, dx, dy) => {
+      const el = activeElements.find((element) => element.id === id)
+      if (el) doc.updateElement(id, { x: el.x + dx, y: el.y + dy })
+    },
   })
 
   const continueToOrder = async () => {
