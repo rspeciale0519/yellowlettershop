@@ -12,5 +12,18 @@ else { const c=fs.readFileSync(claude,'utf8'); toks.forEach(t=>{ if(!c.includes(
 const rc=path.join(root,'CLAUDE.md');
 if(!fs.existsSync(rc)||!fs.readFileSync(rc,'utf8').includes('<!-- brain:pointer -->'))
   fail.push('root CLAUDE.md: missing <!-- brain:pointer --> sentinel');
+try {
+  const lk = JSON.parse(fs.readFileSync(path.join(root,'.brain.lock'),'utf8')||'{}');
+  if (lk && lk.renderManaged) {
+    const rel = vault + '/CLAUDE.md';
+    const e = lk.renderManaged[rel];
+    if (!e) fail.push(`.brain.lock renderManaged: missing entry ${rel}`);
+    else {
+      if (!/^[0-9a-f]{64}$/.test(String(e.renderedHash||''))) fail.push(`.brain.lock renderManaged.${rel}.renderedHash not 64-hex`);
+      if (!/^[0-9a-f]{64}$/.test(String(e.templateHash||''))) fail.push(`.brain.lock renderManaged.${rel}.templateHash not 64-hex`);
+      if (!String(e.templateVersion||'').trim()) fail.push(`.brain.lock renderManaged.${rel}.templateVersion empty`);
+    }
+  }
+} catch {} // absent/corrupt .brain.lock: no renderManaged entry to check here — lock integrity is doctor's job, not a vault-schema error
 if(fail.length){ console.log('SCHEMA FAIL:\n'+fail.join('\n')); process.exit(1); }
 console.log('SCHEMA OK'); process.exit(0);

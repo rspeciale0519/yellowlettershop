@@ -1,6 +1,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 function projectRoot(input) {
   return (input && input.cwd) ? input.cwd
@@ -73,7 +74,14 @@ const PII = [/sk_live_[A-Za-z0-9]/, /AKIA[0-9A-Z]{16}/, /BEGIN [A-Z ]*PRIVATE KE
   /\b[0-9a-fA-F]{40,}\b/];
 function scanSecrets(text){ return PII.some(re=>re.test(text)); }
 
+function sha256Norm(text){
+  let s = (text == null) ? '' : String(text);
+  while (s.charCodeAt(0) === 0xFEFF) s = s.slice(1);
+  s = s.replace(/\r\n/g, '\n');
+  return crypto.createHash('sha256').update(s, 'utf8').digest('hex');
+}
+
 module.exports = { projectRoot, brainConfig, vaultDir, projectName, P, stateDir,
   ensureDir, readJson, writeJson, nowIso,
   getBrain, setBrain, sentinelFile, ledgerFile, appendLedger, allLedgerLines,
-  unconsumed, latestJournal, journalBlocks, scanSecrets };
+  unconsumed, latestJournal, journalBlocks, scanSecrets, sha256Norm };

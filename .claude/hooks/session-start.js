@@ -27,6 +27,14 @@ try {
   out += '--- STATE.md ---\n' + rd('STATE.md') + '\n';
   const lj = L.latestJournal(root);
   out += '--- latest journal ---\n' + (lj ? path.basename(lj) : '(none yet)') + '\n';
+  try {
+    const lk = JSON.parse(fs.readFileSync(path.join(root,'.brain.lock'),'utf8')||'{}');
+    const rel = L.vaultDir(root) + '/CLAUDE.md';
+    const rec = lk && lk.renderManaged && lk.renderManaged[rel] && lk.renderManaged[rel].renderedHash;
+    const dp = L.P(root,'CLAUDE.md');
+    if (rec && fs.existsSync(dp) && L.sha256Norm(fs.readFileSync(dp,'utf8')) !== rec)
+      out = 'INFO Protocol doc diverges from its tracked baseline (local edits or awaiting re-baseline) — run `brain sync` (-ProtocolDiff to inspect, -AcceptDoc to keep yours, -Force to take upstream).\n\n' + out;
+  } catch {}
   process.stdout.write(out);
   process.exit(0);
 } catch (e) { console.error('[brain] session-start failed open: '+e.message); process.exit(0); }

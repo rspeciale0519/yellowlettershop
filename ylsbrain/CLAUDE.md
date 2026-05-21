@@ -66,3 +66,4 @@ Proposal-only, user-approved; cross-project write needs explicit authorization.
 - AL-3: task-boundary detection is heuristic; gate may over/under-fire.
 - AL-4: distillation quality is agent-dependent; the post-task notice is a floor.
 - AL-5: brain-in-repo is a confidentiality/entanglement tradeoff; heuristic PII scan is partial.
+- AL-6: customized protocol docs are operator-reconciled, not auto-merged; `-AcceptDoc` trusts the operator's assertion that they reconciled (the tool cannot verify the reconciliation — structure≠truth). R3 is retired for the untouched case, reduced (not eliminated) for the customized case.
