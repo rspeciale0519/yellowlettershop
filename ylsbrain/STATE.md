@@ -1,9 +1,14 @@
 # yls brain — STATE
-Updated: 2026-05-19
+Updated: 2026-05-21
 
 ## Current focus
-None active — clean. **Artwork Designer Overhaul SHIPPED to `develop`** (PR #9
-merged, `992178b`; 15 phases `618006b`→`2e45a39` + brain `a0abae6`). Every
+None active — clean. **Released `develop` → `main`** (merge `91fcb60` on
+main; `e83f884` brain-sync tip on develop) — artwork-designer overhaul +
+`_brain` v0.1.0 + knowledge layer + Rule 11 + MCP-npx fix are now on
+production `main`. If `main` is wired to Vercel prod, the deploy just
+shipped — verify in the dashboard. Prior: **Artwork Designer Overhaul SHIPPED
+to `develop`** (PR #9 merged, `992178b`; 15 phases `618006b`→`2e45a39` +
+brain `a0abae6`). Every
 phase gated: full Mocha suite green (≈72, 0 regressions), **0 new
 `typecheck:ui` errors vs the pre-existing 12-error baseline** (delta-gate
 model — repo baseline was pre-RED), eslint clean (touched), `next build`
