@@ -3,7 +3,7 @@ const fs = require('fs');
 const L = require('./brain-lib');
 let input = {}; try { input = JSON.parse(fs.readFileSync(0,'utf8')||'{}'); } catch {}
 try {
-  const root = L.ylsRoot(input);
+  const root = L.projectRoot(input);
   const id = input.session_id || 'unknown';
   const sf = L.sentinelFile(root,id);
   const sentinel = L.readJson(sf, { blockCount:0 });
@@ -34,7 +34,8 @@ try {
   }
   sentinel.blockCount = (sentinel.blockCount||0)+1;
   L.writeJson(sf, sentinel);
-  console.error('[brain] BLOCKED: append a journal entry to ylsbrain/journal/'
+  const journalPath = L.vaultDir(root) + '/journal/';
+  console.error('[brain] BLOCKED: append a journal entry to ' + journalPath
     + new Date().toISOString().slice(0,10)
     + '.md for the work just done (### [HH:MM] title; Synopsis; What worked + Evidence; What did NOT work; Artifacts; Next). Or write the one-line no-op entry if nothing substantive.');
   process.exit(2); // non-zero = block

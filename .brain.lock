@@ -1,0 +1,25 @@
+{
+  "renderManaged": {
+    "ylsbrain/CLAUDE.md": {
+      "templateVersion": "0.1.0",
+      "templateHash": "8758188c319384ff85fe580a0c242f3bfca54b7ee5c993755760a73c4a061087",
+      "renderedHash": "6b341e54a4217386a30a0ad12ec676212f502dd7475f80a0e592210b9e6b2b07",
+      "pristine": true
+    }
+  },
+  "lastSync": "2026-05-21T01:06:03.3993079-04:00",
+  "files": {
+    ".claude/hooks/consolidate.js": "41bcc36b78d160d73c26b2dd51040e958f6f6fd84dbb3faa97229ae7c6d834d9",
+    ".claude/hooks/verify/verify-structure.js": "ad3fb8fcffacdcaf82d11db0f9b902b8b15254c755c2a571a003774e9090813f",
+    ".claude/hooks/verify/verify-schema.js": "f248b9acf1f78bdbcc3762971ae025188a80b470d17938dc2ee456b9f4c98617",
+    ".claude/hooks/post-tool-use.js": "4f1a9a325c2313efcd988c6cb5bafde0c05ed48d3a68f1ac75246b64588b32b1",
+    ".claude/hooks/stop.js": "c160f796d92730978223b9bde1249cb56a9cebb862abafccf974cc21de855293",
+    ".claude/hooks/verify/verify-settings.js": "779b0454dc9e176cabe75931c48f645fce8231ffc20c48fdeacc79404fe0fce3",
+    ".claude/hooks/brain-lib.js": "2d5aabb4b79c48bc2d7589d551459ab1e62a409f218476eadd7eb56deb7a6747",
+    ".claude/hooks/verify/verify-hooks.js": "417177cf3710d79d1f5258c9fd8102cf25497ef767aec85b2d0390e81bed9198",
+    ".claude/hooks/playbooks/knowledge-build.md": "0d372f851b767afc66540cf550131bfd57eb00376c2949d8a3506a40f7e8bb2a",
+    ".claude/hooks/session-start.js": "3ca0485b860eb2b40c1ecff0b063b3e3361af311f40815b924c5790e349367a4",
+    ".claude/hooks/verify/verify-knowledge.js": "69f1f71590bf68a0face011aebabce70193b88aff9443226cd4fa2dd8b4c3879"
+  },
+  "engineVersion": "0.1.0"
+}

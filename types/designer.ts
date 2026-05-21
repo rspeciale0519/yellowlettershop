@@ -1,5 +1,10 @@
-export type Tool = "text" | "images" | "graphics" | "qr-codes" | "tables" | "colors" | "background"
-export type WorkspacePanel = "modules" | "layers" | "inspector" | "preflight"
+import type { MailFormatId } from "@/components/designer/mail-spec"
+
+// Phase 12: dead `"colors" | "background"` Tool members removed (the only
+// consumer, legacy tools-sidebar.tsx, is archived). Page backgrounds live in
+// the `"background"` WorkspacePanel below.
+export type Tool = "text" | "images" | "graphics" | "qr-codes" | "tables"
+export type WorkspacePanel = "modules" | "layers" | "inspector" | "preflight" | "background"
 export type DesignerPage = "front" | "back"
 export type DesignerOrientation = "portrait" | "landscape"
 export type DesignerElementType = "text" | "image" | "graphic" | "qr" | "table"
@@ -22,6 +27,7 @@ interface BaseDesignElement {
   locked?: boolean
   hidden?: boolean
   opacity?: number
+  rotation?: number
 }
 
 export interface TextDesignElement extends BaseDesignElement {
@@ -32,6 +38,10 @@ export interface TextDesignElement extends BaseDesignElement {
   fontFamily?: string
   color?: string
   textAlign?: "left" | "center" | "right"
+  fontStyle?: "normal" | "italic"
+  textDecoration?: "none" | "underline"
+  lineHeight?: number
+  letterSpacing?: number
 }
 
 export interface ImageDesignElement extends BaseDesignElement {
@@ -49,6 +59,7 @@ export interface GraphicDesignElement extends BaseDesignElement {
   fill: string
   stroke?: string
   strokeWidth?: number
+  borderRadius?: number
 }
 
 export interface QrDesignElement extends BaseDesignElement {
@@ -73,12 +84,28 @@ export type DesignElement =
   | QrDesignElement
   | TableDesignElement
 
+export interface PageBackgroundImage {
+  assetId?: string
+  src: string
+  sourceUrl?: string
+  fit: "cover" | "contain"
+  opacity?: number
+}
+
+export interface PageBackground {
+  color?: string
+  image?: PageBackgroundImage
+  // FUTURE: gradient?: PageGradient — render order = color, then image
+}
+
 export interface DesignerDocument {
   designId?: string
   templateId: string
   templateName: string
   orientation: DesignerOrientation
+  formatId?: MailFormatId
   pages: Record<DesignerPage, DesignElement[]>
+  backgrounds?: Partial<Record<DesignerPage, PageBackground>>
   updatedAt: string
 }
 

@@ -1,12 +1,25 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
-function ylsRoot(input) {
+function projectRoot(input) {
   return (input && input.cwd) ? input.cwd
     : path.resolve(__dirname, '..', '..');
 }
-const P = (root, ...p) => path.join(root, 'ylsbrain', ...p);
+function brainConfig(root) {
+  try { return JSON.parse(fs.readFileSync(path.join(root, '.brain.json'), 'utf8')) || {}; }
+  catch { return {}; }
+}
+function vaultDir(root) {
+  const v = brainConfig(root).vaultDir;
+  return (typeof v === 'string' && v) ? v : 'brain';
+}
+function projectName(root) {
+  const n = brainConfig(root).project;
+  return (typeof n === 'string' && n) ? n : require('path').basename(root);
+}
+const P = (root, ...p) => path.join(root, vaultDir(root), ...p);
 const stateDir = root => P(root, '.brainstate');
 
 function ensureDir(d){ fs.mkdirSync(d, { recursive:true }); }
@@ -31,7 +44,9 @@ function allLedgerLines(root){
   const d = stateDir(root); if (!fs.existsSync(d)) return [];
   return fs.readdirSync(d).filter(f=>f.endsWith('.ledger'))
     .flatMap(f=>fs.readFileSync(path.join(d,f),'utf8').split('\n').filter(Boolean))
-    .map(l=>({ ts:l.split('\t')[0], raw:l }));
+    .map(l=>{ const ts=l.split('\t')[0];
+      return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(ts) ? { ts, raw:l } : null; })
+    .filter(Boolean);
 }
 function unconsumed(root){
   const b = getBrain(root);
@@ -59,6 +74,14 @@ const PII = [/sk_live_[A-Za-z0-9]/, /AKIA[0-9A-Z]{16}/, /BEGIN [A-Z ]*PRIVATE KE
   /\b[0-9a-fA-F]{40,}\b/];
 function scanSecrets(text){ return PII.some(re=>re.test(text)); }
 
-module.exports = { ylsRoot, P, stateDir, ensureDir, readJson, writeJson, nowIso,
+function sha256Norm(text){
+  let s = (text == null) ? '' : String(text);
+  while (s.charCodeAt(0) === 0xFEFF) s = s.slice(1);
+  s = s.replace(/\r\n/g, '\n');
+  return crypto.createHash('sha256').update(s, 'utf8').digest('hex');
+}
+
+module.exports = { projectRoot, brainConfig, vaultDir, projectName, P, stateDir,
+  ensureDir, readJson, writeJson, nowIso,
   getBrain, setBrain, sentinelFile, ledgerFile, appendLedger, allLedgerLines,
-  unconsumed, latestJournal, journalBlocks, scanSecrets };
+  unconsumed, latestJournal, journalBlocks, scanSecrets, sha256Norm };

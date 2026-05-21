@@ -3,7 +3,7 @@ const fs = require('fs');
 const cp = require('child_process');
 const L = require('./brain-lib');
 try {
-  const root = L.ylsRoot({});
+  const root = L.projectRoot({});
   const b = L.getBrain(root);
   // journal-vs-git gap check (heuristic): commits since lastConsolidationTs with
   // no journal file dated that day. execFileSync + arg array => no shell injection.

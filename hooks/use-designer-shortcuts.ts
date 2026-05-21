@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import { nudgeDelta } from "@/hooks/nudge"
 
 interface DesignerShortcutOptions {
   selectedElement: string | null
@@ -9,6 +10,7 @@ interface DesignerShortcutOptions {
   onDuplicate: (id: string) => void
   onUndo: () => void
   onRedo: () => void
+  onNudge?: (id: string, dx: number, dy: number) => void
 }
 
 export function useDesignerShortcuts({
@@ -18,6 +20,7 @@ export function useDesignerShortcuts({
   onDuplicate,
   onUndo,
   onRedo,
+  onNudge,
 }: DesignerShortcutOptions) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -37,8 +40,15 @@ export function useDesignerShortcuts({
         event.preventDefault()
         onRedo()
       }
+      if (onNudge && selectedElement && !event.ctrlKey && !event.metaKey) {
+        const delta = nudgeDelta(event.key, event.shiftKey)
+        if (delta) {
+          event.preventDefault()
+          onNudge(selectedElement, delta.dx, delta.dy)
+        }
+      }
     }
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [onClearSelection, onDelete, onDuplicate, onRedo, onUndo, selectedElement])
+  }, [onClearSelection, onDelete, onDuplicate, onNudge, onRedo, onUndo, selectedElement])
 }

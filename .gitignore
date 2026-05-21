@@ -96,3 +96,9 @@ logs
 ylsbrain/.brainstate/
 # Entire Obsidian config ignored per spec §12 (incl. vendored plugins, workspace, cache)
 ylsbrain/.obsidian/
+
+# >>> brain (managed) >>>
+ylsbrain/.brainstate/
+ylsbrain/.obsidian/
+# <<< brain (managed) <<<
+

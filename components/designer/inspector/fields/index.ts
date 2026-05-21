@@ -1,0 +1,6 @@
+export { NumberField } from "@/components/designer/inspector/fields/number-field"
+export { SliderField } from "@/components/designer/inspector/fields/slider-field"
+export { ColorField, type ColorFieldProps } from "@/components/designer/inspector/fields/color-field"
+export { ToggleGroupField, type ToggleOption } from "@/components/designer/inspector/fields/toggle-group-field"
+export { SelectField } from "@/components/designer/inspector/fields/select-field"
+export { FontSizeField } from "@/components/designer/inspector/fields/font-size-field"
