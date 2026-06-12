@@ -95,3 +95,4 @@ Append-only timeline. Entry format: `## [YYYY-MM-DD] <op> | <title>`.
 - 2026-05-19 [03:10] Artwork Designer Overhaul 15-phase impl — branch feature/artwork-designer-overhaul (618006b..2e45a39), local-only; gated green per phase. See journal [03:10].
 - 2026-05-19 [03:40] Consolidation post artwork-designer overhaul — 2 skills added, features.md needs-reconcile, index/STATE refreshed (develop, post 992178b).
 - 2026-05-21 [01:30] Release develop -> main — brain sync e83f884 on develop pushed; --no-ff merge 91fcb60 on main pushed (artwork designer overhaul + brain v0.1.0 + knowledge + Rule 11 + MCP fix all on main).
+- 2026-06-12 [00:00] Reconcile + consolidation — features.md Design rows re-audited vs code (58 modules, pdf-lib preview non-stub) -> status: current, BUILT 49->54; roadmap dossier-citation nit fixed; index/STATE refreshed; gap check clean.

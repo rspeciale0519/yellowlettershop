@@ -1,8 +1,8 @@
 ---
 kind: knowledge
 slug: features
-status: needs-reconcile
-updated: 2026-05-19
+status: current
+updated: 2026-06-12
 layer: reference
 sources:
   - dev-docs/features-and-dashboards.md
@@ -16,23 +16,21 @@ sources:
 # Features — code-verified inventory
 
 Status legend: **BUILT** = working with code evidence; **PARTIAL** = wired but degraded/mock/no UI; **UNVERIFIED** = not inspected/not found.
-Every row carries a real `path` from the codebase audit. This inventory is self-contained — each feature is enumerated individually below. Counts: BUILT 49 / PARTIAL 12 / UNVERIFIED 3 / PLANNED 0-in-code.
+Every row carries a real `path` from the codebase audit. This inventory is self-contained — each feature is enumerated individually below. Counts: BUILT 54 / PARTIAL 12 / UNVERIFIED 3 / PLANNED 0-in-code.
 
-> **NEEDS-RECONCILE (2026-05-19, designer rows):** the Artwork Designer
-> Overhaul (PR #9, merge `992178b`; [[journal/2026-05-19]] [03:10]) materially
-> changed the Design rows: `components/designer/` restructured into
-> `canvas/ inspector/ preflight/ tokens/ preview/` (~50 modules, not "19
-> files"); design **preview is now a real server-side PDF**
-> (`app/api/design/preview` + `_render/*`, pdf-lib) — no longer a stub;
-> added per-page background tool, selectable print sizes/bleed/USPS overlays
-> (`mail-spec.ts`), recipients API (`app/api/designer/recipients`); legacy
-> `tools-sidebar/text-tool-panel/image-tool-panel` archived; checkout uses one
-> unified designer. D2 (FPD→custom) in [[knowledge/superseded]] still holds.
-> Re-audit the Design rows + counts at next full reconcile.
+> Reconciled 2026-06-12: Design rows re-audited post Artwork Designer Overhaul
+> (PR #9, merge `992178b`, released to main `91fcb60`). Structure verified in
+> code: `components/designer/` = 58 modules across
+> `canvas/ inspector/ preflight/ preview/ tokens/`; preview is a real
+> server-side pdf-lib PDF (no stubs/TODOs in `app/api/design/preview/`).
+> Legacy tools-sidebar/text-tool-panel/image-tool-panel archived; checkout
+> uses one unified designer. D2 (FPD→custom) in [[knowledge/superseded]]
+> still holds. Visual (browser) verification of the designer UI remains
+> pending — see STATE open threads.
 
 ## BUILT
 
-Area summary: Auth (6), List-builder (1), Mailing-lists (4), Design (5), Orders (3), Payments (6), Validation (2), Analytics (4), Multi-tenant (6), Admin (6), Profile (1), Contact-cards (1), Tags (1), Bulk-ops (1), Campaigns (2), Vendors (1), Version-history (1), Jobs (1), Webhooks (1), Integrations (2). Admin pricing UI fulfills `memory:project_admin_pricing` — see [[knowledge/superseded]] D4.
+Area summary: Auth (6), List-builder (1), Mailing-lists (4), Design (10), Orders (3), Payments (6), Validation (2), Analytics (4), Multi-tenant (6), Admin (6), Profile (1), Contact-cards (1), Tags (1), Bulk-ops (1), Campaigns (2), Vendors (1), Version-history (1), Jobs (1), Webhooks (1), Integrations (2). Admin pricing UI fulfills `memory:project_admin_pricing` — see [[knowledge/superseded]] D4.
 
 | Area | Feature | Evidence path |
 |---|---|---|
@@ -47,7 +45,12 @@ Area summary: Auth (6), List-builder (1), Mailing-lists (4), Design (5), Orders 
 | Mailing-lists | Deduplication | `app/api/mailing-lists/deduplicate/route.ts` |
 | Mailing-lists | Manager UI (add/edit/delete/import/dedup/history) | `app/mailing-services/mailing-list-manager/page.tsx` |
 | Mailing-lists | Version history + change tracking | `app/api/mailing-lists/version-history/route.ts`, `lib/version-history/change-tracker.ts` |
-| Design | Custom WYSIWYG canvas (19 files: tools/layers/pages/fonts/images/preview) | `app/design/customize/page.tsx`, `components/designer/` |
+| Design | Custom WYSIWYG canvas (58 modules: canvas/inspector/preflight/preview/tokens) | `app/design/customize/page.tsx`, `components/designer/` |
+| Design | Server-side PDF preview (pdf-lib) | `app/api/design/preview/route.ts`, `app/api/design/preview/_render/pdf-renderer.ts` |
+| Design | Print-accurate mail sizes + bleed/safe/USPS overlays | `components/designer/mail-spec.ts`, `components/designer/canvas/print-overlay.tsx` |
+| Design | Recipient-data preview (merge fields vs real rows) | `app/api/designer/recipients/`, `components/designer/preview/` |
+| Design | Preflight checks panel | `components/designer/preflight/preflight-rules.ts` |
+| Design | Per-page background tool | `components/designer/background-panel.tsx`, `components/designer/page-background-layer.tsx` |
 | Design | Design save/update | `app/api/design/save/route.ts` → `user_designs` |
 | Design | Font loading API | `app/api/designer/fonts/`, `supabase/migrations/20260507000000_designer_fonts.sql` |
 | Design | Asset library CRUD + storage fallback | `app/api/assets/route.ts`, `components/media/` |

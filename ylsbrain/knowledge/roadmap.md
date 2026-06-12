@@ -16,7 +16,7 @@ Reconciles the April-2025 plan to the current transactional direction. Items the
 ## Near-term
 
 - **Promote AccuZip validation from simulated → live.** The order-flow job path is hardcoded `Math.random()` with no env branch (`app/api/accuzip/upload/route.ts:135`) — wire it to the real AccuZip client that already exists for list-builder (`lib/api/accuzip/count.ts`). Confirmed gap: [[knowledge/superseded]] F1 (CONFIRMED 2026-05-19).
-- **Distributed rate limiting.** Replace in-memory limiter with shared store (dossier §B PARTIAL).
+- **Distributed rate limiting.** Replace in-memory limiter with shared store (see [[knowledge/features]] PARTIAL).
 - **User orders dashboard → real data.** Replace mock `lib/data-structures.ts` read with live queries; admin orders is already real ([[knowledge/superseded]] F5).
 - **Template gallery → DB-backed.** Unify static `data/templates-data.ts` browse with the partial `mail_templates` DB path ([[knowledge/superseded]] F4).
 
@@ -24,9 +24,9 @@ Reconciles the April-2025 plan to the current transactional direction. Items the
 
 - **MelissaData list-purchase + payment wiring.** Add purchase route and payment integration; current code hardcodes $0.10/record with no buy flow ([[knowledge/superseded]] F2).
 - **Mailgun outbound / transactional email.** Build send path; only inbound webhook parsing exists today ([[knowledge/superseded]] F3).
-- **Notification settings backend + API-keys page.** Back the existing UI shells (dossier §B PARTIAL/UNVERIFIED).
-- **Project-level RBAC clarification.** Define scope and add the missing `projects` table/migrations (dossier §B UNVERIFIED).
-- **Security / 2FA page.** Verify and complete (dossier §B UNVERIFIED).
+- **Notification settings backend + API-keys page.** Back the existing UI shells (see [[knowledge/features]] PARTIAL/UNVERIFIED).
+- **Project-level RBAC clarification.** Define scope and add the missing `projects` table/migrations (see [[knowledge/features]] UNVERIFIED).
+- **Security / 2FA page.** Verify and complete (see [[knowledge/features]] UNVERIFIED).
 
 ## Long-term
 

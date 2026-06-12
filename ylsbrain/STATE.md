@@ -1,50 +1,39 @@
 # yls brain — STATE
-Updated: 2026-05-21
+Updated: 2026-06-12
 
 ## Current focus
-None active — clean. **Released `develop` → `main`** (merge `91fcb60` on
-main; `e83f884` brain-sync tip on develop) — artwork-designer overhaul +
-`_brain` v0.1.0 + knowledge layer + Rule 11 + MCP-npx fix are now on
-production `main`. If `main` is wired to Vercel prod, the deploy just
-shipped — verify in the dashboard. Prior: **Artwork Designer Overhaul SHIPPED
-to `develop`** (PR #9 merged, `992178b`; 15 phases `618006b`→`2e45a39` +
-brain `a0abae6`). Every
-phase gated: full Mocha suite green (≈72, 0 regressions), **0 new
-`typecheck:ui` errors vs the pre-existing 12-error baseline** (delta-gate
-model — repo baseline was pre-RED), eslint clean (touched), `next build`
-exit 0, files ≤350 LOC. Post-merge consolidation done (2 skills +
-features.md `needs-reconcile`). Plan:
-`.claude/plans/feature-artwork-designer-overhaul.md` (Rev 3, all ✅). Prior:
-`_brain` v0.1.0; F1–F5 CONFIRMED. Read [[knowledge/orientation]] for context.
+**Brain reconcile + consolidation DONE (2026-06-12)** — features.md Design
+rows re-audited against code (58 modules verified; pdf-lib preview confirmed
+non-stub) → `status: current`, BUILT 49→54; roadmap.md dossier-citation nit
+fixed; index refreshed. Next up (user-stated): **comprehensive audit of all
+active dev docs** to map done vs unbuilt + recommendations — treat
+[[knowledge/features]] + [[knowledge/superseded]] as ground truth over stale
+`dev-docs/`. Prior: released `develop` → `main` (merge `91fcb60`; artwork
+designer overhaul + `_brain` v0.1.0 + knowledge layer all on production
+main). Read [[knowledge/orientation]] for context.
 
 ## Latest synopsis
-Implemented review findings #2–#7 + full drag-drop + shadcn/frontend-design
-pass: selectable print-accurate mail sizes w/ bleed/safe/USPS overlays, real
-server-side PDF (pdf-lib), modular deep Inspector, per-page background tool,
-recipient-data Preview dialog, legacy duplicate checkout editor archived →
-one unified designer. See [[journal/2026-05-19]] [03:10]. Discovered+handled
-two pre-existing repo breakages (absent Mocha harness; pre-RED `typecheck:ui`)
-→ user-approved "fix runner + delta-gate" model. (Prior: Rule 11 [23:41];
-F1–F5 CONFIRMED [21:26].)
+Reconciled the standing `needs-reconcile` on features.md: verified the
+designer surface in code (canvas/inspector/preflight/preview/tokens, 58
+modules; `app/api/design/preview` real pdf-lib, no stubs), rewrote Design
+rows (5→10 BUILT), updated counts, fixed roadmap.md self-containment nit.
+No app code changed. See [[journal/2026-06-12]].
 
 ## Open threads
-- **Artwork designer overhaul: MERGED to develop (`992178b`, PR #9).**
-  Deferred follow-ups (documented, tracked): true CMYK/PDF-X export, embedded
-  handwriting TTF (families map to pdf-lib StandardFonts), order↔designer
-  `orderId`-on-save linkage, broader WCAG contrast sweep, Tooltips on canvas
-  zoom toolbar, **chrome-devtools visual regression NOT yet run** (auth-gated;
-  approach in `docs/temp/designer-verification-auth.md`) — designer UI is
-  *unverified* visually, only logic+build are evidenced.
-- `knowledge/features.md` flipped **needs-reconcile** (Design rows stale post
-  overhaul; D2 FPD→custom still holds). Re-audit Design rows + counts at next
-  full reconcile (`git log --name-only 992178b` for the diff surface).
-- (clean) Project Brain System v0.1.0 shipped; knowledge layer reconciled
-  (F1–F5 CONFIRMED 2026-05-19).
+- **Designer deferred follow-ups** (documented, tracked): true CMYK/PDF-X
+  export, embedded handwriting TTF (families map to pdf-lib StandardFonts),
+  order↔designer `orderId`-on-save linkage, broader WCAG contrast sweep,
+  Tooltips on canvas zoom toolbar, **chrome-devtools visual regression NOT
+  yet run** (auth-gated; approach in
+  `docs/temp/designer-verification-auth.md`) — designer UI is *unverified*
+  visually, only logic+build are evidenced.
+- **Pending user task: comprehensive done-vs-unbuilt audit + recommendations**
+  across active dev docs ([[knowledge/roadmap]] PARTIAL/UNVERIFIED rows are
+  the starting backlog).
 - Standing op-note: **YLS engine is sync-managed** — never hand-edit
   `yls/.claude/hooks/*` (a `brain sync` flags it local-mod); upgrades flow
   from `_brain`. Onboarding other projects = `brain init <repo>` (follow-up,
-  out of v1 scope). Optional housekeeping: `roadmap.md` still cites the
-  disposable scratch dossier in 2 lines (self-containment nit).
+  out of v1 scope).
 
 ## Active skills in play
 - [[skills/build-safe-destructive-git]] — before any git delete/drop/reset
@@ -66,7 +55,7 @@ F1–F5 CONFIRMED [21:26].)
 - Known benign: consolidate.js gap check perpetually flags `9e05ba0`
   (local date 2026-05-17) since journals are UTC-dated (`2026-05-18.md`) —
   artifact of the date-based-covering decision, not a real coverage gap.
-- Seam: both skills are `provisional`; no Developer-brain promotion yet
+- Seam: skills `provisional`; no Developer-brain promotion yet
   (promotion needs `established` + cross-project authorization — §8).
 - Hazard (recorded as feedback memory): concurrent CC sessions doing git
   branch ops in one working tree caused a mid-consolidation checkout→main;
