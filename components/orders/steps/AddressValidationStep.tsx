@@ -39,10 +39,14 @@ export function AddressValidationStep({ orderState, onUpdateState }: OrderStepPr
     const listData = orderState.dataAndMapping?.listData || orderState.listData
     if (!listData) return null
 
-    if (listData.uploadedFile) {
-      // Validate the client-parsed preview rows directly (route's list_builder
-      // branch). NOTE: large uploads should persist to the DB and validate via
-      // an uploadedFileId — tracked follow-up; this covers the wizard's parsed rows.
+    // Persisted records are authoritative: once an upload (or a chosen list) has
+    // a mailing_list_id, validate against the DB rows rather than the 10-row
+    // previewData. This is set by ColumnMappingStep after upload persistence.
+    if (listData.selectedListId) {
+      return { source: 'saved_list' as const, mailingListId: listData.selectedListId }
+    } else if (listData.uploadedFile) {
+      // Fallback when persistence didn't run (e.g. non-CSV or a persist error):
+      // validate the client-parsed preview rows directly (list_builder branch).
       const cm = (orderState.dataAndMapping?.columnMapping ?? orderState.columnMapping) as
         { previewData?: Record<string, unknown>[] } | undefined
       const parsed = cm?.previewData ?? []
@@ -50,8 +54,6 @@ export function AddressValidationStep({ orderState, onUpdateState }: OrderStepPr
         return { source: 'list_builder' as const, records: parsed.map((r) => ({ ...r })) }
       }
       return { source: 'upload' as const }
-    } else if (listData.dataSource === 'mlm_select' && listData.selectedListId) {
-      return { source: 'saved_list' as const, mailingListId: listData.selectedListId }
     } else if (listData.manualRecords?.length) {
       return {
         source: 'list_builder' as const,

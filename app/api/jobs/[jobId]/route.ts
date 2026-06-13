@@ -21,8 +21,8 @@ export async function GET(
     }
 
     // Get the job
-    const job = getJob(jobId)
-    
+    const job = await getJob(jobId)
+
     if (!job) {
       return NextResponse.json(
         { error: 'Job not found' },
@@ -82,8 +82,8 @@ export async function DELETE(
     }
 
     // Get the job to check ownership
-    const job = getJob(jobId)
-    
+    const job = await getJob(jobId)
+
     if (!job) {
       return NextResponse.json(
         { error: 'Job not found' },
@@ -100,7 +100,7 @@ export async function DELETE(
     }
 
     // Cancel the job
-    const cancelled = cancelJob(jobId)
+    const cancelled = await cancelJob(jobId)
     
     if (!cancelled) {
       return NextResponse.json(

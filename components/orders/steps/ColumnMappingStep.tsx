@@ -11,6 +11,7 @@ import { ColumnMappingPage } from '@/components/shared/column-mapping/ColumnMapp
 import type { ColumnMappingData, YLSField } from '@/components/shared/column-mapping'
 import { YLS_FIELDS } from '@/components/shared/column-mapping'
 import type { ListDataSelection } from '@/types/orders'
+import { persistUploadedList } from '@/lib/orders/persist-upload'
 
 export function ColumnMappingStep({ orderState }: OrderStepProps) {
   const { updateOrderState, nextStep, previousStep } = useOrderWorkflow()
@@ -20,6 +21,29 @@ export function ColumnMappingStep({ orderState }: OrderStepProps) {
     updateOrderState({
       columnMapping: mappingData
     })
+
+    // For uploaded files, persist the full list to mailing_list_records so
+    // validation + fulfillment run on real DB records. The mapping (with its
+    // previewData) is kept intact as the fallback, so a persist failure never
+    // breaks the existing happy path — we only *add* the resolved list id.
+    const file = orderState.listData?.uploadedFile
+    if (file) {
+      void persistUploadedList(file, mappingData.mappedFields)
+        .then((result) => {
+          if (!result) return
+          const baseList = orderState.listData ?? { useMailingData: true }
+          updateOrderState({
+            listData: {
+              ...baseList,
+              selectedListId: result.mailingListId,
+              dataSource: 'mlm_select',
+            },
+          })
+        })
+        .catch((err) => {
+          console.warn('Order upload persistence failed; using previewData fallback:', err)
+        })
+    }
     // Don't auto-advance - let user click Continue button to proceed
   }
 

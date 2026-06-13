@@ -10,18 +10,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Switch } from "@/components/ui/switch"
-import { AlertCircle, Check, Copy, Eye, EyeOff, Lock, Loader2, RefreshCw, Shield, Smartphone } from "lucide-react"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { AlertCircle, Check, Eye, EyeOff, Lock, Loader2 } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { TwoFactorAuth } from "@/components/security/two-factor-auth"
 
 export default function SecurityPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -31,24 +22,8 @@ export default function SecurityPage() {
   const [currentPassword, setCurrentPassword] = useState("")
   const [passwordStrength, setPasswordStrength] = useState(0)
   const [updating, setUpdating] = useState(false)
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false)
-  const [showRecoveryCodes, setShowRecoveryCodes] = useState(false)
-  const [showQRCode, setShowQRCode] = useState(false)
-  const [verificationCode, setVerificationCode] = useState("")
-  
-  const supabase = createClient()
 
-  // Mock recovery codes
-  const recoveryCodes = [
-    "ABCD-EFGH-IJKL-MNOP",
-    "QRST-UVWX-YZ12-3456",
-    "7890-ABCD-EFGH-IJKL",
-    "MNOP-QRST-UVWX-YZ12",
-    "3456-7890-ABCD-EFGH",
-    "IJKL-MNOP-QRST-UVWX",
-    "YZ12-3456-7890-ABCD",
-    "EFGH-IJKL-MNOP-QRST",
-  ]
+  const supabase = createClient()
 
   // Mock login history
   const loginHistory = [
@@ -309,142 +284,7 @@ export default function SecurityPage() {
         </TabsContent>
 
         <TabsContent value="2fa" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Two-Factor Authentication</CardTitle>
-              <CardDescription>Add an extra layer of security to your account</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="2fa-toggle">Enable Two-Factor Authentication</Label>
-                  <p className="text-sm text-muted-foreground">Require a verification code when signing in</p>
-                </div>
-                <Switch
-                  id="2fa-toggle"
-                  checked={twoFactorEnabled}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      setShowQRCode(true)
-                    } else {
-                      setTwoFactorEnabled(false)
-                    }
-                  }}
-                />
-              </div>
-
-              {twoFactorEnabled && (
-                <>
-                  <Alert>
-                    <Shield className="h-4 w-4" />
-                    <AlertTitle>Two-factor authentication is enabled</AlertTitle>
-                    <AlertDescription>
-                      Your account is now more secure. You&apos;ll need to enter a verification code when signing in.
-                    </AlertDescription>
-                  </Alert>
-
-                  <div className="space-y-2">
-                    <Label>Recovery Codes</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Save these recovery codes in a secure place. You can use them to access your account if you lose
-                      your authentication device.
-                    </p>
-                    <div className="relative mt-2 rounded-md border p-4">
-                      {showRecoveryCodes ? (
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                          {recoveryCodes.map((code, index) => (
-                            <div key={index} className="font-mono text-sm">
-                              {code}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-center">
-                          <p className="text-sm text-muted-foreground">Recovery codes are hidden for security</p>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="mt-2"
-                            onClick={() => setShowRecoveryCodes(true)}
-                          >
-                            Show Recovery Codes
-                          </Button>
-                        </div>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-2 top-2"
-                        onClick={() => {
-                          // In a real app, this would copy the codes to clipboard
-                          alert("Recovery codes copied to clipboard")
-                        }}
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Button variant="outline" onClick={() => setShowQRCode(true)}>
-                      <Smartphone className="mr-2 h-4 w-4" />
-                      Set Up New Device
-                    </Button>
-                    <Button variant="outline">
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                      Generate New Recovery Codes
-                    </Button>
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
-
-          <Dialog open={showQRCode} onOpenChange={setShowQRCode}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Set Up Two-Factor Authentication</DialogTitle>
-                <DialogDescription>
-                  Scan the QR code with your authenticator app and enter the verification code below.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="flex flex-col items-center space-y-4">
-                <div className="rounded-md border p-4">
-                  <img src="/placeholder.svg?height=200&width=200" alt="QR Code" className="h-48 w-48" />
-                </div>
-                <p className="text-sm text-muted-foreground">Can&apos;t scan the QR code? Use this code instead:</p>
-                <div className="flex items-center space-x-2">
-                  <code className="rounded-md bg-muted px-2 py-1 font-mono text-sm">ABCD EFGH IJKL MNOP</code>
-                  <Button variant="ghost" size="icon">
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="w-full space-y-2">
-                  <Label htmlFor="verification-code">Verification Code</Label>
-                  <Input
-                    id="verification-code"
-                    placeholder="Enter 6-digit code"
-                    value={verificationCode}
-                    onChange={(e) => setVerificationCode(e.target.value)}
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowQRCode(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  onClick={() => {
-                    setTwoFactorEnabled(true)
-                    setShowQRCode(false)
-                  }}
-                  disabled={verificationCode.length !== 6}
-                >
-                  Verify
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <TwoFactorAuth />
         </TabsContent>
 
         <TabsContent value="sessions" className="space-y-6">

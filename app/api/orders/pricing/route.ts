@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware'
+import { createClient } from '@/utils/supabase/service'
 import { calculatePricing, MailingOptions } from '@/lib/orders/pricing'
+import { loadPricingConfig } from '@/lib/orders/pricing-config'
 import { toPricingBreakdown } from '@/lib/orders/pricing-breakdown'
 
 const MailingOptionsSchema = z.object({
@@ -70,7 +72,8 @@ export const POST = withAuth(async (req: NextRequest, { userId: _userId }: Authe
       return NextResponse.json({ error: 'Record count must be at least 1' }, { status: 400 })
     }
 
-    return NextResponse.json(toPricingBreakdown(calculatePricing(mailingOptions, recordCount)))
+    const config = await loadPricingConfig(createClient())
+    return NextResponse.json(toPricingBreakdown(calculatePricing(mailingOptions, recordCount, config)))
 
   } catch (err) {
     if (err instanceof z.ZodError) {

@@ -4,6 +4,7 @@ import { withAuth } from '@/lib/auth/middleware'
 import { createClient } from '@/utils/supabase/service'
 import { batchValidateRecords } from '@/lib/api/accuzip/validation'
 import { buildValidationResults, type AccuzipRecord } from '@/lib/orders/accuzip-processor'
+import { dbRecordToAccuzip } from '@/lib/orders/upload-list-mapper'
 
 const accuzipConfigured = (): boolean => Boolean(process.env.ACCUZIP_API_KEY)
 const devSkipAllowed = (): boolean =>
@@ -52,16 +53,41 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
       records = fileRecords || []
       
     } else if (validatedData.listData.source === 'saved_list' && validatedData.listData.mailingListId) {
-      // Fetch records from saved mailing list
+      // Records are scoped via the parent list (mailing_list_records has no
+      // user_id column). Verify the caller owns the list (created_by) or shares
+      // its team before reading any rows, then fetch by mailing_list_id.
+      const { data: list, error: listErr } = await supabase
+        .from('mailing_lists')
+        .select('id, created_by, team_id')
+        .eq('id', validatedData.listData.mailingListId)
+        .maybeSingle()
+
+      if (listErr) throw new Error('Failed to load mailing list')
+      if (!list) {
+        return NextResponse.json({ error: 'Mailing list not found' }, { status: 404 })
+      }
+
+      let owns = list.created_by === userId
+      if (!owns && list.team_id) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('team_id')
+          .eq('user_id', userId)
+          .maybeSingle()
+        owns = Boolean(profile?.team_id && profile.team_id === list.team_id)
+      }
+      if (!owns) {
+        return NextResponse.json({ error: 'Access denied to this mailing list' }, { status: 403 })
+      }
+
       const { data: listRecords, error } = await supabase
         .from('mailing_list_records')
         .select('*')
         .eq('mailing_list_id', validatedData.listData.mailingListId)
-        .eq('user_id', userId)
-      
+
       if (error) throw new Error('Failed to fetch list records')
       records = listRecords || []
-      
+
     } else if (validatedData.listData.records) {
       // Use provided records directly (from list builder)
       records = validatedData.listData.records
@@ -74,12 +100,17 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
       )
     }
     
-    // Transform records to AccuZip format based on column mapping
+    // Transform records to AccuZip format. Persisted (saved_list) rows use
+    // canonical DB columns, so map them directly; inline rows (upload /
+    // list_builder) still resolve via the wizard's source-column mapping.
     const field = (record: Record<string, unknown>, key: string | undefined): string => {
       const v = key ? record[key] : undefined
       return v === null || v === undefined ? '' : String(v)
     }
     const accuzipRecords: AccuzipRecord[] = records.map((record, index) => {
+      if (validatedData.listData.source === 'saved_list') {
+        return dbRecordToAccuzip(record, index.toString())
+      }
       const mapping = validatedData.columnMapping
       return {
         id: field(record, 'id') || index.toString(),

@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "skipLibCheck": true
+  },
+  "include": [
+    "lib/jobs/job-mappers.ts",
+    "lib/jobs/job-queue.ts",
+    "lib/jobs/job-processors.ts",
+    "app/api/jobs/route.ts",
+    "app/api/jobs/[jobId]/route.ts",
+    "app/api/mailing-lists/import-spreadsheet-async/route.ts",
+    "next-env.d.ts"
+  ],
+  "exclude": ["node_modules", ".next", "archive", "temp", "tests"]
+}

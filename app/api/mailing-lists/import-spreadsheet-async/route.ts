@@ -256,7 +256,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create background job for the actual import
-    const job = createJob(
+    const job = await createJob(
       'import_spreadsheet',
       {
         transformedRecords,
