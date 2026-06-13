@@ -26,9 +26,19 @@ bugs: stale-state submit (submitOrder/validateCurrentStep closed over pre-update
 orderState → "Payment must be authorized" on every checkout; now take a state
 override) + approve 500 (wrote nonexistent `orders.updated_at`; removed + made
 capture idempotent so a post-capture DB hiccup self-heals). Detail in
-[[journal/2026-06-13]] [13:58]. REMAINING: Phases 4-7 + D1-D10; deploy; set email
-provider keys (prod); persist large uploaded CSVs to mailing_list_records
-(previewData-only today); pricing realism (flat $0.118/pc). Full summary:
+[[journal/2026-06-13]] [13:58]. **HARDENING PASS DONE + RE-SMOKED 100%
+(`28e50d6`,`15b7840`,`821eebc`,`80d65f7`; [[journal/2026-06-13]] [15:24]):**
+proof PII → private bucket + signed URLs (mig 060000), fail-closed PI ownership,
+pricing reads admin pricing_config, real Supabase TOTP 2FA, DB-backed job queue,
+CSV→mailing_list_records persistence (mig 070000 fixed a consolidation gap: the
+audit trigger's table was never created → every insert 42P01'd), error
+boundaries, archived dead RBAC + mock api-keys/notifications pages. Fresh order
+CAF16D73 driven to CAPTURE; proof signed→200/public→400. Gates: typecheck:full 0,
+167 tests, `next build` clean, full browser smoke. Migrations 060000+070000
+APPLIED to DB2. REMAINING: D1-D10 differentiators (net-new, need owner external
+accounts); deploy; set email provider keys (prod); deferred minors (CLAUDE.md
+stale refs, subscriptions archive, template-gallery DB = D4, XLSX parse,
+job-queue orphan-reaper); wire typecheck:full+build into CI. Full summary:
 `docs/temp/production-readiness-status.md`. Test user yls-e2e@yellowlettershop.test.
 Read [[knowledge/orientation]].
 
