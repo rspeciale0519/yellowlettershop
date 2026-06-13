@@ -18,12 +18,16 @@ const ListDataSchema = z.object({
   manualRecords: z.array(z.unknown()).optional()
 }).optional()
 
+const ValidationSchema = z.object({ deliverableRecords: z.number() }).passthrough().optional()
+
 const PricingFromStateSchema = z.object({
   orderState: z.object({
     mailingOptions: MailingOptionsSchema.optional(),
     campaignSettings: z.object({
       mailingOptions: z.record(z.unknown()).optional()
     }).optional(),
+    accuzipValidation: ValidationSchema,
+    addressValidation: ValidationSchema,
     listData: ListDataSchema,
     dataAndMapping: z.object({
       listData: ListDataSchema
@@ -52,8 +56,14 @@ export const POST = withAuth(async (req: NextRequest, { userId: _userId }: Authe
 
     const mailingOptions = parsed.data as MailingOptions
 
+    // Pieces to bill = deliverable records (post-validation). Uploaded lists
+    // carry the count there, not on listData.totalRecords/manualRecords.
+    const validatedCount =
+      orderState.accuzipValidation?.deliverableRecords ??
+      orderState.addressValidation?.deliverableRecords
     const listData = orderState.dataAndMapping?.listData ?? orderState.listData
-    const recordCount = listData?.totalRecords
+    const recordCount = validatedCount
+      ?? listData?.totalRecords
       ?? (listData?.manualRecords?.length ?? 0)
 
     if (recordCount < 1) {
