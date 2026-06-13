@@ -65,16 +65,15 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
     // Get or create Stripe customer
     const { data: userProfile } = await supabase
       .from('user_profiles')
-      .select('stripe_customer_id, email')
+      .select('stripe_customer_id')
       .eq('user_id', userId)
       .single()
-    
+
     let customerId = userProfile?.stripe_customer_id
-    
+
     if (!customerId) {
-      // Create new Stripe customer
+      // Create new Stripe customer (email lives on auth.users, not user_profiles)
       const customer = await stripe.customers.create({
-        email: userProfile?.email,
         metadata: {
           user_id: userId
         }

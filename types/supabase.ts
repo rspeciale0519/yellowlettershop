@@ -1540,6 +1540,7 @@ export type Database = {
           phone: string | null
           role: string
           settings: Json
+          stripe_customer_id: string | null
           team_id: string | null
           timezone: string | null
           updated_at: string
@@ -1556,6 +1557,7 @@ export type Database = {
           phone?: string | null
           role?: string
           settings?: Json
+          stripe_customer_id?: string | null
           team_id?: string | null
           timezone?: string | null
           updated_at?: string
@@ -1572,6 +1574,7 @@ export type Database = {
           phone?: string | null
           role?: string
           settings?: Json
+          stripe_customer_id?: string | null
           team_id?: string | null
           timezone?: string | null
           updated_at?: string

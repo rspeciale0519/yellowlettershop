@@ -39,11 +39,20 @@ export function AddressValidationStep({ orderState, onUpdateState }: OrderStepPr
     const listData = orderState.dataAndMapping?.listData || orderState.listData
     if (!listData) return null
 
-    if (listData.dataSource === 'upload' && listData.uploadedFile) {
+    if (listData.uploadedFile) {
+      // Validate the client-parsed preview rows directly (route's list_builder
+      // branch). NOTE: large uploads should persist to the DB and validate via
+      // an uploadedFileId — tracked follow-up; this covers the wizard's parsed rows.
+      const cm = (orderState.dataAndMapping?.columnMapping ?? orderState.columnMapping) as
+        { previewData?: Record<string, unknown>[] } | undefined
+      const parsed = cm?.previewData ?? []
+      if (parsed.length) {
+        return { source: 'list_builder' as const, records: parsed.map((r) => ({ ...r })) }
+      }
       return { source: 'upload' as const }
     } else if (listData.dataSource === 'mlm_select' && listData.selectedListId) {
       return { source: 'saved_list' as const, mailingListId: listData.selectedListId }
-    } else if (listData.dataSource === 'manual_entry' && listData.manualRecords?.length) {
+    } else if (listData.manualRecords?.length) {
       return {
         source: 'list_builder' as const,
         records: listData.manualRecords.map(r => ({ ...r }))
@@ -297,6 +306,16 @@ export function AddressValidationStep({ orderState, onUpdateState }: OrderStepPr
                 <CheckCircle className="h-4 w-4" />
                 <AlertDescription>
                   Address validation completed successfully. Your mailing list is ready for processing.
+                  <Button
+                    variant="link"
+                    className="p-0 h-auto ml-2"
+                    onClick={() => {
+                      setValidationError(null)
+                      handleStartValidation()
+                    }}
+                  >
+                    Re-validate
+                  </Button>
                 </AlertDescription>
               </Alert>
 
