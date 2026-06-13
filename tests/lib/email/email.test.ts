@@ -6,6 +6,8 @@ import {
   proofReadyEmail,
   paymentCapturedEmail,
   teamInviteEmail,
+  esc,
+  safeUrl,
 } from '../../../lib/email/templates'
 
 describe('resolveEmailConfig', () => {
@@ -82,5 +84,47 @@ describe('email templates', () => {
     assert.ok(t.subject.includes('Acme'))
     assert.ok(t.html.includes('https://yls.test/accept?x=1'))
     assert.ok(t.text.includes('manager'))
+  })
+
+  it('escapes a malicious team name instead of rendering it as HTML', () => {
+    const t = teamInviteEmail({
+      teamName: 'Acme</strong><a href="http://evil.test">click</a><strong>',
+      inviteUrl: 'https://yls.test/accept?x=1',
+      role: 'manager',
+    })
+    // The injected anchor must NOT appear as live markup in the body.
+    assert.ok(!t.html.includes('<a href="http://evil.test">'))
+    assert.ok(t.html.includes('&lt;a href=&quot;http://evil.test&quot;&gt;'))
+  })
+
+  it('neutralizes a javascript: invite URL down to #', () => {
+    const t = teamInviteEmail({
+      teamName: 'Acme',
+      inviteUrl: 'javascript:alert(document.cookie)',
+      role: 'manager',
+    })
+    assert.ok(!t.html.includes('javascript:'))
+    assert.ok(t.html.includes('href="#"'))
+  })
+})
+
+describe('esc', () => {
+  it('escapes all five HTML-significant characters', () => {
+    assert.equal(esc(`<a href="x" data-y='z'>&`), '&lt;a href=&quot;x&quot; data-y=&#39;z&#39;&gt;&amp;')
+  })
+  it('leaves benign text untouched', () => {
+    assert.equal(esc('Acme Realty 123'), 'Acme Realty 123')
+  })
+})
+
+describe('safeUrl', () => {
+  it('passes http and https through unchanged', () => {
+    assert.equal(safeUrl('https://yls.test/a?b=1'), 'https://yls.test/a?b=1')
+    assert.equal(safeUrl('http://yls.test'), 'http://yls.test')
+  })
+  it('collapses dangerous or malformed schemes to #', () => {
+    assert.equal(safeUrl('javascript:alert(1)'), '#')
+    assert.equal(safeUrl('data:text/html,<script>1</script>'), '#')
+    assert.equal(safeUrl('not a url'), '#')
   })
 })

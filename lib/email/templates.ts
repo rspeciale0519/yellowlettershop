@@ -6,6 +6,34 @@ export interface EmailContent {
   text: string
 }
 
+/**
+ * Escape user-supplied values before they land in HTML. Team names, roles,
+ * etc. are operator/user input; without this they could inject markup or
+ * phishing links into an email sent from our trusted domain.
+ */
+export function esc(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+/**
+ * Only allow http(s) URLs into an href. Anything else (javascript:, data:,
+ * malformed) collapses to '#'. The result is still HTML-escaped by the caller.
+ */
+export function safeUrl(url: string): string {
+  try {
+    const parsed = new URL(url)
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') return url
+  } catch {
+    /* fall through */
+  }
+  return '#'
+}
+
 function layout(title: string, bodyHtml: string): string {
   return `<!doctype html><html><body style="margin:0;padding:0;background:#f8f7f4;font-family:Georgia,'Times New Roman',serif;">
   <div style="max-width:560px;margin:0 auto;padding:32px 20px;">
@@ -24,7 +52,7 @@ function layout(title: string, bodyHtml: string): string {
 }
 
 function button(href: string, label: string): string {
-  return `<a href="${href}" style="display:inline-block;background:#f59e0b;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:bold;margin:16px 0;">${label}</a>`
+  return `<a href="${esc(safeUrl(href))}" style="display:inline-block;background:#f59e0b;color:#ffffff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:bold;margin:16px 0;">${esc(label)}</a>`
 }
 
 export function orderConfirmationEmail(p: {
@@ -82,14 +110,18 @@ export function paymentCapturedEmail(p: {
 }
 
 export function teamInviteEmail(p: { teamName: string; inviteUrl: string; role: string }): EmailContent {
+  // teamName and role are user-supplied → escape in HTML to prevent injecting
+  // markup/phishing links into an email sent from our trusted domain.
+  const team = esc(p.teamName)
+  const role = esc(p.role)
   return {
     subject: `You've been invited to join ${p.teamName} on Yellow Letter Shop`,
     html: layout(
-      `Join ${p.teamName}`,
-      `<p>You've been invited to join <strong>${p.teamName}</strong> as a <strong>${p.role}</strong> on Yellow Letter Shop.</p>
+      `Join ${team}`,
+      `<p>You've been invited to join <strong>${team}</strong> as a <strong>${role}</strong> on Yellow Letter Shop.</p>
        ${button(p.inviteUrl, 'Accept invitation')}
        <p style="color:#666;font-size:13px;">This invitation expires in 7 days.</p>`
     ),
-    text: `You've been invited to join ${p.teamName} as a ${p.role} on Yellow Letter Shop. Accept: ${p.inviteUrl}`,
+    text: `You've been invited to join ${p.teamName} as a ${p.role} on Yellow Letter Shop. Accept: ${safeUrl(p.inviteUrl)}`,
   }
 }
