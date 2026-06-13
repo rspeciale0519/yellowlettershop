@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware'
 import { createClient } from '@/utils/supabase/service'
+import { generateProofForOrder, getUserEmail } from '@/lib/orders/generate-proof'
+import { summarizeOrderRow } from '@/lib/orders/order-summary'
+import { trySendEmail } from '@/lib/email'
+import { orderConfirmationEmail } from '@/lib/email/templates'
 
 const SubmitOrderSchema = z.object({
   orderState: z.record(z.unknown())
@@ -51,7 +55,35 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
         .eq('user_id', userId)
     }
 
-    return NextResponse.json({ orderId: order.id, status: 'submitted' })
+    // Confirmation email + official proof. Both are loud-on-failure but
+    // non-fatal: the order exists and payment is authorized either way.
+    const summary = summarizeOrderRow({
+      id: order.id,
+      status: 'submitted',
+      order_state: orderState,
+    })
+    const email = await getUserEmail(userId)
+    await trySendEmail(
+      email,
+      orderConfirmationEmail({
+        orderId: order.id,
+        shortId: order.id.split('-')[0].toUpperCase(),
+        total: summary.total,
+        recordCount: summary.recordCount,
+        appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+      })
+    )
+
+    const proof = await generateProofForOrder(order.id, userId)
+    if (!proof.ok) {
+      console.error(`Proof generation deferred for order ${order.id}: ${proof.error}`)
+    }
+
+    return NextResponse.json({
+      orderId: order.id,
+      status: proof.ok ? 'proof_ready' : 'submitted',
+      proofUrl: proof.proofUrl ?? null
+    })
 
   } catch (err) {
     if (err instanceof z.ZodError) {

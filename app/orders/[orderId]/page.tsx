@@ -31,6 +31,28 @@ export default function OrderStatusPage({ params }: { params: Promise<{ orderId:
   const [data, setData] = useState<OrderResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [deciding, setDeciding] = useState(false)
+  const [decisionError, setDecisionError] = useState<string | null>(null)
+
+  const decide = async (action: 'approve' | 'reject') => {
+    if (action === 'reject' && !window.confirm('Reject this proof? The order will be parked and no payment captured.')) return
+    setDeciding(true)
+    setDecisionError(null)
+    try {
+      const res = await fetch(`/api/orders/${orderId}/approve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action }),
+      })
+      const body = await res.json()
+      if (!res.ok) throw new Error(body.error || 'Failed to record your decision')
+      await load()
+    } catch (e) {
+      setDecisionError(e instanceof Error ? e.message : 'Failed to record your decision')
+    } finally {
+      setDeciding(false)
+    }
+  }
 
   const load = async () => {
     setLoading(true)
@@ -140,6 +162,40 @@ export default function OrderStatusPage({ params }: { params: Promise<{ orderId:
                       <Download className="mr-2 h-4 w-4" />
                       Download
                     </a>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Proof decision — the capture moment */}
+          {order.status === 'proof_ready' && (
+            <Card className="mb-6 border-2 border-amber-300">
+              <CardHeader>
+                <CardTitle className="text-base">Approve your proof</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  Review the proof above carefully. Approving locks the design for production and
+                  captures your authorized payment. Rejecting parks the order — nothing is charged.
+                </p>
+                {decisionError && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>{decisionError}</AlertDescription>
+                  </Alert>
+                )}
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => decide('approve')}
+                    disabled={deciding}
+                    className="bg-amber-500 text-white hover:bg-amber-600"
+                  >
+                    {deciding ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+                    Approve & capture payment
+                  </Button>
+                  <Button variant="outline" onClick={() => decide('reject')} disabled={deciding}>
+                    Reject proof
                   </Button>
                 </div>
               </CardContent>

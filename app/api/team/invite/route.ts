@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { TeamService, InviteTeamMemberRequest } from '@/lib/team/team-service'
 import { withAuth, authorizeTeamAccess } from '@/lib/auth/middleware'
+import { createClient } from '@/utils/supabase/service'
+import { trySendEmail } from '@/lib/email'
+import { teamInviteEmail } from '@/lib/email/templates'
 
 export const POST = withAuth(async (request: NextRequest, { userId }) => {
   try {
@@ -24,7 +27,21 @@ export const POST = withAuth(async (request: NextRequest, { userId }) => {
     const teamService = new TeamService()
     const invitation = await teamService.inviteTeamMember(teamId, inviteData)
 
-    return NextResponse.json(invitation)
+    // The actual invitation email — team-service's client-side stub cannot
+    // send; this server route owns delivery. Loud-on-failure, non-fatal.
+    const supabase = createClient()
+    const { data: team } = await supabase.from('teams').select('name').eq('id', teamId).single()
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const emailSent = await trySendEmail(
+      inviteData.email,
+      teamInviteEmail({
+        teamName: team?.name ?? 'your team',
+        role: inviteData.role,
+        inviteUrl: `${appUrl}/dashboard/team-management?invitation=${invitation.id}`,
+      })
+    )
+
+    return NextResponse.json({ ...invitation, emailSent })
 
   } catch (error) {
     console.error('Team invitation error:', error)
