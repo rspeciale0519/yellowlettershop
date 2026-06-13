@@ -4,7 +4,7 @@ Updated: 2026-06-13
 ## Current focus
 **Production-readiness: DB consolidation DONE+verified; orders/payment refactored
 to the consolidated model; core flow browser-smoke VERIFIED.** Branch
-`feature/production-readiness`, commits `0940942`→`011afe9`. Big arc this session:
+`feature/production-readiness`, commits `0940942`→`7517c40`. Big arc this session:
 (1) DB consolidation — DB1 normalized domain model built into the YLS-OWNED
 project DB2 (`lmtpfgfulkynrktdkgpu`), 33 tables, data preserved, team-scoped RLS
 (`0a1f088`); (2) 5 security fixes incl. PII-exposure RLS inherited from DB1
@@ -13,11 +13,11 @@ refactored to normalized/inline-payment model (`cb6f94b`,`52c7353`) — no more
 order_state blob / payment_intents tables; (4) `withAuth` cookie-session fix;
 (5) **chrome-devtools browser smoke on real DB2** — login→dashboard→orders→
 status page verified (`docs/temp/smoke/*.png`). **NEW (fd726fe,011afe9):**
-typecheck:ui backlog CLEARED 14→0 (recovered lost `types/list-builder.ts`;
-un-orphaned assets+version-history via migration 20260613030000 + types). Gates
-now: 143 tests, typecheck:ui 0. REMAINING: **B8 hidden type-debt** (707, see
-below); apply 20260613030000 at deploy; full wizard→payment smoke (needs
-test-keys B1-B5); Phases 4-7 + D1-D10; deploy. Full summary:
+typecheck:ui backlog CLEARED 14→0; then **B8 hidden type-debt reconciled 664→0**
+(whole codebase typechecks; see thread below). Gates now: typecheck:ui 0,
+typecheck:full 0, 143 tests, `next build` exit 0. REMAINING: apply migration
+20260613030000 at deploy; full wizard→payment smoke (user adding test keys);
+Phases 4-7 + D1-D10; deploy. Full summary:
 `docs/temp/production-readiness-status.md`. Test user yls-e2e@yellowlettershop.test.
 Read [[knowledge/orientation]].
 
@@ -31,14 +31,17 @@ display name. Goal paused on owner blocker (migrations + browser smoke).
 See [[journal/2026-06-13]].
 
 ## Open threads
-- **B8 — hidden type-debt** (`docs/temp/typecheck-debt-finding.md`): full-include
-  tsc (`tsconfig.fullcheck.json`) = 707 errors in `lib/`+`app/api` masked by
-  `next.config` `ignoreBuildErrors:true` + tsconfig excludes. Cut 773→707 (archived
-  4 dead `-original`/`-backup` files; recovered 3 lost type modules from `4f7229c^`).
-  Remaining: 300 TS2339 + 109 TS2322 + nullability/implicit-any across ~100 files;
-  missing `@/types/mailing-lists` (never existed), uninstalled `react-hook-form` +
-  `@stripe/react-stripe-js`, `next-themes/dist/types`. Large type-hardening
-  initiative — NOT runtime-fatal (Next transpiles regardless). Awaiting prioritization.
+- **B8 — hidden type-debt → RESOLVED to ZERO** (`docs/temp/typecheck-debt-finding.md`):
+  full-include `tsc` (`tsconfig.fullcheck.json`) 664→**0**. Root cause was a
+  type-architecture swap (970-line hand-authored `types/supabase.ts` replaced by the
+  generated schema at consolidation). Fixed via Phase A (canonical layer:
+  `types/supabase-domain.ts` + `domain-extra.ts`), Phase B (8 parallel subagents,
+  by module), Phase C (central fixes + archived never-functional scaffolding + added
+  `npm run typecheck:full` gate). Gates: typecheck:full 0, typecheck:ui 0, tests 143,
+  `next build` exit 0. **Wire `typecheck:full` into CI** (`ignoreBuildErrors` stays
+  true — Next's build type-checker has lucide-react false-positives; tsc is authoritative).
+  INCOMPLETE features archived (build later): saved-payment-methods, campaign-payment,
+  asset-usage table.
 - **Migration 20260613030000 committed but UNAPPLIED to live DB2** — applies at
   deploy (ad-hoc Mgmt-API prod write was correctly guardrail-denied). Until applied,
   assets-library + undo/redo throw at runtime (assets API has storage-only fallback).
