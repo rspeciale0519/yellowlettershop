@@ -18,10 +18,17 @@ wizard browser-smoke DONE** — journey verified login→…→Step 6 payment, 9
 bugs fixed live (auto-map, AccuZip upload contract, design-save table, designer
 cross-tab round-trip, campaign defaults, proof buckets ×2) + migrations
 20260613030000+040000 APPLIED to DB2 + design-previews bucket auto-created.
-Gates: typecheck:ui 0, typecheck:full 0, 143 tests, build 0. REMAINING: actual
-Stripe authorize→**capture** not yet reached (1-recipient order $0.12 < Stripe
-$0.50 min — test-data; + verify checkout card entry, saved-card UI was archived);
-Phases 4-7 + D1-D10; deploy. Smoke detail in [[journal/2026-06-13]] [06:10]. Full summary:
+Gates: typecheck:ui 0, typecheck:full 0, 143 tests, build 0. **CHECKOUT NOW
+CLOSED END-TO-END (commit `4048a7e`):** drove a $1.48 / 10-piece order through
+the wizard → authorize (manual-capture PI) → submit → proof PDF → approve →
+**CAPTURE** ($1.48, order 1065B687 → processing/captured on DB2). Fixed 2 real
+bugs: stale-state submit (submitOrder/validateCurrentStep closed over pre-update
+orderState → "Payment must be authorized" on every checkout; now take a state
+override) + approve 500 (wrote nonexistent `orders.updated_at`; removed + made
+capture idempotent so a post-capture DB hiccup self-heals). Detail in
+[[journal/2026-06-13]] [13:58]. REMAINING: Phases 4-7 + D1-D10; deploy; set email
+provider keys (prod); persist large uploaded CSVs to mailing_list_records
+(previewData-only today); pricing realism (flat $0.118/pc). Full summary:
 `docs/temp/production-readiness-status.md`. Test user yls-e2e@yellowlettershop.test.
 Read [[knowledge/orientation]].
 
