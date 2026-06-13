@@ -4,6 +4,11 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   typescript: {
+    // Authoritative type gate is `npm run typecheck:full` (tsc over the whole
+    // codebase — currently 0 errors). Next's build type-checker is left off
+    // because it produces resolution false-positives that tsc does not (e.g.
+    // it wrongly reports lucide-react named icons like `Filter` as missing).
+    // Wire `typecheck:full` into CI to prevent regressions.
     ignoreBuildErrors: true,
   },
   images: {

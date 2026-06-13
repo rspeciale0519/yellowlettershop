@@ -10,7 +10,8 @@
     "test": "mocha",
     "test:watch": "mocha --watch",
     "test:single": "mocha --grep",
-    "typecheck:ui": "tsc --noEmit -p tsconfig.typecheck.json"
+    "typecheck:ui": "tsc --noEmit -p tsconfig.typecheck.json",
+    "typecheck:full": "tsc --noEmit -p tsconfig.fullcheck.json"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
