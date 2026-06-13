@@ -38,10 +38,6 @@ const SaveDesignSchema = z.object({
   description: z.string().optional()
 })
 
-function nullableUuid(value?: string) {
-  return value && z.string().uuid().safeParse(value).success ? value : null
-}
-
 export const POST = withAuth(async (req: NextRequest, { userId }) => {
   try {
     const body = await req.json()
@@ -52,22 +48,20 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
     // Extract variables from design state
     const variablesUsed = extractVariablesFromDesign(validatedData.designState)
     
-    // Create design record
+    // Create design record. The consolidated schema uses `saved_designs`
+    // (design_data jsonb); the order linkage is via orders.design_id below.
     const designData = {
       user_id: userId,
-      order_id: validatedData.orderId || null,
-      template_id: nullableUuid(validatedData.templateId),
       name: validatedData.name || `Design ${new Date().toLocaleString()}`,
       description: validatedData.description || null,
-      design_state: validatedData.designState,
-      variables_used: variablesUsed,
+      design_data: validatedData.designState,
       is_template: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     }
-    
+
     const { data: savedDesign, error } = await supabase
-      .from('user_designs')
+      .from('saved_designs')
       .insert(designData)
       .select()
       .single()
@@ -151,10 +145,9 @@ export const PUT = withAuth(async (req: NextRequest, { userId }) => {
     
     // Update design record
     const { data: updatedDesign, error } = await supabase
-      .from('user_designs')
+      .from('saved_designs')
       .update({
-        design_state: updateData.designState,
-        variables_used: variablesUsed,
+        design_data: updateData.designState,
         name: updateData.name,
         description: updateData.description,
         updated_at: new Date().toISOString()
