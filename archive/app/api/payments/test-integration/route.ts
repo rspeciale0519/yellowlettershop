@@ -11,6 +11,13 @@ import { PaymentService, PaymentServiceError } from '@/lib/payments/payment-serv
 import { SubscriptionService } from '@/lib/payments/subscription-service';
 import { paymentAuditLogger } from '@/lib/payments/payment-audit-logger';
 
+interface IntegrationTestResult {
+  name: string;
+  status: 'passed' | 'failed';
+  details: Record<string, unknown>;
+  error: string | null;
+}
+
 export async function POST(request: NextRequest) {
   // Only allow in development
   if (process.env.NODE_ENV !== 'development') {
@@ -27,7 +34,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Get authenticated user
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -77,7 +84,7 @@ export async function POST(request: NextRequest) {
 }
 
 async function testPaymentServiceConfig(): Promise<any> {
-  const test = {
+  const test: IntegrationTestResult = {
     name: 'Payment Service Configuration',
     status: 'failed',
     details: {},
@@ -101,7 +108,7 @@ async function testPaymentServiceConfig(): Promise<any> {
 }
 
 async function testCustomerCreation(userId: string): Promise<any> {
-  const test = {
+  const test: IntegrationTestResult = {
     name: 'Customer Creation',
     status: 'failed',
     details: {},
@@ -128,7 +135,7 @@ async function testCustomerCreation(userId: string): Promise<any> {
 }
 
 async function testPricingCalculation(): Promise<any> {
-  const test = {
+  const test: IntegrationTestResult = {
     name: 'Pricing Calculation',
     status: 'failed',
     details: {},
@@ -165,7 +172,7 @@ async function testPricingCalculation(): Promise<any> {
 }
 
 async function testAuditLogging(userId: string): Promise<any> {
-  const test = {
+  const test: IntegrationTestResult = {
     name: 'Audit Logging',
     status: 'failed',
     details: {},
@@ -196,7 +203,7 @@ async function testAuditLogging(userId: string): Promise<any> {
 }
 
 function testEnvironmentVariables(): any {
-  const test = {
+  const test: IntegrationTestResult = {
     name: 'Environment Variables',
     status: 'passed',
     details: {},
@@ -235,7 +242,7 @@ function testEnvironmentVariables(): any {
 }
 
 async function testDatabaseSchema(supabase: any, userId: string): Promise<any> {
-  const test = {
+  const test: IntegrationTestResult = {
     name: 'Database Schema Validation',
     status: 'failed',
     details: {},

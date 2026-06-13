@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
-import { validateEmailBatch } from '@/lib/validation/email-validation'
-import { validateAddressBatch } from '@/lib/validation/address-validation'
-import { batchDuplicateDetection } from '@/lib/validation/duplicate-detection'
-import { batchCalculateCompleteness } from '@/lib/validation/data-completeness'
+import { validateEmailBatch, type EmailValidationResult } from '@/lib/validation/email-validation'
+import { validateAddressBatch, type AddressValidationResult } from '@/lib/validation/address-validation'
+import { batchDuplicateDetection, type DuplicateDetectionResult } from '@/lib/validation/duplicate-detection'
+import { batchCalculateCompleteness, type CompletenessScore } from '@/lib/validation/data-completeness'
 import { createJob } from '@/lib/jobs/job-queue'
 import { 
   checkBatchProcessingAllowed, 
@@ -37,8 +37,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = createSupabaseServerClient()
-    
+    const supabase = await createSupabaseServerClient()
+
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) {
@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
     // Pre-process validation data for background job
     const emailsToValidate = transformedRecords
       .map(record => record.email)
-      .filter(email => email && typeof email === 'string' && email.trim() !== '')
+      .filter((email): email is string => typeof email === 'string' && email.trim() !== '')
 
     const addressesToValidate = transformedRecords
       .map(record => ({
@@ -173,10 +173,10 @@ export async function POST(request: NextRequest) {
       .filter(addr => addr.address && addr.city && addr.state && addr.zipCode)
 
     // Run validation processes
-    let emailValidationResults: Record<string, unknown> = {}
-    let addressValidationResults: Record<string, unknown> = {}
-    let duplicateResults: Record<string, unknown> = {}
-    let completenessResults: Record<string, unknown> = {}
+    let emailValidationResults: Record<string, EmailValidationResult> = {}
+    let addressValidationResults: Record<string, AddressValidationResult> = {}
+    let duplicateResults: Record<string, DuplicateDetectionResult> = {}
+    let completenessResults: Record<string, CompletenessScore> = {}
 
     try {
       // Email validation
@@ -239,7 +239,7 @@ export async function POST(request: NextRequest) {
       const recordsForScoring = transformedRecords.map((record, index) => ({
         ...record,
         additional_data: {
-          email_validation: record.email ? emailValidationResults[record.email] : null,
+          email_validation: record.email ? emailValidationResults[record.email] : undefined,
           address_validation: addressValidationResults[index.toString()]
         }
       }))
@@ -290,7 +290,8 @@ export async function POST(request: NextRequest) {
     console.error('Async import spreadsheet error:', error)
     
     // Release batch slot if job creation failed
-    const { data: { user } } = await createSupabaseServerClient().auth.getUser()
+    const supabase = await createSupabaseServerClient()
+    const { data: { user } } = await supabase.auth.getUser()
     if (user) {
       releaseBatchSlot(user.id)
     }
@@ -302,29 +303,42 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// Shape produced by mapping spreadsheet columns to system fields.
+// All values originate from string cells, so each mapped field is a string.
+interface MappedRecord {
+  firstName?: string
+  lastName?: string
+  email?: string
+  phone?: string
+  address?: string
+  city?: string
+  state?: string
+  zipCode?: string
+}
+
 // Helper function to transform data based on column mappings
 function transformDataWithMappings(
-  headers: string[], 
-  rows: string[][], 
+  headers: string[],
+  rows: string[][],
   columnMappings: Record<string, string>
-) {
-  const transformedRows = []
-  
+): MappedRecord[] {
+  const transformedRows: MappedRecord[] = []
+
   for (const row of rows) {
-    const transformedRow: Record<string, unknown> = {}
-    
+    const transformedRow: Record<string, string> = {}
+
     headers.forEach((header, index) => {
       const systemField = columnMappings[header]
       if (systemField && systemField !== '') {
         transformedRow[systemField] = row[index] || ''
       }
     })
-    
+
     // Only include rows that have at least one mapped field with data
     if (Object.values(transformedRow).some(value => value !== '')) {
       transformedRows.push(transformedRow)
     }
   }
-  
+
   return transformedRows
 }

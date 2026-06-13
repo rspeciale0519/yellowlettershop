@@ -42,8 +42,10 @@ export async function GET(
     // Increment access count (async, non-blocking)
     shareService.incrementAccessCount(shareData.id, shareData.access_count)
 
-    // Return file with appropriate headers
-    const response = new NextResponse(fileResult.fileBuffer)
+    // Return file with appropriate headers. Copy into a fresh ArrayBuffer-backed
+    // view so the body satisfies BodyInit (Uint8Array<ArrayBufferLike> is not
+    // directly assignable).
+    const response = new NextResponse(Uint8Array.from(fileResult.fileBuffer))
     
     // Set proper headers for file streaming
     response.headers.set('Content-Type', shareData.asset.mime_type || fileResult.mimeType)

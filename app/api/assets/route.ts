@@ -278,7 +278,8 @@ export async function POST(request: NextRequest) {
         category: formData.get('category') as string || undefined,
         description: formData.get('description') as string || undefined
       },
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     }
 
     // Insert DB record with service role to avoid user_assets RLS edge cases

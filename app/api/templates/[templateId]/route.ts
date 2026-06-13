@@ -3,14 +3,14 @@ import { withAuth } from '@/lib/auth/middleware'
 import { createClient } from '@/utils/supabase/service'
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     templateId: string
-  }
+  }>
 }
 
-export const GET = withAuth(async (req: NextRequest, { userId }, { params }: RouteParams) => {
+export const GET = withAuth<RouteParams>(async (req, { userId }, { params }) => {
   try {
-    const { templateId } = params
+    const { templateId } = await params
     
     if (!templateId) {
       return NextResponse.json(
@@ -100,9 +100,9 @@ export const GET = withAuth(async (req: NextRequest, { userId }, { params }: Rou
 })
 
 // Update template (for admin/template creators)
-export const PUT = withAuth(async (req: NextRequest, { userId }, { params }: RouteParams) => {
+export const PUT = withAuth<RouteParams>(async (req, { userId }, { params }) => {
   try {
-    const { templateId } = params
+    const { templateId } = await params
     const body = await req.json()
     
     if (!templateId) {

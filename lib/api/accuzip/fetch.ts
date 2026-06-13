@@ -2,20 +2,16 @@
 import type { ListCriteria } from '@/lib/supabase/mailing-lists';
 import type { MailingListRecord } from '@/types/supabase';
 import { criteriaToAccuZIPParams } from './params';
-import { convertAccuZIPRecord } from './record';
+import { convertAccuZIPRecord, type AccuZIPRecord } from './record';
 
 const ACCUZIP_API_BASE =
   process.env.ACCUZIP_API_URL || 'https://api.accuzip.com/v1';
 const ACCUZIP_API_KEY = process.env.ACCUZIP_API_KEY;
 
-interface AccuZIPRawRecord {
-  [key: string]: unknown;
-}
-
 interface AccuZIPResponse {
   success: boolean;
   data?: {
-    records: AccuZIPRawRecord[];
+    records: AccuZIPRecord[];
     totalCount: number;
     hasMore: boolean;
   };

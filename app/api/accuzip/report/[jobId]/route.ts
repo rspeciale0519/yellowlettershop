@@ -3,14 +3,14 @@ import { withAuth } from '@/lib/auth/middleware'
 import { createClient } from '@/utils/supabase/service'
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     jobId: string
-  }
+  }>
 }
 
-export const GET = withAuth(async (req: NextRequest, { userId }, { params }: RouteParams) => {
+export const GET = withAuth<RouteParams>(async (req, { userId }, { params }) => {
   try {
-    const { jobId } = params
+    const { jobId } = await params
     
     if (!jobId) {
       return NextResponse.json(

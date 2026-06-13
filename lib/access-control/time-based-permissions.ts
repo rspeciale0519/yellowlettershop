@@ -117,6 +117,7 @@ export class TimeBasedPermissionsService {
 
     const { data, error } = await query
       .order('created_at', { ascending: false })
+      .returns<AccessRequest[]>()
 
     if (error) throw error
     return data || []
@@ -251,6 +252,7 @@ export class TimeBasedPermissionsService {
       .eq('team_id', teamId)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
+      .returns<TeamActivity[]>()
 
     if (error) throw error
     return data || []
@@ -310,7 +312,7 @@ export class ClientTimeBasedPermissionsService {
     justification?: string
     requested_duration_days?: number
   }): Promise<AccessRequest> {
-    const { data: request, error } = await (await this.getSupabase())
+    const { data: request, error } = await this.supabase
       .from('access_requests')
       .insert({
         resource_type: data.resource_type,
@@ -328,7 +330,7 @@ export class ClientTimeBasedPermissionsService {
   }
 
   async getUserAccessRequests(): Promise<AccessRequest[]> {
-    const { data, error } = await (await this.getSupabase())
+    const { data, error } = await this.supabase
       .from('access_requests')
       .select('*')
       .order('created_at', { ascending: false })
@@ -338,7 +340,7 @@ export class ClientTimeBasedPermissionsService {
   }
 
   async withdrawAccessRequest(requestId: string): Promise<void> {
-    const { error } = await (await this.getSupabase())
+    const { error } = await this.supabase
       .from('access_requests')
       .update({
         status: 'withdrawn',

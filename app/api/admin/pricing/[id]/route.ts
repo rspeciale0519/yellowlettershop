@@ -6,7 +6,7 @@ import type { AdminUser } from '@/lib/admin/types';
 
 const updateSchema = z.object({
   displayName: z.string().min(1).max(200).optional(),
-  description: z.string().max(500).nullable().optional(),
+  description: z.string().max(500).optional(),
   unitAmount: z.number().int().min(0).optional(),
   unitLabel: z.string().max(50).optional(),
   tierConfig: z.array(z.object({

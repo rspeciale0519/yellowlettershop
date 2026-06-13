@@ -4,7 +4,7 @@
  */
 
 import Stripe from 'stripe';
-import { stripe, requireStripe, STRIPE_CONFIG } from './stripe-config';
+import { requireStripe, STRIPE_CONFIG } from './stripe-config';
 import { createServiceClient } from '@/utils/supabase/service';
 import { CustomerService } from './customer-service';
 import { 
@@ -24,7 +24,7 @@ export class PaymentIntentService {
    * Create payment intent for order authorization
    */
   async createPaymentIntent(params: CreatePaymentIntentParams): Promise<PaymentIntent> {
-    requireStripe();
+    const stripe = requireStripe();
 
     const {
       userId,
@@ -102,7 +102,7 @@ export class PaymentIntentService {
    * Capture payment intent (complete the payment)
    */
   async capturePayment(params: CapturePaymentParams): Promise<PaymentIntent> {
-    requireStripe();
+    const stripe = requireStripe();
 
     const { paymentIntentId, amount, metadata = {} } = params;
 
@@ -148,7 +148,7 @@ export class PaymentIntentService {
    * Refund payment
    */
   async refundPayment(params: RefundPaymentParams): Promise<Stripe.Refund> {
-    requireStripe();
+    const stripe = requireStripe();
 
     const { paymentIntentId, amount, reason = 'requested_by_customer', metadata = {} } = params;
 
@@ -192,7 +192,7 @@ export class PaymentIntentService {
    * Get payment intent details
    */
   async getPaymentIntent(paymentIntentId: string): Promise<Stripe.PaymentIntent> {
-    requireStripe();
+    const stripe = requireStripe();
 
     try {
       return await stripe.paymentIntents.retrieve(paymentIntentId);

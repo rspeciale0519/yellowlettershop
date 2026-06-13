@@ -9,7 +9,7 @@ export async function GET(
   try {
     const { jobId } = params
 
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
     
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -70,7 +70,7 @@ export async function DELETE(
   try {
     const { jobId } = params
 
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
     
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser()

@@ -71,7 +71,7 @@ export async function PATCH(
       }, { status: 403 })
     }
 
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
 
     // Prepare update data
     const updateData: Record<string, unknown> = {}
@@ -138,7 +138,7 @@ export async function DELETE(
       }, { status: 403 })
     }
 
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
 
     // Delete the project (cascade will handle cleanup)
     const { error } = await supabase

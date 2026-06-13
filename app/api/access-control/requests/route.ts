@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { timeBasedPermissions } from '@/lib/access-control/time-based-permissions'
+import type { AccessRequestStatus } from '@/types/supabase'
 import { z } from 'zod'
 
 export const runtime = 'nodejs'
@@ -15,7 +16,7 @@ const CreateAccessRequestSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
     
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -31,7 +32,7 @@ export async function GET(request: NextRequest) {
     if (teamId) {
       const requests = await timeBasedPermissions.getTeamAccessRequests(
         teamId,
-        status as 'pending' | 'approved' | 'rejected' | 'expired' | null
+        (status ?? undefined) as AccessRequestStatus | undefined
       )
       return NextResponse.json({ requests })
     } else {
@@ -50,7 +51,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
     
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()

@@ -30,7 +30,7 @@ export async function GET(
       }, { status: 403 })
     }
 
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
 
     const { data: members, error } = await supabase
       .from('project_members')
@@ -89,8 +89,8 @@ export async function POST(
 
     // Apply permission overrides if provided
     if (permissionOverrides && member) {
-      const supabase = createSupabaseServerClient()
-      
+      const supabase = await createSupabaseServerClient()
+
       const { data: updatedMember, error: updateError } = await supabase
         .from('project_members')
         .update({ permission_overrides: permissionOverrides })

@@ -9,7 +9,7 @@ import {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {

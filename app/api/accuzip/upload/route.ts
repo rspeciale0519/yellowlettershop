@@ -165,7 +165,10 @@ async function processAccuZipValidation(
       .update({ status: 'processing' })
       .eq('id', jobId)
 
-    const verdicts = await batchValidateRecords(records, 'address')
+    const recordsForValidation = records.map(
+      (record): { id: string; [key: string]: unknown } => ({ ...record })
+    )
+    const verdicts = await batchValidateRecords(recordsForValidation, 'address')
     const byId = new Map(verdicts.map((v) => [v.recordId, v]))
 
     const { validatedRecords, deliverableCount, undeliverableCount } = buildValidationResults(

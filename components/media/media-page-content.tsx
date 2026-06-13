@@ -23,6 +23,17 @@ import { UnifiedSearchBar } from "./unified-search-bar"
 import { Pagination } from "./pagination"
 import { toast } from "sonner"
 import { ensureTagsExist } from "@/lib/tag-manager/tag-utils"
+import type { UserAsset } from "@/types/supabase"
+
+function getAssetTags(metadata: UserAsset['metadata']): string[] {
+  if (metadata && typeof metadata === 'object' && !Array.isArray(metadata)) {
+    const tags = (metadata as Record<string, unknown>).tags
+    if (Array.isArray(tags)) {
+      return tags.filter((tag): tag is string => typeof tag === 'string')
+    }
+  }
+  return []
+}
 
 export default function MediaPageContent() {
   const {
@@ -160,7 +171,7 @@ export default function MediaPageContent() {
     // Combined tag filter logic (tags from search query + selected tags filter)
     // Filter out empty tags that might result from typing just '#'
     const validSearchTags = searchTags.filter(tag => tag.trim().length > 0)
-    const fileTags = (file.metadata?.tags || []).map((tag: string) => tag.toLowerCase())
+    const fileTags = getAssetTags(file.metadata).map((tag: string) => tag.toLowerCase())
     const allFilterTags = [...new Set([...selectedTagsFilter, ...validSearchTags])]
     const matchesTagsFilter = allFilterTags.length === 0 ||
       allFilterTags.every((tag) => tag.trim().length > 0 && fileTags.includes(tag.toLowerCase()))
@@ -768,9 +779,18 @@ export default function MediaPageContent() {
         ) : (
           <MediaList
             files={paginatedFiles}
-            onFileSelect={(asset) => handleImageClick(asset)}
-            onFileDelete={(asset) => handleDeleteClick(asset)}
-            onFileUpdate={updateAsset}
+            onFileSelect={async (id) => {
+              const asset = paginatedFiles.find((file) => file.id === id)
+              if (asset) await handleImageClick(asset)
+              return ''
+            }}
+            onFileDelete={async (id) => {
+              const asset = paginatedFiles.find((file) => file.id === id)
+              if (asset) await handleDeleteClick(asset)
+            }}
+            onFileUpdate={async (id, updates) => {
+              await updateAsset(id, updates)
+            }}
             formatFileSize={formatFileSize}
           />
         )}

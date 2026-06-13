@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import type { ListCriteria } from '@/lib/supabase/mailing-lists';
 import { createListFromAccuZIPCriteria } from '@/lib/api/accuzip-integration';
 import { createMailingList as createMailingListServer } from '@/lib/supabase/server-mailing-lists';
 import { bulkImportRecords as bulkImportRecordsServer } from '@/lib/supabase/server-mailing-lists-extended';
@@ -22,17 +23,17 @@ export async function POST(req: Request) {
     }
 
     const { name, criteria, options } = (body ?? {}) as {
-      name?: unknown;
-      criteria?: unknown;
+      name?: string;
+      criteria?: ListCriteria;
       options?: {
-        sampleSize?: unknown;
-        deduplicationField?: unknown;
-        description?: unknown;
-        fetchLimit?: unknown;
+        sampleSize?: number;
+        deduplicationField?: string;
+        description?: string;
+        fetchLimit?: number;
       };
     };
 
-    if (!name || !criteria) {
+    if (typeof name !== 'string' || !name.trim() || !criteria) {
       return NextResponse.json(
         { error: 'Missing name or criteria' },
         { status: 400 }

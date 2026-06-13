@@ -7,6 +7,12 @@ import { createClient } from '@/utils/supabase/server'
 import { createClient as createClientClient } from '@/utils/supabase/client'
 import type { ResourceType, PermissionLevel } from '@/lib/access-control/time-based-permissions'
 
+export interface AuditLogActor {
+  id: string
+  email: string | null
+  raw_user_meta_data: Record<string, unknown> | null
+}
+
 export interface AuditLogEntry {
   id: string
   team_id: string
@@ -21,6 +27,8 @@ export interface AuditLogEntry {
   ip_address?: string
   user_agent?: string
   created_at: string
+  actor?: AuditLogActor | null
+  target_user?: AuditLogActor | null
 }
 
 export type AuditActionType = 
@@ -51,7 +59,9 @@ export type AuditActionType =
  * Server-side audit logger
  */
 export class EnhancedAuditLogger {
-  private supabase = createClient()
+  private async getSupabase() {
+    return await createClient()
+  }
 
   /**
    * Log a team activity
@@ -70,7 +80,8 @@ export class EnhancedAuditLogger {
     user_agent?: string
   }): Promise<void> {
     try {
-      const { error } = await this.supabase
+      const supabase = await this.getSupabase()
+      const { error } = await supabase
         .from('team_activity_log')
         .insert({
           team_id: data.team_id,
@@ -206,7 +217,8 @@ export class EnhancedAuditLogger {
       offset?: number
     }
   ): Promise<AuditLogEntry[]> {
-    let query = this.supabase
+    const supabase = await this.getSupabase()
+    let query = supabase
       .from('team_activity_log')
       .select(`
         *,
@@ -245,6 +257,7 @@ export class EnhancedAuditLogger {
     const { data, error } = await query
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
+      .returns<AuditLogEntry[]>()
 
     if (error) throw error
     return data || []
@@ -270,7 +283,8 @@ export class EnhancedAuditLogger {
         break
     }
 
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase()
+    const { data, error } = await supabase
       .from('team_activity_log')
       .select('action_type')
       .eq('team_id', teamId)
@@ -294,7 +308,8 @@ export class EnhancedAuditLogger {
     teamId: string,
     limit: number = 20
   ): Promise<AuditLogEntry[]> {
-    const { data, error } = await this.supabase
+    const supabase = await this.getSupabase()
+    const { data, error } = await supabase
       .from('team_activity_log')
       .select(`
         *,
@@ -305,6 +320,7 @@ export class EnhancedAuditLogger {
       .or(`actor_id.eq.${userId},target_user_id.eq.${userId}`)
       .order('created_at', { ascending: false })
       .limit(limit)
+      .returns<AuditLogEntry[]>()
 
     if (error) throw error
     return data || []
@@ -344,6 +360,7 @@ export class ClientAuditLogger {
     const { data, error } = await query
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
+      .returns<AuditLogEntry[]>()
 
     if (error) throw error
     return data || []

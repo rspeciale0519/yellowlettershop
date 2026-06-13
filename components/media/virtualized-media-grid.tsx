@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useMemo } from 'react'
-import { Grid } from 'react-window'
+import { Grid, type CellComponentProps } from 'react-window'
 import { Card, CardContent } from "@/components/ui/card"
 import { FileActions } from "./file-actions"
 import { UserAsset } from '@/types/supabase'
@@ -94,7 +94,11 @@ export function VirtualizedMediaGrid({
   const rowCount = Math.ceil(filteredMediaFiles.length / columnCount)
 
   // Grid item renderer
-  const GridItem = ({ columnIndex, rowIndex, style }: any) => {
+  const GridItem = ({
+    columnIndex,
+    rowIndex,
+    style,
+  }: CellComponentProps) => {
     const itemIndex = rowIndex * columnCount + columnIndex
     const file = filteredMediaFiles[itemIndex]
 
@@ -200,14 +204,13 @@ export function VirtualizedMediaGrid({
 
   return (
     <Grid
+      cellComponent={GridItem}
+      cellProps={{}}
       columnCount={columnCount}
       columnWidth={columnWidth}
-      height={containerHeight}
       rowCount={rowCount}
       rowHeight={rowHeight}
-      width={containerWidth}
-    >
-      {GridItem}
-    </Grid>
+      style={{ height: containerHeight, width: containerWidth }}
+    />
   )
 }

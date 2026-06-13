@@ -134,7 +134,7 @@ function getClientIp(request: NextRequest): string | null {
     return cfConnectingIp
   }
 
-  return request.ip || null
+  return null
 }
 
 /**

@@ -17,6 +17,12 @@ interface FileDetailsModalProps {
 export function FileDetailsModal({ isOpen, onClose, asset, onDownload, onCopyLink }: FileDetailsModalProps) {
   if (!asset) return null
 
+  const metadata = asset.metadata
+  const tags =
+    metadata && typeof metadata === 'object' && !Array.isArray(metadata) && Array.isArray(metadata.tags)
+      ? metadata.tags
+      : []
+
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes'
     
@@ -128,7 +134,7 @@ export function FileDetailsModal({ isOpen, onClose, asset, onDownload, onCopyLin
               </div>
               <div className="text-sm">
                 <span className="font-medium">Tags: </span>
-                <span className="break-words">{asset.metadata?.tags?.join(", ") || "None"}</span>
+                <span className="break-words">{tags.length > 0 ? tags.join(", ") : "None"}</span>
               </div>
             </div>
             

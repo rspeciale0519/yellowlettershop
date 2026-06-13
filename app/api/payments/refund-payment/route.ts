@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     const validatedData = refundPaymentSchema.parse(body);
 
     // Get authenticated user
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -101,11 +101,11 @@ export async function POST(request: NextRequest) {
 
     // Initialize payment service and process refund
     const paymentService = new PaymentService();
-    await paymentService.refundPayment(
-      validatedData.paymentIntentId,
-      validatedData.refundAmount,
-      validatedData.reason
-    );
+    await paymentService.refundPayment({
+      paymentIntentId: validatedData.paymentIntentId,
+      amount: validatedData.refundAmount,
+      reason: validatedData.reason,
+    });
 
     // Update campaign status if needed
     if (transaction.campaign_id) {

@@ -244,8 +244,7 @@ export function AuthFlowModalController({}: AuthFlowModalControllerProps) {
             showPassword={showPassword}
             onSignupStateChange={(updates) => setSignupState(prev => ({ ...prev, ...updates }))}
             onShowPasswordToggle={() => setShowPassword(!showPassword)}
-            onSignup={handleSignup}
-            onGoogleLogin={handleGoogleLogin}
+            onSignUp={handleSignup}
             onSwitchToLogin={() => setMode('login')}
           />
         );
@@ -256,8 +255,8 @@ export function AuthFlowModalController({}: AuthFlowModalControllerProps) {
             forgotState={forgotState}
             authState={authState}
             onForgotStateChange={(updates) => setForgotState(prev => ({ ...prev, ...updates }))}
-            onSubmit={handleForgotPassword}
-            onBackToLogin={() => setMode('login')}
+            onSendReset={handleForgotPassword}
+            onSwitchToLogin={() => setMode('login')}
           />
         );
       
@@ -267,16 +266,15 @@ export function AuthFlowModalController({}: AuthFlowModalControllerProps) {
             resetState={resetState}
             authState={authState}
             onResetStateChange={(updates) => setResetState(prev => ({ ...prev, ...updates }))}
-            onSubmit={handleResetPassword}
-            onBackToLogin={() => setMode('login')}
+            onUpdatePassword={handleResetPassword}
+            onSwitchToLogin={() => setMode('login')}
           />
         );
       
       case 'verify':
         return (
           <VerifyForm
-            authState={authState}
-            onBackToLogin={() => setMode('login')}
+            onSwitchToLogin={() => setMode('login')}
           />
         );
       

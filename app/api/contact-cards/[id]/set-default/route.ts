@@ -3,22 +3,23 @@ import { withAuth } from '@/lib/auth/middleware'
 import { createClient } from '@/utils/supabase/service'
 
 interface RouteParams {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
-export const POST = withAuth(async (
-  request: NextRequest,
-  { userId }: { userId: string },
-  { params }: RouteParams
+export const POST = withAuth<RouteParams>(async (
+  request,
+  { userId },
+  { params }
 ) => {
   try {
     const supabase = createClient()
+    const { id } = await params
 
     // Verify the contact card exists and belongs to the user
     const { data: contactCard, error: verifyError } = await supabase
       .from('contact_cards')
       .select('id')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', userId)
       .eq('is_soft_deleted', false)
       .single()
@@ -32,7 +33,7 @@ export const POST = withAuth(async (
       .from('contact_cards')
       .update({ is_default: false })
       .eq('user_id', userId)
-      .neq('id', params.id)
+      .neq('id', id)
 
     if (removeDefaultError) {
       console.error('Error removing default from other cards:', removeDefaultError)
@@ -46,7 +47,7 @@ export const POST = withAuth(async (
         is_default: true,
         updated_at: new Date().toISOString()
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', userId)
       .select()
       .single()

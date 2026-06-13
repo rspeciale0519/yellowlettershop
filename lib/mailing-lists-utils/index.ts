@@ -33,7 +33,7 @@ export function filterSortPaginateLists(
     if (quickFilter === 'last_7_days') {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      return new Date(list.created_at) >= sevenDaysAgo;
+      return new Date(list.created_at ?? 0) >= sevenDaysAgo;
     }
     if (quickFilter === 'used_in_campaign') {
       const campaigns = list.campaigns;

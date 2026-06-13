@@ -40,9 +40,9 @@ if (!webhookSecret) {
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
-  const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0] || 
-                   request.headers.get('x-real-ip') || 
-                   request.ip || 'unknown';
+  const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0] ||
+                   request.headers.get('x-real-ip') ||
+                   'unknown';
 
   try {
     // 1. Validate Stripe IP allowlist (in production)
@@ -247,8 +247,13 @@ async function handlePaymentIntentSucceeded(
   paymentIntent: Stripe.PaymentIntent,
   supabase: SupabaseClient
 ): Promise<void> {
-  const status: PaymentStatus = paymentIntent.capture_method === 'manual' 
-    ? (paymentIntent.charges.data[0]?.captured ? 'captured' : 'authorized')
+  const latestCharge = paymentIntent.latest_charge;
+  const chargeCaptured =
+    typeof latestCharge === 'object' && latestCharge !== null
+      ? latestCharge.captured
+      : false;
+  const status: PaymentStatus = paymentIntent.capture_method === 'manual'
+    ? (chargeCaptured ? 'captured' : 'authorized')
     : 'captured';
 
   const updateData: {
@@ -435,7 +440,11 @@ async function handleInvoicePaymentSucceeded(
   invoice: Stripe.Invoice,
   supabase: SupabaseClient
 ): Promise<void> {
-  if (invoice.subscription) {
+  const subscriptionRef = invoice.parent?.subscription_details?.subscription;
+  const subscriptionId =
+    typeof subscriptionRef === 'string' ? subscriptionRef : subscriptionRef?.id;
+
+  if (subscriptionId) {
     // Log successful payment for analytics
     const { error } = await supabase
       .from('user_analytics')
@@ -444,7 +453,7 @@ async function handleInvoicePaymentSucceeded(
         event_type: 'invoice_paid',
         metadata: {
           invoice_id: invoice.id,
-          subscription_id: invoice.subscription,
+          subscription_id: subscriptionId,
           amount: invoice.amount_paid / 100,
           currency: invoice.currency,
         },
@@ -460,14 +469,18 @@ async function handleInvoicePaymentFailed(
   invoice: Stripe.Invoice,
   supabase: SupabaseClient
 ): Promise<void> {
-  if (invoice.subscription) {
+  const subscriptionRef = invoice.parent?.subscription_details?.subscription;
+  const subscriptionId =
+    typeof subscriptionRef === 'string' ? subscriptionRef : subscriptionRef?.id;
+
+  if (subscriptionId) {
     // Update subscription status to past_due
     const { error } = await supabase
       .from('user_profiles')
       .update({
         subscription_status: 'past_due' as SubscriptionStatus,
       })
-      .eq('stripe_subscription_id', invoice.subscription);
+      .eq('stripe_subscription_id', subscriptionId);
 
     if (error) {
       console.error('Failed to update subscription to past_due:', error);
@@ -481,7 +494,7 @@ async function handleInvoicePaymentFailed(
         event_type: 'invoice_payment_failed',
         metadata: {
           invoice_id: invoice.id,
-          subscription_id: invoice.subscription,
+          subscription_id: subscriptionId,
           amount: invoice.amount_due / 100,
           currency: invoice.currency,
           failure_reason: invoice.last_finalization_error?.message || 'Payment failed',

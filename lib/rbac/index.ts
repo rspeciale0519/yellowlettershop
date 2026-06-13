@@ -17,7 +17,7 @@ export async function createProject(projectData: {
   settings?: Record<string, any>
 }): Promise<{ project: Project | null; error: string | null }> {
   try {
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
     
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -62,7 +62,7 @@ export async function getUserProjects(userId?: string): Promise<{
   error: string | null
 }> {
   try {
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
     
     // Get current user if userId not provided
     let targetUserId = userId
@@ -98,7 +98,7 @@ export async function getProject(projectId: string): Promise<{
   error: string | null
 }> {
   try {
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
 
     const { data: project, error } = await supabase
       .from('projects')
@@ -144,7 +144,7 @@ export async function addProjectMember(
   invitedBy?: string
 ): Promise<{ member: ProjectMember | null; error: string | null }> {
   try {
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
 
     // Get current user if invitedBy not provided
     let inviterId = invitedBy
@@ -202,7 +202,7 @@ export async function updateProjectMember(
   }
 ): Promise<{ member: ProjectMember | null; error: string | null }> {
   try {
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
 
     const updateData: any = {}
     if (updates.role) updateData.role = updates.role
@@ -238,7 +238,7 @@ export async function removeProjectMember(
   userId: string
 ): Promise<{ success: boolean; error: string | null }> {
   try {
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
 
     const { error } = await supabase
       .from('project_members')
@@ -270,7 +270,7 @@ export async function checkUserPermission(
   action: PermissionAction
 ): Promise<{ allowed: boolean; error: string | null }> {
   try {
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
 
     const { data: hasPermission, error } = await supabase
       .rpc('user_has_project_permission', {
@@ -298,7 +298,7 @@ export async function getUserProjectRole(
   projectId: string
 ): Promise<{ role: ProjectRole | null; error: string | null }> {
   try {
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
 
     const { data: role, error } = await supabase
       .rpc('get_user_project_role', {
@@ -359,7 +359,7 @@ export async function checkUserPermissions(
  * Get the current user with authentication
  */
 export async function getCurrentUser() {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   return await supabase.auth.getUser()
 }
 

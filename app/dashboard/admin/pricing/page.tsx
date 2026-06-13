@@ -31,7 +31,7 @@ export default function AdminPricingPage() {
   const [editItem, setEditItem] = useState<PricingConfig | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [historyItem, setHistoryItem] = useState<PricingConfig | null>(null);
-  const [history, setHistory] = useState<Record<string, unknown>[]>([]);
+  const [history, setHistory] = useState<Parameters<typeof PricingHistory>[0]['history']>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
   const supabase = createClient();
@@ -182,7 +182,7 @@ export default function AdminPricingPage() {
         open={!!historyItem}
         onClose={() => setHistoryItem(null)}
         item={historyItem}
-        history={history as Parameters<typeof PricingHistory>[0]['history']}
+        history={history}
         isLoading={historyLoading}
       />
     </div>

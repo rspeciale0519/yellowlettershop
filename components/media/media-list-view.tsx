@@ -12,6 +12,16 @@ import {
 } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
 
+function getAssetTags(metadata: UserAsset['metadata']): string[] {
+  if (metadata && typeof metadata === 'object' && !Array.isArray(metadata)) {
+    const tags = (metadata as Record<string, unknown>).tags
+    if (Array.isArray(tags)) {
+      return tags.filter((tag): tag is string => typeof tag === 'string')
+    }
+  }
+  return []
+}
+
 interface MediaListViewProps {
   filteredMediaFiles: UserAsset[]
   newlyUploadedIds: Set<string>
@@ -118,22 +128,25 @@ export function MediaListView({
               </td>
               <td className="px-4 py-3">
                 <div className="flex flex-wrap gap-1">
-                  {file.metadata?.tags && file.metadata.tags.length > 0 ? (
-                    <>
-                      {file.metadata.tags.slice(0, 2).map((tag: string, index: number) => (
-                        <Badge key={index} variant="secondary" className="text-xs px-1.5 py-0.5">
-                          {tag}
-                        </Badge>
-                      ))}
-                      {file.metadata.tags.length > 2 && (
-                        <Badge variant="outline" className="text-xs px-1.5 py-0.5">
-                          +{file.metadata.tags.length - 2}
-                        </Badge>
-                      )}
-                    </>
-                  ) : (
-                    <span className="text-sm text-muted-foreground">—</span>
-                  )}
+                  {(() => {
+                    const tags = getAssetTags(file.metadata)
+                    return tags.length > 0 ? (
+                      <>
+                        {tags.slice(0, 2).map((tag: string, index: number) => (
+                          <Badge key={index} variant="secondary" className="text-xs px-1.5 py-0.5">
+                            {tag}
+                          </Badge>
+                        ))}
+                        {tags.length > 2 && (
+                          <Badge variant="outline" className="text-xs px-1.5 py-0.5">
+                            +{tags.length - 2}
+                          </Badge>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">—</span>
+                    )
+                  })()}
                 </div>
               </td>
               <td className="px-4 py-3 capitalize">{file.file_type}</td>

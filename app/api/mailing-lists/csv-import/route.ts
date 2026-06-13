@@ -38,7 +38,11 @@ export async function POST(request: NextRequest) {
     }
     // …rest of the try block…
 
-    const result = await bulkImportRecords(listId, records, deduplicationField);
+    const result = await bulkImportRecords(
+      listId,
+      records,
+      deduplicationField ?? undefined
+    );
 
     return NextResponse.json({
       success: true,

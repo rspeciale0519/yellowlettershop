@@ -283,11 +283,11 @@ export class CampaignPaymentService {
 
     // Only refund if payment was captured
     if (transaction.status === 'captured') {
-      await this.paymentService.refundPayment(
-        transaction.stripe_payment_intent_id,
-        refundAmount ? Math.round(refundAmount * 100) : undefined,
-        'requested_by_customer'
-      );
+      await this.paymentService.refundPayment({
+        paymentIntentId: transaction.stripe_payment_intent_id,
+        amount: refundAmount ? Math.round(refundAmount * 100) : undefined,
+        reason: 'requested_by_customer',
+      });
     }
 
     // Update campaign status

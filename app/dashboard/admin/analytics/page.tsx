@@ -10,10 +10,14 @@ import { createClient } from '@/utils/supabase/client';
 
 type Days = 7 | 30 | 90;
 
+type Metrics = Parameters<typeof MetricsCards>[0]['metrics'];
+type RevenueDatum = Parameters<typeof RevenueChart>[0]['data'][number];
+type CustomerRow = Parameters<typeof TopCustomersTable>[0]['customers'][number];
+
 export default function AdminAnalyticsPage() {
-  const [metrics, setMetrics] = useState<Record<string, unknown> | null>(null);
-  const [topCustomers, setTopCustomers] = useState<Record<string, unknown>[]>([]);
-  const [revenueData, setRevenueData] = useState<Record<string, unknown>[]>([]);
+  const [metrics, setMetrics] = useState<Metrics | null>(null);
+  const [topCustomers, setTopCustomers] = useState<CustomerRow[]>([]);
+  const [revenueData, setRevenueData] = useState<RevenueDatum[]>([]);
   const [days, setDays] = useState<Days>(30);
   const [isLoading, setIsLoading] = useState(true);
   const [chartLoading, setChartLoading] = useState(true);
@@ -69,7 +73,7 @@ export default function AdminAnalyticsPage() {
       {isLoading ? (
         <StatCardGridSkeleton count={4} />
       ) : metrics ? (
-        <MetricsCards metrics={metrics as Parameters<typeof MetricsCards>[0]['metrics']} />
+        <MetricsCards metrics={metrics} />
       ) : null}
 
       {/* Revenue Chart with Period Selector */}
@@ -88,14 +92,14 @@ export default function AdminAnalyticsPage() {
           ))}
         </div>
         <RevenueChart
-          data={revenueData as Parameters<typeof RevenueChart>[0]['data']}
+          data={revenueData}
           isLoading={chartLoading}
         />
       </div>
 
       {/* Top Customers */}
       <TopCustomersTable
-        customers={topCustomers as Parameters<typeof TopCustomersTable>[0]['customers']}
+        customers={topCustomers}
         isLoading={isLoading}
       />
     </div>

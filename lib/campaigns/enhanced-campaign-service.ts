@@ -48,7 +48,7 @@ export interface CampaignExecution {
   id: string
   campaignId: string
   executionNumber: number
-  status: 'scheduled' | 'processing' | 'sent' | 'completed' | 'failed'
+  status: 'scheduled' | 'processing' | 'sent' | 'completed' | 'failed' | 'cancelled'
   scheduledDate: string
   executedDate?: string
   recordCount: number

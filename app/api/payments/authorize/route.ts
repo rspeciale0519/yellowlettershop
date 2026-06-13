@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { withAuth } from '@/lib/auth/middleware'
 import Stripe from 'stripe'
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-06-20' })
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-08-27.basil' })
 
 const AuthorizePaymentSchema = z.object({
   paymentIntentId: z.string(),
@@ -52,7 +52,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
       return_url: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/orders/payment-return`,
     })
 
-    if (confirmed.status === 'requires_action' || confirmed.status === 'requires_source_action') {
+    if (confirmed.status === 'requires_action') {
       return NextResponse.json({
         status: 'requires_action',
         clientSecret: confirmed.client_secret,

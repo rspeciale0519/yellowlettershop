@@ -25,7 +25,7 @@ export function useKeyboardShortcuts({
     if (
       activeElement?.tagName === 'INPUT' ||
       activeElement?.tagName === 'TEXTAREA' ||
-      activeElement?.contentEditable === 'true'
+      (activeElement instanceof HTMLElement && activeElement.isContentEditable)
     ) {
       return
     }
@@ -84,7 +84,7 @@ export function useKeyboardShortcuts({
     // Return a ref that can be attached to the container to ensure focus
     containerProps: {
       tabIndex: -1,
-      onFocus: (e: React.FocusEvent) => {
+      onFocus: (e: React.FocusEvent<HTMLElement>) => {
         // Ensure the container can receive focus for keyboard events
         if (e.target === e.currentTarget) {
           e.currentTarget.focus()

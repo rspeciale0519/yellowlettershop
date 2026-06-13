@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
     
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
     
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
