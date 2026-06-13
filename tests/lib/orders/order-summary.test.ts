@@ -1,63 +1,86 @@
 import { describe, it } from 'mocha'
 import { strict as assert } from 'assert'
-import { summarizeOrderRow, ORDER_STATUS_STEPS, statusProgress } from '../../../lib/orders/order-summary'
+import {
+  summarizeOrderRow,
+  deriveDisplayStatus,
+  firstProofUrl,
+  statusProgress,
+  ORDER_STATUS_STEPS,
+} from '../../../lib/orders/order-summary'
 
-describe('summarizeOrderRow', () => {
-  it('lifts total, record count and format out of the order_state blob', () => {
-    const row = {
+describe('summarizeOrderRow (normalized orders)', () => {
+  it('reads the normalized columns directly', () => {
+    const s = summarizeOrderRow({
       id: 'o1',
-      status: 'submitted',
+      status: 'processing',
       submitted_at: '2026-06-12T00:00:00Z',
-      proof_url: null,
-      approved_at: null,
-      captured_at: null,
-      order_state: {
-        pricing: { totalPrice: 123.45 },
-        accuzipValidation: { deliverableRecords: 250 },
-        mailingOptions: { serviceLevel: 'full_service', mailPieceFormat: 'postcard_4x6' },
-      },
-    }
-    const s = summarizeOrderRow(row)
+      proof_urls: ['https://x/proof.pdf'],
+      proof_approved_at: '2026-06-12T01:00:00Z',
+      payment_status: 'captured',
+      amount_authorized: 123.45,
+      amount_captured: 123.45,
+      total_cost: 123.45,
+      record_count: 250,
+      mail_class: 'first_class',
+      postage_type: 'forever',
+    })
     assert.equal(s.id, 'o1')
     assert.equal(s.total, 123.45)
     assert.equal(s.recordCount, 250)
-    assert.equal(s.mailPieceFormat, 'postcard_4x6')
-    assert.equal(s.serviceLevel, 'full_service')
+    assert.equal(s.mailClass, 'first_class')
+    assert.equal(s.amountCaptured, 123.45)
+    assert.equal(s.proofUrl, 'https://x/proof.pdf')
+    assert.equal(s.displayStatus, 'processing')
   })
 
-  it('falls back to list totals when validation counts are absent', () => {
-    const s = summarizeOrderRow({
-      id: 'o2',
-      status: 'submitted',
-      submitted_at: '2026-06-12T00:00:00Z',
-      order_state: {
-        dataAndMapping: { listData: { totalRecords: 42 } },
-      },
-    })
-    assert.equal(s.recordCount, 42)
-    assert.equal(s.total, 0)
-  })
-
-  it('never throws on an empty blob', () => {
-    const s = summarizeOrderRow({ id: 'o3', status: 'submitted', submitted_at: null, order_state: null })
+  it('falls back to created_at when submitted_at is absent and defaults numerics', () => {
+    const s = summarizeOrderRow({ id: 'o2', status: 'draft', created_at: '2026-06-01T00:00:00Z' })
+    assert.equal(s.submittedAt, '2026-06-01T00:00:00Z')
     assert.equal(s.total, 0)
     assert.equal(s.recordCount, 0)
+    assert.equal(s.proofUrl, null)
   })
 })
 
-describe('statusProgress', () => {
-  it('orders the happy-path statuses as a strictly increasing timeline', () => {
-    const happy = ['submitted', 'proof_ready', 'approved', 'processing', 'in_production', 'mailed', 'completed']
-    const indices = happy.map(statusProgress)
-    for (let i = 1; i < indices.length; i++) {
-      assert.ok(indices[i] > indices[i - 1], `${happy[i]} must rank above ${happy[i - 1]}`)
-    }
-    assert.equal(ORDER_STATUS_STEPS.length, happy.length)
+describe('deriveDisplayStatus', () => {
+  it('maps fulfillment statuses straight through', () => {
+    assert.equal(deriveDisplayStatus({ id: 'x', status: 'processing' }), 'processing')
+    assert.equal(deriveDisplayStatus({ id: 'x', status: 'shipped' }), 'shipped')
+    assert.equal(deriveDisplayStatus({ id: 'x', status: 'completed' }), 'completed')
   })
+  it('refines submitted by the proof gate', () => {
+    assert.equal(deriveDisplayStatus({ id: 'x', status: 'submitted' }), 'submitted')
+    assert.equal(
+      deriveDisplayStatus({ id: 'x', status: 'submitted', proof_urls: ['u'] }),
+      'proof_ready'
+    )
+    assert.equal(
+      deriveDisplayStatus({ id: 'x', status: 'submitted', proof_urls: ['u'], proof_approved_at: 't' }),
+      'proof_approved'
+    )
+  })
+  it('passes terminal failure states through as off-path', () => {
+    assert.equal(deriveDisplayStatus({ id: 'x', status: 'failed' }), 'failed')
+    assert.equal(statusProgress('failed'), -1)
+  })
+})
 
-  it('ranks terminal failure states at -1 (off the timeline)', () => {
-    assert.equal(statusProgress('cancelled'), -1)
-    assert.equal(statusProgress('rejected'), -1)
-    assert.equal(statusProgress('unknown_status'), -1)
+describe('firstProofUrl', () => {
+  it('handles string, array, and object jsonb shapes', () => {
+    assert.equal(firstProofUrl('u'), 'u')
+    assert.equal(firstProofUrl(['a', 'b']), 'a')
+    assert.equal(firstProofUrl({ front: 'f' }), 'f')
+    assert.equal(firstProofUrl({ url: 'z' }), 'z')
+    assert.equal(firstProofUrl(null), null)
+    assert.equal(firstProofUrl({}), null)
+  })
+})
+
+describe('statusProgress timeline', () => {
+  it('is strictly increasing along the happy path', () => {
+    const order = ['submitted', 'proof_ready', 'proof_approved', 'processing', 'shipped', 'completed']
+    const idx = order.map(statusProgress)
+    for (let i = 1; i < idx.length; i++) assert.ok(idx[i] > idx[i - 1])
+    assert.equal(ORDER_STATUS_STEPS.length, order.length)
   })
 })

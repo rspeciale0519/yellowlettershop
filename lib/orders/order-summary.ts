@@ -1,82 +1,105 @@
 // Pure helpers shared by the orders list/detail APIs and the status page.
+// Reads the normalized (DB1-model) orders columns and derives a customer-facing
+// timeline from order_status + proof_approved_at + payment_status.
 
 export interface OrderSummary {
   id: string
-  status: string
+  status: string // raw order_status enum
+  displayStatus: string // derived timeline step (see ORDER_STATUS_STEPS)
   submittedAt: string | null
   proofUrl: string | null
-  approvedAt: string | null
-  capturedAt: string | null
+  proofApprovedAt: string | null
+  paymentStatus: string | null
+  amountAuthorized: number | null
+  amountCaptured: number | null
   total: number
   recordCount: number
-  serviceLevel: string | null
-  mailPieceFormat: string | null
+  mailClass: string | null
+  postageType: string | null
 }
 
-/** Happy-path lifecycle in display order (status page timeline). */
+/** Customer-facing happy-path timeline (display order). */
 export const ORDER_STATUS_STEPS = [
   { status: 'submitted', label: 'Order submitted' },
   { status: 'proof_ready', label: 'Proof ready for review' },
-  { status: 'approved', label: 'Proof approved' },
-  { status: 'processing', label: 'Payment captured' },
-  { status: 'in_production', label: 'In production' },
-  { status: 'mailed', label: 'Mailed' },
-  { status: 'completed', label: 'Completed' },
+  { status: 'proof_approved', label: 'Proof approved' },
+  { status: 'processing', label: 'In production' },
+  { status: 'shipped', label: 'Mailed' },
+  { status: 'completed', label: 'Delivered' },
 ] as const
 
-/** Index of a status on the happy-path timeline; -1 for off-path states. */
-export function statusProgress(status: string): number {
-  return ORDER_STATUS_STEPS.findIndex((s) => s.status === status)
+/** Index of a derived displayStatus on the timeline; -1 for off-path states. */
+export function statusProgress(displayStatus: string): number {
+  return ORDER_STATUS_STEPS.findIndex((s) => s.status === displayStatus)
 }
 
-interface ListLike {
-  totalRecords?: unknown
-  manualRecords?: unknown[]
+type ProofUrls = unknown
+
+/** proof_urls is jsonb: accept string | string[] | {url|front|...}. Return first. */
+export function firstProofUrl(proof: ProofUrls): string | null {
+  if (!proof) return null
+  if (typeof proof === 'string') return proof || null
+  if (Array.isArray(proof)) {
+    const s = proof.find((u) => typeof u === 'string' && u)
+    return (s as string) ?? null
+  }
+  if (typeof proof === 'object') {
+    const o = proof as Record<string, unknown>
+    for (const k of ['url', 'front', 'proofUrl', 'pdf']) {
+      if (typeof o[k] === 'string' && o[k]) return o[k] as string
+    }
+  }
+  return null
 }
 
-interface StateBlob {
-  pricing?: { totalPrice?: unknown }
-  addressValidation?: { deliverableRecords?: unknown }
-  accuzipValidation?: { deliverableRecords?: unknown }
-  dataAndMapping?: { listData?: ListLike }
-  listData?: ListLike
-  mailingOptions?: { serviceLevel?: unknown; mailPieceFormat?: unknown }
-  campaignSettings?: { mailingOptions?: { serviceLevel?: unknown; mailPieceFormat?: unknown } }
-}
-
-type Row = {
+interface OrderRow {
   id: string
   status: string
   submitted_at?: string | null
-  proof_url?: string | null
-  approved_at?: string | null
-  captured_at?: string | null
-  order_state?: StateBlob | null
+  created_at?: string | null
+  proof_urls?: unknown
+  proof_approved_at?: string | null
+  payment_status?: string | null
+  amount_authorized?: number | null
+  amount_captured?: number | null
+  total_cost?: number | null
+  record_count?: number | null
+  mail_class?: string | null
+  postage_type?: string | null
 }
 
-/** Flatten a DB row + its order_state blob into the list/detail summary. */
-export function summarizeOrderRow(row: Row): OrderSummary {
-  const state: StateBlob = row.order_state ?? {}
-  const pricing = state.pricing ?? {}
-  const validation = state.addressValidation ?? state.accuzipValidation
-  const listData = state.dataAndMapping?.listData ?? state.listData
-  const mailing = state.mailingOptions ?? state.campaignSettings?.mailingOptions ?? {}
+/**
+ * Derive the customer-facing step from the normalized state. order_status drives
+ * fulfillment (submitted→processing→shipped→completed); the proof gate
+ * (proof_urls / proof_approved_at) refines the pre-production phase.
+ */
+export function deriveDisplayStatus(row: OrderRow): string {
+  const st = row.status
+  if (st === 'failed' || st === 'cancelled' || st === 'rejected') return st
+  if (st === 'completed') return 'completed'
+  if (st === 'shipped') return 'shipped'
+  if (st === 'processing') return 'processing'
+  // draft/submitted: refine by proof gate
+  if (row.proof_approved_at) return 'proof_approved'
+  if (firstProofUrl(row.proof_urls)) return 'proof_ready'
+  return 'submitted'
+}
 
-  const recordCount =
-    (typeof validation?.deliverableRecords === 'number' && validation.deliverableRecords) ||
-    (typeof listData?.totalRecords === 'number' && listData.totalRecords) ||
-    (Array.isArray(listData?.manualRecords) ? listData.manualRecords.length : 0)
-
+/** Flatten a normalized orders row into the list/detail summary. */
+export function summarizeOrderRow(row: OrderRow): OrderSummary {
   return {
     id: row.id,
     status: row.status,
-    submittedAt: row.submitted_at ?? null,
-    proofUrl: row.proof_url ?? null,
-    approvedAt: row.approved_at ?? null,
-    capturedAt: row.captured_at ?? null,
-    total: typeof pricing.totalPrice === 'number' ? pricing.totalPrice : 0,
-    recordCount,
-    serviceLevel: typeof mailing.serviceLevel === 'string' ? mailing.serviceLevel : null,
-    mailPieceFormat: typeof mailing.mailPieceFormat === 'string' ? mailing.mailPieceFormat : null,
+    displayStatus: deriveDisplayStatus(row),
+    submittedAt: row.submitted_at ?? row.created_at ?? null,
+    proofUrl: firstProofUrl(row.proof_urls),
+    proofApprovedAt: row.proof_approved_at ?? null,
+    paymentStatus: row.payment_status ?? null,
+    amountAuthorized: typeof row.amount_authorized === 'number' ? row.amount_authorized : null,
+    amountCaptured: typeof row.amount_captured === 'number' ? row.amount_captured : null,
+    total: typeof row.total_cost === 'number' ? row.total_cost : 0,
+    recordCount: typeof row.record_count === 'number' ? row.record_count : 0,
+    mailClass: row.mail_class ?? null,
+    postageType: row.postage_type ?? null,
   }
 }

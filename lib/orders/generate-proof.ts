@@ -35,9 +35,9 @@ export async function generateProofForOrder(
 
   const { data: order, error } = await supabase
     .from('orders')
-    .select('id, user_id, status, order_state, status_history')
+    .select('id, created_by, status, metadata')
     .eq('id', orderId)
-    .eq('user_id', userId)
+    .eq('created_by', userId)
     .single()
 
   if (error || !order) return { ok: false, error: 'Order not found' }
@@ -46,7 +46,8 @@ export async function generateProofForOrder(
   }
 
   try {
-    const { bytes } = await renderOrderStatePdf(order.order_state ?? {})
+    const orderState = (order.metadata as { order_state?: Record<string, unknown> })?.order_state ?? {}
+    const { bytes } = await renderOrderStatePdf(orderState)
 
     const path = `${userId}/proofs/order-${orderId}.pdf`
     const { error: uploadError } = await supabase.storage
@@ -55,18 +56,14 @@ export async function generateProofForOrder(
     if (uploadError) throw new Error(uploadError.message)
 
     const { data: pub } = supabase.storage.from('design-previews').getPublicUrl(path)
-    const history = Array.isArray(order.status_history) ? order.status_history : []
 
+    // proof_urls present → displayStatus derives 'proof_ready' (order_status
+    // stays 'submitted' until the customer approves → 'processing').
     const { error: updateError } = await supabase
       .from('orders')
-      .update({
-        status: 'proof_ready',
-        proof_url: pub.publicUrl,
-        updated_at: new Date().toISOString(),
-        status_history: [...history, { status: 'proof_ready', at: new Date().toISOString() }],
-      })
+      .update({ proof_urls: [pub.publicUrl] })
       .eq('id', orderId)
-      .eq('user_id', userId)
+      .eq('created_by', userId)
     if (updateError) throw new Error(updateError.message)
 
     const email = await getUserEmail(userId)

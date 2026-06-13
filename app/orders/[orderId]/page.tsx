@@ -12,7 +12,6 @@ import { ORDER_STATUS_STEPS, statusProgress, type OrderSummary } from '@/lib/ord
 
 interface OrderResponse {
   order: OrderSummary
-  statusHistory: Array<{ status: string; at: string }>
 }
 
 function formatDate(iso: string | null): string {
@@ -76,10 +75,14 @@ export default function OrderStatusPage({ params }: { params: Promise<{ orderId:
   }, [orderId])
 
   const order = data?.order
-  const progress = order ? statusProgress(order.status) : -1
+  const progress = order ? statusProgress(order.displayStatus) : -1
   const offPath = order && progress === -1
-  const historyFor = (status: string) =>
-    data?.statusHistory.find((h) => h.status === status)?.at ?? null
+  const historyFor = (status: string): string | null => {
+    if (!order) return null
+    if (status === 'submitted') return order.submittedAt
+    if (status === 'proof_approved') return order.proofApprovedAt
+    return null
+  }
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10">
@@ -116,7 +119,7 @@ export default function OrderStatusPage({ params }: { params: Promise<{ orderId:
               </h1>
               <p className="text-sm text-gray-500">Placed {formatDate(order.submittedAt)}</p>
             </div>
-            <OrderStatusBadge status={order.status} />
+            <OrderStatusBadge status={order.displayStatus} />
           </div>
 
           {/* Order facts */}
@@ -131,9 +134,9 @@ export default function OrderStatusPage({ params }: { params: Promise<{ orderId:
                 <div className="text-lg font-semibold">{order.recordCount.toLocaleString()}</div>
               </div>
               <div>
-                <div className="text-xs uppercase tracking-wide text-gray-500">Service</div>
+                <div className="text-xs uppercase tracking-wide text-gray-500">Mail class</div>
                 <div className="text-lg font-semibold capitalize">
-                  {order.serviceLevel?.replace(/_/g, ' ') ?? '—'}
+                  {order.mailClass?.replace(/_/g, ' ') ?? '—'}
                 </div>
               </div>
             </CardContent>
@@ -169,7 +172,7 @@ export default function OrderStatusPage({ params }: { params: Promise<{ orderId:
           )}
 
           {/* Proof decision — the capture moment */}
-          {order.status === 'proof_ready' && (
+          {order.displayStatus === 'proof_ready' && (
             <Card className="mb-6 border-2 border-amber-300">
               <CardHeader>
                 <CardTitle className="text-base">Approve your proof</CardTitle>
@@ -207,7 +210,7 @@ export default function OrderStatusPage({ params }: { params: Promise<{ orderId:
             <Alert variant="destructive" className="mb-6">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                {order.status === 'cancelled'
+                {order.displayStatus === 'cancelled'
                   ? 'This order was cancelled. No payment was captured.'
                   : 'The proof was rejected. Our team will follow up, or contact support@yellowlettershop.com.'}
               </AlertDescription>

@@ -44,7 +44,7 @@ export default function OrdersPage() {
       orders
         .filter((order) => {
           const matchesSearch = order.id.toLowerCase().includes(searchQuery.toLowerCase())
-          const matchesStatus = statusFilter === "all" || order.status === statusFilter
+          const matchesStatus = statusFilter === "all" || order.displayStatus === statusFilter
           return matchesSearch && matchesStatus
         })
         .sort((a, b) => {
@@ -168,7 +168,7 @@ export default function OrdersPage() {
                   </TableCell>
                   <TableCell>{order.recordCount > 0 ? order.recordCount.toLocaleString() : "—"}</TableCell>
                   <TableCell>
-                    <OrderStatusBadge status={order.status} />
+                    <OrderStatusBadge status={order.displayStatus} />
                   </TableCell>
                   <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
                   <TableCell className="text-right">

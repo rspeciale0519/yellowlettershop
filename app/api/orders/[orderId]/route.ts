@@ -14,19 +14,16 @@ export const GET = withAuth(async (req: NextRequest, { userId }) => {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('orders')
-      .select('id, status, submitted_at, proof_url, approved_at, captured_at, status_history, order_state')
+      .select('id, status, submitted_at, created_at, proof_urls, proof_approved_at, payment_status, amount_authorized, amount_captured, total_cost, record_count, mail_class, postage_type')
       .eq('id', orderId)
-      .eq('user_id', userId)
+      .eq('created_by', userId)
       .single()
 
     if (error || !data) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
-    return NextResponse.json({
-      order: summarizeOrderRow(data),
-      statusHistory: Array.isArray(data.status_history) ? data.status_history : [],
-    })
+    return NextResponse.json({ order: summarizeOrderRow(data) })
   } catch (err) {
     console.error('Get order error:', err)
     return NextResponse.json({ error: 'Failed to load order' }, { status: 500 })

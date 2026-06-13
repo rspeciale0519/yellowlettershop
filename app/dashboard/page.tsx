@@ -1,5 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Package, Users, FileText, ImageIcon, Inbox } from "lucide-react"
+import { Package, Users, FileText, Mail, Inbox } from "lucide-react"
 import Link from "next/link"
 import { createClient } from "@/utils/supabase/server"
 import { summarizeOrderRow } from "@/lib/orders/order-summary"
@@ -13,24 +13,24 @@ async function loadDashboardData() {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) return { orderCount: 0, designCount: 0, assetCount: 0, recentOrders: [] }
+  if (!user) return { orderCount: 0, designCount: 0, campaignCount: 0, recentOrders: [] }
 
-  const [orders, designs, assets, recent] = await Promise.all([
-    supabase.from("orders").select("id", { count: "exact", head: true }).eq("user_id", user.id),
-    supabase.from("user_designs").select("id", { count: "exact", head: true }).eq("user_id", user.id),
-    supabase.from("user_assets").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+  const [orders, designs, campaigns, recent] = await Promise.all([
+    supabase.from("orders").select("id", { count: "exact", head: true }).eq("created_by", user.id),
+    supabase.from("saved_designs").select("id", { count: "exact", head: true }).eq("user_id", user.id),
+    supabase.from("campaigns").select("id", { count: "exact", head: true }).eq("created_by", user.id),
     supabase
       .from("orders")
-      .select("id, status, submitted_at, order_state")
-      .eq("user_id", user.id)
-      .order("submitted_at", { ascending: false })
+      .select("id, status, submitted_at, created_at, proof_urls, proof_approved_at, payment_status, amount_authorized, amount_captured, total_cost, record_count, mail_class, postage_type")
+      .eq("created_by", user.id)
+      .order("created_at", { ascending: false })
       .limit(5),
   ])
 
   return {
     orderCount: orders.count ?? 0,
     designCount: designs.count ?? 0,
-    assetCount: assets.count ?? 0,
+    campaignCount: campaigns.count ?? 0,
     recentOrders: (recent.data ?? []).map(summarizeOrderRow),
   }
 }
@@ -45,12 +45,12 @@ function timeAgo(iso: string | null): string {
 }
 
 export default async function DashboardPage() {
-  const { orderCount, designCount, assetCount, recentOrders } = await loadDashboardData()
+  const { orderCount, designCount, campaignCount, recentOrders } = await loadDashboardData()
 
   const stats = [
     { title: "Total Orders", value: orderCount, icon: Package },
     { title: "Saved Designs", value: designCount, icon: FileText },
-    { title: "Media Files", value: assetCount, icon: ImageIcon },
+    { title: "Campaigns", value: campaignCount, icon: Mail },
   ]
 
   return (
@@ -110,7 +110,7 @@ export default async function DashboardPage() {
                       </p>
                       <p className="text-xs text-muted-foreground">{timeAgo(order.submittedAt)}</p>
                     </div>
-                    <OrderStatusBadge status={order.status} />
+                    <OrderStatusBadge status={order.displayStatus} />
                   </Link>
                 ))}
               </div>

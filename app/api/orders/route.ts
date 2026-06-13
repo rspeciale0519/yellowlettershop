@@ -12,9 +12,9 @@ export const GET = withAuth(async (req: NextRequest, { userId }) => {
     const supabase = createClient()
     const { data, error } = await supabase
       .from('orders')
-      .select('id, status, submitted_at, proof_url, approved_at, captured_at, order_state')
-      .eq('user_id', userId)
-      .order('submitted_at', { ascending: false })
+      .select('id, status, submitted_at, created_at, proof_urls, proof_approved_at, payment_status, amount_authorized, amount_captured, total_cost, record_count, mail_class, postage_type')
+      .eq('created_by', userId)
+      .order('created_at', { ascending: false })
       .limit(limit)
 
     if (error) throw error
