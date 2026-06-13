@@ -27,9 +27,12 @@ No app code changed. See [[journal/2026-06-12]].
   yet run** (auth-gated; approach in
   `docs/temp/designer-verification-auth.md`) — designer UI is *unverified*
   visually, only logic+build are evidenced.
-- **Pending user task: comprehensive done-vs-unbuilt audit + recommendations**
-  across active dev docs ([[knowledge/roadmap]] PARTIAL/UNVERIFIED rows are
-  the starting backlog).
+- **Feature audit DONE** → `docs/temp/yls-feature-audit-report.md`
+  (2026-06-12): 54 BUILT confirmed; 4 verified P0 checkout breaks (no
+  `/api/orders/proof`, `calculateFinalPricing` undefined in PaymentStep,
+  success page 404, submit dead-ends); 13 doc-intended NOT BUILT; 6-sprint
+  build order proposed (Sprint 1 = unbreak checkout). Awaiting user
+  direction on which sprint/items to start.
 - Standing op-note: **YLS engine is sync-managed** — never hand-edit
   `yls/.claude/hooks/*` (a `brain sync` flags it local-mod); upgrades flow
   from `_brain`. Onboarding other projects = `brain init <repo>` (follow-up,
