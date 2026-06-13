@@ -50,6 +50,15 @@ export async function generateProofForOrder(
     const { bytes } = await renderOrderStatePdf(orderState)
 
     const path = `${userId}/proofs/order-${orderId}.pdf`
+    // Ensure the proofs bucket exists (idempotent; "Bucket not found" otherwise).
+    try {
+      const { data: buckets } = await supabase.storage.listBuckets()
+      if (!buckets?.some((b) => b.name === 'design-previews')) {
+        await supabase.storage.createBucket('design-previews', { public: true })
+      }
+    } catch {
+      // Non-fatal: the upload below surfaces a clear error if creation truly failed.
+    }
     const { error: uploadError } = await supabase.storage
       .from('design-previews')
       .upload(path, Buffer.from(bytes), { contentType: 'application/pdf', upsert: true })

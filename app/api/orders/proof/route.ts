@@ -23,6 +23,16 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
     const proofId = crypto.randomUUID()
     const path = `${userId}/proofs/${proofId}.pdf`
     const supabase = createClient()
+    // Ensure the proofs bucket exists (idempotent). Without this, the first proof
+    // in a fresh environment fails with "Bucket not found".
+    try {
+      const { data: buckets } = await supabase.storage.listBuckets()
+      if (!buckets?.some((b) => b.name === 'design-previews')) {
+        await supabase.storage.createBucket('design-previews', { public: true })
+      }
+    } catch {
+      // Non-fatal: the upload below surfaces a clear error if creation truly failed.
+    }
     const { error: uploadError } = await supabase.storage
       .from('design-previews')
       .upload(path, Buffer.from(bytes), { contentType: 'application/pdf', upsert: true })
