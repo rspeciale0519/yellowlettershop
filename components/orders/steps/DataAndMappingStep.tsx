@@ -10,6 +10,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { FileText, AlertCircle, CheckCircle, ArrowRight, Upload, Users, Database } from 'lucide-react'
+import { isMappingComplete } from '@/lib/orders/column-mapping'
 import { ColumnMappingStep } from './ColumnMappingStep'
 import { DataSourceSelectionButtons } from './DataSourceSelectionButtons'
 import { DataSourceDetailsSection } from './DataSourceDetailsSection'
@@ -29,10 +30,15 @@ export function DataAndMappingStep({ orderState, onUpdateState }: OrderStepProps
     orderState.listData?.melissaDataCriteria
   )
 
-  // Determine if column mapping is complete
+  // Mapping is complete only when the UI flag is set AND every required
+  // address field is actually mapped — the flag alone let incomplete mappings
+  // through, failing validation later with a cryptic error.
+  const activeMapping =
+    orderState.dataAndMapping?.columnMapping ?? orderState.columnMapping
   const hasMappingComplete = Boolean(
-    orderState.dataAndMapping?.columnMapping?.isComplete ||
-    orderState.columnMapping?.isComplete
+    (orderState.dataAndMapping?.columnMapping?.isComplete ||
+      orderState.columnMapping?.isComplete) &&
+      isMappingComplete(activeMapping as Record<string, unknown> | null | undefined)
   )
 
   // Reset to data tab if no data is available

@@ -14,6 +14,19 @@ const AuthorizePaymentSchema = z.object({
   orderState: z.any()
 })
 
+/**
+ * Release a card authorization when we can't persist the order it was for.
+ * Without this, an order-insert failure leaves the customer's funds held with
+ * nothing to capture against — a manual-refund situation.
+ */
+async function cancelAuthorization(paymentIntentId: string): Promise<void> {
+  try {
+    await stripe.paymentIntents.cancel(paymentIntentId)
+  } catch (cancelError) {
+    console.error('Failed to release authorization after order failure:', cancelError)
+  }
+}
+
 export const POST = withAuth(async (req: NextRequest, { userId }) => {
   try {
     const body = await req.json()
@@ -95,10 +108,18 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
         .single()
       
       if (orderError) {
-        console.error('Error creating order:', orderError)
-        throw new Error('Failed to create order record')
+        console.error('Error creating order — releasing authorization:', orderError)
+        await cancelAuthorization(paymentIntentId)
+        await supabase
+          .from('payment_intents')
+          .update({ status: 'canceled', updated_at: new Date().toISOString() })
+          .eq('id', paymentIntentId)
+        return NextResponse.json(
+          { error: 'Could not create your order. Your card was not charged.' },
+          { status: 500 }
+        )
       }
-      
+
       // Log the authorization event
       await supabase
         .from('payment_events')
@@ -141,10 +162,20 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
         .single()
       
       if (orderError) {
-        console.error('Error creating order:', orderError)
-        throw new Error('Failed to create order record')
+        // Already captured (immediate-capture edge case) — cannot cancel, must
+        // refund so the customer isn't charged for an order that doesn't exist.
+        console.error('Error creating order after immediate capture — refunding:', orderError)
+        try {
+          await stripe.refunds.create({ payment_intent: paymentIntentId })
+        } catch (refundError) {
+          console.error('Failed to refund after order failure:', refundError)
+        }
+        return NextResponse.json(
+          { error: 'Could not create your order. Any charge has been refunded.' },
+          { status: 500 }
+        )
       }
-      
+
       return NextResponse.json({
         status: 'succeeded',
         orderId: newOrder.id,

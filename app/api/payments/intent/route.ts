@@ -118,12 +118,23 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
         order_data: orderState,
         created_at: new Date().toISOString()
       })
-    
+
     if (saveError) {
-      console.error('Error saving payment intent:', saveError)
-      // Don't fail the request, but log the error
+      // A Stripe intent with no DB row is a phantom: the customer could
+      // authorize against an intent we can't later capture or reconcile.
+      // Cancel it and fail loudly rather than returning a usable clientSecret.
+      console.error('Error saving payment intent — cancelling orphaned Stripe intent:', saveError)
+      try {
+        await stripe.paymentIntents.cancel(paymentIntent.id)
+      } catch (cancelError) {
+        console.error('Failed to cancel orphaned payment intent:', cancelError)
+      }
+      return NextResponse.json(
+        { error: 'Could not initialize payment. Please try again.' },
+        { status: 500 }
+      )
     }
-    
+
     return NextResponse.json({
       paymentIntentId: paymentIntent.id,
       clientSecret: paymentIntent.client_secret,
