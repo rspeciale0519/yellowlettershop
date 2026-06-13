@@ -105,35 +105,11 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
       description: `Direct Mail Order - ${orderState.mailingOptions?.serviceLevel?.replace('_', ' ')} service`
     })
     
-    // Save payment intent to database
-    const { error: saveError } = await supabase
-      .from('payment_intents')
-      .insert({
-        id: paymentIntent.id,
-        user_id: userId,
-        stripe_customer_id: customerId,
-        amount: totalAmount,
-        currency: 'usd',
-        status: paymentIntent.status,
-        order_data: orderState,
-        created_at: new Date().toISOString()
-      })
-
-    if (saveError) {
-      // A Stripe intent with no DB row is a phantom: the customer could
-      // authorize against an intent we can't later capture or reconcile.
-      // Cancel it and fail loudly rather than returning a usable clientSecret.
-      console.error('Error saving payment intent — cancelling orphaned Stripe intent:', saveError)
-      try {
-        await stripe.paymentIntents.cancel(paymentIntent.id)
-      } catch (cancelError) {
-        console.error('Failed to cancel orphaned payment intent:', cancelError)
-      }
-      return NextResponse.json(
-        { error: 'Could not initialize payment. Please try again.' },
-        { status: 500 }
-      )
-    }
+    // Inline-payment model: the PaymentIntent's authoritative state lives in
+    // Stripe (carries metadata.user_id + amount). No separate payment_intents
+    // table — the order row is created at /api/orders/submit, which verifies
+    // this PI against Stripe and persists stripe_payment_intent_id + amounts on
+    // the order itself.
 
     return NextResponse.json({
       paymentIntentId: paymentIntent.id,
