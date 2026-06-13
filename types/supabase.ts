@@ -1744,6 +1744,190 @@ export type Database = {
           },
         ]
       }
+      // ---- Restored ahead of migration 20260613030000 (assets + version-history).
+      // Applied to the live DB at deploy time; shapes mirror that migration exactly.
+      asset_share_links: {
+        Row: {
+          access_count: number
+          asset_id: string
+          created_at: string
+          created_by: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          share_token: string
+        }
+        Insert: {
+          access_count?: number
+          asset_id: string
+          created_at?: string
+          created_by: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          share_token: string
+        }
+        Update: {
+          access_count?: number
+          asset_id?: string
+          created_at?: string
+          created_by?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          share_token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_share_links_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "user_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      change_history: {
+        Row: {
+          batch_id: string | null
+          change_type: string
+          created_at: string
+          description: string | null
+          field_name: string | null
+          id: string
+          is_undoable: boolean
+          new_value: string | null
+          old_value: string | null
+          resource_id: string
+          resource_type: string
+          sequence_number: number
+          undone_at: string | null
+          undone_by: string | null
+          user_id: string
+        }
+        Insert: {
+          batch_id?: string | null
+          change_type: string
+          created_at?: string
+          description?: string | null
+          field_name?: string | null
+          id?: string
+          is_undoable?: boolean
+          new_value?: string | null
+          old_value?: string | null
+          resource_id: string
+          resource_type: string
+          sequence_number?: number
+          undone_at?: string | null
+          undone_by?: string | null
+          user_id: string
+        }
+        Update: {
+          batch_id?: string | null
+          change_type?: string
+          created_at?: string
+          description?: string | null
+          field_name?: string | null
+          id?: string
+          is_undoable?: boolean
+          new_value?: string | null
+          old_value?: string | null
+          resource_id?: string
+          resource_type?: string
+          sequence_number?: number
+          undone_at?: string | null
+          undone_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      data_snapshots: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          resource_id: string
+          resource_type: string
+          snapshot_data: Json
+          snapshot_type: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          resource_id: string
+          resource_type: string
+          snapshot_data?: Json
+          snapshot_type?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          resource_id?: string
+          resource_type?: string
+          snapshot_data?: Json
+          snapshot_type?: string
+        }
+        Relationships: []
+      }
+      user_assets: {
+        Row: {
+          created_at: string
+          file_path: string
+          file_size: number
+          file_type: string
+          file_url: string | null
+          filename: string
+          id: string
+          is_public: boolean
+          metadata: Json
+          mime_type: string
+          original_filename: string
+          team_id: string | null
+          updated_at: string
+          uploaded_by: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_path: string
+          file_size?: number
+          file_type?: string
+          file_url?: string | null
+          filename: string
+          id?: string
+          is_public?: boolean
+          metadata?: Json
+          mime_type?: string
+          original_filename: string
+          team_id?: string | null
+          updated_at?: string
+          uploaded_by: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          file_url?: string | null
+          filename?: string
+          id?: string
+          is_public?: boolean
+          metadata?: Json
+          mime_type?: string
+          original_filename?: string
+          team_id?: string | null
+          updated_at?: string
+          uploaded_by?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1951,3 +2135,12 @@ export type Webhook = Database['public']['Tables']['webhooks']['Row']
 export type WebhookDelivery = Database['public']['Tables']['webhook_deliveries']['Row']
 export type OrderStatus = Database['public']['Enums']['order_status']
 export type CampaignStatus = Database['public']['Enums']['campaign_status']
+export type UserAsset = Database['public']['Tables']['user_assets']['Row']
+export type AssetShareLink = Database['public']['Tables']['asset_share_links']['Row']
+export type ChangeHistory = Database['public']['Tables']['change_history']['Row']
+export type DataSnapshot = Database['public']['Tables']['data_snapshots']['Row']
+// change_history.resource_type / change_type are flexible text columns spanning
+// many resource kinds (asset, vendor, team, campaign, mailing_list, …); typed as
+// string to mirror the schema and avoid breaking the diverse set of callers.
+export type ResourceType = string
+export type ChangeType = string

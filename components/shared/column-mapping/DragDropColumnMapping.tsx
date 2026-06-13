@@ -243,7 +243,7 @@ export function DragDropColumnMapping({
             onMouseLeave={() => setHoveredField(null)}
             className={`
               relative border-2 border-dashed rounded-lg p-4 transition-all duration-200 min-h-[100px]
-              ${snapshot.isDraggedOver ? 'border-[#F6CF62] bg-[#FFF9E8] scale-105' : ''}
+              ${snapshot.isDraggingOver ? 'border-[#F6CF62] bg-[#FFF9E8] scale-105' : ''}
               ${isHovered && draggedColumn ? 'border-[#F6CF62] bg-[#FFF9E8]' : ''}
               ${isMapped ? 'border-green-300 bg-green-50' :
                 isRequired ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-gray-50'}
@@ -302,7 +302,7 @@ export function DragDropColumnMapping({
               <div className="text-center py-2">
                 <FileText className={`h-6 w-6 mx-auto mb-1 ${isRequired ? 'text-red-400' : 'text-gray-400'}`} />
                 <p className="text-xs text-gray-500">
-                  {snapshot.isDraggedOver ? 'Drop here' : 'Drag a column here'}
+                  {snapshot.isDraggingOver ? 'Drop here' : 'Drag a column here'}
                 </p>
               </div>
             )}

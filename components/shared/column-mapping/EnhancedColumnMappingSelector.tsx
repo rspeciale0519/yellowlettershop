@@ -101,7 +101,7 @@ export function EnhancedColumnMappingSelector({
 
       if (entry.fieldKey === '__bulk__') {
         // Handle bulk operations (auto-map, clear-all)
-        const oldMappings = JSON.parse(entry.oldValue)
+        const oldMappings = JSON.parse(entry.oldValue ?? '{}')
         if (onBulkMappingChange) {
           onBulkMappingChange(oldMappings)
         } else {
@@ -130,7 +130,7 @@ export function EnhancedColumnMappingSelector({
 
       if (entry.fieldKey === '__bulk__') {
         // Handle bulk operations (auto-map, clear-all)
-        const newMappings = JSON.parse(entry.newValue)
+        const newMappings = JSON.parse(entry.newValue ?? '{}')
         if (onBulkMappingChange) {
           onBulkMappingChange(newMappings)
         } else {
