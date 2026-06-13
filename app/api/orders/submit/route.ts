@@ -44,7 +44,9 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
     if (pi.status !== 'requires_capture') {
       return NextResponse.json({ error: `Payment is not authorized (status: ${pi.status}).` }, { status: 402 })
     }
-    if (pi.metadata?.user_id && pi.metadata.user_id !== userId) {
+    // Fail closed: a PI without our user_id metadata is not a PI we issued for
+    // this account — reject rather than accept an unverifiable owner.
+    if (pi.metadata?.user_id !== userId) {
       return NextResponse.json({ error: 'Payment does not belong to this account.' }, { status: 403 })
     }
     if (Math.abs(pi.amount - Math.round(serverTotal * 100)) > 1) {

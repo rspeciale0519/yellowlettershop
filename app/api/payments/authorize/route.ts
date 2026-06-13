@@ -29,7 +29,9 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
     } catch {
       return NextResponse.json({ error: 'Payment intent not found' }, { status: 404 })
     }
-    if (intent.metadata?.user_id && intent.metadata.user_id !== userId) {
+    // Fail closed: a PI without our user_id metadata is not one we issued for
+    // this account — reject rather than attach a card to an unverifiable PI.
+    if (intent.metadata?.user_id !== userId) {
       return NextResponse.json({ error: 'Payment does not belong to this account' }, { status: 403 })
     }
 

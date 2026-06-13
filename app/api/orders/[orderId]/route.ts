@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { withAuth } from '@/lib/auth/middleware'
 import { createClient } from '@/utils/supabase/service'
 import { summarizeOrderRow } from '@/lib/orders/order-summary'
+import { signProofUrl } from '@/lib/orders/proof-storage'
 
 /** Fetch a single order (owner-scoped) for the status/success pages. */
 export const GET = withAuth(async (req: NextRequest, { userId }) => {
@@ -23,7 +24,9 @@ export const GET = withAuth(async (req: NextRequest, { userId }) => {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ order: summarizeOrderRow(data) })
+    const order = summarizeOrderRow(data)
+    order.proofUrl = await signProofUrl(supabase, order.proofUrl)
+    return NextResponse.json({ order })
   } catch (err) {
     console.error('Get order error:', err)
     return NextResponse.json({ error: 'Failed to load order' }, { status: 500 })

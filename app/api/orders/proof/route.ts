@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { withAuth } from '@/lib/auth/middleware'
 import { createClient } from '@/utils/supabase/service'
 import { renderOrderStatePdf } from '@/lib/orders/render-proof'
+import { PROOF_BUCKET, signProofUrl } from '@/lib/orders/proof-storage'
 
 const ProofRequestSchema = z.object({
   orderState: z.record(z.unknown()),
@@ -23,26 +24,17 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
     const proofId = crypto.randomUUID()
     const path = `${userId}/proofs/${proofId}.pdf`
     const supabase = createClient()
-    // Ensure the proofs bucket exists (idempotent). Without this, the first proof
-    // in a fresh environment fails with "Bucket not found".
-    try {
-      const { data: buckets } = await supabase.storage.listBuckets()
-      if (!buckets?.some((b) => b.name === 'design-previews')) {
-        await supabase.storage.createBucket('design-previews', { public: true })
-      }
-    } catch {
-      // Non-fatal: the upload below surfaces a clear error if creation truly failed.
-    }
     const { error: uploadError } = await supabase.storage
-      .from('design-previews')
+      .from(PROOF_BUCKET)
       .upload(path, Buffer.from(bytes), { contentType: 'application/pdf', upsert: true })
     if (uploadError) throw new Error(uploadError.message)
 
-    const { data: pub } = supabase.storage.from('design-previews').getPublicUrl(path)
+    // Private bucket → short-lived signed URL for the Review step to display.
+    const proofUrl = await signProofUrl(supabase, path)
 
     return NextResponse.json({
       proofId,
-      proofUrl: pub.publicUrl,
+      proofUrl,
       formatId,
       generatedAt: new Date().toISOString(),
     })

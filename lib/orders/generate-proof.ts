@@ -1,6 +1,7 @@
 import 'server-only'
 import { createClient } from '@/utils/supabase/service'
 import { renderOrderStatePdf } from '@/lib/orders/render-proof'
+import { PROOF_BUCKET, signProofUrl } from '@/lib/orders/proof-storage'
 import { trySendEmail } from '@/lib/email'
 import { proofReadyEmail } from '@/lib/email/templates'
 
@@ -50,30 +51,22 @@ export async function generateProofForOrder(
     const { bytes } = await renderOrderStatePdf(orderState)
 
     const path = `${userId}/proofs/order-${orderId}.pdf`
-    // Ensure the proofs bucket exists (idempotent; "Bucket not found" otherwise).
-    try {
-      const { data: buckets } = await supabase.storage.listBuckets()
-      if (!buckets?.some((b) => b.name === 'design-previews')) {
-        await supabase.storage.createBucket('design-previews', { public: true })
-      }
-    } catch {
-      // Non-fatal: the upload below surfaces a clear error if creation truly failed.
-    }
     const { error: uploadError } = await supabase.storage
-      .from('design-previews')
+      .from(PROOF_BUCKET)
       .upload(path, Buffer.from(bytes), { contentType: 'application/pdf', upsert: true })
     if (uploadError) throw new Error(uploadError.message)
 
-    const { data: pub } = supabase.storage.from('design-previews').getPublicUrl(path)
-
-    // proof_urls present → displayStatus derives 'proof_ready' (order_status
-    // stays 'submitted' until the customer approves → 'processing').
+    // Store the storage PATH (not a public URL) — the private bucket is served
+    // via signed URLs minted on read. proof_urls present → displayStatus derives
+    // 'proof_ready' (order_status stays 'submitted' until approval → 'processing').
     const { error: updateError } = await supabase
       .from('orders')
-      .update({ proof_urls: [pub.publicUrl] })
+      .update({ proof_urls: [path] })
       .eq('id', orderId)
       .eq('created_by', userId)
     if (updateError) throw new Error(updateError.message)
+
+    const signedUrl = await signProofUrl(supabase, path)
 
     const email = await getUserEmail(userId)
     await trySendEmail(
@@ -85,7 +78,7 @@ export async function generateProofForOrder(
       })
     )
 
-    return { ok: true, proofUrl: pub.publicUrl }
+    return { ok: true, proofUrl: signedUrl ?? undefined }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Proof generation failed'
     console.error(`Proof generation failed for order ${orderId}:`, err)
