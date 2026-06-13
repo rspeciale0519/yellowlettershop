@@ -79,7 +79,7 @@ function NewOrderPageInner() {
     switch (entryPoint) {
       case 'design_tool_save': {
         const pendingDesign = typeof window !== 'undefined'
-          ? window.sessionStorage.getItem('yls.pendingOrderDesign')
+          ? window.localStorage.getItem('yls.pendingOrderDesign')
           : null
         let designJson: DesignerDocument | null = null
 

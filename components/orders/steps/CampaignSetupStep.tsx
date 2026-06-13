@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { OrderStepProps, CampaignConfig } from '@/types/orders'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -35,6 +35,16 @@ export function CampaignSetupStep({ orderState }: OrderStepProps) {
   // never persisted as meaningful values.
   const baseCampaign: CampaignConfig =
     orderState.campaignOptions ?? { isSplitCampaign: false, isRepeating: false }
+
+  // Commit a default campaign config on mount so a user who accepts all defaults
+  // (no split/repeat/schedule) still satisfies Step 4 validation — campaignOptions
+  // was previously only written on an explicit toggle, blocking "Continue".
+  useEffect(() => {
+    if (!orderState.campaignOptions) {
+      updateOrderState({ campaignOptions: { isSplitCampaign: false, isRepeating: false } })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleSplitCampaignChange = (isSplitCampaign: boolean) => {
     updateOrderState({

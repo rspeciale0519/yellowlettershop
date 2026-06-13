@@ -120,7 +120,9 @@ export default function DesignCustomizerPage() {
     const nextDocument = { ...documentState, updatedAt: new Date().toISOString() }
     const payload: StoredDesignerState = { document: nextDocument }
     window.localStorage.setItem(DESIGNER_STORAGE_KEY, JSON.stringify(payload))
-    window.sessionStorage.setItem("yls.pendingOrderDesign", JSON.stringify(nextDocument))
+    // localStorage (not sessionStorage) so the order tab — which the designer
+    // opens in a SEPARATE tab — can pick the design up on focus.
+    window.localStorage.setItem("yls.pendingOrderDesign", JSON.stringify(nextDocument))
 
     try {
       const { data: sessionData } = await supabase.auth.getSession()
@@ -143,7 +145,7 @@ export default function DesignCustomizerPage() {
       if (!response.ok) throw new Error(result.error ?? "Design save failed")
       const savedDocument = { ...nextDocument, designId: result.designId ?? nextDocument.designId }
       doc.setDocumentState(savedDocument)
-      window.sessionStorage.setItem("yls.pendingOrderDesign", JSON.stringify(savedDocument))
+      window.localStorage.setItem("yls.pendingOrderDesign", JSON.stringify(savedDocument))
       autosave.setSaved(new Date(savedDocument.updatedAt).toLocaleTimeString())
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
