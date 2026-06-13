@@ -71,7 +71,24 @@ export function AddressValidationStep({ orderState, onUpdateState }: OrderStepPr
     onUpdateState({ addressValidation: undefined, accuzipValidation: undefined })
 
     try {
-      const columnMapping = orderState.dataAndMapping?.columnMapping ?? orderState.columnMapping ?? {}
+      // The upload route expects a flat map of AccuZip fields -> source column.
+      // The wizard stores `mappedFields` keyed by YLS field; translate it.
+      const mappedFields =
+        orderState.dataAndMapping?.columnMapping?.mappedFields ??
+        orderState.columnMapping?.mappedFields ??
+        {}
+      const pick = (v: string | null | undefined) => (v ? v : undefined)
+      const columnMapping = {
+        firstName: pick(mappedFields.first_name),
+        lastName: pick(mappedFields.last_name),
+        address: mappedFields.address_line_1 ?? '',
+        address2: pick(mappedFields.address_line_2),
+        city: mappedFields.city ?? '',
+        state: mappedFields.state ?? '',
+        zipCode: mappedFields.zip_code ?? '',
+        email: pick(mappedFields.email),
+        phone: pick(mappedFields.phone),
+      }
       const uploadBody = { columnMapping, listData: listDataPayload }
 
       const uploadRes = await fetch('/api/accuzip/upload', {
@@ -81,8 +98,9 @@ export function AddressValidationStep({ orderState, onUpdateState }: OrderStepPr
       })
 
       if (!uploadRes.ok) {
-        const err = await uploadRes.json().catch(() => ({ message: 'Upload failed' }))
-        throw new Error((err as { message?: string }).message ?? 'Upload failed')
+        const err = await uploadRes.json().catch(() => ({ error: 'Upload failed' }))
+        const e = err as { error?: string; message?: string }
+        throw new Error(e.error ?? e.message ?? 'Upload failed')
       }
 
       const { jobId: newJobId } = await uploadRes.json() as { jobId: string }

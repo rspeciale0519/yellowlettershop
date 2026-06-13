@@ -278,20 +278,36 @@ export function ColumnMappingPage({
     }
 
     const newMappedFields = { ...mappingData.mappedFields }
-    mappingData.sourceColumns.forEach(sourceCol => {
-      const normalizedSource = sourceCol.toLowerCase().trim()
-      for (const [ylsField, patterns] of Object.entries(mappingPatterns)) {
-        if (newMappedFields[ylsField]) continue // Skip if already mapped
-        const isMatch = patterns.some(pattern =>
-          normalizedSource === pattern ||
-          normalizedSource.includes(pattern)
-        )
-        if (isMatch) {
-          newMappedFields[ylsField] = sourceCol
-          break
+    const usedSources = new Set(
+      Object.values(newMappedFields).filter(Boolean) as string[]
+    )
+    const norm = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]/g, '')
+
+    // Field-outer matching with exact-match preference + used-source tracking.
+    // (A prior source-outer, first-match-break loop mis-paired e.g. "Address
+    // Line 1" to an `address_line_2` column via the broad "address" substring,
+    // leaving the real `address_line_1` unmapped and producing a duplicate.)
+    for (const [ylsField, patterns] of Object.entries(mappingPatterns)) {
+      if (newMappedFields[ylsField]) continue
+      let best: { col: string; score: number } | null = null
+      for (const sourceCol of mappingData.sourceColumns) {
+        if (usedSources.has(sourceCol)) continue
+        const ns = norm(sourceCol)
+        let score = 0
+        for (const pattern of patterns) {
+          const np = norm(pattern)
+          if (ns === np) score = Math.max(score, 3)
+          else if (ns.includes(np)) score = Math.max(score, 1)
+        }
+        if (score > 0 && (!best || score > best.score)) {
+          best = { col: sourceCol, score }
         }
       }
-    })
+      if (best) {
+        newMappedFields[ylsField] = best.col
+        usedSources.add(best.col)
+      }
+    }
 
     handleBulkMappingChange(newMappedFields)
   }, [mappingData, handleBulkMappingChange])
