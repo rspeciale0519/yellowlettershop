@@ -2,18 +2,22 @@
 Updated: 2026-06-13
 
 ## Current focus
-**Production-readiness goal — Phases 0-3 SHIPPED to `feature/production-readiness`,
-paused at goal escape clause (owner blocker).** Branch off develop; commits
-`0940942`(plan)→`d0a151d`(security). Phase 1 unbreak-checkout, Phase 2
-close-the-loop (proof→approve→capture + email layer + real AccuZip), Phase 3
-hardening (webhook retry/dead-letter, payment integrity, mapping gate,
-distributed rate-limit foundation) — all code-complete, `npm test` 136
-passing, typecheck 0-new vs 12 baseline, build exit 0, files ≤350 LOC. Plus 2
-security fixes (email HTML-injection `b3a4e16`; payment IDOR + fail-closed
-rate-limit `d0a151d`). **BLOCKED on owner:** migrations unapplied + browser
-smoke not run. Spec: `.claude/plans/feature-production-readiness.md`; report
-`docs/temp/yls-feature-audit-report.md`; blockers `docs/temp/production-blockers.md`.
-Phases 4-7 + differentiators D1-D8 remain. Read [[knowledge/orientation]].
+**Production-readiness: DB consolidation DONE+verified; orders/payment refactored
+to the consolidated model; core flow browser-smoke VERIFIED.** Branch
+`feature/production-readiness`, commits `0940942`→`52c7353`. Big arc this session:
+(1) DB consolidation — DB1 normalized domain model built into the YLS-OWNED
+project DB2 (`lmtpfgfulkynrktdkgpu`), 33 tables, data preserved, team-scoped RLS
+(`0a1f088`); (2) 5 security fixes incl. PII-exposure RLS inherited from DB1
+(`50d383e`) + submit payment re-verify (`a8842c0`); (3) orders+payment code
+refactored to normalized/inline-payment model (`cb6f94b`,`52c7353`) — no more
+order_state blob / payment_intents tables; (4) `withAuth` cookie-session fix;
+(5) **chrome-devtools browser smoke on real DB2** — login→dashboard→orders→
+status page verified (`docs/temp/smoke/*.png`). Gates: 143 tests, build 0,
+typecheck 14 (assets/version-history backlog). REMAINING: full wizard→payment
+smoke; assets→saved_designs + version-history→mailing_list_versions; Phases 4-7
++ D1-D10; deploy (live app runs pre-consolidation code). Full summary:
+`docs/temp/production-readiness-status.md`. Test user yls-e2e@yellowlettershop.test.
+Read [[knowledge/orientation]].
 
 ## Latest synopsis
 Shipped production-readiness Phases 0-3 (code) + 2 security fixes; resolved a
