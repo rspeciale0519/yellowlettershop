@@ -1,23 +1,28 @@
 # yls brain — STATE
-Updated: 2026-06-12
+Updated: 2026-06-13
 
 ## Current focus
-**Brain reconcile + consolidation DONE (2026-06-12)** — features.md Design
-rows re-audited against code (58 modules verified; pdf-lib preview confirmed
-non-stub) → `status: current`, BUILT 49→54; roadmap.md dossier-citation nit
-fixed; index refreshed. Next up (user-stated): **comprehensive audit of all
-active dev docs** to map done vs unbuilt + recommendations — treat
-[[knowledge/features]] + [[knowledge/superseded]] as ground truth over stale
-`dev-docs/`. Prior: released `develop` → `main` (merge `91fcb60`; artwork
-designer overhaul + `_brain` v0.1.0 + knowledge layer all on production
-main). Read [[knowledge/orientation]] for context.
+**Production-readiness goal — Phases 0-3 SHIPPED to `feature/production-readiness`,
+paused at goal escape clause (owner blocker).** Branch off develop; commits
+`0940942`(plan)→`d0a151d`(security). Phase 1 unbreak-checkout, Phase 2
+close-the-loop (proof→approve→capture + email layer + real AccuZip), Phase 3
+hardening (webhook retry/dead-letter, payment integrity, mapping gate,
+distributed rate-limit foundation) — all code-complete, `npm test` 136
+passing, typecheck 0-new vs 12 baseline, build exit 0, files ≤350 LOC. Plus 2
+security fixes (email HTML-injection `b3a4e16`; payment IDOR + fail-closed
+rate-limit `d0a151d`). **BLOCKED on owner:** migrations unapplied + browser
+smoke not run. Spec: `.claude/plans/feature-production-readiness.md`; report
+`docs/temp/yls-feature-audit-report.md`; blockers `docs/temp/production-blockers.md`.
+Phases 4-7 + differentiators D1-D8 remain. Read [[knowledge/orientation]].
 
 ## Latest synopsis
-Reconciled the standing `needs-reconcile` on features.md: verified the
-designer surface in code (canvas/inspector/preflight/preview/tokens, 58
-modules; `app/api/design/preview` real pdf-lib, no stubs), rewrote Design
-rows (5→10 BUILT), updated counts, fixed roadmap.md self-containment nit.
-No app code changed. See [[journal/2026-06-12]].
+Shipped production-readiness Phases 0-3 (code) + 2 security fixes; resolved a
+Supabase project-identity mixup. The app's real DB is `lmtpfgfulkynrktdkgpu`
+(proven by anon+service JWT `ref` claims in `.env.local`), NOT the dashboard
+project *named* "YLS" (`jgkkcrnegquqbizfuhqr`). Lesson: identify "which X does
+this app use" from the app's own config/JWT, never an external listing's
+display name. Goal paused on owner blocker (migrations + browser smoke).
+See [[journal/2026-06-13]].
 
 ## Open threads
 - **Designer deferred follow-ups** (documented, tracked): true CMYK/PDF-X
