@@ -28,9 +28,21 @@ describe('evaluateRateLimit', () => {
     assert.equal(r.allowed, false)
     assert.equal(r.remaining, 0)
   })
-  it('fails open (allows) when the store returns a non-positive count', () => {
-    // store error path passes 0 → never wrongly block a paying customer
+  it('fails CLOSED by default when the store returns a non-positive count', () => {
+    // default is security-first: a store error must not be exploitable
     const r = evaluateRateLimit(0, 100)
+    assert.equal(r.allowed, false)
+    assert.equal(r.remaining, 0)
+  })
+
+  it('fails open only when explicitly asked (low-risk scopes)', () => {
+    const r = evaluateRateLimit(0, 100, 'open')
     assert.equal(r.allowed, true)
+    assert.equal(r.remaining, 100)
+  })
+
+  it('fails closed when explicitly asked', () => {
+    const r = evaluateRateLimit(-1, 100, 'closed')
+    assert.equal(r.allowed, false)
   })
 })

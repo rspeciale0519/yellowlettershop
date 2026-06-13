@@ -4,6 +4,7 @@ import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware'
 import { createClient } from '@/utils/supabase/service'
 import { generateProofForOrder, getUserEmail } from '@/lib/orders/generate-proof'
 import { summarizeOrderRow } from '@/lib/orders/order-summary'
+import { verifyAuthorizedPayment } from '@/lib/orders/verify-payment'
 import { trySendEmail } from '@/lib/email'
 import { orderConfirmationEmail } from '@/lib/email/templates'
 
@@ -17,10 +18,11 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
     const { orderState } = SubmitOrderSchema.parse(body)
 
     const payment = (orderState as Record<string, unknown>).payment as
-      | { status?: string; paymentIntentId?: string }
+      | { paymentIntentId?: string }
       | undefined
 
-    if (payment?.status !== 'authorized') {
+    const paymentIntentId = payment?.paymentIntentId
+    if (!paymentIntentId) {
       return NextResponse.json(
         { error: 'Payment must be authorized before submitting' },
         { status: 400 }
@@ -28,6 +30,27 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
     }
 
     const supabase = createClient()
+
+    // SECURITY: never trust the client's payment status/id. Look the intent up
+    // server-side scoped to this user (ownership), and verify it is authorized
+    // and its amount matches this order's server-computed total. Prevents
+    // submitting an order against someone else's or an underpriced intent.
+    const { data: storedIntent } = await supabase
+      .from('payment_intents')
+      .select('amount, status')
+      .eq('id', paymentIntentId)
+      .eq('user_id', userId)
+      .single()
+
+    const orderTotal = summarizeOrderRow({ id: 'pending', status: 'pending', order_state: orderState }).total
+    const verdict = verifyAuthorizedPayment(storedIntent ?? null, orderTotal)
+    if (!verdict.ok) {
+      console.error(`Order submit payment verification failed for user ${userId}: ${verdict.reason}`)
+      return NextResponse.json(
+        { error: 'Payment could not be verified for this order. Please restart checkout.' },
+        { status: 402 }
+      )
+    }
 
     const draftId = typeof (orderState as Record<string, unknown>).orderId === 'string'
       ? (orderState as Record<string, unknown>).orderId as string
@@ -39,7 +62,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
         user_id: userId,
         order_state: orderState,
         draft_id: draftId,
-        payment_intent_id: payment?.paymentIntentId ?? null,
+        payment_intent_id: paymentIntentId,
         status_history: [{ status: 'submitted', at: new Date().toISOString() }]
       })
       .select('id')
