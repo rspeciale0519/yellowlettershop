@@ -13,11 +13,15 @@ refactored to normalized/inline-payment model (`cb6f94b`,`52c7353`) — no more
 order_state blob / payment_intents tables; (4) `withAuth` cookie-session fix;
 (5) **chrome-devtools browser smoke on real DB2** — login→dashboard→orders→
 status page verified (`docs/temp/smoke/*.png`). **NEW (fd726fe,011afe9):**
-typecheck:ui backlog CLEARED 14→0; then **B8 hidden type-debt reconciled 664→0**
-(whole codebase typechecks; see thread below). Gates now: typecheck:ui 0,
-typecheck:full 0, 143 tests, `next build` exit 0. REMAINING: apply migration
-20260613030000 at deploy; full wizard→payment smoke (user adding test keys);
-Phases 4-7 + D1-D10; deploy. Full summary:
+typecheck:ui backlog CLEARED 14→0; **B8 type-debt reconciled 664→0**; **full
+wizard browser-smoke DONE** — journey verified login→…→Step 6 payment, 9 real
+bugs fixed live (auto-map, AccuZip upload contract, design-save table, designer
+cross-tab round-trip, campaign defaults, proof buckets ×2) + migrations
+20260613030000+040000 APPLIED to DB2 + design-previews bucket auto-created.
+Gates: typecheck:ui 0, typecheck:full 0, 143 tests, build 0. REMAINING: actual
+Stripe authorize→**capture** not yet reached (1-recipient order $0.12 < Stripe
+$0.50 min — test-data; + verify checkout card entry, saved-card UI was archived);
+Phases 4-7 + D1-D10; deploy. Smoke detail in [[journal/2026-06-13]] [06:10]. Full summary:
 `docs/temp/production-readiness-status.md`. Test user yls-e2e@yellowlettershop.test.
 Read [[knowledge/orientation]].
 
