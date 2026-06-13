@@ -56,7 +56,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
       }
       const { error: updErr } = await supabase
         .from('orders')
-        .update({ status: 'failed', payment_status: 'canceled', updated_at: now })
+        .update({ status: 'failed', payment_status: 'canceled' })
         .eq('id', orderId)
         .eq('created_by', userId)
       if (updErr) throw updErr
@@ -71,15 +71,24 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
     }
 
     // Record approval before money moves (interrupted capture stays visible).
-    await supabase
+    // Surfaced, not absorbed: if we can't record the approval we must not capture.
+    const { error: approvalErr } = await supabase
       .from('orders')
-      .update({ proof_approved_at: now, updated_at: now })
+      .update({ proof_approved_at: now, proof_approved_by: userId })
       .eq('id', orderId)
       .eq('created_by', userId)
+    if (approvalErr) throw approvalErr
 
     let capturedAmount: number | null = null
     try {
-      const captured = await stripe.paymentIntents.capture(order.stripe_payment_intent_id)
+      // Idempotent: if a prior attempt already captured (e.g. the DB write
+      // failed after Stripe captured), reconcile from the existing PI instead
+      // of re-capturing — capturing a succeeded PI would error.
+      const existing = await stripe.paymentIntents.retrieve(order.stripe_payment_intent_id)
+      const captured =
+        existing.status === 'succeeded'
+          ? existing
+          : await stripe.paymentIntents.capture(order.stripe_payment_intent_id)
       capturedAmount = typeof captured.amount_received === 'number' ? captured.amount_received / 100 : null
     } catch (captureError) {
       console.error(`Payment capture failed for order ${orderId}:`, captureError)
@@ -95,7 +104,6 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
         status: 'processing',
         payment_status: 'captured',
         amount_captured: capturedAmount ?? order.total_cost ?? null,
-        updated_at: new Date().toISOString(),
       })
       .eq('id', orderId)
       .eq('created_by', userId)

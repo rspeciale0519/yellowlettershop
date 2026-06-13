@@ -181,17 +181,17 @@ export function PaymentStep({ orderState }: OrderStepProps) {
           amount: pricingData?.totalPrice ?? orderState.pricing?.totalPrice ?? 0,
           currency: 'usd',
         }
-        updateOrderState({
-          payment: {
-            ...basePayment,
-            status: 'authorized',
-            paymentMethodId: selectedPaymentMethod,
-            authorizedAt: new Date()
-          }
-        })
+        const authorizedPayment: PaymentData = {
+          ...basePayment,
+          status: 'authorized',
+          paymentMethodId: selectedPaymentMethod,
+          authorizedAt: new Date()
+        }
+        updateOrderState({ payment: authorizedPayment })
 
-        // Submit the complete order
-        const submitResult = await submitOrder()
+        // Submit the complete order. Pass the authorized payment explicitly so
+        // submitOrder validates fresh state, not the pre-update React snapshot.
+        const submitResult = await submitOrder({ payment: authorizedPayment })
         
         if (submitResult.success) {
           toast({

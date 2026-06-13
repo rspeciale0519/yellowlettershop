@@ -114,8 +114,9 @@ export function OrderProvider({ children, initialState }: OrderProviderProps) {
   }, [orderState.step, orderState, goToStep])
 
   // Validation function
-  const validateCurrentStep = useCallback((): StepValidation => {
-    const currentStepConfig = ORDER_STEPS.find(s => s.id === orderState.step)
+  const validateCurrentStep = useCallback((stateOverride?: OrderState): StepValidation => {
+    const state = stateOverride ?? orderState
+    const currentStepConfig = ORDER_STEPS.find(s => s.id === state.step)
     if (!currentStepConfig) {
       return {
         isValid: false,
@@ -135,7 +136,7 @@ export function OrderProvider({ children, initialState }: OrderProviderProps) {
     switch (currentStepConfig.key) {
       case 'data_and_mapping':
         // Validate data source selection
-        const listData = orderState.dataAndMapping?.listData || orderState.listData
+        const listData = state.dataAndMapping?.listData || state.listData
         const hasListData = Boolean(
           listData?.uploadedFile ||
           listData?.selectedListId ||
@@ -150,7 +151,7 @@ export function OrderProvider({ children, initialState }: OrderProviderProps) {
         }
 
         // Validate column mapping
-        const columnMapping = orderState.dataAndMapping?.columnMapping || orderState.columnMapping
+        const columnMapping = state.dataAndMapping?.columnMapping || state.columnMapping
         if (!columnMapping || !columnMapping.mappedFields) {
           errors.push('Please map your columns to YLS fields')
         } else {
@@ -167,9 +168,9 @@ export function OrderProvider({ children, initialState }: OrderProviderProps) {
         break
 
       case 'address_validation':
-        if (!orderState.accuzipValidation) {
+        if (!state.accuzipValidation) {
           errors.push('Address validation is required')
-        } else if (orderState.accuzipValidation.deliverableRecords === 0) {
+        } else if (state.accuzipValidation.deliverableRecords === 0) {
           errors.push('No deliverable records found')
         } else {
           completedFields.push('accuzipValidation')
@@ -178,7 +179,7 @@ export function OrderProvider({ children, initialState }: OrderProviderProps) {
 
       case 'design_and_content':
         // Validate contact card selection
-        const contactCard = orderState.designAndContent?.contactCard || orderState.contactCard
+        const contactCard = state.designAndContent?.contactCard || state.contactCard
         if (!contactCard) {
           errors.push('Please select a contact card')
         } else {
@@ -186,7 +187,7 @@ export function OrderProvider({ children, initialState }: OrderProviderProps) {
         }
 
         // Validate design selection
-        const design = orderState.designAndContent?.design || orderState.design
+        const design = state.designAndContent?.design || state.design
         if (!design) {
           errors.push('Please create or select a design')
         } else {
@@ -196,7 +197,7 @@ export function OrderProvider({ children, initialState }: OrderProviderProps) {
 
       case 'campaign_settings':
         // Validate mailing options
-        const mailingOptions = orderState.campaignSettings?.mailingOptions || orderState.mailingOptions
+        const mailingOptions = state.campaignSettings?.mailingOptions || state.mailingOptions
         if (!mailingOptions) {
           errors.push('Please select mailing options')
         } else if (!mailingOptions.serviceLevel) {
@@ -207,7 +208,7 @@ export function OrderProvider({ children, initialState }: OrderProviderProps) {
 
         // Validate campaign setup (if required)
         if (mailingOptions?.serviceLevel === 'full_service') {
-          const campaignOptions = orderState.campaignSettings?.campaignOptions || orderState.campaignOptions
+          const campaignOptions = state.campaignSettings?.campaignOptions || state.campaignOptions
           if (!campaignOptions) {
             errors.push('Please configure campaign options')
           } else {
@@ -218,9 +219,9 @@ export function OrderProvider({ children, initialState }: OrderProviderProps) {
 
       case 'review':
         requiredFields.push('approval')
-        if (!orderState.approval) {
+        if (!state.approval) {
           errors.push('Please review and approve the order')
-        } else if (!orderState.approval.designLocked || !orderState.approval.termsAccepted) {
+        } else if (!state.approval.designLocked || !state.approval.termsAccepted) {
           errors.push('Please confirm design lock and accept terms')
         } else {
           completedFields.push('approval')
@@ -229,9 +230,9 @@ export function OrderProvider({ children, initialState }: OrderProviderProps) {
 
       case 'payment':
         requiredFields.push('payment')
-        if (!orderState.payment) {
+        if (!state.payment) {
           errors.push('Payment authorization required')
-        } else if (orderState.payment.status !== 'authorized') {
+        } else if (state.payment.status !== 'authorized') {
           errors.push('Payment must be authorized to complete order')
         } else {
           completedFields.push('payment')
@@ -318,10 +319,15 @@ export function OrderProvider({ children, initialState }: OrderProviderProps) {
   }, [toast])
 
   // Submit order function
-  const submitOrder = useCallback(async (): Promise<{ success: boolean, orderId?: string, error?: string }> => {
+  const submitOrder = useCallback(async (overrides?: Partial<OrderState>): Promise<{ success: boolean, orderId?: string, error?: string }> => {
     try {
+      // Merge caller-provided overrides (e.g. the just-authorized payment) so
+      // validation and submission run against the authoritative state, not a
+      // stale React snapshot captured before the last updateOrderState().
+      const effectiveState: OrderState = { ...orderState, ...overrides }
+
       // Final validation
-      const finalValidation = validateCurrentStep()
+      const finalValidation = validateCurrentStep(effectiveState)
       if (!finalValidation.isValid) {
         return {
           success: false,
@@ -336,7 +342,7 @@ export function OrderProvider({ children, initialState }: OrderProviderProps) {
         },
         body: JSON.stringify({
           orderState: {
-            ...orderState,
+            ...effectiveState,
             isDraft: false,
             submittedAt: new Date()
           }

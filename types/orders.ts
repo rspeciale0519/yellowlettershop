@@ -255,8 +255,8 @@ export interface OrderWorkflowContextType {
   previousStep: () => void
   saveDraft: () => Promise<void>
   loadDraft: (draftId: string) => Promise<void>
-  validateCurrentStep: () => StepValidation
-  submitOrder: () => Promise<{ success: boolean, orderId?: string, error?: string }>
+  validateCurrentStep: (stateOverride?: OrderState) => StepValidation
+  submitOrder: (overrides?: Partial<OrderState>) => Promise<{ success: boolean, orderId?: string, error?: string }>
 }
 
 // Order workflow step definitions - Consolidated 6-step process
