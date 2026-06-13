@@ -2144,3 +2144,46 @@ export type DataSnapshot = Database['public']['Tables']['data_snapshots']['Row']
 // string to mirror the schema and avoid breaking the diverse set of callers.
 export type ResourceType = string
 export type ChangeType = string
+
+// Table-backed types kept canonical (generated rows), exposed under the names
+// the codebase imports.
+export type ContactCard = Database['public']['Tables']['contact_cards']['Row']
+export type InsertMailingList = Database['public']['Tables']['mailing_lists']['Insert']
+export type UpdateMailingList = Database['public']['Tables']['mailing_lists']['Update']
+
+// Non-table DOMAIN types restored from the pre-consolidation type layer
+// (./supabase-domain.ts). These model concepts the generated schema does not
+// (RBAC, tag config, bulk-ops, list-builder criteria, status unions, computed
+// analytics). Entity row shapes stay canonical via the generated aliases above;
+// only names with NO generated-table equivalent are re-exported here.
+export type {
+  // status / enum unions
+  SubscriptionPlan, SubscriptionStatus, UserRole, CampaignType, FulfillmentType,
+  PostageType, PaymentStatus, ValidationStatus, DeliveryStatus, SourceType,
+  DesignType, VendorType, SkipTraceStatus, PermissionLevel, TagVisibility,
+  ProjectRole, RbacResourceType, PermissionAction, BulkOperationType,
+  BulkOperationStatus, AccessRequestStatus, AnalyticsEventType,
+  // tag system
+  TagCategory, TagCategoryConfig, ResourceTag, RecordTag,
+  // RBAC / projects
+  Project, ProjectMember, RolePermission, UserProject, ProjectMemberSummary,
+  PermissionCheck, InsertProject, UpdateProject, InsertProjectMember, UpdateProjectMember,
+  // bulk operations
+  BulkOperation, BulkOperationBatch, UserOperationLimits, BulkOperationConfig,
+  InsertBulkOperation, UpdateBulkOperation,
+  // analytics / tracking
+  ApiUsageTracking, UserAnalytics, CampaignMetrics, ShortLink, ShortLinkClick, ShortLinkTracking,
+  // team / vendor / misc domain
+  TeamInvitation, VendorPerformance, VendorCommunication, MailingListAuditLog,
+  AssetPermission, ResourcePermission, SchemaVersion,
+  // campaign drops + legacy payment txn (domain types, no live table)
+  CampaignDrop, CampaignDropRecord, PaymentTransaction,
+} from './supabase-domain'
+
+// Contracts with no recoverable source — defined from their consumers. The
+// list-builder FILTER shape of ListBuilderCriteria is canonical here (the legacy
+// saved-record shape in supabase-domain.ts is intentionally NOT re-exported).
+export type {
+  DemographicFilters, GeographicFilters, PropertyFilters, ListBuilderCriteria,
+  TeamMember, EngagementEvent,
+} from './domain-extra'
