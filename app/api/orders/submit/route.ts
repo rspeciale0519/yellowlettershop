@@ -13,7 +13,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
     const { orderState } = SubmitOrderSchema.parse(body)
 
     const payment = (orderState as Record<string, unknown>).payment as
-      | { status?: string }
+      | { status?: string; paymentIntentId?: string }
       | undefined
 
     if (payment?.status !== 'authorized') {
@@ -31,7 +31,13 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
 
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .insert({ user_id: userId, order_state: orderState, draft_id: draftId })
+      .insert({
+        user_id: userId,
+        order_state: orderState,
+        draft_id: draftId,
+        payment_intent_id: payment?.paymentIntentId ?? null,
+        status_history: [{ status: 'submitted', at: new Date().toISOString() }]
+      })
       .select('id')
       .single()
 

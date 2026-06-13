@@ -1,35 +1,17 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { OrderStepProps } from '@/types/orders'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { OrderStepProps, PricingBreakdown } from '@/types/orders'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { 
-  CreditCard, 
-  Shield, 
-  CheckCircle, 
-  AlertCircle,
-  Lock,
-  DollarSign,
-  Clock,
-  RefreshCw,
-  ExternalLink,
-  Receipt
-} from 'lucide-react'
+import { AlertCircle, Lock, RefreshCw, Receipt } from 'lucide-react'
 import { useOrderWorkflow } from '../OrderProvider'
 import { useToast } from '@/components/ui/use-toast'
 import { useRouter } from 'next/navigation'
-
-interface PaymentMethod {
-  id: string
-  brand: string
-  last4: string
-  expMonth: number
-  expYear: number
-}
+import { PaymentSecurityInfo } from './payment/PaymentSecurityInfo'
+import { PaymentMethodList, type PaymentMethod } from './payment/PaymentMethodList'
 
 export function PaymentStep({ orderState }: OrderStepProps) {
   const { updateOrderState, submitOrder } = useOrderWorkflow()
@@ -40,8 +22,34 @@ export function PaymentStep({ orderState }: OrderStepProps) {
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
   const [paymentIntent, setPaymentIntent] = useState<string | null>(null)
   const [isLoadingPaymentMethods, setIsLoadingPaymentMethods] = useState(true)
-  const [pricingData, setPricingData] = useState<any>(null)
+  const [pricingData, setPricingData] = useState<PricingBreakdown | null>(null)
   const [isCalculatingPrice, setIsCalculatingPrice] = useState(false)
+
+  const calculateFinalPricing = async () => {
+    setIsCalculatingPrice(true)
+    try {
+      const response = await fetch('/api/orders/pricing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderState })
+      })
+      if (!response.ok) {
+        throw new Error('Failed to calculate final pricing')
+      }
+      const data: PricingBreakdown = await response.json()
+      setPricingData(data)
+      updateOrderState({ pricing: data })
+    } catch (error) {
+      console.error('Failed to calculate final pricing:', error)
+      toast({
+        title: "Pricing calculation failed",
+        description: "Unable to calculate your order total. Please go back and try again.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsCalculatingPrice(false)
+    }
+  }
 
   useEffect(() => {
     loadPaymentMethods()
@@ -90,7 +98,7 @@ export function PaymentStep({ orderState }: OrderStepProps) {
         },
         body: JSON.stringify({
           orderState,
-          amount: orderState.pricing?.totalPrice
+          amount: pricingData?.totalPrice ?? orderState.pricing?.totalPrice
         })
       })
 
@@ -105,7 +113,7 @@ export function PaymentStep({ orderState }: OrderStepProps) {
         payment: {
           paymentIntentId: result.paymentIntentId,
           status: 'pending',
-          amount: pricingData.total,
+          amount: pricingData?.totalPrice ?? 0,
           currency: 'usd'
         }
       })
@@ -255,134 +263,16 @@ export function PaymentStep({ orderState }: OrderStepProps) {
       )}
 
       {/* Payment Methods */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <CreditCard className="h-5 w-5" />
-            <span>Payment Method</span>
-          </CardTitle>
-          <CardDescription>
-            Select or add a payment method for this order
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoadingPaymentMethods ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
-              <p className="text-gray-600">Loading payment methods...</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {paymentMethods.length > 0 ? (
-                paymentMethods.map((method) => (
-                  <div
-                    key={method.id}
-                    className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                      selectedPaymentMethod === method.id
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    onClick={() => handlePaymentMethodSelect(method.id)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-8 bg-gray-100 rounded flex items-center justify-center">
-                          <CreditCard className="h-4 w-4 text-gray-600" />
-                        </div>
-                        <div>
-                          <div className="font-medium">
-                            {method.brand.toUpperCase()} ending in {method.last4}
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            Expires {method.expMonth.toString().padStart(2, '0')}/{method.expYear}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {selectedPaymentMethod === method.id && (
-                        <CheckCircle className="h-5 w-5 text-blue-600" />
-                      )}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <CreditCard className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No Payment Methods</h3>
-                  <p className="text-gray-600 mb-4">
-                    Add a payment method to complete your order
-                  </p>
-                </div>
-              )}
-              
-              <Button
-                variant="outline"
-                className="w-full flex items-center space-x-2"
-                onClick={addNewPaymentMethod}
-              >
-                <CreditCard className="h-4 w-4" />
-                <span>Add New Payment Method</span>
-                <ExternalLink className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <PaymentMethodList
+        methods={paymentMethods}
+        selectedId={selectedPaymentMethod}
+        isLoading={isLoadingPaymentMethods}
+        onSelect={handlePaymentMethodSelect}
+        onAddNew={addNewPaymentMethod}
+      />
 
-      {/* Security Information */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Shield className="h-5 w-5" />
-            <span>Secure Payment Processing</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="flex items-center space-x-3">
-              <Lock className="h-5 w-5 text-green-600" />
-              <div>
-                <div className="font-medium">SSL Encrypted</div>
-                <div className="text-sm text-gray-600">256-bit encryption</div>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              <Shield className="h-5 w-5 text-green-600" />
-              <div>
-                <div className="font-medium">PCI Compliant</div>
-                <div className="text-sm text-gray-600">Secure card processing</div>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              <Clock className="h-5 w-5 text-blue-600" />
-              <div>
-                <div className="font-medium">Payment Hold</div>
-                <div className="text-sm text-gray-600">Authorized, not charged</div>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-3">
-              <CheckCircle className="h-5 w-5 text-blue-600" />
-              <div>
-                <div className="font-medium">Charge on Approval</div>
-                <div className="text-sm text-gray-600">After proof approval</div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Payment Process Information */}
-      <Alert>
-        <Clock className="h-4 w-4" />
-        <AlertDescription>
-          <strong>Payment Authorization:</strong> Your card will be authorized for the full amount, 
-          but not charged until you approve the final proof. This ensures you're satisfied with 
-          the design before payment is captured.
-        </AlertDescription>
-      </Alert>
+      {/* Security information + authorization explainer */}
+      <PaymentSecurityInfo />
 
       {/* Error States */}
       {!paymentIntent && (
