@@ -176,6 +176,33 @@ EXIT: Mocha tests for split assignment, score computation, CallRail seam
 green; browser smoke: preflight shows compliance findings; checkout shows
 combined score — screenshots; build exit 0.
 
+### Phase 6.5 — Vendor-gated capture + AI proof comparison (report §9 D9, D10)
+Added 2026-06-13 (owner-approved). Depends on the DB1-model `orders`
+(`amount_authorized/captured`, `proof_approved_by/at`, `vendor_assignments`,
+`proof_urls`, `proof_annotations`) from the consolidation.
+1. **D9 vendor-gated capture:** move the capture trigger from "customer
+   approves" to "vendor confirms the ready-to-print proof matches the
+   approved design" → `paymentIntents.capture()`. Vendor denial →
+   `paymentIntents.cancel()` (releases hold, NO refund processed). Handle the
+   ~7-day Stripe authorization-expiry window (re-authorize before capture if
+   the vendor cycle exceeds it; document the fallback). This SUPERSEDES the
+   Phase-2 capture-on-customer-approval logic.
+2. **D10 AI proof comparison (automates D9's gate):** hybrid check —
+   (a) per-recipient merge-field text verification (name/property
+   address/phone — the "data merged correctly" the vendor proof demonstrates);
+   (b) vision fidelity diff (layout/handwriting/placement) via a top vision
+   model (GPT-5.5 / Gemini image) through AI Gateway. Ignore vendor
+   mail-automation marks (data-matrix barcode, sequence number, blank back).
+   Confidence-scored: high-confidence → auto-confirm (→ capture); low →
+   escalate to human (never blind-move money). Seam + blocker if no model key.
+   Validate against `temp/vendor-proof-examples/` (LTR + ENV).
+EXIT: Mocha tests for the capture-gate state machine (authorize → vendor
+confirm → capture; vendor deny → cancel/release) and the proof-comparison
+verdict logic (text-match + confidence threshold + human-escalation) green;
+browser smoke: a test order moves authorize → vendor-confirm → capture, and a
+denied proof releases the hold with no refund — screenshots; build exit 0.
+AI model access is owner-level (document in production-blockers.md if absent).
+
 ### Phase 7 — Full E2E + final verification
 1. E2E Mocha suite: API-level journey test (create list → design → order →
    proof → approve → capture, Stripe test mode/stubs).
