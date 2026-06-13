@@ -20,7 +20,7 @@ export default function AdminUserDetailPage() {
   const params = useParams();
   const userId = params.userId as string;
   const [detail, setDetail] = useState<Record<string, unknown> | null>(null);
-  const [creditData, setCreditData] = useState<{ balance: number; history: Record<string, unknown>[] }>({ balance: 0, history: [] });
+  const [creditData, setCreditData] = useState<{ balance: number; history: Parameters<typeof UserCreditsTab>[0]['history'] }>({ balance: 0, history: [] });
   const [isLoading, setIsLoading] = useState(true);
 
   const supabase = createClient();
@@ -96,7 +96,7 @@ export default function AdminUserDetailPage() {
   const profile = detail.profile as Record<string, unknown>;
   const orders = (detail.orders as Record<string, unknown>[]) ?? [];
   const payments = (detail.payments as Record<string, unknown>[]) ?? [];
-  const notes = (detail.notes as Record<string, unknown>[]) ?? [];
+  const notes = (detail.notes as Parameters<typeof UserNotesTab>[0]['notes']) ?? [];
   const status = (profile.account_status as string) ?? 'active';
 
   return (
@@ -221,7 +221,7 @@ export default function AdminUserDetailPage() {
 
         <TabsContent value="notes">
           <UserNotesTab
-            notes={notes as Parameters<typeof UserNotesTab>[0]['notes']}
+            notes={notes}
             onAddNote={handleAddNote}
           />
         </TabsContent>
@@ -229,7 +229,7 @@ export default function AdminUserDetailPage() {
         <TabsContent value="credits">
           <UserCreditsTab
             balance={creditData.balance}
-            history={creditData.history as Parameters<typeof UserCreditsTab>[0]['history']}
+            history={creditData.history}
             onAddCredit={handleAddCredit}
           />
         </TabsContent>

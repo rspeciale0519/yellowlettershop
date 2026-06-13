@@ -11,7 +11,7 @@ type DataQualityField = keyof OptionsCriteria['dataQuality'];
 interface DataQualitySectionProps {
   criteria: OptionsCriteria;
   onToggle: (field: DataQualityField, value: boolean) => void;
-  onConfidenceScoreChange: (values: [number, number]) => void;
+  onConfidenceScoreChange: (values: number[]) => void;
 }
 
 export function DataQualitySection({

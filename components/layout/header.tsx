@@ -297,11 +297,6 @@ export function Header() {
             </div>
           ) : user ? (
             <>
-              <Button variant="outline" size="icon" asChild>
-                <Link href="/dashboard/notifications">
-                  <Bell className="h-4 w-4" />
-                </Link>
-              </Button>
               <ThemeToggle />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

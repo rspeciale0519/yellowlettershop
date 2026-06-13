@@ -9,7 +9,7 @@ export async function GET(
   try {
     const { jobId } = params
 
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
     
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -21,8 +21,8 @@ export async function GET(
     }
 
     // Get the job
-    const job = getJob(jobId)
-    
+    const job = await getJob(jobId)
+
     if (!job) {
       return NextResponse.json(
         { error: 'Job not found' },
@@ -70,7 +70,7 @@ export async function DELETE(
   try {
     const { jobId } = params
 
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
     
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -82,8 +82,8 @@ export async function DELETE(
     }
 
     // Get the job to check ownership
-    const job = getJob(jobId)
-    
+    const job = await getJob(jobId)
+
     if (!job) {
       return NextResponse.json(
         { error: 'Job not found' },
@@ -100,7 +100,7 @@ export async function DELETE(
     }
 
     // Cancel the job
-    const cancelled = cancelJob(jobId)
+    const cancelled = await cancelJob(jobId)
     
     if (!cancelled) {
       return NextResponse.json(

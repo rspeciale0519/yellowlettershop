@@ -73,7 +73,7 @@ export function templateFormatId(templateId: string): MailFormatId {
   return TEMPLATE_FORMATS[templateId] ?? "letter_8_5x11"
 }
 
-export function createDesignerDocument(templateId = DESIGN_TEMPLATES[0].id): DesignerDocument {
+export function createDesignerDocument(templateId: string = DESIGN_TEMPLATES[0].id): DesignerDocument {
   const template = DESIGN_TEMPLATES.find((item) => item.id === templateId) ?? DESIGN_TEMPLATES[0]
   const formatId = templateFormatId(template.id)
   const target = canvasSizePx(formatId, "portrait")

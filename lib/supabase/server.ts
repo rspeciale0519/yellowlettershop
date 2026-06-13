@@ -15,15 +15,17 @@ export async function createSupabaseServerClient() {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        async get(name: string) {
-          return cookieStore.get(name)?.value
+        getAll() {
+          return cookieStore.getAll()
         },
-        async set(name: string, value: string, options?: Parameters<typeof cookieStore.set>[2]) {
-          cookieStore.set(name, value, options)
-        },
-        async remove(name: string, options?: Parameters<typeof cookieStore.set>[1]) {
-          // Expire the cookie
-          cookieStore.set(name, '', { ...options, expires: new Date(0) })
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options),
+            )
+          } catch {
+            // Called from a Server Component — cookies can't be mutated; safe to ignore
+          }
         },
       },
     }

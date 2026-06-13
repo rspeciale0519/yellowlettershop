@@ -21,8 +21,14 @@ import {
 import { MailingList } from '@/types/supabase'
 import { formatDistanceToNow, format } from 'date-fns'
 
+interface MailingListCardTag {
+  id: string
+  name: string
+  color?: string
+}
+
 interface MailingListCardProps {
-  mailingList: MailingList
+  mailingList: MailingList & { tags?: MailingListCardTag[] }
   onEdit?: (id: string) => void
   onDelete?: (id: string) => void
   onDuplicate?: (id: string) => void
@@ -38,12 +44,14 @@ export function MailingListCard({
   onViewHistory,
   onCreateCampaign,
 }: MailingListCardProps) {
-  const formattedCreatedAt = formatDistanceToNow(new Date(mailingList.created_at), { addSuffix: true })
-  const lastUsed = mailingList.last_used_at 
+  const formattedCreatedAt = mailingList.created_at
+    ? formatDistanceToNow(new Date(mailingList.created_at), { addSuffix: true })
+    : 'Unknown'
+  const lastUsed = mailingList.last_used_at
     ? formatDistanceToNow(new Date(mailingList.last_used_at), { addSuffix: true })
     : 'Never used'
 
-  const sourceTypeLabels = {
+  const sourceTypeLabels: Record<string, string> = {
     upload: 'File Upload',
     list_builder: 'List Builder',
     manual: 'Manual Entry',
@@ -104,7 +112,7 @@ export function MailingListCard({
         <div className="flex items-center justify-between text-sm">
           <div className="flex items-center gap-1">
             <Users className="h-4 w-4" />
-            <span className="font-medium">{mailingList.record_count.toLocaleString()}</span>
+            <span className="font-medium">{(mailingList.record_count ?? 0).toLocaleString()}</span>
             <span className="text-muted-foreground">records</span>
           </div>
           {mailingList.estimated_cost && (

@@ -1,5 +1,5 @@
 import { createClient } from '@/utils/supabase/client'
-import { UserAsset } from '@/types/supabase'
+import { UserAsset, Json } from '@/types/supabase'
 import { recordChange } from '@/lib/version-history/change-tracker'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -370,6 +370,39 @@ export class AssetService {
     }
 
     return signedUrlData.signedUrl
+  }
+
+  /**
+   * Records a usage event for an asset by bumping its metadata usage counter.
+   * Uses the existing user_assets.metadata jsonb (no separate usage table).
+   */
+  async recordAssetUsage(assetId: string, usageContext?: string): Promise<void> {
+    const { data: { user } } = await this.supabase.auth.getUser()
+    if (!user) throw new Error('User not authenticated')
+
+    const { data: asset } = await this.supabase
+      .from('user_assets')
+      .select('metadata')
+      .eq('id', assetId)
+      .single()
+
+    const meta: Record<string, Json | undefined> =
+      asset?.metadata && typeof asset.metadata === 'object' && !Array.isArray(asset.metadata)
+        ? (asset.metadata as Record<string, Json | undefined>)
+        : {}
+    const currentCount = typeof meta.usage_count === 'number' ? meta.usage_count : 0
+
+    await this.supabase
+      .from('user_assets')
+      .update({
+        metadata: {
+          ...meta,
+          usage_count: currentCount + 1,
+          last_used_at: new Date().toISOString(),
+          ...(usageContext ? { last_usage_context: usageContext } : {}),
+        },
+      })
+      .eq('id', assetId)
   }
 }
 

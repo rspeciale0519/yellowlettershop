@@ -65,8 +65,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: "Media Library", href: "/dashboard/media", icon: ImageIcon },
     { name: "Tag Manager", href: "/dashboard/tags", icon: Tag },
     { name: "Activity Logs", href: "/dashboard/activity", icon: Activity },
-    { name: "Notifications", href: "/dashboard/notifications", icon: Bell },
-    { name: "API Keys", href: "/dashboard/api-keys", icon: Key },
   ]
 
   return (

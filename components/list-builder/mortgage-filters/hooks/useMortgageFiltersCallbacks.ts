@@ -1,5 +1,6 @@
 // Custom hook for mortgage filters callbacks
 import { useCallback } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 import type { MortgageCriteria } from '@/types/list-builder';
 
 // Define the template type directly since MORTGAGE_TEMPLATES might not be available
@@ -14,9 +15,9 @@ interface UseMortgageFiltersCallbacksProps {
   criteria: MortgageCriteria;
   onUpdate: (values: Partial<MortgageCriteria>) => void;
   expandedPanels: string[];
-  setExpandedPanels: (panels: string[]) => void;
+  setExpandedPanels: Dispatch<SetStateAction<string[]>>;
   savedCriteria: MortgageCriteriaTemplate[];
-  setSavedCriteria: (criteria: MortgageCriteriaTemplate[]) => void;
+  setSavedCriteria: Dispatch<SetStateAction<MortgageCriteriaTemplate[]>>;
 }
 
 export function useMortgageFiltersCallbacks({

@@ -4,7 +4,7 @@ import { restoreListVersion } from '@/lib/supabase/mailing-lists-extended'
 
 const RestoreVersionSchema = z.object({
   listId: z.string().min(1, 'listId is required'),
-  versionId: z.string().min(1, 'versionId is required')
+  versionId: z.coerce.number().int().positive('versionId must be a positive version number')
 })
 
 export async function POST(request: NextRequest) {

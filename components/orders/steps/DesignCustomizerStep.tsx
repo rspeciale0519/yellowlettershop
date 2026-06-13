@@ -1,6 +1,8 @@
 "use client"
 
+import { useEffect } from 'react'
 import { OrderStepProps } from '@/types/orders'
+import type { DesignerDocument } from '@/types/designer'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -19,10 +21,59 @@ import { useOrderWorkflow } from '../OrderProvider'
 //  - Linking the design to the order id on save is a tracked follow-up
 //    (the /api/design/save route already accepts an optional orderId).
 export function DesignCustomizerStep({ orderState }: OrderStepProps) {
-  const { nextStep, previousStep } = useOrderWorkflow()
+  const { nextStep, previousStep, updateOrderState } = useOrderWorkflow()
   const design = orderState.design
   const variables = design?.variablesUsed ?? []
   const hasDesign = Boolean(design && (design.designId || design.designJson))
+
+  // Cross-tab handoff: the designer opens in a SEPARATE tab and writes the saved
+  // document to localStorage('yls.pendingOrderDesign'). Pick it up when the user
+  // returns to this tab (focus / tab-visible) so the order rehydrates the design
+  // without needing a navigation round-trip.
+  useEffect(() => {
+    const PENDING_KEY = 'yls.pendingOrderDesign'
+    const syncPendingDesign = () => {
+      if (typeof window === 'undefined') return
+      const raw = window.localStorage.getItem(PENDING_KEY)
+      if (!raw) return
+      const currentRaw = orderState.design?.designJson
+        ? JSON.stringify(orderState.design.designJson)
+        : null
+      if (raw === currentRaw) return
+      try {
+        const designJson = JSON.parse(raw) as DesignerDocument
+        const variablesUsed = Array.from(
+          new Set(
+            [...JSON.stringify(designJson).matchAll(/\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}/g)].map(
+              (m) => m[1],
+            ),
+          ),
+        ).sort()
+        const nextDesign = {
+          designId: orderState.design?.designId ?? 'local-design-draft',
+          designJson,
+          variablesUsed,
+          isCustomDesign: true,
+        }
+        updateOrderState({
+          design: nextDesign,
+          designAndContent: { ...orderState.designAndContent, design: nextDesign },
+        })
+      } catch {
+        /* ignore malformed pending design */
+      }
+    }
+    syncPendingDesign()
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') syncPendingDesign()
+    }
+    window.addEventListener('focus', syncPendingDesign)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      window.removeEventListener('focus', syncPendingDesign)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [orderState.design, orderState.designAndContent, updateOrderState])
 
   const openFullDesigner = () => {
     const orderId = orderState.orderId ? `?orderId=${encodeURIComponent(orderState.orderId)}` : ''

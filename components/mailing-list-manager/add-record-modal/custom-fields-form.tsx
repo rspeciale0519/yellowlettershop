@@ -44,7 +44,7 @@ export function CustomFieldsForm({
                     <Label htmlFor={field.id}>{field.name}</Label>
                     <Input
                       id={field.id}
-                      value={value}
+                      value={rawValue}
                       onChange={(e) =>
                         onCustomFieldChange(field.id, e.target.value)
                       }
@@ -64,7 +64,7 @@ export function CustomFieldsForm({
                     <Input
                       id={field.id}
                       type='number'
-                      value={value}
+                      value={rawValue}
                       onChange={(e) =>
                         onCustomFieldChange(field.id, e.target.value)
                       }
@@ -82,7 +82,7 @@ export function CustomFieldsForm({
                   <div key={field.id}>
                     <Label htmlFor={field.id}>{field.name}</Label>
                     <Select
-                      value={value}
+                      value={rawValue}
                       onValueChange={(val) =>
                         onCustomFieldChange(field.id, val)
                       }
@@ -114,7 +114,7 @@ export function CustomFieldsForm({
                   >
                     <Checkbox
                       id={field.id}
-                      checked={value || false}
+                      checked={rawValue || false}
                       onCheckedChange={(checked) =>
                         onCustomFieldChange(field.id, checked)
                       }

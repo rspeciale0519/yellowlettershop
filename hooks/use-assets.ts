@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { UserAsset } from '@/types/supabase'
+import { UserAsset, Json } from '@/types/supabase'
 import { UploadAssetRequest, AssetFilters, AssetUsageStats } from '@/lib/assets/asset-service'
 
 export function useAssets() {
@@ -139,12 +139,19 @@ export function useAssets() {
         throw new Error(error.error || 'Failed to record asset usage')
       }
 
-      // Update local usage count
-      setAssets(prev => prev.map(asset => 
-        asset.id === assetId 
-          ? { ...asset, metadata: { ...asset.metadata, usage_count: (asset.metadata.usage_count || 0) + 1, last_used_at: new Date().toISOString() } }
-          : asset
-      ))
+      // Update local usage count (metadata is jsonb → narrow before spreading)
+      setAssets(prev => prev.map(asset => {
+        if (asset.id !== assetId) return asset
+        const meta: Record<string, Json | undefined> =
+          asset.metadata && typeof asset.metadata === 'object' && !Array.isArray(asset.metadata)
+            ? (asset.metadata as Record<string, Json | undefined>)
+            : {}
+        const currentCount = typeof meta.usage_count === 'number' ? meta.usage_count : 0
+        return {
+          ...asset,
+          metadata: { ...meta, usage_count: currentCount + 1, last_used_at: new Date().toISOString() },
+        }
+      }))
     } catch (error) {
       console.error('Error recording asset usage:', error)
       // Don't throw - usage tracking shouldn't break the main flow

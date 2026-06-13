@@ -1,5 +1,14 @@
 import { createClient } from '@/utils/supabase/client'
 import type { Webhook, WebhookDelivery } from '@/types/supabase'
+import { backoffDelayMs, shouldRetry } from '@/lib/webhooks/retry'
+
+// Inline retry attempts are capped low so we don't hold the triggering
+// request open; exhausted deliveries land in webhook_dead_letters for replay.
+const MAX_INLINE_ATTEMPTS = 3
+const INLINE_BASE_MS = 400
+const INLINE_CEIL_MS = 4000
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 // =================================================================================
 // Webhook Management Functions
@@ -140,31 +149,60 @@ export async function triggerWebhookEvent(
     return
   }
 
-  // Send webhook to each registered endpoint
+  // Send webhook to each registered endpoint, with bounded retry + dead-letter.
   for (const webhook of webhooks) {
-    try {
-      await sendWebhook(webhook, eventType, eventData)
-    } catch (error) {
-      console.error(`Failed to send webhook ${webhook.id}:`, error)
-      
-      // Record failed delivery
-      await recordWebhookDelivery({
-        webhook_id: webhook.id,
-        event_type: eventType,
-        payload: eventData,
-        response_status: 500,
-        response_body: error instanceof Error ? error.message : 'Unknown error',
-        delivery_attempts: 1
-      })
+    let attempt = 0
+    let lastStatus = 0
+    let lastBody = ''
+
+    while (attempt < MAX_INLINE_ATTEMPTS) {
+      attempt++
+      const result = await sendWebhook(webhook, eventType, eventData, attempt)
+      lastStatus = result.status
+      lastBody = result.body
+
+      if (result.status >= 200 && result.status < 300) break
+      if (!shouldRetry(result.status, attempt) || attempt >= MAX_INLINE_ATTEMPTS) break
+
+      await sleep(backoffDelayMs(attempt, INLINE_BASE_MS, INLINE_CEIL_MS))
     }
+
+    const delivered = lastStatus >= 200 && lastStatus < 300
+    if (!delivered) {
+      console.error(`Webhook ${webhook.id} failed after ${attempt} attempts (status ${lastStatus})`)
+      await deadLetterWebhook(webhook, eventType, eventData, attempt, lastBody)
+    }
+  }
+}
+
+async function deadLetterWebhook(
+  webhook: Webhook,
+  eventType: string,
+  eventData: Record<string, any>,
+  attempts: number,
+  lastError: string
+): Promise<void> {
+  try {
+    const supabase = createClient()
+    await supabase.from('webhook_dead_letters').insert({
+      webhook_id: webhook.id,
+      user_id: webhook.user_id,
+      event_type: eventType,
+      payload: eventData,
+      attempts,
+      last_error: lastError,
+    })
+  } catch (error) {
+    console.error(`Failed to dead-letter webhook ${webhook.id}:`, error)
   }
 }
 
 async function sendWebhook(
   webhook: Webhook,
   eventType: string,
-  eventData: Record<string, any>
-): Promise<void> {
+  eventData: Record<string, any>,
+  attempt: number
+): Promise<{ status: number; body: string }> {
   const payload = JSON.stringify({
     id: crypto.randomUUID(),
     type: eventType,
@@ -193,25 +231,32 @@ async function sendWebhook(
     headers['X-YLS-Signature'] = signature
   }
 
-  const response = await fetch(webhook.url, {
-    method: 'POST',
-    headers,
-    body: payload
-  })
+  let status = 0
+  let body = ''
+  try {
+    const response = await fetch(webhook.url, {
+      method: 'POST',
+      headers,
+      body: payload
+    })
+    status = response.status
+    body = await response.text().catch(() => '')
+  } catch (error) {
+    // Network failure → status 0 (treated as transient by shouldRetry)
+    status = 0
+    body = error instanceof Error ? error.message : 'Network error'
+  }
 
-  // Record delivery attempt
   await recordWebhookDelivery({
     webhook_id: webhook.id,
     event_type: eventType,
     payload: eventData,
-    response_status: response.status,
-    response_body: await response.text().catch(() => ''),
-    delivery_attempts: 1
+    response_status: status,
+    response_body: body,
+    delivery_attempts: attempt
   })
 
-  if (!response.ok) {
-    throw new Error(`Webhook delivery failed: ${response.status} ${response.statusText}`)
-  }
+  return { status, body }
 }
 
 // =================================================================================

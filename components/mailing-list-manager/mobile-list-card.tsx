@@ -184,7 +184,10 @@ export function MobileListCard({
                       </span>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <CampaignUsageTooltip campaigns={list.campaigns} />
+                      <CampaignUsageTooltip
+                        campaigns={list.campaigns}
+                        onOpenModal={() => setCampaignModalOpen(true)}
+                      />
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>

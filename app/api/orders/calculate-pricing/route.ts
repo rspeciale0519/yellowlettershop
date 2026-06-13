@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { withAuth } from '@/lib/auth/middleware'
+import { createClient } from '@/utils/supabase/service'
 import { calculatePricing } from '@/lib/orders/pricing'
+import { loadPricingConfig } from '@/lib/orders/pricing-config'
 
 const PricingRequestSchema = z.object({
   mailingOptions: z.object({
@@ -19,7 +21,8 @@ export const POST = withAuth(async (req: NextRequest, { userId: _userId }) => {
   try {
     const body = await req.json()
     const { mailingOptions, recordCount } = PricingRequestSchema.parse(body)
-    const result = calculatePricing(mailingOptions, recordCount)
+    const config = await loadPricingConfig(createClient())
+    const result = calculatePricing(mailingOptions, recordCount, config)
     return NextResponse.json(result)
   } catch (error) {
     console.error('Pricing calculation error:', error)
@@ -43,19 +46,23 @@ export const GET = withAuth(async (req: NextRequest, { userId: _userId }) => {
   try {
     const url = new URL(req.url)
     const recordCount = parseInt(url.searchParams.get('recordCount') || '100')
+    const config = await loadPricingConfig(createClient())
 
     const examples = {
       postcard_4x6_500: calculatePricing(
         { serviceLevel: 'full_service', mailPieceFormat: 'postcard_4x6' },
-        500
+        500,
+        config
       ),
       postcard_5x7_1000: calculatePricing(
         { serviceLevel: 'full_service', mailPieceFormat: 'postcard_5x7' },
-        1000
+        1000,
+        config
       ),
       letter_2500: calculatePricing(
         { serviceLevel: 'full_service', mailPieceFormat: 'letter_8_5x11' },
-        2500
+        2500,
+        config
       )
     }
 

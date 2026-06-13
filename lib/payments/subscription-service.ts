@@ -9,7 +9,7 @@
  */
 
 import Stripe from 'stripe';
-import { stripe, requireStripe, SUBSCRIPTION_PLANS } from './stripe-config';
+import { requireStripe, SUBSCRIPTION_PLANS } from './stripe-config';
 import { PaymentServiceError, mapStripeStatusToDb } from './types';
 import { createServiceClient } from '@/utils/supabase/service';
 import type { 
@@ -53,7 +53,7 @@ export class SubscriptionService {
    * Create new subscription for user or team
    */
   async createSubscription(params: CreateSubscriptionParams): Promise<SubscriptionDetails> {
-    requireStripe();
+    const stripe = requireStripe();
 
     const {
       userId,
@@ -120,14 +120,14 @@ export class SubscriptionService {
       if (teamId) {
         await this.updateTeamSubscription(teamId, {
           stripe_subscription_id: subscription.id,
-          stripeCustomerId: customerId,
+          stripe_customer_id: customerId,
           plan: planKey as SubscriptionPlan,
           status: mapStripeStatusToDb(subscription.status),
         });
       } else {
         await this.updateUserSubscription(userId, {
           stripe_subscription_id: subscription.id,
-          stripeCustomerId: customerId,
+          stripe_customer_id: customerId,
           subscription_plan: planKey as SubscriptionPlan,
           subscription_status: mapStripeStatusToDb(subscription.status),
         });
@@ -156,7 +156,7 @@ export class SubscriptionService {
     newBillingInterval?: 'monthly' | 'yearly';
     prorationBehavior?: 'create_prorations' | 'none' | 'always_invoice';
   }): Promise<SubscriptionDetails> {
-    requireStripe();
+    const stripe = requireStripe();
 
     const {
       subscriptionId,
@@ -251,7 +251,7 @@ export class SubscriptionService {
    * Cancel subscription
    */
   async cancelSubscription(subscriptionId: string, cancelAtPeriodEnd = true): Promise<void> {
-    requireStripe();
+    const stripe = requireStripe();
 
     try {
       const subscription = await stripe.subscriptions.update(subscriptionId, {
@@ -290,7 +290,7 @@ export class SubscriptionService {
    * Reactivate cancelled subscription
    */
   async reactivateSubscription(subscriptionId: string): Promise<SubscriptionDetails> {
-    requireStripe();
+    const stripe = requireStripe();
 
     try {
       const subscription = await stripe.subscriptions.update(subscriptionId, {
@@ -334,7 +334,7 @@ export class SubscriptionService {
    * Get subscription details
    */
   async getSubscription(subscriptionId: string): Promise<SubscriptionDetails> {
-    requireStripe();
+    const stripe = requireStripe();
 
     try {
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
@@ -364,17 +364,19 @@ export class SubscriptionService {
     newPriceId?: string;
     prorationDate?: number;
   }) {
-    requireStripe();
+    const stripe = requireStripe();
 
     try {
-      const invoice = await stripe.invoices.upcoming({
+      const invoice = await stripe.invoices.createPreview({
         customer: params.customerId,
         subscription: params.subscriptionId,
-        subscription_items: params.newPriceId ? [{
-          id: params.subscriptionId,
-          price: params.newPriceId,
-        }] : undefined,
-        subscription_proration_date: params.prorationDate,
+        subscription_details: {
+          items: params.newPriceId ? [{
+            id: params.subscriptionId,
+            price: params.newPriceId,
+          }] : undefined,
+          proration_date: params.prorationDate,
+        },
       });
 
       return {

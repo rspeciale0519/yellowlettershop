@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { TeamService, CreateTeamRequest } from '@/lib/team/team-service'
 import { withAuth } from '@/lib/auth/middleware'
 
-export const POST = withAuth(async (request: NextRequest, { userId }) => {
+export const POST = withAuth(async (request: NextRequest) => {
   try {
     const requestData: CreateTeamRequest = await request.json()
 
@@ -14,7 +14,7 @@ export const POST = withAuth(async (request: NextRequest, { userId }) => {
     }
 
     const teamService = new TeamService()
-    const team = await teamService.createTeam({ ...requestData, ownerId: userId })
+    const team = await teamService.createTeam(requestData)
 
     return NextResponse.json(team)
 

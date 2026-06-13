@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/utils/supabase/service';
+import { createClient as createCookieClient } from '@/utils/supabase/server';
 import type { User } from '@supabase/supabase-js';
 
 export interface AuthenticatedRequest {
@@ -25,21 +26,20 @@ export interface AuthMiddlewareOptions {
  */
 export async function getAuthenticatedUser(request: NextRequest): Promise<User | null> {
   try {
-    // Get authorization header
+    // 1. Bearer token (programmatic / mobile clients)
     const authorization = request.headers.get('authorization');
-    if (!authorization?.startsWith('Bearer ')) {
-      return null;
+    if (authorization?.startsWith('Bearer ')) {
+      const token = authorization.substring(7);
+      const supabase = createServiceClient();
+      const { data: { user }, error } = await supabase.auth.getUser(token);
+      if (!error && user) return user;
     }
-    
-    const token = authorization.substring(7);
-    const supabase = createServiceClient();
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    
-    if (error || !user) {
-      return null;
-    }
-    
-    return user;
+
+    // 2. Cookie-based session (browser fetches from the app itself).
+    // Without this, every same-origin fetch() to a withAuth route 401s.
+    const cookieClient = await createCookieClient();
+    const { data: { user } } = await cookieClient.auth.getUser();
+    return user ?? null;
   } catch (error) {
     console.error('Authentication error:', error);
     return null;
@@ -47,22 +47,31 @@ export async function getAuthenticatedUser(request: NextRequest): Promise<User |
 }
 
 /**
- * Middleware wrapper for protected API routes
+ * Middleware wrapper for protected API routes.
+ *
+ * Generic over the Next.js route context (`TRoute`) so dynamic routes can
+ * receive their `{ params }` argument as a third handler parameter. The
+ * returned function accepts the route context Next.js passes as the second
+ * argument and forwards it unchanged to the handler.
  */
-export function withAuth(
-  handler: (request: NextRequest, context: AuthenticatedRequest) => Promise<NextResponse>,
+export function withAuth<TRoute = unknown>(
+  handler: (
+    request: NextRequest,
+    context: AuthenticatedRequest,
+    routeContext: TRoute
+  ) => Promise<NextResponse>,
   options: AuthMiddlewareOptions = {}
 ) {
-  return async (request: NextRequest): Promise<NextResponse> => {
+  return async (request: NextRequest, routeContext: TRoute): Promise<NextResponse> => {
     const user = await getAuthenticatedUser(request);
-    
+
     if (!user) {
       return NextResponse.json(
         { error: 'Authentication required' },
         { status: 401 }
       );
     }
-    
+
     // Additional role checks if specified
     if (options.allowedRoles) {
       // Get user profile with role information
@@ -72,7 +81,7 @@ export function withAuth(
         .select('role')
         .eq('user_id', user.id)
         .single();
-      
+
       if (!profile || !options.allowedRoles.includes(profile.role)) {
         return NextResponse.json(
           { error: 'Insufficient permissions' },
@@ -80,13 +89,13 @@ export function withAuth(
         );
       }
     }
-    
+
     const authContext: AuthenticatedRequest = {
       user,
       userId: user.id,
     };
-    
-    return handler(request, authContext);
+
+    return handler(request, authContext, routeContext);
   };
 }
 
@@ -188,7 +197,7 @@ const requestCounts = new Map<string, { count: number; resetTime: number }>();
 
 export function rateLimit(maxRequests = 100, windowMs = 60000) {
   return (request: NextRequest): NextResponse | null => {
-    const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown';
+    const ip = request.headers.get('x-forwarded-for') || 'unknown';
     const now = Date.now();
     const key = `${ip}`;
     

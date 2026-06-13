@@ -151,11 +151,11 @@ export function CanvasArea({
                     ...position,
                   })
                 }}
-                onClick={(event) => {
+                onClick={(event: React.MouseEvent<HTMLElement>) => {
                   event.stopPropagation()
                   onSelectElement(element.id)
                 }}
-                onDoubleClick={(event) => {
+                onDoubleClick={(event: React.MouseEvent<HTMLElement>) => {
                   event.stopPropagation()
                   if (element.type === "image" && !element.locked) {
                     onReplaceImageRequest(element.id)

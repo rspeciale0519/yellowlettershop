@@ -136,7 +136,7 @@ export function ContactCardManager() {
         zip_code: card.zip_code,
         email: card.email,
         phone: card.phone,
-        is_default: card.is_default
+        is_default: card.is_default ?? false
       })
     } else {
       resetForm()
@@ -196,9 +196,13 @@ export function ContactCardManager() {
       setDialogOpen(false)
       resetForm()
     } catch (error) {
+      const errorDetails =
+        error && typeof error === 'object'
+          ? (error as { message?: string; details?: string; hint?: string })
+          : {}
       console.error('Error saving contact card:', error)
-      console.error('Error details:', error?.message, error?.details, error?.hint)
-      toast.error(error?.message || 'Failed to save contact card')
+      console.error('Error details:', errorDetails.message, errorDetails.details, errorDetails.hint)
+      toast.error(errorDetails.message || 'Failed to save contact card')
     }
   }
 

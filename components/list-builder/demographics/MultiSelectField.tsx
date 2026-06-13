@@ -6,7 +6,7 @@ import { MultiSelect } from "@/components/list-builder/common/multi-select"
 export interface MultiSelectFieldProps {
   label: string
   options: Array<{ label: string; value: string }>
-  values: string[]
+  values: string[] | undefined
   onChange: (values: string[]) => void
   icon?: React.ReactNode
   tooltip?: string
@@ -26,7 +26,7 @@ export function MultiSelectField({
     <MultiSelect
       label={label}
       options={options}
-      values={values}
+      selected={values}
       onChange={onChange}
       icon={icon}
       tooltip={tooltip}

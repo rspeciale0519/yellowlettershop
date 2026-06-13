@@ -4,7 +4,7 @@
  */
 
 import Stripe from 'stripe';
-import { stripe, requireStripe } from './stripe-config';
+import { requireStripe } from './stripe-config';
 import { createServiceClient } from '@/utils/supabase/service';
 import { PaymentServiceError } from './types';
 
@@ -15,7 +15,7 @@ export class CustomerService {
    * Ensure customer exists in Stripe and database
    */
   async ensureCustomer(userId: string, userEmail?: string): Promise<string> {
-    requireStripe();
+    const stripe = requireStripe();
 
     // Check if customer already exists
     const { data: profile, error: profileError } = await this.supabase
@@ -96,7 +96,7 @@ export class CustomerService {
    * Get customer details from Stripe
    */
   async getCustomer(customerId: string): Promise<Stripe.Customer> {
-    requireStripe();
+    const stripe = requireStripe();
 
     try {
       const customer = await stripe.customers.retrieve(customerId);
@@ -132,7 +132,7 @@ export class CustomerService {
       metadata?: Record<string, string>;
     }
   ): Promise<Stripe.Customer> {
-    requireStripe();
+    const stripe = requireStripe();
 
     try {
       return await stripe.customers.update(customerId, updates);

@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { withAuth } from '@/lib/auth/middleware'
 import { createClient } from '@/utils/supabase/service'
+import { batchValidateRecords } from '@/lib/api/accuzip/validation'
+import { buildValidationResults, type AccuzipRecord } from '@/lib/orders/accuzip-processor'
+import { dbRecordToAccuzip } from '@/lib/orders/upload-list-mapper'
+
+const accuzipConfigured = (): boolean => Boolean(process.env.ACCUZIP_API_KEY)
+const devSkipAllowed = (): boolean =>
+  process.env.NODE_ENV !== 'production' || process.env.ACCUZIP_SKIP_VALIDATION === 'true'
 
 const UploadRequestSchema = z.object({
   columnMapping: z.object({
@@ -32,7 +39,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
     const supabase = createClient()
     
     // Get records based on data source
-    let records: any[] = []
+    let records: Record<string, unknown>[] = []
     
     if (validatedData.listData.source === 'upload' && validatedData.listData.uploadedFileId) {
       // Fetch records from uploaded file
@@ -46,16 +53,41 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
       records = fileRecords || []
       
     } else if (validatedData.listData.source === 'saved_list' && validatedData.listData.mailingListId) {
-      // Fetch records from saved mailing list
+      // Records are scoped via the parent list (mailing_list_records has no
+      // user_id column). Verify the caller owns the list (created_by) or shares
+      // its team before reading any rows, then fetch by mailing_list_id.
+      const { data: list, error: listErr } = await supabase
+        .from('mailing_lists')
+        .select('id, created_by, team_id')
+        .eq('id', validatedData.listData.mailingListId)
+        .maybeSingle()
+
+      if (listErr) throw new Error('Failed to load mailing list')
+      if (!list) {
+        return NextResponse.json({ error: 'Mailing list not found' }, { status: 404 })
+      }
+
+      let owns = list.created_by === userId
+      if (!owns && list.team_id) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('team_id')
+          .eq('user_id', userId)
+          .maybeSingle()
+        owns = Boolean(profile?.team_id && profile.team_id === list.team_id)
+      }
+      if (!owns) {
+        return NextResponse.json({ error: 'Access denied to this mailing list' }, { status: 403 })
+      }
+
       const { data: listRecords, error } = await supabase
         .from('mailing_list_records')
         .select('*')
         .eq('mailing_list_id', validatedData.listData.mailingListId)
-        .eq('user_id', userId)
-      
+
       if (error) throw new Error('Failed to fetch list records')
       records = listRecords || []
-      
+
     } else if (validatedData.listData.records) {
       // Use provided records directly (from list builder)
       records = validatedData.listData.records
@@ -68,20 +100,29 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
       )
     }
     
-    // Transform records to AccuZip format based on column mapping
-    const accuzipRecords = records.map((record, index) => {
+    // Transform records to AccuZip format. Persisted (saved_list) rows use
+    // canonical DB columns, so map them directly; inline rows (upload /
+    // list_builder) still resolve via the wizard's source-column mapping.
+    const field = (record: Record<string, unknown>, key: string | undefined): string => {
+      const v = key ? record[key] : undefined
+      return v === null || v === undefined ? '' : String(v)
+    }
+    const accuzipRecords: AccuzipRecord[] = records.map((record, index) => {
+      if (validatedData.listData.source === 'saved_list') {
+        return dbRecordToAccuzip(record, index.toString())
+      }
       const mapping = validatedData.columnMapping
       return {
-        id: record.id || index.toString(),
-        address_line_1: record[mapping.address] || '',
-        address_line_2: record[mapping.address2 || ''] || '',
-        city: record[mapping.city] || '',
-        state: record[mapping.state] || '',
-        zip: record[mapping.zipCode] || '',
-        first_name: record[mapping.firstName || ''] || '',
-        last_name: record[mapping.lastName || ''] || '',
-        email: record[mapping.email || ''] || '',
-        phone: record[mapping.phone || ''] || ''
+        id: field(record, 'id') || index.toString(),
+        address_line_1: field(record, mapping.address),
+        address_line_2: field(record, mapping.address2),
+        city: field(record, mapping.city),
+        state: field(record, mapping.state),
+        zip: field(record, mapping.zipCode),
+        first_name: field(record, mapping.firstName),
+        last_name: field(record, mapping.lastName),
+        email: field(record, mapping.email),
+        phone: field(record, mapping.phone)
       }
     })
     
@@ -104,15 +145,24 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
       throw new Error('Failed to create validation job')
     }
     
-    // Start AccuZip validation process (async)
-    // In a real implementation, this would upload to AccuZip
-    // For now, we'll simulate the process
+    if (!accuzipConfigured() && !devSkipAllowed()) {
+      await supabase
+        .from('accuzip_validation_jobs')
+        .update({ status: 'error', error_message: 'Address validation unavailable: ACCUZIP_API_KEY is not configured' })
+        .eq('id', validationJob.id)
+      return NextResponse.json(
+        { error: 'Address validation is unavailable — ACCUZIP_API_KEY is not configured. Contact support.' },
+        { status: 503 }
+      )
+    }
+
     processAccuZipValidation(validationJob.id, accuzipRecords, supabase)
-    
+
     return NextResponse.json({
       jobId: validationJob.id,
       totalRecords: records.length,
-      status: 'pending'
+      status: 'pending',
+      validationMode: accuzipConfigured() ? 'live' : 'skipped_dev'
     })
     
   } catch (error) {
@@ -132,37 +182,36 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
   }
 })
 
-// Simulate AccuZip validation process
-async function processAccuZipValidation(jobId: string, records: any[], supabase: any) {
+// Validate the job's records against the real AccuZip client. Without an API
+// key this only runs in dev (skip semantics live in batchValidateRecords and
+// are logged); production without a key is rejected before we get here.
+async function processAccuZipValidation(
+  jobId: string,
+  records: AccuzipRecord[],
+  supabase: ReturnType<typeof createClient>
+) {
   try {
-    // Update job status to processing
     await supabase
       .from('accuzip_validation_jobs')
       .update({ status: 'processing' })
       .eq('id', jobId)
-    
-    // Simulate processing time
-    await new Promise(resolve => setTimeout(resolve, 5000))
-    
-    // Simulate validation results (90% deliverable rate)
-    const validatedRecords = records.map((record, index) => ({
-      ...record,
-      is_deliverable: Math.random() > 0.1, // 90% deliverable
-      standardized_address: {
-        address_line_1: record.address_line_1,
-        address_line_2: record.address_line_2,
-        city: record.city,
-        state: record.state,
-        zip: record.zip,
-        zip_plus_4: Math.random() > 0.5 ? '1234' : null
-      },
-      validation_errors: Math.random() > 0.9 ? ['Invalid ZIP code'] : null
-    }))
-    
-    const deliverableCount = validatedRecords.filter(r => r.is_deliverable).length
-    const undeliverableCount = records.length - deliverableCount
-    
-    // Update job with results
+
+    const recordsForValidation = records.map(
+      (record): { id: string; [key: string]: unknown } => ({ ...record })
+    )
+    const verdicts = await batchValidateRecords(recordsForValidation, 'address')
+    const byId = new Map(verdicts.map((v) => [v.recordId, v]))
+
+    const { validatedRecords, deliverableCount, undeliverableCount } = buildValidationResults(
+      records,
+      (record) => {
+        const v = byId.get(String(record.id))
+        return v
+          ? { valid: v.valid, errors: v.errors }
+          : { valid: false, errors: ['No validation verdict returned'] }
+      }
+    )
+
     await supabase
       .from('accuzip_validation_jobs')
       .update({
@@ -173,13 +222,8 @@ async function processAccuZipValidation(jobId: string, records: any[], supabase:
         completed_at: new Date().toISOString()
       })
       .eq('id', jobId)
-    
-    console.log(`AccuZip validation completed for job ${jobId}`)
-    
   } catch (error) {
     console.error('AccuZip validation processing error:', error)
-    
-    // Update job status to error
     await supabase
       .from('accuzip_validation_jobs')
       .update({

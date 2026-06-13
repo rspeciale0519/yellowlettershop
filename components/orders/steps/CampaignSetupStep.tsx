@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useState } from 'react'
-import { OrderStepProps } from '@/types/orders'
+import React, { useState, useEffect } from 'react'
+import { OrderStepProps, CampaignConfig } from '@/types/orders'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -25,15 +25,31 @@ import { useOrderWorkflow } from '../OrderProvider'
 export function CampaignSetupStep({ orderState }: OrderStepProps) {
   const { updateOrderState, nextStep, previousStep } = useOrderWorkflow()
   const [scheduledDate, setScheduledDate] = useState(
-    orderState.campaignOptions?.scheduledStartDate 
+    orderState.campaignOptions?.scheduledStartDate
       ? new Date(orderState.campaignOptions.scheduledStartDate).toISOString().split('T')[0]
       : ''
   )
 
+  // Spread base for partial updates: the two required booleans default to false,
+  // and every handler immediately sets the flag it owns, so these fallbacks are
+  // never persisted as meaningful values.
+  const baseCampaign: CampaignConfig =
+    orderState.campaignOptions ?? { isSplitCampaign: false, isRepeating: false }
+
+  // Commit a default campaign config on mount so a user who accepts all defaults
+  // (no split/repeat/schedule) still satisfies Step 4 validation — campaignOptions
+  // was previously only written on an explicit toggle, blocking "Continue".
+  useEffect(() => {
+    if (!orderState.campaignOptions) {
+      updateOrderState({ campaignOptions: { isSplitCampaign: false, isRepeating: false } })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const handleSplitCampaignChange = (isSplitCampaign: boolean) => {
     updateOrderState({
       campaignOptions: {
-        ...orderState.campaignOptions,
+        ...baseCampaign,
         isSplitCampaign,
         splitConfig: isSplitCampaign ? {
           numberOfDrops: 2,
@@ -46,9 +62,11 @@ export function CampaignSetupStep({ orderState }: OrderStepProps) {
   const handleSplitConfigChange = (field: 'numberOfDrops' | 'intervalWeeks', value: number) => {
     updateOrderState({
       campaignOptions: {
-        ...orderState.campaignOptions,
+        ...baseCampaign,
         splitConfig: {
-          ...orderState.campaignOptions?.splitConfig,
+          numberOfDrops: 2,
+          intervalWeeks: 2,
+          ...baseCampaign.splitConfig,
           [field]: value
         }
       }
@@ -58,7 +76,7 @@ export function CampaignSetupStep({ orderState }: OrderStepProps) {
   const handleRepeatingCampaignChange = (isRepeating: boolean) => {
     updateOrderState({
       campaignOptions: {
-        ...orderState.campaignOptions,
+        ...baseCampaign,
         isRepeating,
         repeatConfig: isRepeating ? {
           frequency: 'monthly',
@@ -71,9 +89,11 @@ export function CampaignSetupStep({ orderState }: OrderStepProps) {
   const handleRepeatConfigChange = (field: 'frequency' | 'repetitions', value: any) => {
     updateOrderState({
       campaignOptions: {
-        ...orderState.campaignOptions,
+        ...baseCampaign,
         repeatConfig: {
-          ...orderState.campaignOptions?.repeatConfig,
+          frequency: 'monthly',
+          repetitions: 3,
+          ...baseCampaign.repeatConfig,
           [field]: value
         }
       }
@@ -84,7 +104,7 @@ export function CampaignSetupStep({ orderState }: OrderStepProps) {
     setScheduledDate(dateString)
     updateOrderState({
       campaignOptions: {
-        ...orderState.campaignOptions,
+        ...baseCampaign,
         scheduledStartDate: dateString ? new Date(dateString) : undefined
       }
     })

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { OrderStepProps, PricingBreakdown } from '@/types/orders'
+import { OrderStepProps, PricingBreakdown, OrderApproval } from '@/types/orders'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -112,9 +112,16 @@ export function ReviewApprovalStep({ orderState }: OrderStepProps) {
   }
 
   const handleApprovalChange = (field: string, value: boolean) => {
+    const baseApproval: OrderApproval = orderState.approval ?? {
+      designLocked: false,
+      termsAccepted: false,
+      noRefundAcknowledged: false,
+      privacyPolicyAccepted: false,
+      approvedBy: 'current_user',
+    }
     updateOrderState({
       approval: {
-        ...orderState.approval,
+        ...baseApproval,
         [field]: value,
         approvedAt: value ? new Date() : undefined,
         approvedBy: 'current_user' // This would come from auth context
@@ -199,7 +206,7 @@ export function ReviewApprovalStep({ orderState }: OrderStepProps) {
               </div>
             </div>
             <Badge variant="outline">
-              {orderState.listData.dataSource?.replace('_', ' ').toUpperCase()}
+              {orderState.listData?.dataSource?.replace('_', ' ').toUpperCase()}
             </Badge>
           </div>
 

@@ -8,33 +8,60 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { FileText, AlertCircle, CheckCircle, Upload } from 'lucide-react'
 import { useOrderWorkflow } from '../OrderProvider'
 import { ColumnMappingPage } from '@/components/shared/column-mapping/ColumnMappingPage'
-import type { ColumnMappingData } from '@/components/shared/column-mapping'
+import type { ColumnMappingData, YLSField } from '@/components/shared/column-mapping'
+import { YLS_FIELDS } from '@/components/shared/column-mapping'
+import type { ListDataSelection } from '@/types/orders'
+import { persistUploadedList } from '@/lib/orders/persist-upload'
 
 export function ColumnMappingStep({ orderState }: OrderStepProps) {
   const { updateOrderState, nextStep, previousStep } = useOrderWorkflow()
+  const listData: ListDataSelection = orderState.listData ?? { useMailingData: false }
 
   const handleMappingComplete = (mappingData: ColumnMappingData) => {
     updateOrderState({
       columnMapping: mappingData
     })
+
+    // For uploaded files, persist the full list to mailing_list_records so
+    // validation + fulfillment run on real DB records. The mapping (with its
+    // previewData) is kept intact as the fallback, so a persist failure never
+    // breaks the existing happy path — we only *add* the resolved list id.
+    const file = orderState.listData?.uploadedFile
+    if (file) {
+      void persistUploadedList(file, mappingData.mappedFields)
+        .then((result) => {
+          if (!result) return
+          const baseList = orderState.listData ?? { useMailingData: true }
+          updateOrderState({
+            listData: {
+              ...baseList,
+              selectedListId: result.mailingListId,
+              dataSource: 'mlm_select',
+            },
+          })
+        })
+        .catch((err) => {
+          console.warn('Order upload persistence failed; using previewData fallback:', err)
+        })
+    }
     // Don't auto-advance - let user click Continue button to proceed
   }
 
   const getDataSource = () => {
-    if (orderState.listData.uploadedFile) {
+    if (listData.uploadedFile) {
       return {
         type: 'file' as const,
-        file: orderState.listData.uploadedFile
+        file: listData.uploadedFile
       }
-    } else if (orderState.listData.selectedListId) {
+    } else if (listData.selectedListId) {
       return {
         type: 'list' as const,
-        listId: orderState.listData.selectedListId
+        listId: listData.selectedListId
       }
-    } else if (orderState.listData.manualRecords) {
+    } else if (listData.manualRecords) {
       return {
         type: 'manual' as const,
-        records: orderState.listData.manualRecords
+        records: listData.manualRecords
       }
     }
     return null
@@ -45,16 +72,21 @@ export function ColumnMappingStep({ orderState }: OrderStepProps) {
     const dataSource = getDataSource()
     if (dataSource?.type === 'manual' && !orderState.columnMapping) {
       // Create automatic mapping for manual entries
+      const mappedFields: Record<string, string | null> = {
+        'first_name': 'first_name',
+        'last_name': 'last_name',
+        'address': 'address_line_1',
+        'city': 'city',
+        'state': 'state',
+        'zip_code': 'zip_code',
+        'email': 'email'
+      }
       const autoMapping: ColumnMappingData = {
-        mappedFields: {
-          'first_name': 'first_name',
-          'last_name': 'last_name',
-          'address': 'address_line_1',
-          'city': 'city',
-          'state': 'state',
-          'zip_code': 'zip_code',
-          'email': 'email'
-        },
+        sourceColumns: Object.keys(mappedFields),
+        mappedFields,
+        previewData: dataSource.records,
+        requiredFields: YLS_FIELDS.filter((f: YLSField) => f.required).map((f: YLSField) => f.key),
+        optionalFields: YLS_FIELDS.filter((f: YLSField) => !f.required).map((f: YLSField) => f.key),
         isComplete: false, // Don't auto-complete to prevent auto-advancement
         recordCount: dataSource.records.length
       }
@@ -129,7 +161,6 @@ export function ColumnMappingStep({ orderState }: OrderStepProps) {
       {dataSource.type === 'list' && (
         <ColumnMappingPage
           listId={dataSource.listId}
-          listName={orderState.listData.selectedListName}
           onMappingComplete={handleMappingComplete}
           onCancel={previousStep}
           mode="order-workflow"

@@ -49,6 +49,8 @@ export function useAtramentCanvas(
     }
 
     function onResize() {
+      if (!canvas) return
+
       const imageData = canvas
         .getContext('2d')
         ?.getImageData(0, 0, canvas.width, canvas.height)

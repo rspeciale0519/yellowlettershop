@@ -19,22 +19,23 @@ const ContactCardUpdateSchema = z.object({
 })
 
 interface RouteParams {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
-export const GET = withAuth(async (
-  request: NextRequest,
-  { userId }: { userId: string },
-  { params }: RouteParams
+export const GET = withAuth<RouteParams>(async (
+  request,
+  { userId },
+  { params }
 ) => {
   try {
     const supabase = createClient()
+    const { id } = await params
 
     // Get specific contact card
     const { data: contactCard, error } = await supabase
       .from('contact_cards')
       .select('*')
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', userId)
       .eq('is_soft_deleted', false)
       .single()
@@ -51,13 +52,14 @@ export const GET = withAuth(async (
   }
 })
 
-export const PUT = withAuth(async (
-  request: NextRequest,
-  { userId }: { userId: string },
-  { params }: RouteParams
+export const PUT = withAuth<RouteParams>(async (
+  request,
+  { userId },
+  { params }
 ) => {
   try {
     const supabase = createClient()
+    const { id } = await params
 
     // Parse and validate request body
     const body = await request.json()
@@ -69,7 +71,7 @@ export const PUT = withAuth(async (
         .from('contact_cards')
         .update({ is_default: false })
         .eq('user_id', userId)
-        .neq('id', params.id)
+        .neq('id', id)
     }
 
     // Update the contact card
@@ -79,7 +81,7 @@ export const PUT = withAuth(async (
         ...validatedData,
         updated_at: new Date().toISOString()
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', userId)
       .select()
       .single()
@@ -100,13 +102,14 @@ export const PUT = withAuth(async (
   }
 })
 
-export const DELETE = withAuth(async (
-  request: NextRequest,
-  { userId }: { userId: string },
-  { params }: RouteParams
+export const DELETE = withAuth<RouteParams>(async (
+  request,
+  { userId },
+  { params }
 ) => {
   try {
     const supabase = createClient()
+    const { id } = await params
 
     // Check if this is the user's last contact card
     const { data: cardCount, error: countError } = await supabase
@@ -133,7 +136,7 @@ export const DELETE = withAuth(async (
         is_soft_deleted: true,
         updated_at: new Date().toISOString()
       })
-      .eq('id', params.id)
+      .eq('id', id)
       .eq('user_id', userId)
 
     if (error) {

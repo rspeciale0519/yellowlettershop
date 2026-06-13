@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/service'
 import Stripe from 'stripe'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20'
+  apiVersion: '2025-08-27.basil'
 })
 
 const PaymentIntentSchema = z.object({
@@ -65,16 +65,15 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
     // Get or create Stripe customer
     const { data: userProfile } = await supabase
       .from('user_profiles')
-      .select('stripe_customer_id, email')
+      .select('stripe_customer_id')
       .eq('user_id', userId)
       .single()
-    
+
     let customerId = userProfile?.stripe_customer_id
-    
+
     if (!customerId) {
-      // Create new Stripe customer
+      // Create new Stripe customer (email lives on auth.users, not user_profiles)
       const customer = await stripe.customers.create({
-        email: userProfile?.email,
         metadata: {
           user_id: userId
         }
@@ -105,25 +104,12 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
       description: `Direct Mail Order - ${orderState.mailingOptions?.serviceLevel?.replace('_', ' ')} service`
     })
     
-    // Save payment intent to database
-    const { error: saveError } = await supabase
-      .from('payment_intents')
-      .insert({
-        id: paymentIntent.id,
-        user_id: userId,
-        stripe_customer_id: customerId,
-        amount: totalAmount,
-        currency: 'usd',
-        status: paymentIntent.status,
-        order_data: orderState,
-        created_at: new Date().toISOString()
-      })
-    
-    if (saveError) {
-      console.error('Error saving payment intent:', saveError)
-      // Don't fail the request, but log the error
-    }
-    
+    // Inline-payment model: the PaymentIntent's authoritative state lives in
+    // Stripe (carries metadata.user_id + amount). No separate payment_intents
+    // table — the order row is created at /api/orders/submit, which verifies
+    // this PI against Stripe and persists stripe_payment_intent_id + amounts on
+    // the order itself.
+
     return NextResponse.json({
       paymentIntentId: paymentIntent.id,
       clientSecret: paymentIntent.client_secret,

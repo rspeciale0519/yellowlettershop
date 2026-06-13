@@ -1,69 +1,70 @@
 "use client"
 
-import { useState } from "react"
-import { Search, Filter, ArrowUpDown, Download, Eye, Package, RefreshCw } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
+import { Search, Filter, ArrowUpDown, Eye, Package, RefreshCw, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-
-// Update imports to use the new data structures file
-import { orders } from "@/lib/data-structures"
-
-// Mock data for orders
-const mockOrders = orders
+import { Skeleton } from "@/components/ui/skeleton"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { OrderStatusBadge, orderStatusLabel } from "@/components/orders/order-status-badge"
+import { ORDER_STATUS_STEPS, type OrderSummary } from "@/lib/orders/order-summary"
 
 export default function OrdersPage() {
+  const [orders, setOrders] = useState<OrderSummary[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
   const [sortBy, setSortBy] = useState("recent")
-  const [expandedOrder, setExpandedOrder] = useState<string | null>(null)
 
-  // Filter and sort orders
-  const filteredOrders = mockOrders
-    .filter((order) => {
-      const matchesSearch = order.id.toLowerCase().includes(searchQuery.toLowerCase())
-      const matchesStatus = statusFilter === "all" || order.status.toLowerCase() === statusFilter.toLowerCase()
-      return matchesSearch && matchesStatus
-    })
-    .sort((a, b) => {
-      if (sortBy === "recent") {
-        return new Date(b.date).getTime() - new Date(a.date).getTime()
-      } else if (sortBy === "oldest") {
-        return new Date(a.date).getTime() - new Date(b.date).getTime()
-      } else if (sortBy === "total-high") {
-        return b.total - a.total
-      } else if (sortBy === "total-low") {
-        return a.total - b.total
-      }
-      return 0
-    })
-
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "delivered":
-        return "bg-green-500"
-      case "in transit":
-        return "bg-blue-500"
-      case "processing":
-        return "bg-yellow-500"
-      case "cancelled":
-        return "bg-red-500"
-      default:
-        return "bg-gray-500"
+  const load = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch("/api/orders")
+      if (!res.ok) throw new Error("Failed to load your orders")
+      const data = await res.json()
+      setOrders(data.orders ?? [])
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load your orders")
+    } finally {
+      setLoading(false)
     }
   }
+
+  useEffect(() => {
+    load()
+  }, [])
+
+  const filteredOrders = useMemo(
+    () =>
+      orders
+        .filter((order) => {
+          const matchesSearch = order.id.toLowerCase().includes(searchQuery.toLowerCase())
+          const matchesStatus = statusFilter === "all" || order.displayStatus === statusFilter
+          return matchesSearch && matchesStatus
+        })
+        .sort((a, b) => {
+          const aTime = a.submittedAt ? new Date(a.submittedAt).getTime() : 0
+          const bTime = b.submittedAt ? new Date(b.submittedAt).getTime() : 0
+          if (sortBy === "recent") return bTime - aTime
+          if (sortBy === "oldest") return aTime - bTime
+          if (sortBy === "total-high") return b.total - a.total
+          if (sortBy === "total-low") return a.total - b.total
+          return 0
+        }),
+    [orders, searchQuery, statusFilter, sortBy]
+  )
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Order History</h1>
         <Button asChild>
-          <a href="/orders/new?source=dashboard_create_new">Place New Order</a>
+          <Link href="/orders/new?source=dashboard_create_new">Place New Order</Link>
         </Button>
       </div>
 
@@ -71,7 +72,7 @@ export default function OrdersPage() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
-            placeholder="Search orders..."
+            placeholder="Search by order id..."
             className="pl-9"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -79,20 +80,23 @@ export default function OrdersPage() {
         </div>
         <div className="flex gap-2">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[200px]">
               <Filter className="mr-2 h-4 w-4" />
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="delivered">Delivered</SelectItem>
-              <SelectItem value="in transit">In Transit</SelectItem>
-              <SelectItem value="processing">Processing</SelectItem>
+              {ORDER_STATUS_STEPS.map((s) => (
+                <SelectItem key={s.status} value={s.status}>
+                  {orderStatusLabel(s.status)}
+                </SelectItem>
+              ))}
               <SelectItem value="cancelled">Cancelled</SelectItem>
+              <SelectItem value="rejected">Proof rejected</SelectItem>
             </SelectContent>
           </Select>
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[190px]">
               <ArrowUpDown className="mr-2 h-4 w-4" />
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
@@ -106,26 +110,48 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {filteredOrders.length === 0 ? (
+      {error && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>{error}</span>
+            <Button variant="outline" size="sm" onClick={load}>
+              <RefreshCw className="mr-2 h-3 w-3" />
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {loading ? (
+        <div className="space-y-3">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-14 w-full" />
+          ))}
+        </div>
+      ) : !error && filteredOrders.length === 0 ? (
         <div className="flex h-[400px] flex-col items-center justify-center rounded-lg border border-dashed p-8 text-center">
           <Package className="h-10 w-10 text-muted-foreground" />
-          <h3 className="mt-4 text-lg font-semibold">No orders found</h3>
+          <h3 className="mt-4 text-lg font-semibold">
+            {searchQuery || statusFilter !== "all" ? "No orders found" : "No orders yet"}
+          </h3>
           <p className="mt-2 text-sm text-muted-foreground">
             {searchQuery || statusFilter !== "all"
               ? "Try adjusting your search or filters"
-              : "You haven't placed any orders yet"}
+              : "Your direct mail campaigns will appear here once you place your first order."}
           </p>
           <Button className="mt-4" asChild>
-            <a href="/orders/new?source=dashboard_create_new">Place New Order</a>
+            <Link href="/orders/new?source=dashboard_create_new">Place New Order</Link>
           </Button>
         </div>
-      ) : (
+      ) : !error ? (
         <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Order ID</TableHead>
+                <TableHead>Order</TableHead>
                 <TableHead>Date</TableHead>
+                <TableHead>Pieces</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Total</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -134,30 +160,30 @@ export default function OrdersPage() {
             <TableBody>
               {filteredOrders.map((order) => (
                 <TableRow key={order.id} className="group">
-                  <TableCell className="font-medium">{order.id}</TableCell>
-                  <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
+                  <TableCell className="font-mono font-medium">
+                    #{order.id.split("-")[0].toUpperCase()}
+                  </TableCell>
                   <TableCell>
-                    <div className="flex items-center">
-                      <div className={`mr-2 h-2 w-2 rounded-full ${getStatusColor(order.status)}`} />
-                      {order.status}
-                    </div>
+                    {order.submittedAt ? new Date(order.submittedAt).toLocaleDateString() : "—"}
+                  </TableCell>
+                  <TableCell>{order.recordCount > 0 ? order.recordCount.toLocaleString() : "—"}</TableCell>
+                  <TableCell>
+                    <OrderStatusBadge status={order.displayStatus} />
                   </TableCell>
                   <TableCell className="text-right">${order.total.toFixed(2)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end space-x-2">
                       <Button variant="outline" size="sm" asChild>
+                        <Link href={`/orders/${order.id}`}>
+                          <Eye className="mr-2 h-4 w-4" />
+                          Details
+                        </Link>
+                      </Button>
+                      <Button variant="outline" size="sm" asChild>
                         <Link href={`/orders/new?reorderId=${order.id}&source=previous_orders_reorder`}>
                           <RefreshCw className="mr-2 h-4 w-4" />
                           Reorder
                         </Link>
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Eye className="mr-2 h-4 w-4" />
-                        Details
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Download className="mr-2 h-4 w-4" />
-                        Invoice
                       </Button>
                     </div>
                   </TableCell>
@@ -166,93 +192,7 @@ export default function OrdersPage() {
             </TableBody>
           </Table>
         </div>
-      )}
-
-      <div className="mt-8">
-        <h2 className="text-xl font-semibold mb-4">Order Details</h2>
-        <Accordion type="single" collapsible className="w-full">
-          {filteredOrders.map((order) => (
-            <AccordionItem key={order.id} value={order.id}>
-              <AccordionTrigger className="hover:bg-muted/50 px-4">
-                <div className="flex items-center">
-                  <span className="font-medium">{order.id}</span>
-                  <Badge className="ml-4" variant={order.status.toLowerCase() === "delivered" ? "default" : "outline"}>
-                    {order.status}
-                  </Badge>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-4 pb-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Order Summary</CardTitle>
-                      <CardDescription>Placed on {new Date(order.date).toLocaleDateString()}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div>
-                          <h4 className="font-medium">Items</h4>
-                          <ul className="mt-2 space-y-2">
-                            {order.items.map((item, index) => (
-                              <li key={index} className="flex justify-between text-sm">
-                                <span>
-                                  {item.quantity} × {item.name}
-                                </span>
-                                <span>${item.price.toFixed(2)}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                        <div className="border-t pt-4">
-                          <div className="flex justify-between font-medium">
-                            <span>Total</span>
-                            <span>${order.total.toFixed(2)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Shipping Information</CardTitle>
-                      <CardDescription>
-                        {order.shipping?.trackingNumber ? "Tracking available" : "No tracking available yet"}
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div>
-                          <h4 className="font-medium">Shipping Method</h4>
-                          <p className="text-sm text-muted-foreground">{order.shipping?.method}</p>
-                        </div>
-                        <div>
-                          <h4 className="font-medium">Shipping Address</h4>
-                          <p className="text-sm text-muted-foreground">{order.shipping?.address}</p>
-                        </div>
-                        {order.shipping?.trackingNumber && (
-                          <div>
-                            <h4 className="font-medium">Tracking Number</h4>
-                            <p className="text-sm text-muted-foreground">{order.shipping?.trackingNumber}</p>
-                            <Button variant="link" className="h-auto p-0 text-sm" asChild>
-                              <a
-                                href={`https://tools.usps.com/go/TrackConfirmAction?tLabels=${order.shipping?.trackingNumber}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                Track Package
-                              </a>
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
-      </div>
+      ) : null}
     </div>
   )
 }

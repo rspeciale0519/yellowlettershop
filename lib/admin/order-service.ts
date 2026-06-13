@@ -111,7 +111,7 @@ export async function captureOrderPayment(
   const { PaymentIntentService } = await import('@/lib/payments/payment-intent-service');
   const service = new PaymentIntentService();
 
-  await service.capturePayment(paymentIntentId);
+  await service.capturePayment({ paymentIntentId });
 
   const supabase = createServiceClient();
   await supabase.from('orders').update({ status: 'processing' }).eq('id', orderId);
@@ -138,7 +138,7 @@ export async function refundOrder(
   const { PaymentIntentService } = await import('@/lib/payments/payment-intent-service');
   const service = new PaymentIntentService();
 
-  await service.refundPayment(paymentIntentId, amount, reason as 'duplicate' | 'fraudulent' | 'requested_by_customer');
+  await service.refundPayment({ paymentIntentId, amount, reason });
 
   const supabase = createServiceClient();
   await supabase.from('orders').update({ status: 'cancelled' }).eq('id', orderId);
@@ -159,10 +159,11 @@ export async function assignVendor(
 ): Promise<void> {
   const supabase = createServiceClient();
 
+  // Vendor assignment is recorded via the audit log below; the order row only
+  // needs its updated_at bumped (order_state JSONB is left untouched here).
   const { error } = await supabase
     .from('orders')
     .update({
-      order_state: supabase.rpc ? undefined : undefined, // vendor stored in order_state JSONB
       updated_at: new Date().toISOString(),
     })
     .eq('id', orderId);

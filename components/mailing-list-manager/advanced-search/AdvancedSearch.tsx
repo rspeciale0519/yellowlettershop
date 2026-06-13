@@ -14,10 +14,55 @@ import {
   MailingHistoryFilter,
   RecordCountFilter,
   ListFilter,
+  CombinedConjunction,
   Column,
   Tag,
   List,
 } from "./types"
+
+// Rebuild a valid ColumnFilter from a base filter plus partial updates.
+// ColumnFilter is a discriminated union keyed on `operator`, so a plain
+// spread loses the operator/value correlation; re-discriminate here instead.
+function mergeColumnFilter(
+  base: ColumnFilter,
+  updates: Partial<ColumnFilter>,
+): ColumnFilter {
+  const id = base.id
+  const columnId = updates.columnId ?? base.columnId
+  const operator = updates.operator ?? base.operator
+  const value = "value" in updates ? updates.value : base.value
+
+  switch (operator) {
+    case "empty":
+    case "notEmpty":
+      return { id, columnId, operator }
+    case "greaterThan":
+    case "lessThan":
+      return {
+        id,
+        columnId,
+        operator,
+        value: typeof value === "number" || value instanceof Date ? value : 0,
+      }
+    case "between":
+      return {
+        id,
+        columnId,
+        operator,
+        value:
+          Array.isArray(value) && value.length === 2
+            ? value
+            : [0, 0],
+      }
+    default:
+      return {
+        id,
+        columnId,
+        operator,
+        value: typeof value === "string" || typeof value === "number" ? value : "",
+      }
+  }
+}
 
 interface AdvancedSearchProps {
   isOpen: boolean
@@ -43,7 +88,7 @@ export function AdvancedSearch({
       mailingHistoryFilter: null,
       recordCountFilter: null,
       listFilter: null,
-      logicalOperator: "AND",
+      conjunction: "AND",
     },
   )
 
@@ -81,7 +126,7 @@ export function AdvancedSearch({
         typeof crypto !== "undefined" && "randomUUID" in crypto
           ? crypto.randomUUID()
           : `col-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
-      column: columns[0].id,
+      columnId: columns[0].id,
       operator: "contains",
       value: "",
     }
@@ -99,9 +144,13 @@ export function AdvancedSearch({
   const updateColumnFilter = (id: string, updates: Partial<ColumnFilter>) => {
     updateCriteria({
       columnFilters: criteria.columnFilters.map((filter) =>
-        filter.id === id ? { ...filter, ...updates } : filter
+        filter.id === id ? mergeColumnFilter(filter, updates) : filter
       ),
     })
+  }
+
+  const setConjunction = (conjunction: CombinedConjunction) => {
+    updateCriteria({ conjunction })
   }
 
   const setTagFilter = (tagFilter: TagFilter | null) => {
@@ -136,9 +185,11 @@ export function AdvancedSearch({
         <ColumnFiltersSection
           columnFilters={criteria.columnFilters}
           columns={columns}
+          conjunction={criteria.conjunction}
           onAddFilter={addColumnFilter}
           onRemoveFilter={removeColumnFilter}
           onUpdateFilter={updateColumnFilter}
+          onSetConjunction={setConjunction}
         />
 
         <div className="flex flex-col md:flex-row gap-4 mb-4">

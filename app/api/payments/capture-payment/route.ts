@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const validatedData = capturePaymentSchema.parse(body);
 
     // Get authenticated user
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
@@ -74,10 +74,10 @@ export async function POST(request: NextRequest) {
 
     // Initialize payment service and capture payment
     const paymentService = new PaymentService();
-    await paymentService.capturePayment(
-      validatedData.paymentIntentId,
-      validatedData.captureAmount
-    );
+    await paymentService.capturePayment({
+      paymentIntentId: validatedData.paymentIntentId,
+      amount: validatedData.captureAmount,
+    });
 
     // If this is for a campaign, update campaign status
     if (transaction.campaign_id) {

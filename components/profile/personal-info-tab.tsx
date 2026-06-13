@@ -126,7 +126,8 @@ export function PersonalInfoTab({ user, profile, onProfileUpdate }: PersonalInfo
       }
     } catch (error) {
       console.error('Error uploading image:', error)
-      toast.error(`Failed to upload image: ${error.message}`)
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      toast.error(`Failed to upload image: ${message}`)
     } finally {
       setUploadingImage(false)
       setSelectedImageFile(null)

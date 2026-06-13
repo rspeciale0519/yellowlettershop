@@ -31,7 +31,7 @@ export interface AddRecordModalProps {
   onOpenChange: (open: boolean) => void
   onSuccess: (newRecord: NewRecord) => void
   lists?: MailingListSummary[]
-  onCreateNewList: (listName: string) => Promise<MailingListSummary>
+  onCreateNewList: (listName: string) => Promise<MailingListSummary | null>
 }
 
 export interface CustomField {

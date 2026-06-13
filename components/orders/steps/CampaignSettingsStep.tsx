@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
-import { OrderStepProps } from '@/types/orders'
+import React, { useState } from 'react'
+import { OrderStepProps, StepValidation } from '@/types/orders'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -11,9 +11,29 @@ import { useOrderWorkflow } from '../OrderProvider'
 import { MailingOptionsStep } from './MailingOptionsStep'
 import { CampaignSetupStep } from './CampaignSetupStep'
 
+// MailingOptionsStep / CampaignSetupStep both require the full OrderStepProps
+// but drive all state through the workflow context internally; this validation
+// placeholder satisfies the prop contract without altering their behavior.
+const noopValidation: StepValidation = {
+  isValid: false,
+  errors: [],
+  warnings: [],
+  canProceed: false,
+  requiredFields: [],
+  completedFields: [],
+}
+
 export function CampaignSettingsStep({ orderState }: OrderStepProps) {
-  const { updateOrderState, nextStep, previousStep } = useOrderWorkflow()
+  const { updateOrderState, nextStep, previousStep, saveDraft } = useOrderWorkflow()
   const [activeTab, setActiveTab] = useState<'mailing' | 'campaign'>('mailing')
+
+  const childStepProps = {
+    onUpdateState: updateOrderState,
+    onNext: nextStep,
+    onBack: previousStep,
+    onSaveDraft: () => { void saveDraft() },
+    validation: noopValidation,
+  }
 
   // Check completion status
   const hasMailingOptions = Boolean(
@@ -29,34 +49,6 @@ export function CampaignSettingsStep({ orderState }: OrderStepProps) {
   // No auto-advancement - let user control tab navigation
 
   const canProceed = hasMailingOptions && hasCampaignSetup
-
-  const handleMailingOptionsComplete = (mailingOptions: any) => {
-    // Update the consolidated structure
-    updateOrderState({
-      campaignSettings: {
-        mailingOptions,
-        campaignOptions: orderState.campaignSettings?.campaignOptions || orderState.campaignOptions
-      },
-      // Also update legacy structure for compatibility
-      mailingOptions
-    })
-
-    // Don't auto-advance tab - let user manually navigate
-  }
-
-  const handleCampaignSetupComplete = (campaignOptions: any) => {
-    // Update the consolidated structure
-    updateOrderState({
-      campaignSettings: {
-        mailingOptions: orderState.campaignSettings?.mailingOptions || orderState.mailingOptions,
-        campaignOptions
-      },
-      // Also update legacy structure for compatibility
-      campaignOptions
-    })
-
-    // Don't auto-advance - let user click Continue button to proceed
-  }
 
   return (
     <div className="w-full space-y-6">
@@ -106,7 +98,7 @@ export function CampaignSettingsStep({ orderState }: OrderStepProps) {
                   ...orderState,
                   mailingOptions: orderState.campaignSettings?.mailingOptions || orderState.mailingOptions
                 }}
-                onMailingOptionsComplete={handleMailingOptionsComplete}
+                {...childStepProps}
               />
             </TabsContent>
 
@@ -118,7 +110,7 @@ export function CampaignSettingsStep({ orderState }: OrderStepProps) {
                     campaignOptions: orderState.campaignSettings?.campaignOptions || orderState.campaignOptions,
                     mailingOptions: orderState.campaignSettings?.mailingOptions || orderState.mailingOptions
                   }}
-                  onCampaignSetupComplete={handleCampaignSetupComplete}
+                  {...childStepProps}
                 />
               ) : (
                 <Alert>

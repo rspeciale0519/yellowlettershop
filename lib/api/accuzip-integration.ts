@@ -36,8 +36,8 @@ export async function createListFromAccuZIPCriteria(
     const list = await createMailingListFn({
       name,
       description: options?.description || `List created from AccuZIP criteria (Est. ${estimatedTotal.toLocaleString()} records)`,
-      criteria,
-      metadata: {
+      source_type: 'list_builder',
+      source_criteria: {
         source: 'accuzip',
         createdFrom: 'list_builder',
         estimatedTotal,
@@ -222,8 +222,10 @@ export async function validateListRecords(
       return { validated: 0, valid: 0, invalid: 0, updated: 0 }
     }
     
-    // Batch validate records
-    const validationResults = await batchValidateRecords(records, validationType)
+    // Batch validate records. AccuZIP's batch endpoint supports address-only
+    // or full validation; map the broader request type accordingly.
+    const accuzipValidationType = validationType === 'address' ? 'address' : 'full'
+    const validationResults = await batchValidateRecords(records, accuzipValidationType)
     
     let valid = 0
     let invalid = 0

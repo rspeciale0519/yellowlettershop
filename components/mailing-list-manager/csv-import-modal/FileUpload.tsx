@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label'
 import { FileText } from 'lucide-react'
 
 interface FileUploadProps {
-  fileInputRef: React.RefObject<HTMLInputElement>
+  fileInputRef: React.RefObject<HTMLInputElement | null>
   file: File | null
   onFileSelect: (event: React.ChangeEvent<HTMLInputElement>) => void
   isImporting: boolean

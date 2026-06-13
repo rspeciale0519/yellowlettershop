@@ -18,6 +18,19 @@ import { getVersionHistory, restoreFromSnapshot, createSnapshot } from '@/lib/su
 import type { MailingListVersion } from '@/types/supabase'
 import { formatDistanceToNow, format } from 'date-fns'
 
+function getMetadataString(
+  metadata: MailingListVersion['metadata'],
+  key: string
+): string | undefined {
+  if (metadata && typeof metadata === 'object' && !Array.isArray(metadata)) {
+    const value = (metadata as Record<string, unknown>)[key]
+    if (typeof value === 'string') {
+      return value
+    }
+  }
+  return undefined
+}
+
 interface VersionHistoryPanelProps {
   mailingListId: string
   mailingListName: string
@@ -173,10 +186,10 @@ export function VersionHistoryPanel({
                       <Badge variant="outline" className="font-mono">
                         v{version.version_number}
                       </Badge>
-                      <Badge 
-                        className={getSnapshotTypeColor(version.snapshot_type)}
+                      <Badge
+                        className={getSnapshotTypeColor(getMetadataString(version.metadata, 'snapshot_type') ?? 'manual')}
                       >
-                        {getSnapshotTypeLabel(version.snapshot_type)}
+                        {getSnapshotTypeLabel(getMetadataString(version.metadata, 'snapshot_type') ?? 'manual')}
                       </Badge>
                     </div>
                     <Button
@@ -197,25 +210,27 @@ export function VersionHistoryPanel({
                   <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2">
                     <div className="flex items-center gap-1">
                       <Users className="h-4 w-4" />
-                      <span>{version.record_count.toLocaleString()} records</span>
+                      <span>{(version.record_count ?? 0).toLocaleString()} records</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Clock className="h-4 w-4" />
-                      <span>{formatDistanceToNow(new Date(version.created_at), { addSuffix: true })}</span>
+                      <span>{version.created_at ? formatDistanceToNow(new Date(version.created_at), { addSuffix: true }) : 'Unknown'}</span>
                     </div>
                   </div>
 
                   <p className="text-xs text-muted-foreground">
-                    Created on {format(new Date(version.created_at), 'MMM d, yyyy \'at\' h:mm a')}
+                    {version.created_at
+                      ? `Created on ${format(new Date(version.created_at), 'MMM d, yyyy \'at\' h:mm a')}`
+                      : 'Creation date unknown'}
                   </p>
 
                   {version.metadata && (
                     <div className="mt-2 text-xs text-muted-foreground">
-                      {version.metadata.description && (
-                        <p>{version.metadata.description}</p>
+                      {getMetadataString(version.metadata, 'description') && (
+                        <p>{getMetadataString(version.metadata, 'description')}</p>
                       )}
-                      {version.metadata.action && (
-                        <p>Action: {version.metadata.action}</p>
+                      {getMetadataString(version.metadata, 'action') && (
+                        <p>Action: {getMetadataString(version.metadata, 'action')}</p>
                       )}
                     </div>
                   )}

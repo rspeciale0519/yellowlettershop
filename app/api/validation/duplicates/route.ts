@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { record, records, options = {} } = body
 
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
     
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -131,7 +131,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
     
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser()

@@ -21,22 +21,28 @@ import { ChevronDown, Settings } from 'lucide-react';
 import type { PropertyCriteria } from '@/types/list-builder';
 import type { ReactNode } from 'react';
 
+// Range sections operate only on the numeric-array fields of PropertyCriteria
+// (everything except `propertyTypes: string[]`).
+type PropertyRangeField = {
+  [K in keyof PropertyCriteria]: PropertyCriteria[K] extends number[] ? K : never;
+}[keyof PropertyCriteria];
+
 interface PropertyRangeSectionProps {
   title: string;
   description: string;
-  field: keyof PropertyCriteria;
+  field: PropertyRangeField;
   criteria: PropertyCriteria;
-  onUpdate: (field: keyof PropertyCriteria, value: number[]) => void;
+  onUpdate: (field: PropertyRangeField, value: number[]) => void;
   formatValue: (value: number) => string;
   min: number;
   max: number;
   step: number;
   customRange: [number, number] | null;
   onCustomRangeInput: (
-    field: keyof PropertyCriteria,
+    field: PropertyRangeField,
     value: [number, number] | null
   ) => void;
-  onApplyCustomRange: (field: keyof PropertyCriteria) => void;
+  onApplyCustomRange: (field: PropertyRangeField) => void;
   expanded: boolean;
   onToggle: () => void;
   icon: ReactNode;

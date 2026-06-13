@@ -306,13 +306,13 @@ function validateRecord(record: Record<string, unknown>) {
   return errors
 }
 
-function isValidEmail(email: string): boolean {
+function isValidEmail(email: unknown): boolean {
   if (!email || typeof email !== 'string') return false
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   return emailRegex.test(email.trim())
 }
 
-function isValidZipCode(zipCode: string): boolean {
+function isValidZipCode(zipCode: unknown): boolean {
   if (!zipCode || typeof zipCode !== 'string') return false
   const zipRegex = /^\d{5}(-\d{4})?$/
   return zipRegex.test(zipCode.trim())

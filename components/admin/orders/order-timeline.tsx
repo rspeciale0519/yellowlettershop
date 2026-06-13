@@ -56,19 +56,19 @@ export function OrderTimeline({ entries, orderCreatedAt, orderStatus }: OrderTim
               {/* Content */}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium">{config.label}</p>
-                {newVal?.status && (
+                {Boolean(newVal?.status) && (
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {entry.old_value?.status ? `${entry.old_value.status} → ` : ''}{newVal.status as string}
+                    {entry.old_value?.status ? `${String(entry.old_value.status)} → ` : ''}{String(newVal?.status)}
                   </p>
                 )}
-                {newVal?.notes && (
+                {Boolean(newVal?.notes) && (
                   <p className="text-xs text-muted-foreground mt-0.5 italic">
-                    "{newVal.notes as string}"
+                    "{String(newVal?.notes)}"
                   </p>
                 )}
-                {newVal?.paymentIntentId && (
+                {Boolean(newVal?.paymentIntentId) && (
                   <p className="text-xs font-mono text-muted-foreground mt-0.5">
-                    {(newVal.paymentIntentId as string).slice(0, 20)}...
+                    {String(newVal?.paymentIntentId).slice(0, 20)}...
                   </p>
                 )}
                 <p className="text-[11px] text-muted-foreground/60 mt-1">

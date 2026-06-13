@@ -118,7 +118,7 @@ export function StreamlinedColumnMapping({
             {...provided.droppableProps}
             className={`
               flex items-center justify-between py-2 px-3 rounded-lg border transition-all
-              ${snapshot.isDraggedOver ? 'border-[#F6CF62] bg-[#FFF9E8]' : 'border-gray-200'}
+              ${snapshot.isDraggingOver ? 'border-[#F6CF62] bg-[#FFF9E8]' : 'border-gray-200'}
               ${isMapped ? 'bg-green-50 border-green-200' : isRequired ? 'bg-red-50 border-red-200' : ''}
             `}
           >
@@ -164,7 +164,7 @@ export function StreamlinedColumnMapping({
                 </div>
               ) : (
                 <span className="text-xs text-gray-400 px-3 py-1 bg-gray-100 rounded">
-                  {snapshot.isDraggedOver ? 'Drop here' : 'Drag column here'}
+                  {snapshot.isDraggingOver ? 'Drop here' : 'Drag column here'}
                 </span>
               )}
             </div>

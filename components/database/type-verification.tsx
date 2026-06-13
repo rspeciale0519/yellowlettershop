@@ -39,8 +39,8 @@ export function TypeVerification({ className }: TypeVerificationProps) {
       // Test 1: Basic type instantiation
       const testUserProfile: Partial<UserProfile> = {
         user_id: '12345678-1234-1234-1234-123456789012',
-        subscription_plan: 'pro',
         role: 'pro_user',
+        account_status: 'active',
         timezone: 'America/New_York'
       }
       results.push({ name: 'UserProfile type', status: 'passed' })
@@ -52,8 +52,8 @@ export function TypeVerification({ className }: TypeVerificationProps) {
         record_count: 0,
         source_type: 'manual',
         is_active: true,
-        validation_status: 'pending',
-        validation_results: {}
+        estimated_cost: 0,
+        metadata: {}
       }
       results.push({ name: 'MailingList type', status: 'passed' })
 
@@ -61,25 +61,21 @@ export function TypeVerification({ className }: TypeVerificationProps) {
       const testCampaign: Partial<Campaign> = {
         name: 'Test Campaign',
         campaign_type: 'single',
-        design_data: {},
-        design_type: 'letter',
+        design_id: '12345678-1234-1234-1234-123456789012',
         fulfillment_type: 'full_service',
-        total_drops: 1,
-        drop_interval_days: 7,
-        recurrence_count: 1,
-        recurrence_interval_days: 30,
+        postage_type: 'first_class',
+        total_records: 1,
+        repeat_config: {},
+        split_config: {},
         status: 'draft'
       }
       results.push({ name: 'Campaign type', status: 'passed' })
 
       // Test 4: List builder criteria type
       const testCriteria: Partial<ListBuilderCriteria> = {
-        criteria_data: {
-          geography: { states: ['CA', 'NY'] },
-          demographics: { age_range: [25, 65] }
-        },
-        is_template: false,
-        api_provider: 'melissa'
+        geographic: { states: ['CA', 'NY'] },
+        demographic: { age_range: [25, 65] },
+        property: { property_type: ['single_family'] }
       }
       results.push({ name: 'ListBuilderCriteria type', status: 'passed' })
 
@@ -88,8 +84,8 @@ export function TypeVerification({ className }: TypeVerificationProps) {
         resource_type: 'mailing_list',
         change_type: 'update',
         field_name: 'name',
-        old_value: { name: 'Old Name' },
-        new_value: { name: 'New Name' },
+        old_value: 'Old Name',
+        new_value: 'New Name',
         is_undoable: true
       }
       results.push({ name: 'ChangeHistory type', status: 'passed' })
@@ -122,14 +118,11 @@ export function TypeVerification({ className }: TypeVerificationProps) {
       // Test 9: Vendor type
       const testVendor: Partial<Vendor> = {
         name: 'Test Vendor',
-        vendor_type: 'print',
-        contact_email: 'vendor@example.com',
-        services_offered: ['printing', 'mailing'],
+        vendor_type: ['print'],
+        contact_info: { email: 'vendor@example.com' },
         pricing_tiers: {},
-        minimum_order_quantity: 1,
-        quality_rating: 4.5,
-        is_active: true,
-        contract_terms: {}
+        performance_metrics: {},
+        is_active: true
       }
       results.push({ name: 'Vendor type', status: 'passed' })
 

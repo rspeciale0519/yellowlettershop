@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { FieldSelection } from './FieldSelection';
-import { FormatOptions } from './FormatOptions';
+import { FormatOptions, type FormatOption } from './FormatOptions';
 import { DictionarySection } from './DictionarySection';
 import type { ColumnDef } from '../customizable-table';
 
@@ -26,7 +26,31 @@ interface FormatDataModalProps {
   applyLabel?: string;
 }
 
-type RecordSelection = 'all' | 'range' | 'next' | 'rest' | 'record';
+type RecordSelection =
+  | 'all'
+  | 'range'
+  | 'fromTo'
+  | 'next'
+  | 'rest'
+  | 'record'
+  | 'marked'
+  | 'deleted'
+  | 'selection';
+
+const RECORD_SELECTIONS: readonly string[] = [
+  'all',
+  'range',
+  'fromTo',
+  'next',
+  'rest',
+  'record',
+  'marked',
+  'deleted',
+  'selection',
+];
+
+const isRecordSelection = (value: string): value is RecordSelection =>
+  RECORD_SELECTIONS.includes(value);
 
 interface RecordRange {
   from: string;
@@ -34,6 +58,7 @@ interface RecordRange {
   next: string;
   rest: string;
   record: string;
+  startAt: string;
 }
 
 interface DictionaryEntry {
@@ -43,7 +68,7 @@ interface DictionaryEntry {
 
 interface ApplyFormatOptions {
   columns: string[];
-  formatOption: string;
+  formatOption: FormatOption;
   recordSelection: RecordSelection;
   recordRange: RecordRange;
   dictionaryEnabled: boolean;
@@ -64,14 +89,20 @@ export function FormatDataModal({
   description = 'Apply text formatting to selected columns and records.',
 }: FormatDataModalProps) {
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
-  const [formatOption, setFormatOption] = useState<string>('upper');
+  const [formatOption, setFormatOption] = useState<FormatOption>('upper');
   const [recordSelection, setRecordSelection] = useState<RecordSelection>('all');
+  const handleRecordSelectionChange = (selection: string) => {
+    if (isRecordSelection(selection)) {
+      setRecordSelection(selection);
+    }
+  };
   const [recordRange, setRecordRange] = useState<RecordRange>({
     from: '1',
     to: '100',
     next: '1',
     rest: '1',
     record: '1',
+    startAt: '1',
   });
   const [dictionaryEnabled, setDictionaryEnabled] = useState<boolean>(false);
   const [includeDeleted, setIncludeDeleted] = useState<boolean>(false);
@@ -169,7 +200,7 @@ export function FormatDataModal({
                 selectedColumns={selectedColumns}
                 onToggleColumn={toggleColumnSelection}
                 recordSelection={recordSelection}
-                onRecordSelectionChange={setRecordSelection}
+                onRecordSelectionChange={handleRecordSelectionChange}
                 recordRange={recordRange}
                 onRecordRangeChange={setRecordRange}
               />

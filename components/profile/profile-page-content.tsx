@@ -48,8 +48,8 @@ export default function ProfilePageContent() {
     }
   }
 
-  const updateProfile = async (updates: Partial<UserProfile>) => {
-    if (!user || !profile) return
+  const updateProfile = async (updates: Partial<UserProfile>): Promise<boolean> => {
+    if (!user || !profile) return false
 
     try {
       console.log('🔄 Updating profile for user:', user.id, 'with updates:', updates)

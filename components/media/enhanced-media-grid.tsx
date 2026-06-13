@@ -13,6 +13,16 @@ import {
   FileIcon as FilePdf,
 } from "lucide-react"
 
+function getAssetTags(metadata: UserAsset['metadata']): string[] {
+  if (metadata && typeof metadata === 'object' && !Array.isArray(metadata)) {
+    const tags = (metadata as Record<string, unknown>).tags
+    if (Array.isArray(tags)) {
+      return tags.filter((tag): tag is string => typeof tag === 'string')
+    }
+  }
+  return []
+}
+
 interface EnhancedMediaGridProps {
   filteredMediaFiles: UserAsset[]
   newlyUploadedIds: Set<string>
@@ -152,20 +162,23 @@ export function EnhancedMediaGrid({
               </h3>
               
               {/* Tags */}
-              {file.metadata?.tags && file.metadata.tags.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {file.metadata.tags.slice(0, 3).map((tag: string, index: number) => (
-                    <Badge key={index} variant="secondary" className="text-xs px-1.5 py-0.5">
-                      {tag}
-                    </Badge>
-                  ))}
-                  {file.metadata.tags.length > 3 && (
-                    <Badge variant="outline" className="text-xs px-1.5 py-0.5">
-                      +{file.metadata.tags.length - 3}
-                    </Badge>
-                  )}
-                </div>
-              )}
+              {(() => {
+                const tags = getAssetTags(file.metadata)
+                return tags.length > 0 ? (
+                  <div className="flex flex-wrap gap-1">
+                    {tags.slice(0, 3).map((tag: string, index: number) => (
+                      <Badge key={index} variant="secondary" className="text-xs px-1.5 py-0.5">
+                        {tag}
+                      </Badge>
+                    ))}
+                    {tags.length > 3 && (
+                      <Badge variant="outline" className="text-xs px-1.5 py-0.5">
+                        +{tags.length - 3}
+                      </Badge>
+                    )}
+                  </div>
+                ) : null
+              })()}
               
               <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <span>{formatFileSize(file.file_size)}</span>

@@ -48,13 +48,13 @@ export function requireStripe(): Stripe {
  * Client-side Stripe instance (lazy-loaded)
  * Used for Stripe Elements and client-side payment processing
  */
-let stripePromise: Promise<Stripe | null> | null = null;
+let stripePromise: Promise<import('@stripe/stripe-js').Stripe | null> | null = null;
 
 export const getStripe = (): Promise<import('@stripe/stripe-js').Stripe | null> => {
   if (!stripePromise) {
     stripePromise = loadStripe(stripePublishableKey!);
   }
-  return stripePromise as Promise<import('@stripe/stripe-js').Stripe | null>;
+  return stripePromise;
 };
 
 /**

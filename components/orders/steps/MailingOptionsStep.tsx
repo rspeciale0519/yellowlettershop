@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { OrderStepProps } from '@/types/orders'
+import { OrderStepProps, MailingOptionsConfig } from '@/types/orders'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -40,6 +40,13 @@ export function MailingOptionsStep({ orderState }: OrderStepProps) {
   const [pricingEstimate, setPricingEstimate] = useState<any>(null)
   const [isCalculatingPricing, setIsCalculatingPricing] = useState(false)
 
+  // Spread base for partial updates — required fields are always overwritten by
+  // the handler (service-level change) or guarded by render conditions that only
+  // appear once a service level is selected, so these fallbacks are never the
+  // persisted runtime values.
+  const baseOptions: MailingOptionsConfig =
+    orderState.mailingOptions ?? { serviceLevel: 'full_service', includePostage: false }
+
   // Load user's default shipping address if available
   useEffect(() => {
     if (orderState.contactCard?.contactCardData) {
@@ -71,7 +78,7 @@ export function MailingOptionsStep({ orderState }: OrderStepProps) {
   const handleServiceLevelChange = (serviceLevel: 'full_service' | 'ship_processed' | 'print_only') => {
     updateOrderState({
       mailingOptions: {
-        ...orderState.mailingOptions,
+        ...baseOptions,
         serviceLevel,
         // Reset postage/shipping options based on service level
         includePostage: serviceLevel === 'full_service',
@@ -83,7 +90,7 @@ export function MailingOptionsStep({ orderState }: OrderStepProps) {
   const handlePostageTypeChange = (postageType: 'first_class_forever' | 'first_class_discounted' | 'standard') => {
     updateOrderState({
       mailingOptions: {
-        ...orderState.mailingOptions,
+        ...baseOptions,
         postageType
       }
     })
@@ -93,7 +100,7 @@ export function MailingOptionsStep({ orderState }: OrderStepProps) {
   const handleFormatChange = (field: string, value: string) => {
     updateOrderState({
       mailingOptions: {
-        ...orderState.mailingOptions,
+        ...baseOptions,
         [field]: value
       }
     })
@@ -135,7 +142,7 @@ export function MailingOptionsStep({ orderState }: OrderStepProps) {
   const handleIncludePostageChange = (includePostage: boolean) => {
     updateOrderState({
       mailingOptions: {
-        ...orderState.mailingOptions,
+        ...baseOptions,
         includePostage,
         postageType: includePostage ? 'first_class_forever' : undefined
       }
@@ -148,7 +155,7 @@ export function MailingOptionsStep({ orderState }: OrderStepProps) {
     
     updateOrderState({
       mailingOptions: {
-        ...orderState.mailingOptions,
+        ...baseOptions,
         shippingAddress: updatedAddress
       }
     })
@@ -167,7 +174,7 @@ export function MailingOptionsStep({ orderState }: OrderStepProps) {
       
       updateOrderState({
         mailingOptions: {
-          ...orderState.mailingOptions,
+          ...baseOptions,
           shippingAddress: contactAddress
         }
       })

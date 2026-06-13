@@ -1,6 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
+interface EnhancedStatsTagRow {
+  id: string
+  name: string
+  description: string | null
+  color: string | null
+  category: string | null
+  visibility: string | null
+  is_system: boolean | null
+  sort_order: number | null
+  created_at: string | null
+  updated_at: string | null
+  user_id: string | null
+}
+
+interface AssetMetadataRow {
+  metadata: Record<string, unknown> | null
+}
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createSupabaseServerClient()
@@ -57,8 +75,8 @@ async function getEnhancedStats(supabase: any, userId: string) {
     // Count tag usage in media files
     const tagCounts: Record<string, number> = {}
     if (mediaFiles && !mediaError) {
-      mediaFiles.forEach(file => {
-        const metadata = file.metadata as any
+      mediaFiles.forEach((file: AssetMetadataRow) => {
+        const metadata = file.metadata as { tags?: unknown } | null
         const fileTags = metadata?.tags || []
         if (Array.isArray(fileTags)) {
           fileTags.forEach(tagName => {
@@ -71,7 +89,7 @@ async function getEnhancedStats(supabase: any, userId: string) {
     }
 
     // Transform tags with enhanced statistics
-    const enhancedTags = (tags || []).map(tag => {
+    const enhancedTags = ((tags || []) as EnhancedStatsTagRow[]).map((tag: EnhancedStatsTagRow) => {
       const count = tagCounts[tag.name] || 0
 
       // Determine usage frequency based on count

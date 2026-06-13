@@ -42,7 +42,7 @@ export interface UntaggedRecord {
  * Get tag usage statistics for a user
  */
 export async function getTagUsageStats(userId: string): Promise<TagUsageStats[]> {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   
   const { data, error } = await supabase.rpc('get_tag_usage_stats', {
     p_user_id: userId
@@ -63,7 +63,7 @@ export async function searchRecordsByTags(
   userId: string,
   options: TagSearchOptions = {}
 ): Promise<TaggedRecord[]> {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   
   const {
     mailingListId,
@@ -103,7 +103,7 @@ export async function getUntaggedRecords(
   mailingListId?: string,
   limit: number = 100
 ): Promise<UntaggedRecord[]> {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   
   const { data, error } = await supabase.rpc('get_untagged_records', {
     p_user_id: userId,
@@ -127,7 +127,7 @@ export async function bulkAddTags(
   tagsToAdd: string[],
   userId: string
 ): Promise<{ success: boolean; updatedCount: number }> {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   
   // Get current records with their tags
   const { data: records, error: fetchError } = await supabase
@@ -176,7 +176,7 @@ export async function bulkRemoveTags(
   tagsToRemove: string[],
   userId: string
 ): Promise<{ success: boolean; updatedCount: number }> {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   
   // Get current records with their tags
   const { data: records, error: fetchError } = await supabase
@@ -227,7 +227,7 @@ export async function getRecordsByTag(
   limit: number = 50,
   offset: number = 0
 ): Promise<{ records: TaggedRecord[]; total: number }> {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   
   let query = supabase
     .from('mailing_list_records')
@@ -290,7 +290,7 @@ export async function getTagSuggestions(
   partialTag: string,
   limit: number = 10
 ): Promise<string[]> {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   
   // Get all unique tags for the user
   const { data, error } = await supabase
@@ -325,7 +325,7 @@ export async function cleanupUnusedTags(userId: string): Promise<{
   removedTags: string[]
   affectedRecords: number
 }> {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   
   // Get all records with tags
   const { data: records, error } = await supabase

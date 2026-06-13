@@ -13,7 +13,7 @@ import { StatCardGridSkeleton, TableSkeleton } from '@/components/admin/admin-sk
 import { createClient } from '@/utils/supabase/client';
 
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<Record<string, unknown>[]>([]);
+  const [users, setUsers] = useState<Parameters<typeof UserListTable>[0]['users']>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -145,7 +145,7 @@ export default function AdminUsersPage() {
             <TableSkeleton rows={5} columns={5} />
           ) : (
             <UserListTable
-              users={users as Parameters<typeof UserListTable>[0]['users']}
+              users={users}
               onStatusChange={handleStatusChange}
               onResetPassword={handleResetPassword}
             />

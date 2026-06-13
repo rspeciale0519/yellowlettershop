@@ -5,6 +5,16 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import type { ForeclosureCriteria } from '@/types/list-builder';
 
+const FORECLOSURE_STATUSES: string[] = [
+  'pre-foreclosure',
+  'notice-of-default',
+  'lis-pendens',
+  'auction-scheduled',
+  'reo',
+  'completed-foreclosure',
+  'cancelled-foreclosure',
+];
+
 interface ForeclosureStatusSectionProps {
   criteria: ForeclosureCriteria;
   onCriteriaToggle: (criterion: string) => void;
@@ -16,7 +26,6 @@ export function ForeclosureStatusSection({
   onCriteriaToggle,
   onStatusToggle,
 }: ForeclosureStatusSectionProps) {
-  // use FORECLOSURE_STATUSES defined at module scope
   return (
     <CardContent className='pt-0'>
       <div className='space-y-4'>
@@ -39,7 +48,7 @@ export function ForeclosureStatusSection({
               Select Foreclosure Statuses:
             </Label>
             <div className='grid grid-cols-2 gap-3'>
-              {foreclosureStatuses.map((status) => (
+              {FORECLOSURE_STATUSES.map((status) => (
                 <div key={status} className='flex items-center space-x-2'>
                   <Checkbox
                     id={`status-${status}`}

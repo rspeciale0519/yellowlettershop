@@ -74,13 +74,36 @@ export function MortgageFilters({ criteria, onUpdate }: MortgageFiltersProps) {
   const [showTemplates, setShowTemplates] = useState(false)
   const [savedCriteria, setSavedCriteria] = useState(MORTGAGE_TEMPLATES)
 
-  const safeCriteria = useMemo(() => criteria || {
+  const safeCriteria = useMemo<MortgageCriteria>(() => criteria || {
     selectedCriteria: [],
-    lienPosition: "all" as const,
+    lienPosition: "all",
     mortgageAmount: null,
     interestRate: null,
+    loanToValue: null,
     mortgageOriginationDate: null,
-    maturityDate: null
+    maturityDate: null,
+    mortgageTerm: null,
+    primaryLoanType: [],
+    lenderOrigination: [],
+    lenderAssigned: [],
+    adjustableRateRider: {
+      selectedSubCriteria: null,
+      interestOnly: "no-preference",
+      interestRateChangeLimit: [],
+      interestRateChange: [],
+      interestRateChangeDate: { type: "initial", dates: [] },
+      interestRateChangeFrequency: [],
+      interestRateIndexType: [],
+      interestRateMaximum: [],
+      negativeAmortization: "no-preference",
+      paymentOption: "no-preference",
+      prepaymentPenalty: "no-preference",
+      prepaymentPenaltyExpireDate: [],
+    },
+    balloonLoan: "no-preference",
+    creditLineLoan: "no-preference",
+    equityLoan: "no-preference",
+    maturedMortgage: "no-preference",
   }, [criteria])
 
   // Create groupedCriteria inline to avoid server-side import issues
@@ -343,7 +366,7 @@ export function MortgageFilters({ criteria, onUpdate }: MortgageFiltersProps) {
                       </SelectContent>
                     </Select>
                     <Button
-                      onClick={addCriterion}
+                      onClick={() => addCriterion()}
                       disabled={!selectedCriterion || safeCriteria.selectedCriteria.includes(selectedCriterion)}
                       className="bg-yellow-500 hover:bg-yellow-600 text-gray-900"
                     >

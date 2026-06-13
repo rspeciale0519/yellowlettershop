@@ -6,6 +6,12 @@
 import { createClient } from '@/utils/supabase/client'
 import type { ResourceType, PermissionLevel } from '@/lib/access-control/time-based-permissions-client'
 
+export interface AuditLogActor {
+  id: string
+  email: string | null
+  raw_user_meta_data: Record<string, unknown> | null
+}
+
 export interface AuditLogEntry {
   id: string
   team_id: string
@@ -20,6 +26,8 @@ export interface AuditLogEntry {
   ip_address?: string
   user_agent?: string
   created_at: string
+  actor?: AuditLogActor | null
+  target_user?: AuditLogActor | null
 }
 
 export type AuditActionType = 
@@ -73,6 +81,7 @@ export class ClientAuditLogger {
     const { data, error } = await query
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
+      .returns<AuditLogEntry[]>()
 
     if (error) throw error
     return data || []

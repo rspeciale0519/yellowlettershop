@@ -1,7 +1,8 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { Tag, TagCategoryConfig } from '@/types/supabase'
+import { TagCategory, TagCategoryConfig, TagVisibility } from '@/types/supabase'
+import { Tag } from '@/types/supabase-domain'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -83,8 +84,8 @@ export function EditTagModal({
 
       // Only include category and visibility if tag is not system tag
       if (!tag.is_system) {
-        updates.category = formData.category as any
-        updates.visibility = formData.visibility as any
+        updates.category = formData.category as TagCategory
+        updates.visibility = formData.visibility as TagVisibility
       }
 
       await onSubmit(updates)

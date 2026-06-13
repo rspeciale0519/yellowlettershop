@@ -28,14 +28,16 @@ import {
 } from "lucide-react"
 import { TagData } from "./tag-form-modal"
 
+type TagWithCount = TagData & { count?: number }
+
 interface TagAnalyticsModalProps {
   isOpen: boolean
   onClose: () => void
-  tags: TagData[]
+  tags: TagWithCount[]
 }
 
 interface TagUsageData {
-  tag: TagData
+  tag: TagWithCount
   usageCount: number
   trend: 'up' | 'down' | 'stable'
   lastUsed: string
@@ -65,7 +67,7 @@ export function TagAnalyticsModal({
 
     // Simulate API call to get usage analytics
     setTimeout(() => {
-      const mockUsageData: TagUsageData[] = tags.map(tag => ({
+      const mockUsageData: TagUsageData[] = tags.map((tag): TagUsageData => ({
         tag,
         usageCount: tag.count || 0,
         trend: Math.random() > 0.6 ? 'up' : Math.random() > 0.3 ? 'stable' : 'down',

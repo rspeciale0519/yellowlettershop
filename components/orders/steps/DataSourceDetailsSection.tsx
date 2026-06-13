@@ -4,9 +4,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ColumnMappingStep } from './ColumnMappingStep'
 import { Button } from '@/components/ui/button'
 import { Upload, File, CheckCircle } from 'lucide-react'
-import { OrderState } from '@/types/orders'
+import { OrderState, ListDataSelection, StepValidation } from '@/types/orders'
 import { useRef, useState } from 'react'
 import { ManualEntryForm } from './ManualEntryForm'
+
+// UI-level data-source discriminator carried on listData via the loosely typed
+// onDataComplete callback (distinct from the persisted `dataSource` enum).
+type ListDataWithSource = ListDataSelection & {
+  source?: 'upload' | 'existing' | 'manual'
+}
+
+// ColumnMappingStep requires the full OrderStepProps but only reads orderState;
+// nested usage drives its own mapping via callbacks, so validation is a no-op.
+const emptyValidation: StepValidation = {
+  isValid: false,
+  errors: [],
+  warnings: [],
+  canProceed: false,
+  requiredFields: [],
+  completedFields: [],
+}
 
 interface DataSourceDetailsSectionProps {
   activeTab: string
@@ -82,7 +99,9 @@ export function DataSourceDetailsSection({
   }
 
   // Only show the section if a data source has been selected
-  const currentSource = orderState.dataAndMapping?.listData?.source || orderState.listData?.source
+  const currentSource =
+    (orderState.dataAndMapping?.listData as ListDataWithSource | undefined)?.source ||
+    (orderState.listData as ListDataWithSource | undefined)?.source
   const uploadedFile = orderState.dataAndMapping?.listData?.uploadedFile || orderState.listData?.uploadedFile
 
   if (!currentSource) {
@@ -220,7 +239,7 @@ export function DataSourceDetailsSection({
         </TabsContent>
 
         <TabsContent value="map-columns" className="space-y-4">
-          <ColumnMappingStep orderState={orderState} onUpdateState={() => {}} onNext={() => {}} onBack={() => {}} onSaveDraft={() => {}} validation={{}} />
+          <ColumnMappingStep orderState={orderState} onUpdateState={() => {}} onNext={() => {}} onBack={() => {}} onSaveDraft={() => {}} validation={emptyValidation} />
         </TabsContent>
       </Tabs>
     </div>

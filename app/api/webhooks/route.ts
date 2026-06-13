@@ -137,7 +137,7 @@ async function handleRecordsImported(data: any, supabase: any) {
 
 export async function POST(request: NextRequest) {
   try {
-    const headersList = headers()
+    const headersList = await headers()
     const signature = headersList.get('x-yls-signature')
     const eventType = headersList.get('x-yls-event-type')
     

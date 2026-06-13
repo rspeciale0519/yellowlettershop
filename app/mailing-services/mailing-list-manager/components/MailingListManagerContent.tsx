@@ -187,7 +187,11 @@ export default function MailingListManagerContent() {
             criteria={enhancedFilters.advancedSearchCriteria}
             onCriteriaChange={enhancedFilters.setAdvancedSearchCriteria}
             availableTags={tags || []}
-            availableLists={lists || []}
+            availableLists={(lists || []).map((l) => ({
+              id: l.id,
+              name: l.name,
+              record_count: l.record_count ?? undefined,
+            }))}
           />
         </div>
       )}
@@ -250,7 +254,7 @@ export default function MailingListManagerContent() {
         onOpenVersionHistory={handleOpenVersionHistory}
         onUpdateRecord={handleUpdateRecord}
         onUpdateRecordStatus={(recordId: string, status: string) =>
-          handleUpdateRecord(recordId, { response_status: status })
+          handleUpdateRecord(recordId, { status })
         }
         onRecordFieldEdit={(id: string, field: string, value: any) => {
           setEditingRecord({ id, field, value });
@@ -285,10 +289,15 @@ export default function MailingListManagerContent() {
           await refreshCurrentListRecords();
           setAddRecordOpen(false);
         }}
-        lists={lists || []}
+        lists={(lists || []).map((l) => ({
+          id: l.id,
+          name: l.name,
+          recordCount: l.record_count ?? 0,
+        }))}
         onCreateNewList={async () => {
           setAddListOpen(true);
           setAddRecordOpen(false);
+          return null;
         }}
       />
 

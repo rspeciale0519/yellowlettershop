@@ -174,12 +174,12 @@ export class ListBuilderService {
         if (updateError) throw updateError
 
         // Record batch changes for all records
-        const recordChanges = recordsData.map(record => ({
+        const recordChanges = recordsData.map((record, index) => ({
           resourceType: 'mailing_list_record' as const,
           resourceId: record.id,
           changeType: 'create' as const,
           newValue: record,
-          description: `Created record for ${record.first_name} ${record.last_name}`
+          description: `Created record for ${records[index].first_name} ${records[index].last_name}`
         }))
 
         await recordBatchChanges(recordChanges, batchId)
@@ -226,13 +226,13 @@ export class ListBuilderService {
         metadata: {
           record_count: recordCount,
           criteria_summary: {
-            has_demographic: Object.values(criteria.demographics).some(v => v !== null),
-            has_geographic: Object.values(criteria.geography).some(v => v !== null),
+            has_demographic: Object.values(criteria.demographic).some(v => v !== null),
+            has_geographic: Object.values(criteria.geographic).some(v => v !== null),
             has_property: Object.values(criteria.property).some(v => v !== null),
-            geographic_scope: criteria.geography.states?.length || 0,
+            geographic_scope: criteria.geographic.states?.length || 0,
             filter_count: [
-              ...Object.values(criteria.demographics),
-              ...Object.values(criteria.geography),
+              ...Object.values(criteria.demographic),
+              ...Object.values(criteria.geographic),
               ...Object.values(criteria.property)
             ].filter(v => v !== null && v !== undefined).length
           }

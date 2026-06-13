@@ -1,2 +1,2 @@
 // Re-export the modularized AdvancedSearch component
-export { AdvancedSearch } from "./advanced-search"
+export { AdvancedSearch } from "./advanced-search/index"

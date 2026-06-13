@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
     
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the background job
-    const job = createJob(type, data, user.id)
+    const job = await createJob(type, data, user.id)
     
     return NextResponse.json({ 
       success: true, 
@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
     
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all jobs for the user
-    const jobs = getUserJobs(user.id)
+    const jobs = await getUserJobs(user.id)
     
     return NextResponse.json({ 
       success: true, 

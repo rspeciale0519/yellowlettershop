@@ -2,7 +2,14 @@
 
 import { Button } from '@/components/ui/button'
 import { Upload, List, Plus } from 'lucide-react'
-import { OrderState } from '@/types/orders'
+import { OrderState, ListDataSelection } from '@/types/orders'
+
+// This flow tracks a UI-level data-source discriminator on listData that is
+// distinct from the persisted `dataSource` enum. It is written via the loosely
+// typed onDataComplete callback, so reads are surfaced through this augmentation.
+type ListDataWithSource = ListDataSelection & {
+  source?: 'upload' | 'existing' | 'manual'
+}
 
 interface DataSourceSelectionButtonsProps {
   orderState: OrderState
@@ -39,7 +46,9 @@ export function DataSourceSelectionButtons({
     })
   }
 
-  const currentSource = orderState.dataAndMapping?.listData?.source || orderState.listData?.source
+  const currentSource =
+    (orderState.dataAndMapping?.listData as ListDataWithSource | undefined)?.source ||
+    (orderState.listData as ListDataWithSource | undefined)?.source
 
   return (
     <div className="space-y-6">
