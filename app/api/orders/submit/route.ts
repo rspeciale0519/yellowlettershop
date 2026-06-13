@@ -6,6 +6,9 @@ import { generateProofForOrder, getUserEmail } from '@/lib/orders/generate-proof
 import { buildOrderInsert, extractTotal, extractRecordCount } from '@/lib/orders/order-insert'
 import { trySendEmail } from '@/lib/email'
 import { orderConfirmationEmail } from '@/lib/email/templates'
+import Stripe from 'stripe'
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-06-20' })
 
 const SubmitOrderSchema = z.object({
   orderState: z.record(z.unknown())
@@ -28,15 +31,36 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
       )
     }
 
+    // SECURITY: verify the PaymentIntent server-side against Stripe (never trust
+    // the client). Must be authorized (manual-capture → requires_capture), owned
+    // by this user, and its amount must match the server-computed order total.
+    const serverTotal = extractTotal(orderState as Record<string, unknown>)
+    let pi: Stripe.PaymentIntent
+    try {
+      pi = await stripe.paymentIntents.retrieve(paymentIntentId)
+    } catch {
+      return NextResponse.json({ error: 'Payment could not be verified. Please restart checkout.' }, { status: 402 })
+    }
+    if (pi.status !== 'requires_capture') {
+      return NextResponse.json({ error: `Payment is not authorized (status: ${pi.status}).` }, { status: 402 })
+    }
+    if (pi.metadata?.user_id && pi.metadata.user_id !== userId) {
+      return NextResponse.json({ error: 'Payment does not belong to this account.' }, { status: 403 })
+    }
+    if (Math.abs(pi.amount - Math.round(serverTotal * 100)) > 1) {
+      return NextResponse.json({ error: 'Authorized amount does not match the order total.' }, { status: 402 })
+    }
+
     const supabase = createClient()
     const now = new Date().toISOString()
 
     // Normalized (DB1-model) insert: queryable columns + payment inline on the
     // order; full wizard state retained in metadata for proof/design rendering.
+    // amountAuthorized comes from Stripe (verified), not the client.
     const insert = buildOrderInsert(
       orderState as Record<string, unknown>,
       userId,
-      { paymentIntentId, amountAuthorized: extractTotal(orderState as Record<string, unknown>) },
+      { paymentIntentId, amountAuthorized: pi.amount / 100 },
       now
     )
 

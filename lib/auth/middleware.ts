@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/utils/supabase/service';
+import { createClient as createCookieClient } from '@/utils/supabase/server';
 import type { User } from '@supabase/supabase-js';
 
 export interface AuthenticatedRequest {
@@ -25,21 +26,20 @@ export interface AuthMiddlewareOptions {
  */
 export async function getAuthenticatedUser(request: NextRequest): Promise<User | null> {
   try {
-    // Get authorization header
+    // 1. Bearer token (programmatic / mobile clients)
     const authorization = request.headers.get('authorization');
-    if (!authorization?.startsWith('Bearer ')) {
-      return null;
+    if (authorization?.startsWith('Bearer ')) {
+      const token = authorization.substring(7);
+      const supabase = createServiceClient();
+      const { data: { user }, error } = await supabase.auth.getUser(token);
+      if (!error && user) return user;
     }
-    
-    const token = authorization.substring(7);
-    const supabase = createServiceClient();
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    
-    if (error || !user) {
-      return null;
-    }
-    
-    return user;
+
+    // 2. Cookie-based session (browser fetches from the app itself).
+    // Without this, every same-origin fetch() to a withAuth route 401s.
+    const cookieClient = await createCookieClient();
+    const { data: { user } } = await cookieClient.auth.getUser();
+    return user ?? null;
   } catch (error) {
     console.error('Authentication error:', error);
     return null;
