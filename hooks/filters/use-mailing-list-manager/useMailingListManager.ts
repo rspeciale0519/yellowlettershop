@@ -1,12 +1,19 @@
 'use client'
 
+import { useState } from 'react'
 import { useListData } from './useListData'
 import { useListFilters } from './useListFilters'
 import { useListActions } from './useListActions'
 
 export function useMailingListManager() {
   const listData = useListData()
-  
+
+  // Status/tag/quick filters used for record fetching are managed here since
+  // useListFilters handles list-level (date/usage) filtering via filterState.
+  const [quickFilter, setQuickFilter] = useState('all')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [tagFilters, setTagFilters] = useState<string[]>([])
+
   const listFilters = useListFilters({
     lists: listData.lists || [],
     records: listData.records,
@@ -29,8 +36,8 @@ export function useMailingListManager() {
     itemsPerPage: listFilters.itemsPerPage,
     currentPage: listFilters.currentPage,
     searchQuery: listFilters.searchQuery,
-    statusFilter: listFilters.statusFilter,
-    tagFilters: listFilters.tagFilters,
+    statusFilter,
+    tagFilters,
     tags: listData.tags || [],
     isMountedRef: listData.isMountedRef,
   })
@@ -64,12 +71,12 @@ export function useMailingListManager() {
     setSearchQuery: listFilters.setSearchQuery,
     sortBy: listFilters.sortBy,
     setSortBy: listFilters.setSortBy,
-    quickFilter: listFilters.quickFilter,
-    setQuickFilter: listFilters.setQuickFilter,
-    tagFilters: listFilters.tagFilters,
-    setTagFilters: listFilters.setTagFilters,
-    statusFilter: listFilters.statusFilter,
-    setStatusFilter: listFilters.setStatusFilter,
+    quickFilter,
+    setQuickFilter,
+    tagFilters,
+    setTagFilters,
+    statusFilter,
+    setStatusFilter,
     advancedSearchOpen: listFilters.advancedSearchOpen,
     setAdvancedSearchOpen: listFilters.setAdvancedSearchOpen,
     advancedSearchCriteria: listFilters.advancedSearchCriteria,

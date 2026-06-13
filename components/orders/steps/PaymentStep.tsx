@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { OrderStepProps, PricingBreakdown } from '@/types/orders'
+import { OrderStepProps, PricingBreakdown, PaymentData } from '@/types/orders'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -176,9 +176,14 @@ export function PaymentStep({ orderState }: OrderStepProps) {
 
       if (result.status === 'succeeded') {
         // Payment authorized successfully
+        const basePayment: PaymentData = orderState.payment ?? {
+          status: 'authorized',
+          amount: pricingData?.totalPrice ?? orderState.pricing?.totalPrice ?? 0,
+          currency: 'usd',
+        }
         updateOrderState({
           payment: {
-            ...orderState.payment,
+            ...basePayment,
             status: 'authorized',
             paymentMethodId: selectedPaymentMethod,
             authorizedAt: new Date()

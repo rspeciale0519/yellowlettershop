@@ -1,7 +1,7 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
-import { OrderStepProps } from '@/types/orders'
+import React, { useState } from 'react'
+import { OrderStepProps, StepValidation } from '@/types/orders'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -11,9 +11,29 @@ import { useOrderWorkflow } from '../OrderProvider'
 import { ContactCardsStep } from './ContactCardsStep'
 import { DesignCustomizerStep } from './DesignCustomizerStep'
 
+// ContactCardsStep / DesignCustomizerStep both require the full OrderStepProps
+// but drive all state through the workflow context internally; this validation
+// placeholder satisfies the prop contract without altering their behavior.
+const noopValidation: StepValidation = {
+  isValid: false,
+  errors: [],
+  warnings: [],
+  canProceed: false,
+  requiredFields: [],
+  completedFields: [],
+}
+
 export function DesignAndContentStep({ orderState }: OrderStepProps) {
-  const { updateOrderState, nextStep, previousStep } = useOrderWorkflow()
+  const { updateOrderState, nextStep, previousStep, saveDraft } = useOrderWorkflow()
   const [activeTab, setActiveTab] = useState<'contact' | 'design'>('contact')
+
+  const childStepProps = {
+    onUpdateState: updateOrderState,
+    onNext: nextStep,
+    onBack: previousStep,
+    onSaveDraft: () => { void saveDraft() },
+    validation: noopValidation,
+  }
 
   // Check completion status
   const hasContactCard = Boolean(
@@ -29,34 +49,6 @@ export function DesignAndContentStep({ orderState }: OrderStepProps) {
   // No auto-advancement - let user control tab navigation
 
   const canProceed = hasContactCard && hasDesign
-
-  const handleContactCardComplete = (contactCard: any) => {
-    // Update the consolidated structure
-    updateOrderState({
-      designAndContent: {
-        contactCard,
-        design: orderState.designAndContent?.design || orderState.design
-      },
-      // Also update legacy structure for compatibility
-      contactCard
-    })
-
-    // Don't auto-advance tab - let user manually navigate
-  }
-
-  const handleDesignComplete = (design: any) => {
-    // Update the consolidated structure
-    updateOrderState({
-      designAndContent: {
-        contactCard: orderState.designAndContent?.contactCard || orderState.contactCard,
-        design
-      },
-      // Also update legacy structure for compatibility
-      design
-    })
-
-    // Don't auto-advance - let user click Continue button to proceed
-  }
 
   return (
     <div className="w-full space-y-6">
@@ -106,7 +98,7 @@ export function DesignAndContentStep({ orderState }: OrderStepProps) {
                   ...orderState,
                   contactCard: orderState.designAndContent?.contactCard || orderState.contactCard
                 }}
-                onContactCardComplete={handleContactCardComplete}
+                {...childStepProps}
               />
             </TabsContent>
 
@@ -118,7 +110,7 @@ export function DesignAndContentStep({ orderState }: OrderStepProps) {
                     design: orderState.designAndContent?.design || orderState.design,
                     contactCard: orderState.designAndContent?.contactCard || orderState.contactCard
                   }}
-                  onDesignComplete={handleDesignComplete}
+                  {...childStepProps}
                 />
               ) : (
                 <Alert>

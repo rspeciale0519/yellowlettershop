@@ -13,7 +13,7 @@ import { TableSkeleton } from '@/components/admin/admin-skeleton';
 import { createClient } from '@/utils/supabase/client';
 
 export default function AdminOrdersPage() {
-  const [orders, setOrders] = useState<Record<string, unknown>[]>([]);
+  const [orders, setOrders] = useState<Parameters<typeof OrderListTable>[0]['orders']>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('all');
@@ -95,7 +95,7 @@ export default function AdminOrdersPage() {
           {isLoading ? (
             <TableSkeleton rows={5} columns={7} />
           ) : (
-            <OrderListTable orders={orders as Parameters<typeof OrderListTable>[0]['orders']} />
+            <OrderListTable orders={orders} />
           )}
         </CardContent>
       </Card>

@@ -83,8 +83,8 @@ export default function AdminOrderDetailPage() {
 
   const order = detail.order as Record<string, unknown>;
   const user = detail.user as Record<string, unknown> | null;
-  const payments = (detail.payments as Record<string, unknown>[]) ?? [];
-  const timeline = (detail.timeline as Record<string, unknown>[]) ?? [];
+  const payments = (detail.payments ?? []) as Parameters<typeof OrderPaymentActions>[0]['payments'];
+  const timeline = (detail.timeline ?? []) as Parameters<typeof OrderTimeline>[0]['entries'];
   const status = order.status as string;
   const orderState = order.order_state as Record<string, unknown> | null;
 
@@ -163,7 +163,7 @@ export default function AdminOrderDetailPage() {
             <CardContent>
               {orderState ? (
                 <div className="text-sm space-y-2">
-                  {orderState.pricing && (
+                  {Boolean(orderState.pricing) && (
                     <div className="grid grid-cols-2 gap-2">
                       <span className="text-muted-foreground">Total:</span>
                       <span className="font-mono font-semibold">
@@ -175,7 +175,7 @@ export default function AdminOrderDetailPage() {
                       </span>
                     </div>
                   )}
-                  {orderState.mailingOptions && (
+                  {Boolean(orderState.mailingOptions) && (
                     <div className="grid grid-cols-2 gap-2 pt-2 border-t">
                       <span className="text-muted-foreground">Service Level:</span>
                       <span>{String((orderState.mailingOptions as Record<string, unknown>).serviceLevel ?? '—')}</span>
@@ -194,7 +194,7 @@ export default function AdminOrderDetailPage() {
           <div>
             <h3 className="text-sm font-semibold mb-3">Payments</h3>
             <OrderPaymentActions
-              payments={payments as Parameters<typeof OrderPaymentActions>[0]['payments']}
+              payments={payments}
               onCapture={handleCapture}
               onRefund={handleRefund}
             />
@@ -209,7 +209,7 @@ export default function AdminOrderDetailPage() {
             </CardHeader>
             <CardContent>
               <OrderTimeline
-                entries={timeline as Parameters<typeof OrderTimeline>[0]['entries']}
+                entries={timeline}
                 orderCreatedAt={order.created_at as string}
                 orderStatus={status}
               />

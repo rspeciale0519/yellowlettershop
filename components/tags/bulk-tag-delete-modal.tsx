@@ -19,10 +19,12 @@ import {
   AlertTriangle
 } from "lucide-react"
 
+type TagWithCount = TagData & { count?: number }
+
 interface BulkTagDeleteModalProps {
   isOpen: boolean
   onClose: () => void
-  tags: TagData[]
+  tags: TagWithCount[]
   onConfirm: () => void
   onRemoveTag?: (tagId: string) => void
 }

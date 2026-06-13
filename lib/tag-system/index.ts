@@ -40,7 +40,7 @@ export const TAG_VISIBILITY = {
  * Get all tags available to a user (including system tags)
  */
 export async function getUserTags(userId: string, teamId?: string): Promise<Tag[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   
   const { data, error } = await supabase
     .from('tags')
@@ -62,7 +62,7 @@ export async function getUserTags(userId: string, teamId?: string): Promise<Tag[
  * Get system tags only
  */
 export async function getSystemTags(): Promise<Tag[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   
   const { data, error } = await supabase
     .from('tags')
@@ -83,7 +83,7 @@ export async function getSystemTags(): Promise<Tag[]> {
  * Get a system tag by name
  */
 export async function getSystemTagByName(tagName: string): Promise<Tag | null> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   
   const { data, error } = await supabase
     .from('tags')
@@ -108,7 +108,7 @@ export async function getTagsByCategory(
   userId?: string,
   teamId?: string
 ): Promise<Tag[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
   
   let query = supabase
     .from('tags')
@@ -152,7 +152,7 @@ export async function createTag(tagData: {
   sortOrder?: number;
   metadata?: Record<string, any>;
 }): Promise<Tag | null> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const insertData = {
     name: tagData.name,
@@ -193,7 +193,7 @@ export async function createSystemTag(tagData: {
   sortOrder?: number;
   metadata?: Record<string, any>;
 }): Promise<Tag | null> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const insertData = {
     name: tagData.name,
@@ -237,7 +237,7 @@ export async function assignTagToRecord(
   assignedBy?: string,
   metadata?: Record<string, any>
 ): Promise<RecordTag | null> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const insertData = {
     record_id: recordId,
@@ -269,7 +269,7 @@ export async function assignTagToRecord(
  * Remove a tag from a record
  */
 export async function removeTagFromRecord(recordId: string, tagId: string): Promise<boolean> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const { error } = await supabase
     .from('record_tags')
@@ -289,7 +289,7 @@ export async function removeTagFromRecord(recordId: string, tagId: string): Prom
  * Get all tags for a record
  */
 export async function getRecordTags(recordId: string): Promise<RecordTag[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase
     .from('record_tags')
@@ -319,7 +319,7 @@ export async function updateRecordTagValue(
   newValue: string,
   metadata?: Record<string, any>
 ): Promise<boolean> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const updateData: any = { tag_value: newValue };
   if (metadata) {
@@ -361,7 +361,7 @@ export async function ensureRequiredTagsForRecord(
     }
 
     // Assign or update the List Name tag
-    const supabase = createSupabaseServerClient();
+    const supabase = await createSupabaseServerClient();
     
     const { error } = await supabase
       .from('record_tags')
@@ -395,7 +395,7 @@ export async function bulkAssignTagToRecords(
   tagValue?: string,
   assignedBy?: string
 ): Promise<boolean> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const insertData = recordIds.map(recordId => ({
     record_id: recordId,
@@ -427,7 +427,7 @@ export async function bulkAssignTagToRecords(
  * Get tag usage statistics
  */
 export async function getTagUsageStats(tagId?: string, userId?: string, teamId?: string) {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   let query = supabase
     .from('tag_usage_stats')
@@ -458,7 +458,7 @@ export async function getTagUsageStats(tagId?: string, userId?: string, teamId?:
  * Get all tag categories
  */
 export async function getTagCategories(): Promise<TagCategoryConfig[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   const { data, error } = await supabase
     .from('tag_categories')
@@ -503,7 +503,7 @@ export async function validateTagName(
   teamId?: string,
   excludeTagId?: string
 ): Promise<{ valid: boolean; error?: string }> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   // Check for system tags with same name
   let query = supabase
@@ -542,7 +542,7 @@ export async function searchTags(
   teamId?: string,
   category?: TagCategory
 ): Promise<Tag[]> {
-  const supabase = createSupabaseServerClient();
+  const supabase = await createSupabaseServerClient();
 
   let dbQuery = supabase
     .from('tags')

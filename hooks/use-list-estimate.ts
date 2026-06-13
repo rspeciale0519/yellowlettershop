@@ -140,7 +140,7 @@ export function useListEstimate(
   }, [calculateMockEstimate]);
 
   // Debounce functionality using useRef
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   
   const debouncedEstimate = useCallback(
     async (criteria: ListCriteria) => {

@@ -12,10 +12,22 @@ import { formatDate } from "@/lib/utils"
 import { useLocalStorage } from "@/hooks/use-local-storage"
 import { useMemo } from "react"
 
+interface ListRow {
+  id: string
+  name: string
+  recordCount: number
+  createdAt: string
+  createdBy?: string
+  modifiedDate?: string
+  modifiedBy?: string
+  tags: { id: string; name: string }[]
+  campaigns: { id: string; orderId: string; mailedDate: string }[]
+}
+
 interface ListsTableProps {
-  lists: any[]
+  lists: ListRow[]
   selectedRecords: string[]
-  onCheckboxToggle: (id: string) => void
+  onCheckboxToggle: (id: string, checked: boolean) => void
   selectAll: boolean
   onSelectAllChange: (checked: boolean | "indeterminate") => void
   sortBy: { column: string; direction: "asc" | "desc" }
@@ -71,7 +83,7 @@ export const ListsTable = ({
   }
 
   // Define columns
-  const columns = useMemo<ColumnDef[]>(
+  const columns = useMemo<ColumnDef<ListRow>[]>(
     () => [
       {
         id: "select",
@@ -375,9 +387,8 @@ export const ListsTable = ({
     <CustomizableTable
       data={lists}
       columns={columns}
-      tableId="mailing-lists"
-      showDataOperations={false}
-      onNameFormatChange={handleNameFormatChange}
+      viewMode="lists"
+      storageKeyPrefix="mailing-lists"
       renderRow={(list, visibleColumns, columnStates, index) => (
         <tr key={list.id} className="hover:bg-muted/50">
           {visibleColumns.map((column) => (

@@ -9,7 +9,7 @@ import { ListSelector } from "./list-selector"
 import { BasicInfoForm } from "./basic-info-form"
 import { CustomFieldsForm } from "./custom-fields-form"
 import { validateForm, initializeCustomFields } from "./utils"
-import type { AddRecordModalProps, FormData } from "./types"
+import type { AddRecordModalProps, FormData, NewRecord } from "./types"
 import { getCustomFieldsForList } from "./types"
 
 export function AddRecordModal({ open, onOpenChange, onSuccess, lists, onCreateNewList }: AddRecordModalProps) {
@@ -116,6 +116,10 @@ export function AddRecordModal({ open, onOpenChange, onSuccess, lists, onCreateN
       if (listOption === "new") {
         try {
           const newList = await onCreateNewList(newListName)
+          if (!newList) {
+            setIsSubmitting(false)
+            return
+          }
           listId = newList.id
           listName = newList.name
         } catch (error) {
@@ -135,16 +139,13 @@ export function AddRecordModal({ open, onOpenChange, onSuccess, lists, onCreateN
       }
 
       // Create a record object with all form values
-      const newRecord = {
+      const newRecord: NewRecord = {
         id: `record-${Date.now()}`,
-        ...formData,
-        ...customFields,
-        listId,
-        listName,
-        tags: [],
-        campaigns: [],
-        createdDate: new Date().toISOString(),
-        createdBy: "Current User", // In a real app, this would be the logged-in user
+        mailing_list_id: listId,
+        record_data: { ...formData, ...customFields },
+        validation_status: "pending",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       }
 
       // Simulate API delay

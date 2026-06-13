@@ -178,9 +178,9 @@ export function GeographyFilters({
           <div className='space-y-4'>
             <StateCountySelector
               selectedState={selectedState}
-              onStateChange={setSelectedState}
+              onStateChange={(state) => setSelectedState(state ?? '')}
               selectedCounty={selectedCounty}
-              onCountyChange={setSelectedCounty}
+              onCountyChange={(county) => setSelectedCounty(county ?? '')}
               showCounty={false}
             />
             {selectedState && (
@@ -198,9 +198,9 @@ export function GeographyFilters({
           <div className='space-y-4'>
             <StateCountySelector
               selectedState={selectedState}
-              onStateChange={setSelectedState}
+              onStateChange={(state) => setSelectedState(state ?? '')}
               selectedCounty={selectedCounty}
-              onCountyChange={setSelectedCounty}
+              onCountyChange={(county) => setSelectedCounty(county ?? '')}
               showCounty={true}
             />
           </div>

@@ -9,7 +9,7 @@ export interface RangeSliderFieldProps {
   min: number
   max: number
   step?: number
-  onChange: (value: [number, number]) => void
+  onChange: (value: number[]) => void
   formatValue?: (value: number) => string
   icon?: React.ReactNode
   tooltip?: string
@@ -36,10 +36,10 @@ export function RangeSliderField({
       max={max}
       step={step}
       onChange={onChange}
-      formatValue={formatValue}
+      formatValue={formatValue ?? ((v) => String(v))}
       icon={icon}
       tooltip={tooltip}
-      ariaLabel={ariaLabel}
+      ariaLabel={ariaLabel ?? label}
     />
   )
 }

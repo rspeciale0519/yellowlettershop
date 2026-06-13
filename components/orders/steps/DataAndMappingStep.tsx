@@ -73,7 +73,7 @@ export function DataAndMappingStep({ orderState, onUpdateState }: OrderStepProps
 
     onUpdateState({
       dataAndMapping: {
-        listData: orderState.dataAndMapping?.listData || orderState.listData,
+        listData: orderState.dataAndMapping?.listData ?? orderState.listData ?? { useMailingData: true },
         columnMapping: updatedColumnMapping
       },
       // Also update legacy structure for compatibility

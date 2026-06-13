@@ -33,7 +33,6 @@ export function DemographicsFilters({ criteria, onUpdate }: DemographicsFiltersP
     handleRemoveCriterion,
     toggleSection,
     savePreset,
-    loadPreset,
     deletePreset,
   } = useDemographicsFilters({ criteria, onUpdate })
 
@@ -48,13 +47,8 @@ export function DemographicsFilters({ criteria, onUpdate }: DemographicsFiltersP
             onToggle={() => {}}
           />
           <SelectedChips
-            criteria={safeCriteria.selectedCriteria}
+            items={safeCriteria.selectedCriteria}
             onRemove={handleRemoveCriterion}
-            presets={safeCriteria.presets}
-            activePreset={safeCriteria.activePreset}
-            onLoadPreset={loadPreset}
-            onDeletePreset={(id) => setDeletePresetId(id)}
-            onSavePreset={() => setShowPresetDialog(true)}
           />
         </Card>
 

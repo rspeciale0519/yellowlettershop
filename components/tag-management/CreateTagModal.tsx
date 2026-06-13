@@ -1,7 +1,8 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { Tag, TagCategoryConfig } from '@/types/supabase'
+import { TagCategory, TagCategoryConfig, TagVisibility } from '@/types/supabase'
+import { Tag } from '@/types/supabase-domain'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -99,9 +100,9 @@ export function CreateTagModal({
       const tagData: Partial<Tag> = {
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
-        category: formData.category as any,
+        category: formData.category as TagCategory,
         color: formData.color,
-        visibility: formData.visibility as any,
+        visibility: formData.visibility as TagVisibility,
         sort_order: formData.sortOrder,
         parent_tag_id: parentTag?.id,
         user_id: userId,

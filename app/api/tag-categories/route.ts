@@ -12,7 +12,7 @@ const CategoryCreateSchema = z.object({
 
 export async function GET() {
   try {
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
 
     // Get current user
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -41,7 +41,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createSupabaseServerClient()
+    const supabase = await createSupabaseServerClient()
     const body = await request.json()
 
     // Validate input

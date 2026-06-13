@@ -25,9 +25,11 @@ import {
 } from "lucide-react"
 import { TagData } from "./tag-form-modal"
 
+type TagWithCount = TagData & { count?: number }
+
 interface DuplicateGroup {
   id: string
-  similarTags: TagData[]
+  similarTags: TagWithCount[]
   confidence: 'high' | 'medium' | 'low'
   reason: string
 }
@@ -35,7 +37,7 @@ interface DuplicateGroup {
 interface DuplicateDetectionModalProps {
   isOpen: boolean
   onClose: () => void
-  tags: TagData[]
+  tags: TagWithCount[]
   onMergeComplete: () => void
 }
 
@@ -64,7 +66,7 @@ export function DuplicateDetectionModal({
     }, 1500)
   }, [isOpen, tags])
 
-  const detectDuplicates = (tagList: TagData[]): DuplicateGroup[] => {
+  const detectDuplicates = (tagList: TagWithCount[]): DuplicateGroup[] => {
     const groups: DuplicateGroup[] = []
     const processed = new Set<string>()
 

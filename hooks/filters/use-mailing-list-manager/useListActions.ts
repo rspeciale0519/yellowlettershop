@@ -4,32 +4,46 @@ import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/use-toast';
 import { useMediaQuery } from '@/hooks/use-media-query';
-import type { MailingList, MailingListRecord } from '@/types/supabase';
+import type { MailingList, MailingListRecord, Tag } from '@/types/supabase';
+import type {
+  UpdateMailingListPayload,
+  UpdateMailingListRecordPayload,
+} from '@/lib/supabase/mailing-lists';
+
+type RecordWithTags = MailingListRecord & {
+  tags?: Array<{ tag: Tag }>;
+};
+
+interface CampaignUsage {
+  id: string;
+  orderId: string;
+  mailedDate: string;
+}
 
 interface UseListActionsProps {
   updateMailingList: (
     id: string,
-    updates: Partial<MailingList>
-  ) => Promise<void>;
+    updates: UpdateMailingListPayload
+  ) => Promise<MailingList>;
   updateMailingListRecord: (
     id: string,
-    updates: Partial<MailingListRecord>
-  ) => Promise<void>;
+    updates: UpdateMailingListRecordPayload
+  ) => Promise<MailingListRecord>;
   getMailingListRecords: (listId: string, options?: any) => Promise<any>;
   addTagToRecordAPI: (recordId: string, tagId: string) => Promise<void>;
   removeTagFromRecordAPI: (recordId: string, tagId: string) => Promise<void>;
-  mutateLists: () => Promise<void>;
+  mutateLists: () => Promise<MailingList[] | undefined>;
   viewMode: 'lists' | 'records';
   selectedList: MailingList | null;
-  records: MailingListRecord[];
-  setRecords: (records: MailingListRecord[]) => void;
+  records: RecordWithTags[];
+  setRecords: (records: RecordWithTags[]) => void;
   setTotalRecords: (total: number) => void;
   itemsPerPage: number;
   currentPage: number;
   searchQuery: string;
   statusFilter: string;
   tagFilters: string[];
-  tags: any[];
+  tags: Tag[];
   isMountedRef: React.MutableRefObject<boolean>;
 }
 
@@ -126,7 +140,7 @@ export function useListActions({
   );
 
   const handleOpenCampaignModal = useCallback(
-    (campaigns: Campaign[], title: string) => {
+    (campaigns: CampaignUsage[], title: string) => {
       setSelectedCampaigns(campaigns);
       setCampaignModalTitle(title);
       setCampaignModalOpen(true);
@@ -231,7 +245,7 @@ export function useListActions({
         records.map((r) => {
           if (r.id === recordId) {
             const currentTags = r.tags || [];
-            const tagExists = currentTags.some((t: any) => t.tag?.id === tagId);
+            const tagExists = currentTags.some((t) => t.tag?.id === tagId);
             if (!tagExists) {
               // Find the tag object from the tags state
               const tagObj = tags.find((t) => t.id === tagId);
@@ -291,7 +305,7 @@ export function useListActions({
             const currentTags = r.tags || [];
             return {
               ...r,
-              tags: currentTags.filter((t: any) => t.tag?.id !== tagId),
+              tags: currentTags.filter((t) => t.tag?.id !== tagId),
             };
           }
           return r;

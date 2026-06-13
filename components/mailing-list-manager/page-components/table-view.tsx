@@ -46,7 +46,7 @@ export const TableView = (props: TableViewProps) => {
     <div className="rounded-md border overflow-hidden">
       {props.viewMode === 'lists' ? (
         <ListsTable
-          lists={props.paginatedItems as MailingList[]}
+          lists={props.paginatedItems}
           onViewRecords={props.onViewRecords}
           onEdit={props.onEditList}
           onDelete={(id) => props.onDelete(id, 'list')}
@@ -59,7 +59,7 @@ export const TableView = (props: TableViewProps) => {
           selectedRecords={props.selectedRecords}
           onCheckboxToggle={props.onCheckboxToggle}
           selectAll={props.selectAll}
-          onSelectAllChange={props.onSelectAllChange}
+          onSelectAllChange={(checked) => props.onSelectAllChange(checked === true)}
           editingName={props.editingName}
           onNameEdit={props.onNameEdit}
           saveNameEdit={props.saveNameEdit}
@@ -70,12 +70,14 @@ export const TableView = (props: TableViewProps) => {
         />
       ) : (
         <RecordsTable
-          records={props.paginatedItems as MailingListRecord[]}
+          records={props.paginatedItems}
           onDelete={(id) => props.onDelete(id, 'record')}
           selectedRecords={props.selectedRecords}
-          onCheckboxToggle={props.onCheckboxToggle}
+          onCheckboxToggle={(id) =>
+            props.onCheckboxToggle(id, !props.selectedRecords.includes(id))
+          }
           selectAll={props.selectAll}
-          onSelectAllChange={props.onSelectAllChange}
+          onSelectAllChange={(checked) => props.onSelectAllChange(checked === true)}
           onSort={props.onSort}
           sortBy={props.sortBy}
           availableTags={props.availableTags}
@@ -86,7 +88,7 @@ export const TableView = (props: TableViewProps) => {
           onRecordFieldEdit={props.onRecordFieldEdit}
           editingRecord={props.editingRecord}
           saveRecordFieldEdit={props.saveRecordFieldEdit}
-          setEditingRecord={props.setEditingRecord as any}
+          setEditingRecord={props.setEditingRecord}
         />
       )}
     </div>

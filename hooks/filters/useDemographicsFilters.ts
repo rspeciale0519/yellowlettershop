@@ -143,23 +143,23 @@ export function useDemographicsFilters({
       );
     }
 
-    if (safeCriteria.ethnicity.length > 0) {
-      selected.push(`Ethnicity: ${safeCriteria.ethnicity.length} group(s)`);
+    if ((safeCriteria.ethnicity?.length ?? 0) > 0) {
+      selected.push(`Ethnicity: ${safeCriteria.ethnicity?.length} group(s)`);
     }
 
-    if (safeCriteria.language.length > 0) {
-      selected.push(`Language: ${safeCriteria.language.length} language(s)`);
+    if ((safeCriteria.language?.length ?? 0) > 0) {
+      selected.push(`Language: ${safeCriteria.language?.length} language(s)`);
     }
 
-    if (safeCriteria.politicalAffiliation.length > 0) {
+    if ((safeCriteria.politicalAffiliation?.length ?? 0) > 0) {
       selected.push(
-        `Political Affiliation: ${safeCriteria.politicalAffiliation.length} affiliation(s)`
+        `Political Affiliation: ${safeCriteria.politicalAffiliation?.length} affiliation(s)`
       );
     }
 
-    if (safeCriteria.veteranStatus.length > 0) {
+    if ((safeCriteria.veteranStatus?.length ?? 0) > 0) {
       selected.push(
-        `Veteran Status: ${safeCriteria.veteranStatus.length} status(es)`
+        `Veteran Status: ${safeCriteria.veteranStatus?.length} status(es)`
       );
     }
 

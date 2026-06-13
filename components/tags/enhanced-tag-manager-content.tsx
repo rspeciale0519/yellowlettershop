@@ -286,7 +286,7 @@ export default function EnhancedTagManagerContent() {
       fetchTags()
     } catch (error) {
       console.error('Error deleting tag:', error)
-      toast.error(`Failed to delete tag: ${error.message}`)
+      toast.error(`Failed to delete tag: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
 
@@ -688,14 +688,14 @@ export default function EnhancedTagManagerContent() {
       <TagDeleteModal
         isOpen={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
-        tag={tagToDelete}
+        tagToDelete={tagToDelete}
         onConfirm={handleConfirmDelete}
       />
 
       <BulkTagDeleteModal
         isOpen={bulkDeleteModalOpen}
         onClose={() => setBulkDeleteModalOpen(false)}
-        tags={Array.from(selectedTags).map(id => tags.find(tag => tag.id === id)).filter(Boolean) as TagData[]}
+        tags={Array.from(selectedTags).map(id => tags.find(tag => tag.id === id)).filter(Boolean) as TagWithStats[]}
         onConfirm={handleConfirmBulkDelete}
         onRemoveTag={handleRemoveFromBulkDelete}
       />

@@ -14,12 +14,14 @@ import { Upload, Users, Database, FileText, Plus, X, CheckCircle, Loader2 } from
 import { useOrderWorkflow } from '../OrderProvider'
 import { getMailingLists } from '@/lib/supabase/mailing-lists'
 import { smoothScrollToElementWithDelay } from '@/lib/utils'
-import type { MailingList } from '@/types/mailing-lists'
+import type { MailingList } from '@/types/supabase'
+import type { ListDataSelection } from '@/types/orders'
 
 export function ListDataStep({ orderState }: OrderStepProps) {
   const { updateOrderState, nextStep } = useOrderWorkflow()
+  const listData: ListDataSelection = orderState.listData ?? { useMailingData: false }
   const [dragActive, setDragActive] = useState(false)
-  const [manualRecords, setManualRecords] = useState(orderState.listData.manualRecords || [])
+  const [manualRecords, setManualRecords] = useState(listData.manualRecords || [])
   const [mailingLists, setMailingLists] = useState<MailingList[]>([])
   const [loadingLists, setLoadingLists] = useState(false)
   const [listError, setListError] = useState<string | null>(null)
@@ -35,7 +37,7 @@ export function ListDataStep({ orderState }: OrderStepProps) {
       setLoadingLists(true)
       setListError(null)
       const lists = await getMailingLists()
-      setMailingLists(lists.filter(list => list.is_active && list.record_count > 0))
+      setMailingLists(lists.filter(list => list.is_active && (list.record_count ?? 0) > 0))
     } catch (error) {
       console.error('Error loading mailing lists:', error)
       setListError('Failed to load mailing lists')
@@ -45,12 +47,10 @@ export function ListDataStep({ orderState }: OrderStepProps) {
   }
 
   const handleListSelection = (listId: string) => {
-    const selectedList = mailingLists.find(list => list.id === listId)
     updateOrderState({
       listData: {
-        ...orderState.listData,
-        selectedListId: listId,
-        selectedListName: selectedList?.name
+        ...listData,
+        selectedListId: listId
       }
     })
   }
@@ -59,7 +59,7 @@ export function ListDataStep({ orderState }: OrderStepProps) {
     const useMailingData = value === 'yes'
     updateOrderState({
       listData: {
-        ...orderState.listData,
+        ...listData,
         useMailingData,
         dataSource: useMailingData ? undefined : undefined
       }
@@ -69,7 +69,7 @@ export function ListDataStep({ orderState }: OrderStepProps) {
   const handleDataSourceChange = (dataSource: 'upload' | 'mlm_select' | 'manual_entry' | 'melissa_data') => {
     updateOrderState({
       listData: {
-        ...orderState.listData,
+        ...listData,
         dataSource
       }
     })
@@ -86,7 +86,7 @@ export function ListDataStep({ orderState }: OrderStepProps) {
 
     updateOrderState({
       listData: {
-        ...orderState.listData,
+        ...listData,
         uploadedFile: file
       }
     })
@@ -143,7 +143,7 @@ export function ListDataStep({ orderState }: OrderStepProps) {
     setManualRecords(updatedRecords)
     updateOrderState({
       listData: {
-        ...orderState.listData,
+        ...listData,
         manualRecords: updatedRecords
       }
     })
@@ -156,7 +156,7 @@ export function ListDataStep({ orderState }: OrderStepProps) {
     setManualRecords(updatedRecords)
     updateOrderState({
       listData: {
-        ...orderState.listData,
+        ...listData,
         manualRecords: updatedRecords
       }
     })
@@ -167,32 +167,32 @@ export function ListDataStep({ orderState }: OrderStepProps) {
     setManualRecords(updatedRecords)
     updateOrderState({
       listData: {
-        ...orderState.listData,
+        ...listData,
         manualRecords: updatedRecords
       }
     })
   }
 
   const canProceed = () => {
-    if (!orderState.listData.useMailingData) {
+    if (!listData.useMailingData) {
       return true // Can proceed to contact cards without mailing data
     }
 
-    if (!orderState.listData.dataSource) {
+    if (!listData.dataSource) {
       return false
     }
 
-    switch (orderState.listData.dataSource) {
+    switch (listData.dataSource) {
       case 'upload':
-        return !!orderState.listData.uploadedFile
+        return !!listData.uploadedFile
       case 'mlm_select':
-        return !!orderState.listData.selectedListId
+        return !!listData.selectedListId
       case 'manual_entry':
         return manualRecords.length > 0 && manualRecords.every(r => 
           r.first_name && r.last_name && r.address_line_1 && r.city && r.state && r.zip_code
         )
       case 'melissa_data':
-        return !!orderState.listData.melissaDataCriteria
+        return !!listData.melissaDataCriteria
       default:
         return false
     }
@@ -217,7 +217,7 @@ export function ListDataStep({ orderState }: OrderStepProps) {
         </CardHeader>
         <CardContent>
           <RadioGroup
-            value={orderState.listData.useMailingData ? 'yes' : 'no'}
+            value={listData.useMailingData ? 'yes' : 'no'}
             onValueChange={handleUseMailingDataChange}
             className="flex flex-col sm:flex-row sm:space-x-8 space-y-4 sm:space-y-0"
           >
@@ -249,7 +249,7 @@ export function ListDataStep({ orderState }: OrderStepProps) {
       </Card>
 
       {/* Data Source Selection */}
-      {orderState.listData.useMailingData && (
+      {listData.useMailingData && (
         <Card>
           <CardHeader>
             <CardTitle>Select Data Source</CardTitle>
@@ -261,7 +261,7 @@ export function ListDataStep({ orderState }: OrderStepProps) {
             <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
               {/* File Upload Option */}
               <Button
-                variant={orderState.listData.dataSource === 'upload' ? 'default' : 'outline'}
+                variant={listData.dataSource === 'upload' ? 'default' : 'outline'}
                 className="h-auto p-4 flex flex-col items-center space-y-2"
                 onClick={() => handleDataSourceChange('upload')}
               >
@@ -274,7 +274,7 @@ export function ListDataStep({ orderState }: OrderStepProps) {
 
               {/* Mailing List Manager Option */}
               <Button
-                variant={orderState.listData.dataSource === 'mlm_select' ? 'default' : 'outline'}
+                variant={listData.dataSource === 'mlm_select' ? 'default' : 'outline'}
                 className="h-auto p-4 flex flex-col items-center space-y-2"
                 onClick={() => handleDataSourceChange('mlm_select')}
               >
@@ -287,7 +287,7 @@ export function ListDataStep({ orderState }: OrderStepProps) {
 
               {/* Manual Entry Option */}
               <Button
-                variant={orderState.listData.dataSource === 'manual_entry' ? 'default' : 'outline'}
+                variant={listData.dataSource === 'manual_entry' ? 'default' : 'outline'}
                 className="h-auto p-4 flex flex-col items-center space-y-2"
                 onClick={() => handleDataSourceChange('manual_entry')}
               >
@@ -300,7 +300,7 @@ export function ListDataStep({ orderState }: OrderStepProps) {
 
               {/* List Builder Option */}
               <Button
-                variant={orderState.listData.dataSource === 'melissa_data' ? 'default' : 'outline'}
+                variant={listData.dataSource === 'melissa_data' ? 'default' : 'outline'}
                 className="h-auto p-4 flex flex-col items-center space-y-2"
                 onClick={() => handleDataSourceChange('melissa_data')}
                 disabled // Will be enabled when MelissaData integration is complete
@@ -319,7 +319,7 @@ export function ListDataStep({ orderState }: OrderStepProps) {
       )}
 
       {/* File Upload Interface */}
-      {orderState.listData.dataSource === 'upload' && (
+      {listData.dataSource === 'upload' && (
         <Card id="upload-form">
           <CardHeader>
             <CardTitle>Upload Your Mailing List</CardTitle>
@@ -338,20 +338,20 @@ export function ListDataStep({ orderState }: OrderStepProps) {
               onDrop={handleDrop}
             >
               <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              {orderState.listData.uploadedFile ? (
+              {listData.uploadedFile ? (
                 <div>
                   <p className="text-green-600 font-medium">
-                    File uploaded: {orderState.listData.uploadedFile.name}
+                    File uploaded: {listData.uploadedFile.name}
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
-                    Size: {(orderState.listData.uploadedFile.size / 1024).toFixed(1)} KB
+                    Size: {(listData.uploadedFile.size / 1024).toFixed(1)} KB
                   </p>
                   <Button 
                     variant="outline" 
                     size="sm" 
                     className="mt-3"
                     onClick={() => updateOrderState({
-                      listData: { ...orderState.listData, uploadedFile: undefined }
+                      listData: { ...listData, uploadedFile: undefined }
                     })}
                   >
                     Upload Different File
@@ -389,7 +389,7 @@ export function ListDataStep({ orderState }: OrderStepProps) {
       )}
 
       {/* Manual Entry Interface */}
-      {orderState.listData.dataSource === 'manual_entry' && (
+      {listData.dataSource === 'manual_entry' && (
         <Card id="manual_entry-form">
           <CardHeader>
             <CardTitle>Manual Entry</CardTitle>
@@ -495,7 +495,7 @@ export function ListDataStep({ orderState }: OrderStepProps) {
       )}
 
       {/* Existing List Selection */}
-      {orderState.listData.dataSource === 'mlm_select' && (
+      {listData.dataSource === 'mlm_select' && (
         <Card id="mlm_select-form">
           <CardHeader>
             <CardTitle>Select Existing Mailing List</CardTitle>
@@ -532,7 +532,7 @@ export function ListDataStep({ orderState }: OrderStepProps) {
             ) : (
               <div className="space-y-3">
                 <RadioGroup
-                  value={orderState.listData.selectedListId || ''}
+                  value={listData.selectedListId || ''}
                   onValueChange={handleListSelection}
                 >
                   {mailingLists.map((list) => (
@@ -554,14 +554,16 @@ export function ListDataStep({ orderState }: OrderStepProps) {
                               </div>
                             )}
                             <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
-                              <span>{list.record_count} records</span>
-                              <span>Created {new Date(list.created_at).toLocaleDateString()}</span>
+                              <span>{list.record_count ?? 0} records</span>
+                              {list.created_at && (
+                                <span>Created {new Date(list.created_at).toLocaleDateString()}</span>
+                              )}
                               {list.last_used_at && (
                                 <span>Last used {new Date(list.last_used_at).toLocaleDateString()}</span>
                               )}
                             </div>
                           </div>
-                          {orderState.listData.selectedListId === list.id && (
+                          {listData.selectedListId === list.id && (
                             <CheckCircle className="h-5 w-5 text-green-600" />
                           )}
                         </div>
@@ -570,7 +572,7 @@ export function ListDataStep({ orderState }: OrderStepProps) {
                   ))}
                 </RadioGroup>
 
-                {orderState.listData.selectedListId && (
+                {listData.selectedListId && (
                   <Alert>
                     <CheckCircle className="h-4 w-4" />
                     <AlertDescription>
@@ -585,7 +587,7 @@ export function ListDataStep({ orderState }: OrderStepProps) {
       )}
 
       {/* List Builder Placeholder */}
-      {orderState.listData.dataSource === 'melissa_data' && (
+      {listData.dataSource === 'melissa_data' && (
         <Alert id="melissa_data-form">
           <AlertDescription>
             List Builder integration with MelissaData is coming soon. This will allow you to build

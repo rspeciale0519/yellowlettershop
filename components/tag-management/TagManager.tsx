@@ -1,7 +1,8 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { Tag, TagCategory, TagCategoryConfig } from '@/types/supabase'
+import { TagCategory, TagCategoryConfig } from '@/types/supabase'
+import { Tag } from '@/types/supabase-domain'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'

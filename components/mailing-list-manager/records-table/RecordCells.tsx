@@ -14,42 +14,22 @@ import {
 import { Ban, MailX, Trash, X } from 'lucide-react';
 import { TagsDropdown } from '../tags-dropdown';
 import { CampaignUsageTooltip } from '../campaign-usage-tooltip';
+import type { MailingRecordUI } from '@/types/mailing-records';
 
-interface Campaign {
+interface CampaignTooltipShape {
   id: string;
   orderId: string;
   mailedDate: string;
 }
 
-interface MailingListRecord {
-  id: string;
-  record_data: {
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-    phone?: string;
-    address?: string;
-    city?: string;
-    state?: string;
-    zipCode?: string;
-    [key: string]: unknown;
-  };
-  validation_status: string;
-  tags?: Array<{ id: string; name: string }>;
-  campaigns?: Campaign[];
-  status?: 'active' | 'doNotContact' | 'returnedMail';
-  created_at: string;
-  updated_at: string;
-}
-
 interface EditingRecord {
   id: string;
   field: string;
-  value: unknown;
+  value: string;
 }
 
 export interface RecordCellProps {
-  record: MailingListRecord;
+  record: MailingRecordUI;
   onUpdateStatus: (
     id: string,
     status: 'active' | 'doNotContact' | 'returnedMail'
@@ -64,7 +44,7 @@ export interface RecordCellProps {
     value: EditingRecord | null
   ) => void;
   availableTags: { id: string; name: string }[];
-  onOpenCampaignModal: (campaigns: Campaign[], title: string) => void;
+  onOpenCampaignModal: (campaigns: CampaignTooltipShape[], title: string) => void;
 }
 
 export function SelectCell({
@@ -72,7 +52,7 @@ export function SelectCell({
   selectedRecords,
   onCheckboxToggle,
 }: {
-  record: MailingListRecord;
+  record: MailingRecordUI;
   selectedRecords: string[];
   onCheckboxToggle: (id: string) => void;
 }) {
@@ -90,7 +70,7 @@ export function ActionsCell({
   onUpdateStatus,
   onDelete,
 }: {
-  record: MailingListRecord;
+  record: MailingRecordUI;
   onUpdateStatus: (
     id: string,
     status: 'active' | 'doNotContact' | 'returnedMail'
@@ -202,7 +182,7 @@ export function TagsCell({
   onRemoveTag,
   availableTags,
 }: {
-  record: MailingListRecord;
+  record: MailingRecordUI;
   onAddTag: (listId: string, tagId: string) => void;
   onRemoveTag: (listId: string, tagId: string) => void;
   availableTags: { id: string; name: string }[];
@@ -238,22 +218,18 @@ export function CampaignsCell({
   record,
   onOpenCampaignModal,
 }: {
-  record: MailingListRecord;
+  record: MailingRecordUI;
   onOpenCampaignModal: (
-    campaigns: { id: string; orderId: string; mailedDate: string }[],
+    campaigns: CampaignTooltipShape[],
     title: string
   ) => void;
 }) {
   // Normalize campaign objects to the shape expected by CampaignUsageTooltip
-  const campaigns = Array.isArray(record?.campaigns)
-    ? record.campaigns.map((c: Campaign) => ({
+  const campaigns: CampaignTooltipShape[] = Array.isArray(record?.campaigns)
+    ? record.campaigns.map((c) => ({
         id: String(c?.id ?? ''),
-        orderId: String(
-          c?.orderId ?? c?.order_id ?? c?.orderNumber ?? c?.name ?? 'N/A'
-        ),
-        mailedDate: String(
-          c?.mailedDate ?? c?.mailed_date ?? c?.date ?? c?.created_at ?? ''
-        ),
+        orderId: String(c?.name ?? 'N/A'),
+        mailedDate: '',
       }))
     : [];
 
@@ -279,7 +255,7 @@ const EditableField = ({
   className,
   suffix = '',
 }: {
-  record: MailingListRecord;
+  record: MailingRecordUI;
   field: string;
   value: string;
   editingRecord: { id: string; field: string; value: string } | null;
@@ -319,11 +295,11 @@ export function EditableNameCell({
   setEditingRecord,
   saveRecordFieldEdit,
 }: {
-  record: MailingListRecord
+  record: MailingRecordUI
   nameFormat: 'lastFirst' | 'firstLast'
   editingRecord: { id: string; field: string; value: string } | null
   onRecordFieldEdit: (id: string, field: string, value: string) => void
-  setEditingRecord: (value: { id: string; field: string; value: any } | null) => void
+  setEditingRecord: (value: { id: string; field: string; value: string } | null) => void
   saveRecordFieldEdit: () => void
 }) {
   return (
@@ -385,7 +361,7 @@ export function EditableTextCell({
   setEditingRecord,
   saveRecordFieldEdit,
 }: {
-  record: MailingListRecord;
+  record: MailingRecordUI;
   field: string;
   value: string;
   editingRecord: { id: string; field: string; value: string } | null;

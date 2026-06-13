@@ -122,6 +122,7 @@ export function MailingListManagerModals({
         onCreateNewList={async () => {
           setAddListOpen(true);
           setAddRecordOpen(false);
+          return null;
         }}
       />
 
