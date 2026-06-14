@@ -28,8 +28,10 @@ drop policy if exists access_requests_select on public.access_requests;
 create policy access_requests_select on public.access_requests for select to authenticated
   using (requester_id = auth.uid() or reviewed_by = auth.uid());
 drop policy if exists access_requests_insert on public.access_requests;
+-- requester is always the caller; 'owner' cannot be self-requested (owner is
+-- assigned, not requested).
 create policy access_requests_insert on public.access_requests for insert to authenticated
-  with check (requester_id = auth.uid());
+  with check (requester_id = auth.uid() and requested_permission <> 'owner');
 drop policy if exists access_requests_update on public.access_requests;
 create policy access_requests_update on public.access_requests for update to authenticated
   using (requester_id = auth.uid()) with check (requester_id = auth.uid());
@@ -97,32 +99,48 @@ create policy team_activity_log_select on public.team_activity_log for select to
   using (actor_id = auth.uid() or target_user_id = auth.uid());
 
 -- ── RPCs ────────────────────────────────────────────────────────────────────
-create or replace function public.approve_access_request(request_id uuid, reviewer_user_id uuid, review_notes_text text default null)
+-- SECURITY: identity is taken from the JWT (auth.uid()), NEVER from the
+-- caller-supplied reviewer_user_id argument (kept only for call-signature
+-- compatibility). Only admins/managers may approve, and never their own request.
+create or replace function public.approve_access_request(request_id uuid, reviewer_user_id uuid default null, review_notes_text text default null)
 returns void language plpgsql security definer set search_path = public as $$
-declare r public.access_requests;
+declare r public.access_requests; caller uuid := auth.uid(); caller_role text;
 begin
+  if caller is null then raise exception 'unauthenticated'; end if;
+  select role into caller_role from public.user_profiles where user_id = caller;
+  if coalesce(caller_role, 'user') not in ('admin', 'manager') then
+    raise exception 'not authorized to approve access requests';
+  end if;
   update public.access_requests
-     set status='approved', reviewed_by=reviewer_user_id, reviewed_at=now(),
+     set status='approved', reviewed_by=caller, reviewed_at=now(),
          review_notes=review_notes_text, updated_at=now()
-   where id=request_id and status='pending'
+   where id=request_id and status='pending' and requester_id <> caller
    returning * into r;
   if r.id is not null then
     insert into public.resource_permissions (user_id, granted_by, resource_type, resource_id, permission_level, expires_at)
-    values (r.requester_id, reviewer_user_id, r.resource_type, r.resource_id, r.requested_permission,
+    values (r.requester_id, caller, r.resource_type, r.resource_id, r.requested_permission,
             case when r.requested_duration_days is not null
                  then now() + make_interval(days => r.requested_duration_days) end);
   end if;
 end; $$;
 
-create or replace function public.apply_permission_template(template_id uuid, target_user_id uuid, applied_by_user_id uuid)
+-- SECURITY: granted_by is taken from the JWT (auth.uid()), NEVER from the
+-- caller-supplied applied_by_user_id argument. Only the template owner or an
+-- admin/manager may apply a template.
+create or replace function public.apply_permission_template(template_id uuid, target_user_id uuid, applied_by_user_id uuid default null)
 returns void language plpgsql security definer set search_path = public as $$
-declare tp jsonb; t public.permission_templates;
+declare tp jsonb; t public.permission_templates; caller uuid := auth.uid(); caller_role text;
 begin
+  if caller is null then raise exception 'unauthenticated'; end if;
+  select role into caller_role from public.user_profiles where user_id = caller;
   select * into t from public.permission_templates where id=template_id;
   if t.id is null then raise exception 'permission template not found'; end if;
+  if t.created_by <> caller and coalesce(caller_role, 'user') not in ('admin', 'manager') then
+    raise exception 'not authorized to apply this template';
+  end if;
   for tp in select jsonb_array_elements(coalesce(t.template_permissions,'[]'::jsonb)) loop
     insert into public.resource_permissions (user_id, granted_by, resource_type, resource_id, permission_level, expires_at)
-    values (target_user_id, applied_by_user_id, tp->>'resource_type', tp->>'resource_id', tp->>'permission_level',
+    values (target_user_id, caller, tp->>'resource_type', tp->>'resource_id', tp->>'permission_level',
             case when tp->>'duration_days' is not null
                  then now() + make_interval(days => (tp->>'duration_days')::int) end);
   end loop;
