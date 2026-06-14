@@ -104,3 +104,7 @@ ylsbrain/.brainstate/
 ylsbrain/.obsidian/
 # <<< brain (managed) <<<
 
+# local-supabase-setup
+*.bak
+supabase/.temp
+supabase/.branches

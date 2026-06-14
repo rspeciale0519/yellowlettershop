@@ -756,6 +756,7 @@ create table if not exists background_jobs (
 create index if not exists background_jobs_user_idx on background_jobs(user_id, status);
 
 alter table background_jobs enable row level security;
+drop policy if exists "users read own jobs" on background_jobs;
 create policy "users read own jobs"
   on background_jobs for select
   using (auth.uid() = user_id);
@@ -816,6 +817,7 @@ create table if not exists webhook_dead_letters (
 
 create index if not exists webhook_dead_letters_user_idx on webhook_dead_letters(user_id, created_at);
 alter table webhook_dead_letters enable row level security;
+drop policy if exists "users read own dead letters" on webhook_dead_letters;
 create policy "users read own dead letters"
   on webhook_dead_letters for select
   using (auth.uid() = user_id);
