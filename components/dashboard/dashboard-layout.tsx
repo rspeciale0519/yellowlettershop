@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard,
   FileText,
@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { useAdmin } from "@/hooks/use-admin"
+import { createClient } from "@/utils/supabase/client"
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -37,6 +38,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true)
   const isDesktop = useMediaQuery("(min-width: 1024px)")
   const { isAdmin } = useAdmin()
+  const router = useRouter()
+
+  const handleSignOut = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push("/login")
+    router.refresh()
+  }
 
   useEffect(() => {
     setIsSidebarOpen(isDesktop)
@@ -150,11 +159,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             )}
           </ScrollArea>
           <div className="border-t p-4">
-            <Button variant="outline" className="w-full justify-start" asChild>
-              <Link href="/login">
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
-              </Link>
+            <Button variant="outline" className="w-full justify-start" onClick={handleSignOut}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
             </Button>
           </div>
         </div>
