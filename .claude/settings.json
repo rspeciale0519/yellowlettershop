@@ -8,10 +8,8 @@
       "mcp__plugin_vercel_vercel__get_deployment",
       "mcp__plugin_vercel_vercel__get_runtime_logs",
       "mcp__plugin_vercel_vercel__list_deployments",
-      "mcp__brave__brave_web_search",
-      "mcp__firecrawl__firecrawl_search",
-      "Bash(git fetch *)",
-      "Bash(nslookup *)"
+      "Bash(git fetch origin)",
+      "Bash(git fetch origin *)"
     ]
   },
   "hooks": {
