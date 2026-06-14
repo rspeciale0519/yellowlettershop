@@ -22,8 +22,23 @@ export default function SecurityPage() {
   const [currentPassword, setCurrentPassword] = useState("")
   const [passwordStrength, setPasswordStrength] = useState(0)
   const [updating, setUpdating] = useState(false)
+  const [signingOutOthers, setSigningOutOthers] = useState(false)
 
   const supabase = createClient()
+
+  const handleSignOutOthers = async () => {
+    setSigningOutOthers(true)
+    try {
+      const { error } = await supabase.auth.signOut({ scope: "others" })
+      if (error) throw error
+      toast.success("Signed out of all other sessions")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to sign out other sessions"
+      toast.error(message)
+    } finally {
+      setSigningOutOthers(false)
+    }
+  }
 
   // Mock login history
   const loginHistory = [
@@ -318,7 +333,10 @@ export default function SecurityPage() {
               </div>
             </CardContent>
             <CardFooter>
-              <Button variant="outline">Sign Out All Other Sessions</Button>
+              <Button variant="outline" onClick={handleSignOutOthers} disabled={signingOutOthers}>
+                {signingOutOthers && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Sign Out All Other Sessions
+              </Button>
             </CardFooter>
           </Card>
         </TabsContent>
