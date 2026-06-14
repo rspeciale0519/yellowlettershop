@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { createClient } from "@/utils/supabase/client"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,47 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { AlertCircle, Check, Eye, EyeOff, Lock, Loader2 } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { TwoFactorAuth } from "@/components/security/two-factor-auth"
+
+interface SessionRow {
+  id: string
+  created_at: string | null
+  updated_at: string | null
+  user_agent: string | null
+  ip: string | null
+  aal: string | null
+  is_current: boolean
+}
+
+function formatUserAgent(ua: string | null): string {
+  if (!ua) return "Unknown device"
+  const browser = /Edg/.test(ua)
+    ? "Edge"
+    : /Chrome/.test(ua)
+      ? "Chrome"
+      : /Firefox/.test(ua)
+        ? "Firefox"
+        : /Safari/.test(ua)
+          ? "Safari"
+          : "Browser"
+  const os = /Windows/.test(ua)
+    ? "Windows"
+    : /iPhone|iPad|iOS/.test(ua)
+      ? "iOS"
+      : /Mac OS X|Macintosh/.test(ua)
+        ? "macOS"
+        : /Android/.test(ua)
+          ? "Android"
+          : /Linux/.test(ua)
+            ? "Linux"
+            : "Unknown OS"
+  return `${browser} on ${os}`
+}
+
+function formatDate(value: string | null): string {
+  if (!value) return "Unknown"
+  const d = new Date(value)
+  return isNaN(d.getTime()) ? "Unknown" : d.toLocaleString()
+}
 
 export default function SecurityPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -32,6 +73,7 @@ export default function SecurityPage() {
       const { error } = await supabase.auth.signOut({ scope: "others" })
       if (error) throw error
       toast.success("Signed out of all other sessions")
+      await fetchSessions()
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to sign out other sessions"
       toast.error(message)
@@ -40,14 +82,26 @@ export default function SecurityPage() {
     }
   }
 
-  // Mock login history
-  const loginHistory = [
-    { date: "2023-11-20 14:30:25", ip: "192.168.1.1", location: "Los Angeles, CA", device: "Chrome on Windows" },
-    { date: "2023-11-18 09:15:10", ip: "192.168.1.1", location: "Los Angeles, CA", device: "Safari on iPhone" },
-    { date: "2023-11-15 16:45:33", ip: "192.168.1.1", location: "Los Angeles, CA", device: "Chrome on Windows" },
-    { date: "2023-11-10 11:20:45", ip: "192.168.1.1", location: "San Francisco, CA", device: "Firefox on MacOS" },
-    { date: "2023-11-05 08:05:12", ip: "192.168.1.1", location: "Los Angeles, CA", device: "Chrome on Windows" },
-  ]
+  // Active login sessions (real data from auth.sessions via RPC)
+  const [sessions, setSessions] = useState<SessionRow[]>([])
+  const [loadingSessions, setLoadingSessions] = useState(true)
+
+  const fetchSessions = useCallback(async () => {
+    setLoadingSessions(true)
+    try {
+      const { data, error } = await supabase.rpc("get_my_sessions")
+      if (error) throw error
+      setSessions((data as SessionRow[] | null) ?? [])
+    } catch {
+      setSessions([])
+    } finally {
+      setLoadingSessions(false)
+    }
+  }, [supabase])
+
+  useEffect(() => {
+    fetchSessions()
+  }, [fetchSessions])
 
   const calculatePasswordStrength = (password: string) => {
     if (!password) return 0
@@ -165,7 +219,7 @@ export default function SecurityPage() {
         <TabsList>
           <TabsTrigger value="password">Password</TabsTrigger>
           <TabsTrigger value="2fa">Two-Factor Authentication</TabsTrigger>
-          <TabsTrigger value="sessions">Login History</TabsTrigger>
+          <TabsTrigger value="sessions">Active Sessions</TabsTrigger>
         </TabsList>
 
         <TabsContent value="password" className="space-y-6">
@@ -305,32 +359,39 @@ export default function SecurityPage() {
         <TabsContent value="sessions" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Login History</CardTitle>
-              <CardDescription>Recent login activity on your account</CardDescription>
+              <CardTitle>Active Sessions</CardTitle>
+              <CardDescription>Devices currently signed in to your account</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {loginHistory.map((session, index) => (
-                  <div key={index} className="flex items-start space-x-4 rounded-md border p-4">
-                    <div className="rounded-full bg-primary/10 p-2">
-                      <Lock className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="flex-1 space-y-1">
-                      <p className="font-medium">{session.device}</p>
-                      <div className="text-sm text-muted-foreground">
-                        <p>IP: {session.ip}</p>
-                        <p>Location: {session.location}</p>
-                        <p>Date: {session.date}</p>
+              {loadingSessions ? (
+                <div className="flex items-center justify-center py-8 text-muted-foreground">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading sessions...
+                </div>
+              ) : sessions.length === 0 ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">No active sessions found.</p>
+              ) : (
+                <div className="space-y-4">
+                  {sessions.map((session) => (
+                    <div key={session.id} className="flex items-start space-x-4 rounded-md border p-4">
+                      <div className="rounded-full bg-primary/10 p-2">
+                        <Lock className="h-4 w-4 text-primary" />
                       </div>
-                    </div>
-                    {index === 0 && (
-                      <div className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-800/30 dark:text-green-500">
-                        Current
+                      <div className="flex-1 space-y-1">
+                        <p className="font-medium">{formatUserAgent(session.user_agent)}</p>
+                        <div className="text-sm text-muted-foreground">
+                          <p>IP: {session.ip ?? "Unknown"}</p>
+                          <p>Last active: {formatDate(session.updated_at ?? session.created_at)}</p>
+                        </div>
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                      {session.is_current && (
+                        <div className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-800/30 dark:text-green-500">
+                          Current
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
             <CardFooter>
               <Button variant="outline" onClick={handleSignOutOthers} disabled={signingOutOthers}>
