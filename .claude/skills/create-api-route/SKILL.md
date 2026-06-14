@@ -1,6 +1,6 @@
 ---
 name: create-api-route
-description: Scaffold a new Next.js API route with auth middleware, Zod validation, and Prisma queries following existing project patterns.
+description: Scaffold a new Next.js API route under app/api with the project's auth wrappers, Zod (or unknown-narrowing) validation, and Supabase data access following existing patterns.
 disable-model-invocation: true
 ---
 
@@ -14,9 +14,9 @@ The user invokes this with: `/create-api-route <path> [methods]`
 
 Examples:
 
-- `/create-api-route webhooks` - Creates GET and POST handlers
-- `/create-api-route webhooks/[id] GET PATCH DELETE` - Creates specific methods
-- `/create-api-route admin/reports` - Creates an admin route with `requireAdmin()`
+- `/create-api-route campaigns` — Creates GET and POST handlers
+- `/create-api-route campaigns/[id] GET PATCH DELETE` — Creates specific methods
+- `/create-api-route admin/reports` — Creates an admin route gated by `withAdmin`
 
 ## Steps
 
@@ -24,111 +24,106 @@ Examples:
 
 Check if the path starts with `admin/`:
 
-- **Admin route**: Use `requireAdmin()` from `@/lib/admin/middleware`
-- **User route**: Use `getAuthContext()` from `@/lib/auth/middleware`
+- **Admin route**: wrap with `withAdmin` from `@/lib/admin/require-admin`
+- **User route**: wrap with `withAuth` from `@/lib/auth/middleware`
 
 ### 2. Examine Existing Patterns
 
-Before writing any code, read 2-3 existing routes near the target path to match patterns:
+Before writing any code, read 2-3 existing routes near the target path to match conventions:
 
 ```bash
-# For user routes
-cat src/app/api/contacts/route.ts
-cat src/app/api/lists/route.ts
+# User routes
+cat app/api/accuzip/search/route.ts
+cat app/api/mailing-lists/route.ts
 
-# For admin routes
-cat src/app/api/admin/users/route.ts
-cat src/app/api/admin/plans/route.ts
+# Admin routes
+cat app/api/admin/users/route.ts
 ```
 
 ### 3. Create the Route File
 
-Create `src/app/api/<path>/route.ts` following this structure:
+Create `app/api/<path>/route.ts`. Routes live in `app/api`, not `src/app/api`.
 
-**User route pattern:**
+**User route pattern** (`withAuth` injects an auth context — destructure `userId`; the full shape is `{ user, userId }`):
 
 ```typescript
-import { NextRequest, NextResponse } from "next/server";
-import { getAuthContext } from "@/lib/auth/middleware";
+import { NextRequest, NextResponse } from 'next/server';
+import { withAuth } from '@/lib/auth/middleware';
 
-export async function GET(request: NextRequest) {
+export const GET = withAuth(async (req: NextRequest, { userId }) => {
   try {
-    const auth = await getAuthContext(request);
-    if (!auth) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    if (!auth.organizationId) {
-      return NextResponse.json(
-        { error: "No organization associated with user" },
-        { status: 403 }
-      );
-    }
-
-    // TODO: Implement
+    // ... query scoped to userId
     return NextResponse.json({ data: [] });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
-      { error: "Failed to fetch resource" },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
-}
-```
-
-**Admin route pattern:**
-
-```typescript
-import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin/middleware";
-
-export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
-  if (auth.error) return auth.error;
-
-  try {
-    // TODO: Implement
-    return NextResponse.json({ data: [] });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
-}
-```
-
-### 4. Create Validation Schema (if POST/PATCH)
-
-If the route accepts request bodies, create a Zod schema in the appropriate service's `validation.ts` file or a co-located file:
-
-```typescript
-import { z } from "zod";
-
-export const createResourceSchema = z.object({
-  name: z.string().min(1).max(255),
-  // ... fields
 });
 ```
 
-### 5. Create Service Layer (if complex logic)
+To restrict a user route by role, pass options: `withAuth(handler, { allowedRoles: ['admin'] })`.
 
-For routes with non-trivial business logic, create or extend a service file under `src/lib/<resource>/service.ts` or `src/services/`.
+**Admin route pattern** (`withAdmin` injects the resolved `AdminUser`; it returns 401/403 itself):
+
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+import { withAdmin } from '@/lib/admin/require-admin';
+import type { AdminUser } from '@/lib/admin/types';
+
+export const GET = withAdmin(async (req: NextRequest, admin: AdminUser) => {
+  // admin.userId, admin.role, admin.email available
+  return NextResponse.json({ data: [] });
+});
+```
+
+### 4. Validate request bodies (POST/PATCH)
+
+Parse the body as `unknown` inside a try/catch and reject malformed JSON with 400 before touching it. Then validate with either a Zod schema (preferred — ~45 routes already do) or explicit `unknown`-narrowing (see `app/api/accuzip/search/route.ts`):
+
+```typescript
+import { z } from 'zod';
+
+const createResourceSchema = z.object({
+  name: z.string().min(1).max(255),
+  // ... fields
+});
+
+let body: unknown;
+try {
+  body = await req.json();
+} catch {
+  return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+}
+
+const parsed = createResourceSchema.safeParse(body);
+if (!parsed.success) {
+  return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
+}
+```
+
+### 5. Data access (Supabase, not Prisma)
+
+This project has **no Prisma**. Use the Supabase clients:
+
+- Server helpers under `@/lib/supabase/server-*` (e.g. `server-mailing-lists`)
+- Service-role client `createServiceClient` from `@/utils/supabase/service` for trusted server work
+
+For non-trivial logic, extract to a service under `lib/<resource>/` rather than fattening the route. Always scope queries to the caller (`userId` / their organization) so a request can't read another tenant's rows.
 
 ### 6. Verify
 
-After creation, run:
-
 ```bash
-npm run type-check
+npm run typecheck:ui
 npm run lint
 ```
 
 ## Key Rules
 
-- Never use `any` types - use `unknown` with type narrowing
-- Always validate request bodies with Zod at API boundaries
-- Use `prisma` from `@/lib/prisma` for database operations
-- Keep route files under 450 lines - extract to service layer if needed
-- Use `Promise.all()` for parallel independent queries (see admin/users pattern)
-- Parse search params with explicit defaults, not implicit coercion
+- Never use `any` — use `unknown` with type narrowing
+- Always parse/validate request bodies at the boundary; reject bad JSON with 400
+- Data access is Supabase (`@/lib/supabase/*`, `@/utils/supabase/*`) — there is no `@/lib/prisma`
+- Keep route files **≤350 LOC** — extract to a `lib/<resource>/` service if needed
+- Scope every query to the authenticated user/org to prevent cross-tenant (IDOR) reads
+- Parse search params with explicit defaults, not implicit coercion (see `app/api/admin/users/route.ts`)

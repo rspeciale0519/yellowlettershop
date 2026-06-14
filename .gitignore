@@ -1,6 +1,8 @@
 .env
 .env.local
+.env.local.bak
 .signing_keys.json
+.claude/settings.local.json
 node_modules
 
 # Logs
