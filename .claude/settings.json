@@ -1,4 +1,17 @@
 {
+  "permissions": {
+    "allow": [
+      "mcp__chrome-devtools__wait_for",
+      "mcp__chrome-devtools__list_network_requests",
+      "mcp__chrome-devtools__get_network_request",
+      "mcp__plugin_vercel_vercel__get_project",
+      "mcp__plugin_vercel_vercel__get_deployment",
+      "mcp__plugin_vercel_vercel__get_runtime_logs",
+      "mcp__plugin_vercel_vercel__list_deployments",
+      "Bash(git fetch origin)",
+      "Bash(git fetch origin *)"
+    ]
+  },
   "hooks": {
     "SessionStart": [
       {

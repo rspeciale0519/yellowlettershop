@@ -1,7 +1,42 @@
 # yls brain — STATE
-Updated: 2026-06-13
+Updated: 2026-06-14
 
 ## Current focus
+**NEW (2026-06-14): Supabase key-leak remediated — rotated to new sb_ keys,
+legacy keys DISABLED+REVOKED.** Old `service_role` JWT + a PAT had been
+committed to pushed git history (`5cb2199`, `.claude/settings.local.json`).
+Fix (browser-driven, owner-authorized): migrated app to new `sb_publishable_`/
+`sb_secret_` keys (same env var NAMES, new values) across `.env.local` + Vercel
+(Prod + Dev + Preview/develop) → prod redeploy `dpl_GHQPqaHx2…` READY; then
+**disabled legacy anon/service_role + REVOKED legacy HS256 signing key
+`BCDC2B40`**. Verified: leaked key → `"Legacy API keys are disabled"`, new keys
+200, leaked PAT `sbp_v0_8ff3…` → 401 (already dead), live login 0 console errors.
+`.claude/settings.local.json` gitignored+untracked (leak vector closed). Details:
+[[journal/2026-06-14]] [10:30]; memory:project_supabase_key_rotation. Remaining:
+commit hygiene+tooling bundle (chore branch→PR); optional history purge (low
+priority, leaked key dead); owner may delete `.env.local.bak`.
+
+## (prior focus)
+**(PR #11, merge `a9981fe`): Stripe webhook finished "properly" + FIRST
+PRODUCTION DEPLOY.** Per owner "set it up properly"→"Do it all properly":
+(1) Vercel `STRIPE_WEBHOOK_SECRET` untangled — deleted 3 overlapping placeholder
+entries (All-Env + Development + Preview/develop), left ONE All-Environments
+entry set to the real endpoint signing secret (whsec_…, NOT recorded here);
+"Needs Attention" cleared. Also deleted leftover `TEST_VAR_DELETE_ME`. Endpoint:
+Stripe → https://app.yellowlettershop.com/api/payments/webhooks/stripe (events
+payment_intent.succeeded/payment_failed/canceled). (2) Handler rewrite
+`app/api/payments/webhooks/stripe/route.ts` for the consolidated inline-payment
+model: kept IP allowlist + rate limit + signature verify; added DB-backed
+idempotency via new `webhook_events`; only reconciles orders by
+stripe_payment_intent_id (payment_status + amount_captured), never regresses
+fulfillment; dropped dead subscription/invoice/customer handlers (−475 LOC).
+(3) Migration `20260613100000_webhook_events.sql` (service-role-only, unique
+stripe_event_id) APPLIED to DB2 + verified (RLS on, unique constraint, 3 idx).
+Gates: typecheck:full 0, 167 tests. Commit `c743bcb` → PR #11 → main `a9981fe`
+→ Vercel production deploy (dpl_nLgykfJoJv9b…, target production). Detail in
+[[journal/2026-06-13]].
+
+## (prior focus)
 **Production-readiness: DB consolidation DONE+verified; orders/payment refactored
 to the consolidated model; core flow browser-smoke VERIFIED.** Branch
 `feature/production-readiness`, commits `0940942`→`7517c40`. Big arc this session:
