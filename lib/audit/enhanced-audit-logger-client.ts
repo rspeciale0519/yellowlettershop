@@ -62,14 +62,21 @@ export class ClientAuditLogger {
     teamId: string,
     filters?: ActivityFilters
   ): Promise<AuditLogEntry[]> {
+    // Note: auth.users is not exposed to PostgREST, so we cannot embed actor/
+    // target_user via a foreign-key join — select the row columns only.
     let query = this.supabase
       .from('team_activity_log')
-      .select(`
-        *,
-        actor:auth.users!actor_id(id, email, raw_user_meta_data),
-        target_user:auth.users!target_user_id(id, email, raw_user_meta_data)
-      `)
-      .eq('team_id', teamId)
+      .select('*')
+
+    // When no real team UUID is available (e.g. solo accounts pass a placeholder),
+    // scope to the current user's own activity instead of a bogus team_id filter.
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(teamId)
+    if (isUuid) {
+      query = query.eq('team_id', teamId)
+    } else {
+      const { data: { user } } = await this.supabase.auth.getUser()
+      if (user) query = query.eq('actor_id', user.id)
+    }
 
     if (filters?.action_types?.length) {
       query = query.in('action_type', filters.action_types)

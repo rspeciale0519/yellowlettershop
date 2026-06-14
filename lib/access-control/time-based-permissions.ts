@@ -206,12 +206,16 @@ export class TimeBasedPermissionsService {
    * Get permission templates for a team
    */
   async getPermissionTemplates(teamId?: string): Promise<PermissionTemplate[]> {
-    const { data, error } = await (await this.getSupabase())
+    let query = (await this.getSupabase())
       .from('permission_templates')
       .select('*')
-      .eq('team_id', teamId)
       .eq('is_active', true)
-      .order('name')
+
+    if (teamId) {
+      query = query.eq('team_id', teamId)
+    }
+
+    const { data, error } = await query.order('name')
 
     if (error) throw error
     return data || []
