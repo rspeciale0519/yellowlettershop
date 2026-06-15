@@ -410,6 +410,7 @@ export default function TeamManagementPage() {
           {showCreateTemplate ? (
             <PermissionTemplateForm
               onSubmit={handleCreateTemplate}
+              teamId={team.teamId ?? undefined}
               onCancel={() => {
                 setShowCreateTemplate(false)
                 setEditingTemplate(null)
