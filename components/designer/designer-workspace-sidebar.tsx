@@ -1,7 +1,9 @@
 "use client"
 
 import { AlertTriangle, Layers, PackagePlus, PaintBucket, SlidersHorizontal } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { designerBorder, designerSurface } from "@/components/designer/ui/designer-tokens"
 import { InspectorPanel } from "@/components/designer/inspector-panel"
 import { LayersPanel } from "@/components/designer/layers-panel"
 import { ModulesPanel } from "@/components/designer/modules-panel"
@@ -55,7 +57,7 @@ const panelOptions: { id: WorkspacePanel; label: string; icon: typeof PackagePlu
 export function DesignerWorkspaceSidebar(props: DesignerWorkspaceSidebarProps) {
   return (
     <aside className="flex h-full">
-      <div className="flex w-20 flex-col items-center gap-2 border-r border-slate-800 bg-slate-950 px-2 py-4">
+      <div className={cn("flex w-20 flex-col items-center gap-2 border-r px-2 py-4", designerBorder.rail, designerSurface.rail)}>
         {panelOptions.map((panel) => {
           const Icon = panel.icon
           const isActive = props.activePanel === panel.id
@@ -77,7 +79,7 @@ export function DesignerWorkspaceSidebar(props: DesignerWorkspaceSidebarProps) {
           )
         })}
       </div>
-      <div className="w-80 overflow-y-auto border-r border-slate-800 bg-slate-900">
+      <div className={cn("w-80 overflow-y-auto border-r", designerBorder.base, designerSurface.panel)}>
         {props.activePanel === "modules" && (
           <ModulesPanel
             activeTool={props.activeTool}

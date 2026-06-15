@@ -36,14 +36,22 @@ EXIT CRITERIA (prove in transcript):
 - `frontend-design` skill announced as invoked.
 
 ### P1 — Design system + global chrome + theme coherence
+NOTE on sequencing: design-system-first means P1 delivers the tokens/primitives and makes the
+**chrome + shared foundation** theme-coherent. Each later zone phase (P2–P5) makes ITS OWN panel
+surfaces theme-coherent as it is rebuilt on the primitives — so total theme coverage is reached by
+P6, not crammed into P1 (which would mean refactoring the same files twice).
 EXIT CRITERIA:
 - New `components/designer/ui/` files exist: `designer-tokens.ts` + shared primitives (DesignerPanel,
   PanelSection, FieldRow, IconButton, ToolbarButton, SegmentedControl) — show via `git status`/`ls`.
-- Header, icon rail, workspace sidebar, panel shells are theme-coherent: a grep shows no designer
-  surface hardcoded dark without a light/`dark:` pair (the sidebar no longer uses bare `bg-slate-9xx`).
+- The CHROME + shared foundation are theme-coherent: `designer-header.tsx`, the sidebar content-panel
+  shell (`designer-workspace-sidebar.tsx`), and the inspector foundation (`inspector/inspector-styles.ts`,
+  `inspector/inspector-section.tsx`) no longer use bare dark-only surfaces — they use semantic tokens
+  (`bg-card`/`bg-background`/`border-border`/`text-foreground`/`text-muted-foreground`). The icon rail
+  stays fixed-dark by design (brand). Show via grep/diff.
 - `npm run typecheck:ui` exits 0 (run it). Per-file `npx eslint` clean on every changed file (run it).
 - CDT: `/design/customize` loads in BOTH light and dark; a screenshot is captured for each; agent
-  states how the chrome matches the approved mockup.
+  states how the chrome matches the approved mockup (and notes which per-zone surfaces are still
+  pending their phase).
 - `/git-workflow-planning:checkpoint 1 design-system-and-chrome` commit exists (show `git log -1`).
 
 ### P2 — Inspector upgrades (zone 7)
@@ -71,6 +79,8 @@ the picker in use; checkpoint 5 commit shown.
 ### P6 — Final polish + verification
 EXIT CRITERIA:
 - Full CDT visual pass across all zones in BOTH themes; screenshots captured.
+- A grep confirms no non-rail designer surface remains hardcoded dark-only (every zone fixed its own
+  surfaces in its phase; the icon rail is the only intentional fixed-dark surface).
 - `npm run build` exits 0 (run it). `npm run typecheck:ui` exits 0. All designer mocha tests pass.
 - Every changed/added source file ≤350 LOC — prove with a line-count over the changed file list.
 - Contrast/a11y notes recorded.
