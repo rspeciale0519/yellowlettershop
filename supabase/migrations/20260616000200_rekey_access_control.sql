@@ -57,7 +57,9 @@ begin
   if caller is null then raise exception 'unauthenticated'; end if;
   select * into t from public.permission_templates where id=template_id;
   if t.id is null then raise exception 'permission template not found'; end if;
-  if t.created_by <> caller and not public.is_team_admin(t.team_id) then raise exception 'not authorized to apply this template'; end if;
+  -- Admin-only: NO template-owner shortcut. A non-admin who owns a template must
+  -- not be able to self-grant arbitrary resource_permissions by applying it.
+  if not public.is_team_admin(t.team_id) then raise exception 'not authorized to apply this template'; end if;
   for tp in select jsonb_array_elements(coalesce(t.template_permissions,'[]'::jsonb)) loop
     insert into public.resource_permissions (user_id, granted_by, resource_type, resource_id, permission_level, team_id, expires_at)
     values (target_user_id, caller, tp->>'resource_type', tp->>'resource_id', tp->>'permission_level', t.team_id,
@@ -76,10 +78,13 @@ drop policy if exists access_requests_select on public.access_requests;
 create policy access_requests_select on public.access_requests for select to authenticated
   using (requester_id = auth.uid() or reviewed_by = auth.uid() or public.is_team_admin(team_id));
 
+-- Templates are admin-only (create/read/update/delete). Dropping the prior
+-- created_by-based access so a non-admin cannot mint a template to self-grant via
+-- apply_permission_template. team_id must be set and the caller must administer it.
 drop policy if exists permission_templates_all on public.permission_templates;
 create policy permission_templates_all on public.permission_templates for all to authenticated
-  using (created_by = auth.uid() or public.is_team_admin(team_id))
-  with check (created_by = auth.uid() or public.is_team_admin(team_id));
+  using (public.is_team_admin(team_id))
+  with check (public.is_team_admin(team_id));
 
 drop policy if exists resource_permissions_select on public.resource_permissions;
 create policy resource_permissions_select on public.resource_permissions for select to authenticated
