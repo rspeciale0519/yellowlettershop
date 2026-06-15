@@ -110,7 +110,9 @@ export function TextInspector({
         />
       </InspectorSection>
       <MergeFieldsSection
-        onInsert={(token) => onUpdate({ content: `${element.content} ${token}` })}
+        onInsert={(token) =>
+          onUpdate({ content: element.content ? `${element.content} ${token}` : token })
+        }
       />
     </>
   )
