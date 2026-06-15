@@ -4,7 +4,7 @@ import { getCurrentTeam } from "@/lib/teams/current-team"
 
 export async function GET() {
   const team = await getCurrentTeam()
-  if (!team) return NextResponse.json({ members: [], invitations: [], role: null, maxSeats: null })
+  if (!team) return NextResponse.json({ teamId: null, members: [], invitations: [], role: null, maxSeats: null })
   const supabase = await createClient()
   const [members, invitations, teamRow] = await Promise.all([
     supabase.from("team_members").select("user_id, role, status, joined_at").eq("team_id", team.teamId),
@@ -18,6 +18,7 @@ export async function GET() {
     supabase.from("teams").select("max_seats").eq("id", team.teamId).maybeSingle(),
   ])
   return NextResponse.json({
+    teamId: team.teamId,
     members: members.data ?? [],
     invitations: (invitations as { data: unknown[] }).data ?? [],
     role: team.role,

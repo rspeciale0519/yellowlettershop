@@ -3,11 +3,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command'
-import { Info, Loader2, X } from 'lucide-react'
+import { Check, Info, Loader2, Search, X } from 'lucide-react'
 import type { ResourceType } from '@/lib/access-control/time-based-permissions'
 
 export const ALL_RESOURCES = '*'
@@ -152,31 +151,54 @@ export default function ResourcePicker({ resourceType, teamId, value, onChange }
                   ))}
                 </div>
               )}
-              <Command shouldFilter={false} className="rounded-md border">
-                <CommandInput placeholder={`Search ${labels.plural.toLowerCase()}…`} value={search} onValueChange={setSearch} />
-                <CommandList className="max-h-[220px]">
+              <div className="rounded-md border">
+                <div className="flex items-center border-b px-3">
+                  <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                  <Input
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder={`Search ${labels.plural.toLowerCase()}…`}
+                    className="h-9 border-0 px-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
+                </div>
+                <div className="max-h-[220px] overflow-y-auto p-1">
                   {loading ? (
                     <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin" /> Loading…
                     </div>
                   ) : error ? (
                     <div className="py-6 text-center text-sm text-destructive">{error}</div>
+                  ) : options.length === 0 ? (
+                    <div className="py-6 text-center text-sm text-muted-foreground">No {labels.plural.toLowerCase()} found.</div>
                   ) : (
-                    <>
-                      <CommandEmpty>No {labels.plural.toLowerCase()} found.</CommandEmpty>
-                      <CommandGroup>
-                        {options.map(opt => (
-                          <CommandItem key={opt.id} value={opt.id} onSelect={() => toggleId(opt.id)} className="flex items-center gap-2">
-                            <Checkbox checked={selectedIds.includes(opt.id)} className="pointer-events-none" />
-                            <span className="flex-1 truncate">{opt.label}</span>
-                            {opt.meta && <span className="text-xs text-muted-foreground">{opt.meta}</span>}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </>
+                    options.map(opt => {
+                      const checked = selectedIds.includes(opt.id)
+                      return (
+                        <div
+                          key={opt.id}
+                          role="option"
+                          aria-selected={checked}
+                          tabIndex={0}
+                          onClick={() => toggleId(opt.id)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              toggleId(opt.id)
+                            }
+                          }}
+                          className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-accent focus:bg-accent focus:outline-none"
+                        >
+                          <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border ${checked ? 'border-primary bg-primary text-primary-foreground' : 'border-input'}`}>
+                            {checked && <Check className="h-3 w-3" />}
+                          </span>
+                          <span className="flex-1 truncate">{opt.label}</span>
+                          {opt.meta && <span className="text-xs text-muted-foreground">{opt.meta}</span>}
+                        </div>
+                      )
+                    })
                   )}
-                </CommandList>
-              </Command>
+                </div>
+              </div>
               {selectedIds.length > 0 && (
                 <div className="flex items-center justify-between">
                   <Badge variant="outline">{selectedIds.length} selected</Badge>
