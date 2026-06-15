@@ -73,7 +73,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: "Team Management", href: "/dashboard/team-management", icon: Users },
     { name: "Media Library", href: "/dashboard/media", icon: ImageIcon },
     { name: "Tag Manager", href: "/dashboard/tags", icon: Tag },
-    { name: "Activity Logs", href: "/dashboard/activity", icon: Activity },
+    // Activity Logs is an admin-only feature for now.
+    ...(isAdmin ? [{ name: "Activity Logs", href: "/dashboard/activity", icon: Activity }] : []),
   ]
 
   return (
