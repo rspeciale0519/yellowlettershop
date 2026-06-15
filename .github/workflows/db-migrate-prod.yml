@@ -1,0 +1,44 @@
+name: Apply DB migrations (production)
+
+# Applies any migration in supabase/migrations/** that production hasn't seen yet,
+# whenever such a file lands on main. Uses the Management API (NOT `supabase db push`)
+# so it only runs un-applied versions, atomically, stopping on the first error.
+#
+# Required repo secrets:
+#   SUPABASE_ACCESS_TOKEN  - a Supabase personal access token with access to the project
+#   SUPABASE_PROJECT_REF   - the production project ref (lmtpfgfulkynrktdkgpu)
+#
+# The `production` environment lets you require a manual approval before each run
+# (Settings -> Environments -> production -> Required reviewers). Optional but recommended.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'List pending migrations without applying them'
+        type: boolean
+        default: false
+
+concurrency:
+  group: db-migrate-prod
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: Apply pending migrations to production
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Apply migrations
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: node scripts/apply-prod-migrations.mjs ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && '--dry-run' || '' }}
