@@ -119,6 +119,10 @@ export default function TeamManagementPage() {
     }
   }, [])
 
+  const refreshTeam = useCallback(async () => {
+    await Promise.all([loadTeam(), loadRecentActivity()])
+  }, [loadTeam, loadRecentActivity])
+
   useEffect(() => {
     loadTeam()
     loadAccessRequests()
@@ -371,7 +375,7 @@ export default function TeamManagementPage() {
             // them owner on their first invite, so they must see the invite control.
             role={team.role ?? 'owner'}
             maxSeats={team.maxSeats}
-            onChanged={loadTeam}
+            onChanged={refreshTeam}
           />
         </TabsContent>
 
