@@ -43,7 +43,7 @@ export function ToggleGroupField({
               key={option.value}
               value={option.value}
               aria-label={option.label}
-              className="h-9 border border-slate-700 bg-slate-950/70 text-slate-300 data-[state=on]:border-yellow-400 data-[state=on]:bg-yellow-400 data-[state=on]:text-slate-950"
+              className="h-9 border border-input bg-background text-foreground data-[state=on]:border-yellow-400 data-[state=on]:bg-yellow-400 data-[state=on]:text-slate-950"
             >
               {Icon ? <Icon className="h-4 w-4" /> : option.label}
             </ToggleGroupItem>

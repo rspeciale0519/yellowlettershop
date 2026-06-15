@@ -25,14 +25,14 @@ export function TransformSection({
       <div className="grid grid-cols-2 gap-2">
         <button
           type="button"
-          className="rounded-md border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm font-medium text-slate-200 hover:border-yellow-400 hover:text-yellow-200"
+          className="rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-foreground hover:border-yellow-400 hover:text-yellow-600 dark:hover:text-yellow-300"
           onClick={() => onUpdate({ x: canvasSize.width / 2 - element.width / 2 })}
         >
           Center H
         </button>
         <button
           type="button"
-          className="rounded-md border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm font-medium text-slate-200 hover:border-yellow-400 hover:text-yellow-200"
+          className="rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-foreground hover:border-yellow-400 hover:text-yellow-600 dark:hover:text-yellow-300"
           onClick={() => onUpdate({ y: canvasSize.height / 2 - element.height / 2 })}
         >
           Center V

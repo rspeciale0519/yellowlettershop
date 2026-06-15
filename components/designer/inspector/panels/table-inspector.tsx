@@ -39,7 +39,7 @@ export function TableInspector({
           onCheckedChange={() => onUpdate(toggleHeader(element))}
         />
       </div>
-      <p className="text-xs text-slate-400">Double-click a cell on the canvas to edit its text.</p>
+      <p className="text-xs text-muted-foreground">Double-click a cell on the canvas to edit its text.</p>
     </InspectorSection>
   )
 }

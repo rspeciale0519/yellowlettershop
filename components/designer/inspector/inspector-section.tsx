@@ -1,24 +1,38 @@
-import type { LucideIcon } from "lucide-react"
+"use client"
+
+import { useState } from "react"
+import { ChevronDown, type LucideIcon } from "lucide-react"
 import type { ReactNode } from "react"
 
 export function InspectorSection({
   title,
   icon: Icon,
   children,
+  defaultOpen = true,
 }: {
   title: string
   icon: LucideIcon
   children: ReactNode
+  defaultOpen?: boolean
 }) {
+  const [open, setOpen] = useState(defaultOpen)
   return (
-    <section className="rounded-lg border border-border bg-card/60 p-3 shadow-sm">
-      <div className="mb-3 flex items-center gap-2 border-b border-border pb-2">
+    <section className="rounded-lg border border-border bg-card/60 shadow-sm">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center gap-2 rounded-lg px-3 py-2.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
+      >
         <span className="flex h-7 w-7 items-center justify-center rounded-md bg-yellow-400/15 text-yellow-700 dark:text-yellow-300">
           <Icon className="h-4 w-4" />
         </span>
-        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-      </div>
-      <div className="space-y-3">{children}</div>
+        <h3 className="flex-1 text-left text-sm font-semibold text-foreground">{title}</h3>
+        <ChevronDown
+          className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "" : "-rotate-90"}`}
+        />
+      </button>
+      {open ? <div className="space-y-3 px-3 pb-3">{children}</div> : null}
     </section>
   )
 }
