@@ -125,7 +125,7 @@ export default async function DashboardPage() {
           <CardContent>
             <div className="grid gap-2">
               <Link
-                href="/dashboard/templates/new"
+                href="/design/customize"
                 className="flex items-center rounded-md border p-3 text-sm transition-colors hover:bg-muted"
               >
                 <FileText className="mr-3 h-4 w-4 text-primary" />

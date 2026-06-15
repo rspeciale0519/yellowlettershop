@@ -1,6 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useAdmin } from "@/hooks/use-admin"
 import {
   Search,
   Filter,
@@ -117,10 +119,19 @@ const mockActivityLogs = [
 ]
 
 export default function ActivityPage() {
+  const router = useRouter()
+  const { isAdmin, isLoading: isAdminLoading } = useAdmin()
   const [searchQuery, setSearchQuery] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [sortBy, setSortBy] = useState("recent")
   const [dateRange, setDateRange] = useState("all")
+
+  // Admin-only feature for now — redirect non-admins away.
+  useEffect(() => {
+    if (!isAdminLoading && !isAdmin) {
+      router.replace("/dashboard")
+    }
+  }, [isAdminLoading, isAdmin, router])
 
   // Filter and sort activity logs
   const filteredLogs = mockActivityLogs
@@ -238,6 +249,14 @@ export default function ActivityPage() {
     }
 
     return `${Math.floor(seconds)} second${seconds === 1 ? "" : "s"} ago`
+  }
+
+  if (isAdminLoading || !isAdmin) {
+    return (
+      <div className="flex items-center justify-center py-16 text-muted-foreground">
+        Loading…
+      </div>
+    )
   }
 
   return (

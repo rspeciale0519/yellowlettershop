@@ -1,0 +1,3 @@
+-- Seed data for local development. Runs on `supabase db reset`.
+-- Add INSERTs here, e.g.:
+-- insert into public.profiles (id, name) values (gen_random_uuid(), 'Demo');
