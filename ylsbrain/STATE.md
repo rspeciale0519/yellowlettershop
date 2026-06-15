@@ -1,8 +1,37 @@
 # yls brain — STATE
-Updated: 2026-06-14
+Updated: 2026-06-15
 
 ## Current focus
-**NEW (2026-06-14): Supabase key-leak remediated — rotated to new sb_ keys,
+**NEW (2026-06-15): Permission Template resource picker — name-based picker +
+wildcard grants; built via /goal, e2e-PASSED, ready to merge.** Replaced the raw
+`resource_id` UUID text box in the Create/Edit Permission Template form with a
+searchable picker (All [type] vs specific multi-select, by name). Branch
+`feature/permission-resource-picker`, 4 commits (`7588529` endpoint+wildcard,
+`ec21bf3` picker, `6723b1a` form/mapping, `e32fddc` e2e bug fixes). Backend:
+`GET /api/access-control/resources` (server-side type→table allowlist + team-admin
+guard) + migration `20260616000600` makes `my_resource_permission` honor
+`resource_id='*'` (team-bound) so "All [type]" enforces. Storage shape unchanged
+(`*` sentinel; multi-select expands to N entries; pure `permission-template-mapping.ts`
++ 8 tests). `template` kept visible but UNENFORCED (no ownership model) with an inline
+notice; real template enforcement = backlog. **CDT e2e PASSED** as `owner-e2e@…`:
+list-by-name, create→201 (2 entries+team_id in DB), edit re-resolves names, template
+notice. Two e2e-only bugs fixed in `e32fddc`: (1) render loop from a Radix Checkbox
+(`<button>`) nested in a clickable + cmdk controlled input → swapped to plain
+Input+`role=option` rows; (2) `/api/teams/members` never returned `teamId` (page read a
+nonexistent `members[0].team_id`) → endpoint now returns it. Gates: eslint 0,
+typecheck:ui 0, mocha 179 (8 new). NOW FINISHING → PR to develop. Detail:
+[[journal/2026-06-15]] [later]; handoff `docs/temp/permission-resource-picker-handoff.md`.
+
+## (prior focus)
+**(2026-06-15): Profile page e2e smoketest — all 3 tabs pass; fixed missing
+`assets` storage bucket.** Avatar upload 400'd "Bucket not found" — `assets` bucket
+was never in a migration (only `app/api/assets/route.ts` auto-creates it server-side).
+Fix: migration `20260616000500_assets_storage_bucket.sql` (PUBLIC `assets` bucket + 4
+storage RLS policies); applied + recorded. Migration still UNCOMMITTED (unrelated to
+the picker branch). Detail: [[journal/2026-06-15]] [06:10].
+
+## (prior focus)
+**Supabase key-leak remediated — rotated to new sb_ keys,
 legacy keys DISABLED+REVOKED.** Old `service_role` JWT + a PAT had been
 committed to pushed git history (`5cb2199`, `.claude/settings.local.json`).
 Fix (browser-driven, owner-authorized): migrated app to new `sb_publishable_`/
