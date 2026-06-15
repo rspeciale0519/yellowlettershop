@@ -13,12 +13,13 @@ $$;
 
 create or replace function public.is_team_admin(p_team_id uuid)
 returns boolean language sql stable security definer set search_path = public as $$
-  select public.team_role(p_team_id) in ('owner','admin') or public.is_super_admin();
+  -- coalesce so a non-member yields false, not NULL (NULL would defeat `if not ...`).
+  select coalesce(public.team_role(p_team_id) in ('owner','admin'), false) or public.is_super_admin();
 $$;
 
 create or replace function public.is_team_member(p_team_id uuid)
 returns boolean language sql stable security definer set search_path = public as $$
-  select public.team_role(p_team_id) is not null or public.is_super_admin();
+  select coalesce(public.team_role(p_team_id) is not null, false) or public.is_super_admin();
 $$;
 
 -- Returns the active resource_permissions level for the caller on a resource, or
