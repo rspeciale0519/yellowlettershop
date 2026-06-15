@@ -1,9 +1,10 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { Copy, Hand, Lock, MousePointer2, RotateCcw, Trash2, Unlock, ZoomIn, ZoomOut } from "lucide-react"
+import { Copy, Hand, Lock, Maximize2, MousePointer2, RotateCcw, Trash2, Unlock, ZoomIn, ZoomOut } from "lucide-react"
 import { Rnd } from "react-rnd"
 import { Button } from "@/components/ui/button"
+import { ToolbarButton } from "@/components/designer/ui/toolbar-button"
 import type { DesignerFont } from "@/components/designer/designer-fonts"
 import { RenderElement } from "@/components/designer/canvas/render-element"
 import { computeSnap, snapPosition, type SnapGuide } from "@/components/designer/canvas/snap"
@@ -241,35 +242,53 @@ export function CanvasArea({
         <div
           role="toolbar"
           aria-label="Canvas controls"
-          className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-2 rounded-full bg-white p-2 shadow-md dark:bg-gray-800"
+          className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-border bg-card p-1.5 shadow-lg shadow-slate-900/10 dark:shadow-black/40"
         >
-          <Button variant={mode === "select" ? "default" : "ghost"} size="icon" aria-label="Select tool" aria-pressed={mode === "select"} onClick={() => onModeChange("select")}>
-            <MousePointer2 className="h-5 w-5" />
-          </Button>
-          <Button variant={mode === "pan" ? "default" : "ghost"} size="icon" aria-label="Pan canvas" aria-pressed={mode === "pan"} onClick={() => onModeChange("pan")}>
-            <Hand className="h-5 w-5" />
-          </Button>
-          <div className="h-6 w-px bg-gray-200 dark:bg-gray-700" />
-          <Button variant="ghost" size="icon" aria-label="Zoom out" onClick={() => changeZoom(zoom - 10)}>
-            <ZoomOut className="h-5 w-5" />
-          </Button>
-          <span className="w-14 text-center text-sm font-semibold" aria-live="polite" aria-label={`Zoom ${zoom} percent`}>
+          <ToolbarButton active={mode === "select"} aria-label="Select tool" aria-pressed={mode === "select"} onClick={() => onModeChange("select")}>
+            <MousePointer2 />
+          </ToolbarButton>
+          <ToolbarButton active={mode === "pan"} aria-label="Pan canvas" aria-pressed={mode === "pan"} onClick={() => onModeChange("pan")}>
+            <Hand />
+          </ToolbarButton>
+          <div className="mx-1 h-5 w-px bg-border" />
+          <ToolbarButton aria-label="Zoom out" onClick={() => changeZoom(zoom - 10)}>
+            <ZoomOut />
+          </ToolbarButton>
+          <input
+            type="range"
+            min={25}
+            max={220}
+            step={1}
+            value={zoom}
+            aria-label="Zoom level"
+            onChange={(event) => changeZoom(Number(event.target.value))}
+            className="h-1 w-24 cursor-pointer accent-yellow-400"
+          />
+          <ToolbarButton aria-label="Zoom in" onClick={() => changeZoom(zoom + 10)}>
+            <ZoomIn />
+          </ToolbarButton>
+          <span className="w-12 text-center text-xs font-semibold tabular-nums text-foreground" aria-live="polite" aria-label={`Zoom ${zoom} percent`}>
             {zoom}%
           </span>
-          <Button variant="ghost" size="icon" aria-label="Zoom in" onClick={() => changeZoom(zoom + 10)}>
-            <ZoomIn className="h-5 w-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Reset zoom and position"
+          <div className="mx-1 h-5 w-px bg-border" />
+          <ToolbarButton
+            aria-label="Fit to screen"
             onClick={() => {
               onPanChange({ x: 0, y: 0 })
               changeZoom(70)
             }}
           >
-            <RotateCcw className="h-5 w-5" />
-          </Button>
+            <Maximize2 />
+          </ToolbarButton>
+          <ToolbarButton
+            aria-label="Actual size"
+            onClick={() => {
+              onPanChange({ x: 0, y: 0 })
+              changeZoom(100)
+            }}
+          >
+            <RotateCcw />
+          </ToolbarButton>
         </div>
       )}
     </div>

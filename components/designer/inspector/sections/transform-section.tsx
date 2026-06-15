@@ -1,13 +1,32 @@
 "use client"
 
-import { Maximize2 } from "lucide-react"
+import {
+  AlignHorizontalJustifyCenter,
+  AlignHorizontalJustifyEnd,
+  AlignHorizontalJustifyStart,
+  AlignVerticalJustifyCenter,
+  AlignVerticalJustifyEnd,
+  AlignVerticalJustifyStart,
+  Maximize2,
+  type LucideIcon,
+} from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { InspectorSection } from "@/components/designer/inspector/inspector-section"
 import { NumberField } from "@/components/designer/inspector/fields/number-field"
 import { SliderField } from "@/components/designer/inspector/fields/slider-field"
 import { labelClass } from "@/components/designer/inspector/inspector-styles"
+import { alignToPage, type AlignDirection } from "@/components/designer/canvas/alignment"
 import type { CanvasSize, DesignElement } from "@/types/designer"
+
+const ALIGN_BUTTONS: { dir: AlignDirection; Icon: LucideIcon; label: string }[] = [
+  { dir: "left", Icon: AlignHorizontalJustifyStart, label: "Align left" },
+  { dir: "center", Icon: AlignHorizontalJustifyCenter, label: "Center horizontally" },
+  { dir: "right", Icon: AlignHorizontalJustifyEnd, label: "Align right" },
+  { dir: "top", Icon: AlignVerticalJustifyStart, label: "Align top" },
+  { dir: "middle", Icon: AlignVerticalJustifyCenter, label: "Center vertically" },
+  { dir: "bottom", Icon: AlignVerticalJustifyEnd, label: "Align bottom" },
+]
 
 // Single unified Transform block for ALL element types — replaces the two
 // duplicated "Module Alignment" blocks in the old inspector.
@@ -22,21 +41,22 @@ export function TransformSection({
 }) {
   return (
     <InspectorSection title="Transform" icon={Maximize2}>
-      <div className="grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-foreground hover:border-yellow-400 hover:text-yellow-600 dark:hover:text-yellow-300"
-          onClick={() => onUpdate({ x: canvasSize.width / 2 - element.width / 2 })}
-        >
-          Center H
-        </button>
-        <button
-          type="button"
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-foreground hover:border-yellow-400 hover:text-yellow-600 dark:hover:text-yellow-300"
-          onClick={() => onUpdate({ y: canvasSize.height / 2 - element.height / 2 })}
-        >
-          Center V
-        </button>
+      <div className="space-y-1.5">
+        <Label className={labelClass}>Align to page</Label>
+        <div className="flex gap-1">
+          {ALIGN_BUTTONS.map(({ dir, Icon, label }) => (
+            <button
+              key={dir}
+              type="button"
+              aria-label={label}
+              title={label}
+              className="flex h-8 flex-1 items-center justify-center rounded-md border border-input bg-background text-muted-foreground transition-colors hover:border-yellow-400 hover:text-yellow-600 dark:hover:text-yellow-300"
+              onClick={() => onUpdate(alignToPage(element, canvasSize, dir))}
+            >
+              <Icon className="h-4 w-4" />
+            </button>
+          ))}
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
         <NumberField label="X" value={element.x} onChange={(x) => onUpdate({ x })} />
