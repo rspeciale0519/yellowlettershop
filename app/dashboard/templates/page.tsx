@@ -108,7 +108,7 @@ export default function TemplatesPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Saved Templates</h1>
         <Button asChild>
-          <Link href="/dashboard/templates/new">
+          <Link href="/design/customize">
             <Plus className="mr-2 h-4 w-4" />
             New Template
           </Link>
@@ -166,7 +166,7 @@ export default function TemplatesPage() {
               : "Get started by creating a new template"}
           </p>
           <Button className="mt-4" asChild>
-            <Link href="/dashboard/templates/new">
+            <Link href="/design/customize">
               <Plus className="mr-2 h-4 w-4" />
               New Template
             </Link>

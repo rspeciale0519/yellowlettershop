@@ -97,6 +97,9 @@ export async function POST(request: NextRequest) {
       sort_order: tagData.sort_order,
       parent_tag_id: tagData.parent_tag_id || null,
       user_id: user.id,
+      // tags RLS keys off created_by (auth.uid() = created_by); set it so the
+      // insert/select/manage policies pass. user_id is kept for the GET filter.
+      created_by: user.id,
       team_id: tagData.teamId || null,
       is_system: tagData.is_system || false,
       metadata: tagData.metadata || {}
