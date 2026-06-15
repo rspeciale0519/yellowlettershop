@@ -79,7 +79,7 @@ export function PreviewModal({ documentState, onClose }: PreviewModalProps) {
           to personalize.
         </p>
         <div className="grid gap-6 md:grid-cols-[260px_1fr]">
-          <div className="rounded-lg bg-slate-900 p-3">
+          <div className="rounded-lg bg-card p-3">
             <RecipientPicker onSelect={setRecipient} />
           </div>
           <div className="space-y-2">
