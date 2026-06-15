@@ -367,7 +367,9 @@ export default function TeamManagementPage() {
           <MembersTab
             members={team.members}
             invitations={team.invitations}
-            role={team.role ?? 'member'}
+            // A solo user (no team yet) is the owner-to-be: lazy creation makes
+            // them owner on their first invite, so they must see the invite control.
+            role={team.role ?? 'owner'}
             maxSeats={team.maxSeats}
             onChanged={loadTeam}
           />
