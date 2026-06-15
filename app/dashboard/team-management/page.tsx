@@ -68,7 +68,7 @@ export default function TeamManagementPage() {
       const res = await fetch('/api/teams/members')
       const data = await res.json()
       setTeam({
-        teamId: data.role ? data.members?.[0]?.team_id ?? null : null,
+        teamId: data.teamId ?? null,
         role: data.role,
         members: data.members ?? [],
         invitations: data.invitations ?? [],
@@ -410,6 +410,7 @@ export default function TeamManagementPage() {
           {showCreateTemplate ? (
             <PermissionTemplateForm
               onSubmit={handleCreateTemplate}
+              teamId={team.teamId ?? undefined}
               onCancel={() => {
                 setShowCreateTemplate(false)
                 setEditingTemplate(null)
