@@ -51,19 +51,13 @@ describe('canvasSizePx / printSizePx', () => {
 })
 
 describe('specRectsPx', () => {
-  it('produces trim/bleed/safe with correct insets, and address+indicia inside trim', () => {
+  it('produces trim/bleed/safe with correct insets', () => {
     const r = specRectsPx('postcard_4x6', 'portrait') // 400 x 600 trim
     assert.deepEqual(r.trim, { x: 0, y: 0, w: 400, h: 600 })
     // bleed 0.125in = 12.5px outside the trim on every side
     assert.deepEqual(r.bleed, { x: -12.5, y: -12.5, w: 425, h: 625 })
     // safe 0.125in = 12.5px inside
     assert.deepEqual(r.safe, { x: 12.5, y: 12.5, w: 375, h: 575 })
-    for (const zone of [r.address, r.indicia]) {
-      assert.ok(zone.w > 0 && zone.h > 0, 'zone has positive size')
-      assert.ok(zone.x >= 0 && zone.y >= 0, 'zone inside trim (origin)')
-      assert.ok(zone.x + zone.w <= r.trim.w, 'zone within trim width')
-      assert.ok(zone.y + zone.h <= r.trim.h, 'zone within trim height')
-    }
   })
 
   it('letter uses a wider safe margin than postcards', () => {

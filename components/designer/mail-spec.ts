@@ -34,8 +34,6 @@ export interface SpecRects {
   trim: RectPx
   bleed: RectPx
   safe: RectPx
-  address: RectPx
-  indicia: RectPx
 }
 
 export interface MailFormat {
@@ -127,17 +125,6 @@ export function printSizePx(
   return { width: c.width * PRINT_SCALE, height: c.height * PRINT_SCALE }
 }
 
-function clampZone(
-  preferredWIn: number,
-  preferredHIn: number,
-  trimWIn: number,
-  trimHIn: number,
-): { w: number; h: number } {
-  const w = Math.max(0.5, Math.min(preferredWIn, trimWIn - 1)) * DESIGN_PPI
-  const h = Math.max(0.5, Math.min(preferredHIn, trimHIn - 1)) * DESIGN_PPI
-  return { w, h }
-}
-
 export function specRectsPx(
   formatId: MailFormatId,
   orientation: MailOrientation,
@@ -148,17 +135,11 @@ export function specRectsPx(
   const H = hIn * DESIGN_PPI
   const bleed = fmt.bleedIn * DESIGN_PPI
   const safe = fmt.safeIn * DESIGN_PPI
-  const margin = 0.25 * DESIGN_PPI
-
-  const addr = clampZone(fmt.isLetter ? 4 : 3.75, fmt.isLetter ? 1.5 : 1.75, wIn, hIn)
-  const ind = clampZone(1.5, 0.75, wIn, hIn)
 
   return {
     trim: { x: 0, y: 0, w: W, h: H },
     bleed: { x: -bleed, y: -bleed, w: W + bleed * 2, h: H + bleed * 2 },
     safe: { x: safe, y: safe, w: W - safe * 2, h: H - safe * 2 },
-    address: { x: W - margin - addr.w, y: H - margin - addr.h, w: addr.w, h: addr.h },
-    indicia: { x: W - margin - ind.w, y: margin, w: ind.w, h: ind.h },
   }
 }
 
