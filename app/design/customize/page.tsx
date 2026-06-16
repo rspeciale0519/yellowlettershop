@@ -10,6 +10,7 @@ import { DesignerWorkspaceSidebar } from "@/components/designer/designer-workspa
 import { HelpButton } from "@/components/designer/help-button"
 import { PagesPanel } from "@/components/designer/pages-panel"
 import { PreviewModal } from "@/components/designer/preview-modal"
+import { ConfirmDialog } from "@/components/designer/ui/confirm-dialog"
 import { DESIGN_TEMPLATES, DESIGNER_STORAGE_KEY, createDesignerDocument } from "@/components/designer/designer-templates"
 import { specRectsPx, withFormatId } from "@/components/designer/mail-spec"
 import { createClient } from "@/utils/supabase/client"
@@ -50,6 +51,7 @@ export default function DesignCustomizerPage() {
   const [activePage, setActivePage] = useState<DesignerPage>("front")
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
   const [imageReplaceTarget, setImageReplaceTarget] = useState<string | null>(null)
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null)
   const router = useRouter()
   const fonts = useDesignerFonts()
   const designerImages = useDesignerImages(Boolean(user))
@@ -159,10 +161,21 @@ export default function DesignCustomizerPage() {
     saveDesignRef.current = saveDesign
   }, [saveDesign])
 
+  // Guarded delete: postage (stamp/indicia) areas require explicit confirmation;
+  // everything else deletes immediately. Routes every delete entry point.
+  const requestDeleteElement = useCallback(
+    (id: string) => {
+      const el = activeElements.find((element) => element.id === id)
+      if (el?.type === "postage") setPendingDelete(id)
+      else doc.deleteElement(id)
+    },
+    [activeElements, doc],
+  )
+
   useDesignerShortcuts({
     selectedElement,
     onClearSelection: () => setSelectedElement(null),
-    onDelete: doc.deleteElement,
+    onDelete: requestDeleteElement,
     onDuplicate: doc.duplicateElement,
     onUndo: doc.handleUndo,
     onRedo: doc.handleRedo,
@@ -249,7 +262,7 @@ export default function DesignCustomizerPage() {
           onToggleHidden={(id) => doc.updateElement(id, { hidden: !activeElements.find((element) => element.id === id)?.hidden })}
           onToggleLocked={(id) => doc.updateElement(id, { locked: !activeElements.find((element) => element.id === id)?.locked })}
           onDuplicate={doc.duplicateElement}
-          onDelete={doc.deleteElement}
+          onDelete={requestDeleteElement}
           onReplaceImageRequest={handleReplaceImageRequest}
           activePage={activePage}
           pageBackground={activeBackground}
@@ -271,7 +284,7 @@ export default function DesignCustomizerPage() {
           pan={pan}
           onPanChange={setPan}
           onUpdateElement={doc.updateElement}
-          onDeleteElement={doc.deleteElement}
+          onDeleteElement={requestDeleteElement}
           onDuplicateElement={doc.duplicateElement}
           onToggleLock={(id) => doc.updateElement(id, { locked: !activeElements.find((element) => element.id === id)?.locked })}
           onDropModule={doc.addElement}
@@ -286,6 +299,18 @@ export default function DesignCustomizerPage() {
         </div>
       </main>
       {isPreviewOpen && <PreviewModal documentState={documentState} canvasSize={canvasSize} onClose={() => setIsPreviewOpen(false)} />}
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="Remove this postage area?"
+        description="Stamp and Indicia areas are postal-compliance elements. Removing this may affect how your mailpiece is processed — you can re-add it from the Postage tab."
+        confirmLabel="Remove"
+        destructive
+        onConfirm={() => {
+          if (pendingDelete) doc.deleteElement(pendingDelete)
+          setPendingDelete(null)
+        }}
+        onCancel={() => setPendingDelete(null)}
+      />
       <HelpButton />
     </div>
   )
