@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { User } from "@supabase/supabase-js"
-import { CheckCircle, Loader2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { CanvasArea } from "@/components/designer/canvas-area"
 import { DesignerHeader } from "@/components/designer/designer-header"
 import { DesignerWorkspaceSidebar } from "@/components/designer/designer-workspace-sidebar"
@@ -218,24 +218,15 @@ export default function DesignCustomizerPage() {
         onNext={continueToOrder}
         onToggleOrientation={() => doc.commitDocument({ ...documentState, orientation: documentState.orientation === "portrait" ? "landscape" : "portrait" })}
         onTemplateChange={doc.handleTemplateChange}
-        onCycleTemplate={() => {
-          const index = DESIGN_TEMPLATES.findIndex((template) => template.id === documentState.templateId)
-          doc.handleTemplateChange(DESIGN_TEMPLATES[(index + 1) % DESIGN_TEMPLATES.length].id)
-        }}
         onFormatChange={doc.setFormat}
         canUndo={doc.historyIndex > 0}
         canRedo={doc.historyIndex < doc.history.length - 1}
+        orientation={documentState.orientation}
         templateId={documentState.templateId}
         formatId={doc.formatId}
         templates={templateOptions}
+        savedLabel={autosave.label}
       />
-      <div className="flex h-9 items-center gap-2 border-b border-gray-200 bg-white px-4 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300">
-        <CheckCircle className="h-4 w-4 text-yellow-500" />
-        <span>{documentState.templateName}</span>
-        <span className="text-gray-400">/</span>
-        <span className="capitalize">{documentState.orientation}</span>
-        <span className="ml-auto">{autosave.label}</span>
-      </div>
       <main className="flex flex-1 overflow-hidden">
         <DesignerWorkspaceSidebar
           activePanel={activePanel}
