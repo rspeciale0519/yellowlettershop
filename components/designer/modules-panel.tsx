@@ -32,7 +32,7 @@ function ModuleCard({ item, onAddModule }: { item: DesignerModule; onAddModule: 
   return (
     <button
       type="button"
-      className="flex w-full cursor-grab items-center gap-3 rounded-lg border border-slate-700 bg-slate-950/70 p-3 text-left shadow-sm transition hover:border-yellow-400 hover:bg-yellow-400/10 active:cursor-grabbing"
+      className="flex w-full cursor-grab items-center gap-3 rounded-lg border border-input bg-background p-3 text-left shadow-sm transition hover:border-yellow-400 hover:bg-yellow-400/10 active:cursor-grabbing"
       draggable
       onClick={() => onAddModule(item.id)}
       onDragStart={(event) => setDragPayload(event.dataTransfer, { kind: "module", moduleId: item.id })}
@@ -41,8 +41,8 @@ function ModuleCard({ item, onAddModule }: { item: DesignerModule; onAddModule: 
         <Icon className="h-5 w-5" />
       </span>
       <span className="min-w-0">
-        <span className="block text-sm font-semibold text-white">{item.label}</span>
-        <span className="block text-xs leading-5 text-slate-400">
+        <span className="block text-sm font-semibold text-foreground">{item.label}</span>
+        <span className="block text-xs leading-5 text-muted-foreground">
           {item.id === "image" ? "Choose saved or upload from device" : item.description}
         </span>
       </span>
@@ -66,10 +66,10 @@ export function ModulesPanel({
   const visibleModules = DESIGNER_MODULES.filter((item) => activeFilter.modules.includes(item.id))
 
   return (
-    <div className="space-y-4 bg-slate-900 p-4 text-slate-100">
-      <div className="rounded-lg border border-slate-700 bg-slate-950/80 p-3">
-        <h2 className="text-lg font-semibold text-white">Modules</h2>
-        <p className="mt-1 text-sm leading-6 text-slate-400">
+    <div className="space-y-4 bg-card p-4 text-foreground">
+      <div className="rounded-lg border border-border bg-card p-3">
+        <h2 className="text-lg font-semibold text-foreground">Modules</h2>
+        <p className="mt-1 text-sm leading-6 text-muted-foreground">
           Click to add to the center, or drag onto the page.
         </p>
       </div>
@@ -81,7 +81,7 @@ export function ModulesPanel({
             className={`rounded-md border px-3 py-2 text-sm font-medium ${
               activeFilter.id === tool.id
                 ? "border-yellow-400 bg-yellow-400 text-slate-950"
-                : "border-slate-700 bg-slate-950/70 text-slate-300 hover:border-yellow-400 hover:text-yellow-200"
+                : "border-input bg-background text-foreground hover:border-yellow-400 hover:text-yellow-600 dark:hover:text-yellow-300"
             }`}
             onClick={() => onSelectTool(tool.id)}
           >

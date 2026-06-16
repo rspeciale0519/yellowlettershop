@@ -32,7 +32,7 @@ function Swatches({
           key={color}
           type="button"
           aria-label={`Use ${color}`}
-          className="h-6 w-6 rounded border border-slate-600"
+          className="h-6 w-6 rounded border border-border"
           style={{ backgroundColor: color }}
           onClick={() => onPick(color)}
         />
@@ -58,40 +58,40 @@ export function ColorField({ value, onChange, label, id, allowClear }: ColorFiel
             type="button"
             id={id}
             aria-label={`${label ?? "Color"} ${value ?? "none"}`}
-            className="flex h-10 w-full items-center gap-2 rounded-md border border-slate-700 bg-slate-950/70 px-2 text-sm text-white"
+            className="flex h-10 w-full items-center gap-2 rounded-md border border-input bg-background px-2 text-sm text-foreground"
           >
             <span
-              className="h-6 w-6 shrink-0 rounded border border-slate-600"
+              className="h-6 w-6 shrink-0 rounded border border-border"
               style={{ backgroundColor: value ?? "transparent" }}
             />
-            <span className="font-mono text-xs text-slate-300">{value ?? "None"}</span>
+            <span className="font-mono text-xs text-foreground">{value ?? "None"}</span>
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-60 space-y-3 border-slate-700 bg-slate-900 p-3">
+        <PopoverContent className="w-60 space-y-3 border-border bg-background p-3">
           <HexColorPicker color={current} onChange={onChange} />
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400">#</span>
+            <span className="text-xs text-muted-foreground">#</span>
             <HexColorInput
               color={current}
               onChange={onChange}
               prefixed={false}
-              className="h-8 w-full rounded border border-slate-700 bg-slate-950/70 px-2 font-mono text-xs text-white outline-none focus:border-yellow-400"
+              className="h-8 w-full rounded border border-input bg-background px-2 font-mono text-xs text-foreground outline-none focus:border-yellow-400"
             />
           </div>
           <div className="space-y-1.5">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Brand</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Brand</p>
             <Swatches colors={BRAND_SWATCHES} onPick={onChange} />
           </div>
           {recent.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Recent</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Recent</p>
               <Swatches colors={recent} onPick={onChange} />
             </div>
           )}
           {allowClear && (
             <button
               type="button"
-              className="w-full rounded border border-slate-700 px-2 py-1 text-xs text-slate-300 hover:border-yellow-400 hover:text-yellow-200"
+              className="w-full rounded border border-input px-2 py-1 text-xs text-foreground hover:border-yellow-400 hover:text-yellow-600 dark:hover:text-yellow-300"
               onClick={() => onChange(undefined)}
             >
               Clear

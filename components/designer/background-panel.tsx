@@ -34,10 +34,10 @@ export function BackgroundPanel({
   const image = background?.image
 
   return (
-    <div className="space-y-4 bg-slate-900 p-4 text-slate-100">
-      <div className="rounded-lg border border-slate-700 bg-slate-950/80 p-3">
-        <h2 className="text-lg font-semibold text-white">Background</h2>
-        <p className="mt-1 text-xs capitalize text-slate-400">Applies to the {page} of your mail piece.</p>
+    <div className="space-y-4 bg-card p-4 text-foreground">
+      <div className="rounded-lg border border-border bg-card p-3">
+        <h2 className="text-lg font-semibold text-foreground">Background</h2>
+        <p className="mt-1 text-xs capitalize text-muted-foreground">Applies to the {page} of your mail piece.</p>
       </div>
 
       <InspectorSection title="Color" icon={PaintBucket}>
@@ -83,7 +83,7 @@ export function BackgroundPanel({
             </Button>
           </div>
         ) : (
-          <p className="mb-2 text-xs leading-5 text-slate-400">
+          <p className="mb-2 text-xs leading-5 text-muted-foreground">
             Full-bleed images extend into the print bleed and may be trimmed at the edges.
           </p>
         )}

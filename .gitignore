@@ -108,3 +108,5 @@ ylsbrain/.obsidian/
 *.bak
 supabase/.temp
 supabase/.branches
+
+.superpowers/

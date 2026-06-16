@@ -43,7 +43,7 @@ export function InspectorPanel({
   }
 
   return (
-    <div className="space-y-4 bg-slate-900 p-4 text-slate-100">
+    <div className="space-y-4 bg-card p-4 text-foreground">
       <InspectorHeader subtitle="Edit the selected module" badge={element.type} />
       <InspectorSection title="Module" icon={Move}>
         <div className="space-y-1">

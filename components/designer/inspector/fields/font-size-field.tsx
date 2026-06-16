@@ -51,7 +51,7 @@ export function FontSizeField({
         <button
           type="button"
           aria-label="Show font size presets"
-          className="absolute inset-y-0 right-1 flex w-7 items-center justify-center rounded text-slate-400 hover:bg-slate-800 hover:text-yellow-300"
+          className="absolute inset-y-0 right-1 flex w-7 items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-yellow-600 dark:hover:text-yellow-300"
           onMouseDown={(event) => event.preventDefault()}
           onClick={() => setIsOpen((open) => !open)}
         >
@@ -62,7 +62,7 @@ export function FontSizeField({
         <div
           id="designer-font-size-options"
           role="listbox"
-          className="absolute z-30 mt-1 max-h-44 w-full overflow-y-auto rounded-md border border-slate-700 bg-slate-950 py-1 shadow-xl"
+          className="absolute z-30 mt-1 max-h-44 w-full overflow-y-auto rounded-md border border-input bg-background py-1 shadow-xl"
         >
           {FONT_SIZE_PRESETS.map((size) => (
             <button
@@ -71,7 +71,7 @@ export function FontSizeField({
               role="option"
               aria-selected={size === roundedValue}
               className={`block w-full px-3 py-1.5 text-left text-sm hover:bg-yellow-400/10 ${
-                size === roundedValue ? "bg-yellow-400/20 text-yellow-200" : "text-slate-200"
+                size === roundedValue ? "bg-yellow-400/15 text-yellow-700 dark:text-yellow-300" : "text-foreground"
               }`}
               onMouseDown={(event) => event.preventDefault()}
               onClick={() => {

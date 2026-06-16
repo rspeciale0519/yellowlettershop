@@ -25,7 +25,7 @@ export function SliderField({
     <div className="space-y-1">
       <div className="flex items-center justify-between">
         <Label className={labelClass}>{label}</Label>
-        <span className="text-xs font-semibold tabular-nums text-slate-300">
+        <span className="text-xs font-semibold tabular-nums text-foreground">
           {format ? format(value) : value}
         </span>
       </div>

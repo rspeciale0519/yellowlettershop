@@ -63,12 +63,12 @@ export function RecipientPicker({
   return (
     <div className="space-y-3">
       <div>
-        <label className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Mailing list</label>
+        <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Mailing list</label>
         {lists.length === 0 ? (
-          <p className="mt-1 text-sm text-slate-400">No saved lists yet.</p>
+          <p className="mt-1 text-sm text-muted-foreground">No saved lists yet.</p>
         ) : (
           <select
-            className="mt-1 h-9 w-full rounded-md border border-slate-700 bg-slate-950/70 px-2 text-sm text-white"
+            className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground"
             value={listId}
             onChange={(e) => setListId(e.target.value)}
           >
@@ -81,9 +81,9 @@ export function RecipientPicker({
         )}
       </div>
       <div className="relative">
-        <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+        <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
-          className="h-9 w-full rounded-md border border-slate-700 bg-slate-950/70 pl-8 pr-2 text-sm text-white placeholder:text-slate-500"
+          className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-2 text-sm text-foreground placeholder:text-muted-foreground"
           placeholder="Search recipients"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -92,7 +92,7 @@ export function RecipientPicker({
       {error && <p className="text-xs text-red-300">{error}</p>}
       <div className="max-h-64 space-y-1 overflow-y-auto">
         {loading && (
-          <div className="flex items-center gap-2 p-2 text-sm text-slate-400">
+          <div className="flex items-center gap-2 p-2 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" /> Loading…
           </div>
         )}
@@ -101,20 +101,20 @@ export function RecipientPicker({
             <button
               key={r.id}
               type="button"
-              className="w-full rounded-md border border-slate-700 bg-slate-950/60 px-3 py-2 text-left text-sm text-slate-200 hover:border-yellow-400 hover:text-yellow-200"
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-left text-sm text-foreground hover:border-yellow-400 hover:text-yellow-600 dark:hover:text-yellow-300"
               onClick={() => onSelect(r)}
             >
               <span className="block font-medium">
                 {r.firstName} {r.lastName}
               </span>
-              <span className="block text-xs text-slate-400">
+              <span className="block text-xs text-muted-foreground">
                 {r.addressLine1}
                 {r.city ? `, ${r.city}` : ""} {r.state} {r.zipCode}
               </span>
             </button>
           ))}
         {!loading && records.length === 0 && !error && (
-          <p className="p-2 text-sm text-slate-400">No recipients found.</p>
+          <p className="p-2 text-sm text-muted-foreground">No recipients found.</p>
         )}
       </div>
     </div>
