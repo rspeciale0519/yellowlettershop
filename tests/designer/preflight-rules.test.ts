@@ -25,21 +25,10 @@ describe('runPreflight', () => {
     assert.ok(issues.some((i) => i.elementId === 'small' && i.severity === 'error' && i.rule === 'tiny-font'))
   })
 
-  it('flags content outside the safe area and inside the address clear zone', () => {
+  it('flags content outside the safe area', () => {
     const outside = el({ id: 'oob', type: 'graphic', x: 0, y: 0, width: 5, height: 5, shape: 'rectangle', fill: '#000' } as Partial<DesignElement> & { id: string; type: 'graphic' })
-    const inAddr = el({
-      id: 'addr',
-      type: 'graphic',
-      x: spec.address.x + 2,
-      y: spec.address.y + 2,
-      width: 10,
-      height: 10,
-      shape: 'rectangle',
-      fill: '#000',
-    } as Partial<DesignElement> & { id: string; type: 'graphic' })
-    const issues = runPreflight([outside, inAddr], { specRects: spec })
+    const issues = runPreflight([outside], { specRects: spec })
     assert.ok(issues.some((i) => i.elementId === 'oob' && i.rule === 'out-of-safe'))
-    assert.ok(issues.some((i) => i.elementId === 'addr' && i.rule === 'clear-zone' && i.severity === 'error'))
   })
 
   it('flags a low-resolution image (natural px < required at 300 DPI)', () => {

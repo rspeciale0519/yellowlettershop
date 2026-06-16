@@ -25,8 +25,6 @@ export function PrintOverlay({ specRects }: { specRects?: SpecRects }) {
       {box(specRects.bleed, "border border-dashed border-red-500/70")}
       {box(specRects.trim, "border border-gray-400")}
       {box(specRects.safe, "border border-dashed border-emerald-500/70")}
-      {box(specRects.address, "border border-blue-500/70 bg-blue-500/5", "Address")}
-      {box(specRects.indicia, "border border-amber-500/70 bg-amber-500/5", "Indicia")}
     </div>
   )
 }

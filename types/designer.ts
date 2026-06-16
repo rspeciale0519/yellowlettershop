@@ -3,11 +3,11 @@ import type { MailFormatId } from "@/components/designer/mail-spec"
 // Phase 12: dead `"colors" | "background"` Tool members removed (the only
 // consumer, legacy tools-sidebar.tsx, is archived). Page backgrounds live in
 // the `"background"` WorkspacePanel below.
-export type Tool = "text" | "images" | "graphics" | "qr-codes" | "tables"
+export type Tool = "text" | "images" | "graphics" | "qr-codes" | "tables" | "postage"
 export type WorkspacePanel = "modules" | "layers" | "inspector" | "preflight" | "background"
 export type DesignerPage = "front" | "back"
 export type DesignerOrientation = "portrait" | "landscape"
-export type DesignerElementType = "text" | "image" | "graphic" | "qr" | "table"
+export type DesignerElementType = "text" | "image" | "graphic" | "qr" | "table" | "postage"
 export type DesignerMode = "select" | "pan"
 
 export interface CanvasSize {
@@ -77,12 +77,20 @@ export interface TableDesignElement extends BaseDesignElement {
   headerRow?: boolean
 }
 
+// Postage compliance element (stamp or indicia). Movable, locked by default,
+// keep-clear (no other element may overlap it). Singleton + mutually exclusive.
+export interface PostageDesignElement extends BaseDesignElement {
+  type: "postage"
+  kind: "stamp" | "indicia"
+}
+
 export type DesignElement =
   | TextDesignElement
   | ImageDesignElement
   | GraphicDesignElement
   | QrDesignElement
   | TableDesignElement
+  | PostageDesignElement
 
 export interface PageBackgroundImage {
   assetId?: string

@@ -68,7 +68,7 @@ export function DesignerWorkspaceSidebar(props: DesignerWorkspaceSidebarProps) {
               className={`relative h-16 w-16 flex-col gap-1 rounded-lg border text-[11px] transition ${
                 isActive
                   ? "border-yellow-400 bg-yellow-400 text-slate-950 shadow-[0_0_0_3px_rgba(250,204,21,0.16)] hover:bg-yellow-400"
-                  : "border-transparent text-slate-300 hover:border-slate-700 hover:bg-slate-900 hover:text-yellow-200"
+                  : "border-transparent text-slate-500 hover:border-slate-300 hover:bg-slate-200/70 hover:text-slate-900 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800 dark:hover:text-yellow-200"
               }`}
               aria-current={isActive ? "page" : undefined}
               onClick={() => props.onPanelChange(panel.id)}
@@ -83,6 +83,7 @@ export function DesignerWorkspaceSidebar(props: DesignerWorkspaceSidebarProps) {
         {props.activePanel === "modules" && (
           <ModulesPanel
             activeTool={props.activeTool}
+            elements={props.elements}
             onSelectTool={props.onToolChange}
             onAddModule={props.onAddModule}
             savedImages={props.savedImages}

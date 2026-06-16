@@ -7,18 +7,19 @@
 //
 // Import these instead of hardcoding slate-9xx so a surface is never dark-only again.
 
-/** Surfaces. `rail` is intentionally fixed-dark in both themes (brand). */
+/** Surfaces. `rail` is a theme-aware, softly-tinted chrome surface (brand identity
+ *  carried by the yellow active chip, not a dark-everywhere fill). */
 export const designerSurface = {
   panel: "bg-card text-card-foreground",
   inset: "bg-muted/50",
-  rail: "bg-slate-950 text-slate-300",
+  rail: "bg-gradient-to-b from-slate-50 to-slate-100 text-slate-600 dark:from-slate-900 dark:to-slate-950 dark:text-slate-300",
   canvas: "bg-muted/60 dark:bg-slate-900",
 } as const
 
 export const designerBorder = {
   base: "border-border",
   subtle: "border-border/60",
-  rail: "border-slate-800",
+  rail: "border-slate-200 dark:border-slate-800",
 } as const
 
 export const designerText = {

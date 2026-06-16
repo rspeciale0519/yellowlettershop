@@ -4,10 +4,12 @@ import type { DesignerModule } from "@/components/designer/module-definitions"
 import { DESIGNER_MODULES } from "@/components/designer/module-definitions"
 import { setDragPayload } from "@/components/designer/dnd"
 import { AssetPicker } from "@/components/designer/asset-picker"
-import type { DesignerImageAsset, Tool } from "@/types/designer"
+import { availablePostageKinds, type PostageKind } from "@/components/designer/postage"
+import type { DesignElement, DesignerImageAsset, Tool } from "@/types/designer"
 
 interface ModulesPanelProps {
   activeTool: Tool
+  elements: DesignElement[]
   onSelectTool: (tool: Tool) => void
   onAddModule: (moduleId: string) => void
   savedImages: DesignerImageAsset[]
@@ -25,6 +27,7 @@ const toolFilters: { id: Tool; label: string; modules: string[] }[] = [
   { id: "graphics", label: "Graphics", modules: ["shape"] },
   { id: "qr-codes", label: "QR Codes", modules: ["qr"] },
   { id: "tables", label: "Tables", modules: ["table"] },
+  { id: "postage", label: "Postage", modules: ["stamp", "indicia"] },
 ]
 
 function ModuleCard({ item, onAddModule }: { item: DesignerModule; onAddModule: (moduleId: string) => void }) {
@@ -52,6 +55,7 @@ function ModuleCard({ item, onAddModule }: { item: DesignerModule; onAddModule: 
 
 export function ModulesPanel({
   activeTool,
+  elements,
   onSelectTool,
   onAddModule,
   savedImages,
@@ -63,7 +67,13 @@ export function ModulesPanel({
   onInsertImage,
 }: ModulesPanelProps) {
   const activeFilter = toolFilters.find((tool) => tool.id === activeTool) ?? toolFilters[0]
-  const visibleModules = DESIGNER_MODULES.filter((item) => activeFilter.modules.includes(item.id))
+  const postageAvailable = availablePostageKinds(elements)
+  const visibleModules = DESIGNER_MODULES.filter((item) => {
+    if (!activeFilter.modules.includes(item.id)) return false
+    if (activeFilter.id === "postage") return postageAvailable.includes(item.id as PostageKind)
+    return true
+  })
+  const postageFull = activeFilter.id === "postage" && visibleModules.length === 0
 
   return (
     <div className="space-y-4 bg-card p-4 text-foreground">
@@ -89,13 +99,7 @@ export function ModulesPanel({
           </button>
         ))}
       </div>
-      {activeFilter.id !== "images" ? (
-        <div className="space-y-2">
-          {visibleModules.map((item) => (
-            <ModuleCard key={item.id} item={item} onAddModule={onAddModule} />
-          ))}
-        </div>
-      ) : (
+      {activeFilter.id === "images" ? (
         <AssetPicker
           mode={imagePickerMode}
           savedImages={savedImages}
@@ -105,6 +109,16 @@ export function ModulesPanel({
           onUploadImage={onUploadImage}
           onPick={onInsertImage}
         />
+      ) : postageFull ? (
+        <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs leading-5 text-muted-foreground">
+          A postage area is already on this page. A mailpiece uses one stamp <em>or</em> indicia — delete the existing one to switch.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {visibleModules.map((item) => (
+            <ModuleCard key={item.id} item={item} onAddModule={onAddModule} />
+          ))}
+        </div>
       )}
     </div>
   )
