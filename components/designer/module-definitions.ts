@@ -1,11 +1,14 @@
 import {
   ImageIcon,
+  Mail,
   MessageSquareText,
   QrCode,
   RectangleHorizontal,
+  Stamp,
   Table2,
   Type,
 } from "lucide-react"
+import { POSTAGE_DEFAULTS } from "@/components/designer/postage"
 import type { DesignElement, DesignerElementType } from "@/types/designer"
 
 export type DesignerModule = {
@@ -23,6 +26,8 @@ export const DESIGNER_MODULES: DesignerModule[] = [
   { id: "shape", label: "Graphic", description: "Shape, line, or callout", type: "graphic", icon: RectangleHorizontal },
   { id: "qr", label: "QR Code", description: "Scannable URL or text code", type: "qr", icon: QrCode },
   { id: "table", label: "Table", description: "Editable rows and columns", type: "table", icon: Table2 },
+  { id: "stamp", label: "Stamp Area", description: "Postage stamp area — keep clear", type: "postage", icon: Stamp },
+  { id: "indicia", label: "Indicia Area", description: "Permit imprint area — keep clear", type: "postage", icon: Mail },
 ]
 
 export function createElementId(prefix: string) {
@@ -121,6 +126,23 @@ export function createModuleElement(
       y: position.y,
       width: 320,
       height: 120,
+      zIndex,
+    }
+  }
+
+  if (moduleId === "stamp" || moduleId === "indicia") {
+    const kind = moduleId
+    const d = POSTAGE_DEFAULTS[kind]
+    return {
+      id,
+      name: kind === "stamp" ? "Stamp Area" : "Indicia Area",
+      type: "postage",
+      kind,
+      x: position.x,
+      y: position.y,
+      width: d.width,
+      height: d.height,
+      locked: true,
       zIndex,
     }
   }

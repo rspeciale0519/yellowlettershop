@@ -83,6 +83,7 @@ export function DesignerWorkspaceSidebar(props: DesignerWorkspaceSidebarProps) {
         {props.activePanel === "modules" && (
           <ModulesPanel
             activeTool={props.activeTool}
+            elements={props.elements}
             onSelectTool={props.onToolChange}
             onAddModule={props.onAddModule}
             savedImages={props.savedImages}

@@ -2,6 +2,7 @@
 
 import { getFontFamily, type DesignerFont } from "@/components/designer/designer-fonts"
 import { QrRenderer } from "@/components/designer/qr-renderer"
+import { POSTAGE_DEFAULTS } from "@/components/designer/postage"
 import type { DesignElement } from "@/types/designer"
 
 // Moved verbatim from canvas-area (Phase 2 — behavior-preserving split).
@@ -91,6 +92,14 @@ export function RenderElement({
   if (element.type === "qr") {
     return (
       <QrRenderer value={element.value} foreground={element.foreground} background={element.background} alt={element.name} />
+    )
+  }
+
+  if (element.type === "postage") {
+    return (
+      <div className="flex h-full w-full items-center justify-center rounded-sm border-2 border-dashed border-amber-500/70 bg-amber-500/10 text-center text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+        {POSTAGE_DEFAULTS[element.kind].label}
+      </div>
     )
   }
 
