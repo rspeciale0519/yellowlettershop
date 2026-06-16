@@ -30,7 +30,7 @@ export function TextInspector({
         <div className="space-y-1">
           <Label className={labelClass}>Text</Label>
           <Input
-            className="h-10 border-slate-700 bg-slate-950/70 text-white placeholder:text-slate-500 focus-visible:ring-yellow-400"
+            className="h-10 border-input bg-background text-foreground placeholder:text-muted-foreground focus-visible:ring-yellow-400"
             value={element.content}
             onChange={(event) => onUpdate({ content: event.target.value })}
           />
@@ -110,7 +110,9 @@ export function TextInspector({
         />
       </InspectorSection>
       <MergeFieldsSection
-        onInsert={(token) => onUpdate({ content: `${element.content} ${token}` })}
+        onInsert={(token) =>
+          onUpdate({ content: element.content ? `${element.content} ${token}` : token })
+        }
       />
     </>
   )

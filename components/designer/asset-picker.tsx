@@ -1,7 +1,7 @@
 "use client"
 
-import { useRef, useState } from "react"
-import { CheckCircle2, ImageIcon, Loader2, UploadCloud } from "lucide-react"
+import { useMemo, useRef, useState } from "react"
+import { CheckCircle2, ImageIcon, Loader2, Search, UploadCloud } from "lucide-react"
 import { setDragPayload } from "@/components/designer/dnd"
 import { isDuplicateAssetName } from "@/components/designer/is-duplicate-asset-name"
 import type { DesignerImageAsset } from "@/types/designer"
@@ -43,6 +43,7 @@ export function AssetPicker({
   const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [imageName, setImageName] = useState("")
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [search, setSearch] = useState("")
   const duplicateName = isDuplicateAssetName(imageName, savedImages)
   const nameMessage = !imageName.trim()
     ? "Name required"
@@ -51,23 +52,28 @@ export function AssetPicker({
       : "Name available"
   const canUpload = Boolean(imageName.trim() && selectedFile && !duplicateName && !isUploadingImage)
 
+  const visibleImages = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return q ? savedImages.filter((asset) => asset.name.toLowerCase().includes(q)) : savedImages
+  }, [savedImages, search])
+
   return (
-    <div className="space-y-3 rounded-lg border border-slate-700 bg-slate-950/70 p-3">
+    <div className="space-y-3 rounded-lg border border-border bg-card p-3">
       <div>
-        <h3 className="text-sm font-semibold text-white">{COPY[mode].title}</h3>
-        <p className="mt-1 text-xs leading-5 text-slate-400">{COPY[mode].hint}</p>
+        <h3 className="text-sm font-semibold text-foreground">{COPY[mode].title}</h3>
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">{COPY[mode].hint}</p>
       </div>
-      <div className="space-y-3 rounded-md border border-slate-700 bg-slate-900/80 p-3">
+      <div className="space-y-3 rounded-md border border-border bg-muted/40 p-3">
         <label className="block space-y-1">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Image name</span>
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Image name</span>
           <input
-            className="h-10 w-full rounded-md border border-slate-700 bg-slate-950/80 px-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-yellow-400"
+            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground outline-none placeholder:text-muted-foreground focus:border-yellow-400"
             value={imageName}
             onChange={(event) => setImageName(event.target.value)}
             placeholder="Property logo"
           />
         </label>
-        <div className={`flex items-center gap-1.5 text-xs ${duplicateName || !imageName.trim() ? "text-amber-200" : "text-emerald-300"}`}>
+        <div className={`flex items-center gap-1.5 text-xs ${duplicateName || !imageName.trim() ? "text-amber-600 dark:text-amber-300" : "text-emerald-600 dark:text-emerald-300"}`}>
           {!duplicateName && imageName.trim() ? <CheckCircle2 className="h-3.5 w-3.5" /> : null}
           <span>{nameMessage}</span>
         </div>
@@ -80,7 +86,7 @@ export function AssetPicker({
         />
         <button
           type="button"
-          className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-slate-600 bg-slate-950/70 px-3 py-3 text-sm font-semibold text-slate-200 hover:border-yellow-400 hover:text-yellow-200"
+          className="flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-input bg-background px-3 py-3 text-sm font-semibold text-foreground transition-colors hover:border-yellow-400 hover:text-yellow-600 dark:hover:text-yellow-300"
           onClick={() => fileInputRef.current?.click()}
           disabled={isUploadingImage}
         >
@@ -89,7 +95,7 @@ export function AssetPicker({
         </button>
         <button
           type="button"
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-yellow-400 px-3 py-3 text-sm font-bold text-slate-950 transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-yellow-400 px-3 py-3 text-sm font-bold text-slate-950 transition-colors hover:bg-yellow-300 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
           onClick={() => {
             if (!canUpload || !selectedFile) return
             void onUploadImage(selectedFile, imageName)
@@ -107,42 +113,60 @@ export function AssetPicker({
         </button>
       </div>
       {imageLibraryError && (
-        <div className="rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive">
           {imageLibraryError}
         </div>
       )}
       <div className="space-y-2">
-        <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-slate-400">
+        <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           <span>Saved Images</span>
-          <span>{savedImages.length}</span>
+          <span>{search.trim() ? `${visibleImages.length}/${savedImages.length}` : savedImages.length}</span>
         </div>
+        {savedImages.length > 0 && (
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search images"
+              aria-label="Search saved images"
+              className="h-8 w-full rounded-md border border-input bg-background pl-8 pr-2 text-xs text-foreground outline-none placeholder:text-muted-foreground focus:border-yellow-400"
+            />
+          </div>
+        )}
         {isLoadingImages && (
-          <div className="flex items-center gap-2 rounded-md border border-slate-700 bg-slate-900 p-3 text-sm text-slate-300">
-            <Loader2 className="h-4 w-4 animate-spin text-yellow-300" />
+          <div className="flex items-center gap-2 rounded-md border border-border bg-card p-3 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin text-yellow-500 dark:text-yellow-300" />
             Loading saved images
           </div>
         )}
         {!isLoadingImages && savedImages.length === 0 && (
-          <div className="rounded-md border border-slate-700 bg-slate-900 p-3 text-sm text-slate-400">
+          <div className="rounded-md border border-border bg-card p-3 text-sm text-muted-foreground">
             Upload a logo, photo, or artwork file to start your saved image library.
           </div>
         )}
+        {!isLoadingImages && savedImages.length > 0 && visibleImages.length === 0 && (
+          <div className="rounded-md border border-border bg-card p-3 text-sm text-muted-foreground">
+            No images match “{search.trim()}”.
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-2">
-          {savedImages.map((asset) => (
+          {visibleImages.map((asset) => (
             <button
               key={asset.id}
               type="button"
-              className="group cursor-grab overflow-hidden rounded-lg border border-slate-700 bg-slate-900 text-left transition hover:border-yellow-400 active:cursor-grabbing"
+              className="group cursor-grab overflow-hidden rounded-lg border border-border bg-card text-left transition-colors hover:border-yellow-400 active:cursor-grabbing"
               draggable
               onDragStart={(event) => setDragPayload(event.dataTransfer, { kind: "asset", asset })}
               onClick={() => onPick(asset)}
             >
-              <span className="block aspect-[4/3] bg-slate-950">
+              <span className="block aspect-[4/3] bg-muted">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={asset.url} alt={asset.name} className="h-full w-full object-cover transition group-hover:scale-105" />
+                <img src={asset.url} alt={asset.name} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
               </span>
-              <span className="flex items-center gap-1.5 px-2 py-2 text-xs font-medium text-slate-200">
-                <ImageIcon className="h-3.5 w-3.5 text-yellow-300" />
+              <span className="flex items-center gap-1.5 px-2 py-2 text-xs font-medium text-foreground">
+                <ImageIcon className="h-3.5 w-3.5 text-yellow-500 dark:text-yellow-300" />
                 <span className="truncate">{asset.name}</span>
               </span>
             </button>

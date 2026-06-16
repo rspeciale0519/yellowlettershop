@@ -20,10 +20,10 @@ export function PreflightPanel({ elements, specRects, onSelectElement }: Preflig
   const warnings = issues.filter((i) => i.severity === "warning")
 
   return (
-    <div className="space-y-4 bg-slate-900 p-4 text-slate-100">
-      <div className="rounded-lg border border-slate-700 bg-slate-950/80 p-3">
-        <h2 className="text-lg font-semibold text-white">Preflight</h2>
-        <p className="mt-1 text-xs text-slate-400">
+    <div className="space-y-4 bg-card p-4 text-foreground">
+      <div className="rounded-lg border border-border bg-card p-3">
+        <h2 className="text-lg font-semibold text-foreground">Preflight</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
           Print &amp; personalization checks for this page.
         </p>
       </div>

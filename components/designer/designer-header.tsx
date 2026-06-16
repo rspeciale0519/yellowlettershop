@@ -40,13 +40,13 @@ export function DesignerHeader({
 }: DesignerHeaderProps) {
   return (
     <TooltipProvider>
-      <header className="flex items-center justify-between h-16 px-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shrink-0">
+      <header className="flex items-center justify-between h-16 px-4 bg-card border-b border-border shrink-0">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <select
               value={templateId}
               onChange={(event) => onTemplateChange(event.target.value)}
-              className="h-9 rounded-md border border-gray-200 bg-transparent px-2 text-sm font-semibold dark:border-gray-700"
+              className="h-9 rounded-md border border-input bg-transparent px-2 text-sm font-semibold text-foreground"
               aria-label="Design template"
             >
               {templates.map((template) => (
@@ -60,7 +60,7 @@ export function DesignerHeader({
             <select
               value={formatId}
               onChange={(event) => onFormatChange(event.target.value as MailFormatId)}
-              className="h-9 rounded-md border border-gray-200 bg-transparent px-2 text-sm font-semibold dark:border-gray-700"
+              className="h-9 rounded-md border border-input bg-transparent px-2 text-sm font-semibold text-foreground"
               aria-label="Mail piece size"
             >
               {Object.values(MAIL_FORMATS).map((format) => (
@@ -70,7 +70,7 @@ export function DesignerHeader({
               ))}
             </select>
           </div>
-          <div className="h-6 w-px bg-gray-200 dark:bg-gray-700" />
+          <div className="h-6 w-px bg-border" />
           <div className="flex items-center gap-2">
             <Tooltip>
               <TooltipTrigger asChild>
