@@ -12,8 +12,7 @@ const LEGEND = [
   { color: "bg-red-500", label: "Bleed — art must extend here; trimmed off" },
   { color: "bg-gray-400", label: "Trim — the finished cut edge" },
   { color: "bg-emerald-500", label: "Safe — keep important content inside" },
-  { color: "bg-blue-500", label: "Address zone — keep clear (USPS)" },
-  { color: "bg-amber-500", label: "Indicia — postage area, keep clear" },
+  { color: "bg-amber-500", label: "Stamp / Indicia — placeable postage areas; keep other elements clear" },
 ]
 
 export function HelpDialogBody() {

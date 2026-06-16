@@ -1,9 +1,11 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Save, Undo, Redo, Eye, LayoutPanelLeft, Replace } from "lucide-react"
+import { Eye, Redo, RectangleHorizontal, RectangleVertical, Save, Undo } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { MAIL_FORMATS, type MailFormatId } from "@/components/designer/mail-spec"
+import type { DesignerOrientation } from "@/types/designer"
 
 interface DesignerHeaderProps {
   onUndo: () => void
@@ -13,13 +15,14 @@ interface DesignerHeaderProps {
   onNext: () => void
   onToggleOrientation: () => void
   onTemplateChange: (templateId: string) => void
-  onCycleTemplate: () => void
   onFormatChange: (formatId: MailFormatId) => void
   canUndo: boolean
   canRedo: boolean
+  orientation: DesignerOrientation
   templateId: string
   formatId: MailFormatId
   templates: { id: string; name: string }[]
+  savedLabel: string
 }
 
 export function DesignerHeader({
@@ -30,55 +33,56 @@ export function DesignerHeader({
   onNext,
   onToggleOrientation,
   onTemplateChange,
-  onCycleTemplate,
   onFormatChange,
   canUndo,
   canRedo,
+  orientation,
   templateId,
   formatId,
   templates,
+  savedLabel,
 }: DesignerHeaderProps) {
+  const isPortrait = orientation === "portrait"
   return (
-    <TooltipProvider>
-      <header className="flex items-center justify-between h-16 px-4 bg-card border-b border-border shrink-0">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <select
-              value={templateId}
-              onChange={(event) => onTemplateChange(event.target.value)}
-              className="h-9 rounded-md border border-input bg-transparent px-2 text-sm font-semibold text-foreground"
-              aria-label="Design template"
-            >
+    <TooltipProvider delayDuration={300}>
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-4">
+        {/* Left: what you're editing — template, size, orientation, history */}
+        <div className="flex items-center gap-3">
+          <Select value={templateId} onValueChange={onTemplateChange}>
+            <SelectTrigger aria-label="Design template" className="h-9 w-[190px] text-sm font-medium">
+              <SelectValue placeholder="Template" />
+            </SelectTrigger>
+            <SelectContent>
               {templates.map((template) => (
-                <option key={template.id} value={template.id}>
+                <SelectItem key={template.id} value={template.id}>
                   {template.name}
-                </option>
+                </SelectItem>
               ))}
-            </select>
-          </div>
-          <div className="flex items-center gap-2">
-            <select
-              value={formatId}
-              onChange={(event) => onFormatChange(event.target.value as MailFormatId)}
-              className="h-9 rounded-md border border-input bg-transparent px-2 text-sm font-semibold text-foreground"
-              aria-label="Mail piece size"
-            >
+            </SelectContent>
+          </Select>
+          <Select value={formatId} onValueChange={(value) => onFormatChange(value as MailFormatId)}>
+            <SelectTrigger aria-label="Mail piece size" className="h-9 w-[150px] text-sm font-medium">
+              <SelectValue placeholder="Size" />
+            </SelectTrigger>
+            <SelectContent>
               {Object.values(MAIL_FORMATS).map((format) => (
-                <option key={format.id} value={format.id}>
+                <SelectItem key={format.id} value={format.id}>
                   {format.label}
-                </option>
+                </SelectItem>
               ))}
-            </select>
-          </div>
-          <div className="h-6 w-px bg-border" />
-          <div className="flex items-center gap-2">
+            </SelectContent>
+          </Select>
+
+          <div className="mx-1 h-6 w-px bg-border" />
+
+          <div className="flex items-center gap-1">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button variant="ghost" size="icon" onClick={onSave} aria-label="Save design">
                   <Save className="h-5 w-5" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Save Project</TooltipContent>
+              <TooltipContent>Save project</TooltipContent>
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -96,20 +100,31 @@ export function DesignerHeader({
               </TooltipTrigger>
               <TooltipContent>Redo (Ctrl+Y)</TooltipContent>
             </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onToggleOrientation}
+                  aria-label={`Orientation: ${orientation}. Switch to ${isPortrait ? "landscape" : "portrait"}.`}
+                >
+                  {isPortrait ? <RectangleVertical className="h-5 w-5" /> : <RectangleHorizontal className="h-5 w-5" />}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{isPortrait ? "Portrait — switch to landscape" : "Landscape — switch to portrait"}</TooltipContent>
+            </Tooltip>
           </div>
         </div>
 
+        {/* Right: save status, then where you're going — proof, then order */}
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="hidden md:inline-flex bg-transparent" onClick={onToggleOrientation}>
-            <LayoutPanelLeft className="h-4 w-4 mr-2" />
-            Change Orientation
-          </Button>
-          <Button variant="outline" size="sm" className="hidden md:inline-flex bg-transparent" onClick={onCycleTemplate}>
-            <Replace className="h-4 w-4 mr-2" />
-            Change Template
-          </Button>
+          {savedLabel ? (
+            <span className="mr-1 hidden text-xs font-medium text-muted-foreground sm:inline" aria-live="polite">
+              {savedLabel}
+            </span>
+          ) : null}
           <Button variant="outline" size="sm" onClick={onPreview}>
-            <Eye className="h-4 w-4 mr-2" />
+            <Eye className="mr-2 h-4 w-4" />
             Preview
           </Button>
           <Button size="sm" variant="brand" onClick={onNext}>

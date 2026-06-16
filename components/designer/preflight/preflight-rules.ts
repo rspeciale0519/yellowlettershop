@@ -39,9 +39,6 @@ function inside(inner: RectPx, outer: RectPx): boolean {
     inner.y + inner.h <= outer.y + outer.h
   )
 }
-function overlaps(a: RectPx, b: RectPx): boolean {
-  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y
-}
 
 export function runPreflight(elements: DesignElement[], ctx: PreflightContext): PreflightIssue[] {
   const issues: PreflightIssue[] = []
@@ -84,9 +81,6 @@ export function runPreflight(elements: DesignElement[], ctx: PreflightContext): 
       const r = box(el)
       if (!inside(r, ctx.specRects.safe)) {
         add("warning", "out-of-safe", `${label} is outside the safe area and may be trimmed.`)
-      }
-      if (overlaps(r, ctx.specRects.address) || overlaps(r, ctx.specRects.indicia)) {
-        add("error", "clear-zone", `${label} overlaps the USPS address/indicia clear zone.`)
       }
     }
   }
