@@ -13,6 +13,7 @@ import { CanvasEmptyState } from "@/components/designer/canvas/canvas-empty-stat
 import { PrintOverlay } from "@/components/designer/canvas/print-overlay"
 import { PageBackgroundLayer } from "@/components/designer/page-background-layer"
 import { dropPointToCanvas, readDragPayload } from "@/components/designer/dnd"
+import { isPostageType, rectsOverlap, violatesKeepClear } from "@/components/designer/postage"
 import type { SpecRects } from "@/components/designer/mail-spec"
 import type { CanvasSize, DesignElement, DesignerImageAsset, DesignerMode, PageBackground } from "@/types/designer"
 
@@ -111,6 +112,9 @@ export function CanvasArea({
         const rect = viewportRef.current?.getBoundingClientRect()
         if (!payload || !rect) return
         const position = dropPointToCanvas(event, rect, currentPan, canvasScale)
+        // Keep-clear: don't drop new content onto a postage (stamp/indicia) box.
+        const dropPoint = { x: position.x, y: position.y, width: 1, height: 1 }
+        if (elements.some((el) => isPostageType(el.type) && rectsOverlap(dropPoint, el))) return
         if (payload.kind === "module") onDropModule(payload.moduleId, position)
         else onDropAsset(payload.asset, position)
       }}
@@ -143,14 +147,18 @@ export function CanvasArea({
                 onDrag={(event, data) => setActiveGuides(computeSnap(element, data.x, data.y, elements, canvasSize).guides)}
                 onDragStop={(event, data) => {
                   setActiveGuides([])
-                  onUpdateElement(element.id, snapPosition(element, data.x, data.y, elements, canvasSize))
+                  const snapped = snapPosition(element, data.x, data.y, elements, canvasSize)
+                  // Keep-clear: reject (snap back) if the move would overlap a postage box.
+                  const candidate = { x: snapped.x, y: snapped.y, width: element.width, height: element.height }
+                  if (violatesKeepClear(element, candidate, elements)) return
+                  onUpdateElement(element.id, snapped)
                 }}
                 onResizeStop={(event, direction, ref, delta, position) => {
-                  onUpdateElement(element.id, {
-                    width: Number.parseInt(ref.style.width, 10),
-                    height: Number.parseInt(ref.style.height, 10),
-                    ...position,
-                  })
+                  const width = Number.parseInt(ref.style.width, 10)
+                  const height = Number.parseInt(ref.style.height, 10)
+                  const candidate = { x: position.x, y: position.y, width, height }
+                  if (violatesKeepClear(element, candidate, elements)) return
+                  onUpdateElement(element.id, { width, height, ...position })
                 }}
                 onClick={(event: React.MouseEvent<HTMLElement>) => {
                   event.stopPropagation()

@@ -30,6 +30,24 @@ export function isPostageType(type: string): boolean {
   return type === "postage"
 }
 
+type IdBox = Box & { id?: string; type: string }
+
+/**
+ * Keep-clear rule: a postage box and any OTHER element are mutually exclusive in
+ * space. A move/drop of `moving` to `candidate` is a violation if it would
+ * overlap an element of the opposite class (postage vs non-postage). Same-class
+ * overlaps are fine (normal elements may overlap; postage is a singleton, so
+ * postage-vs-postage never occurs).
+ */
+export function violatesKeepClear(moving: { id?: string; type: string }, candidate: Box, others: IdBox[]): boolean {
+  const movingIsPostage = isPostageType(moving.type)
+  return others.some((o) => {
+    if (o.id && moving.id && o.id === moving.id) return false
+    if (isPostageType(o.type) === movingIsPostage) return false
+    return rectsOverlap(candidate, o)
+  })
+}
+
 /**
  * Singleton + mutual exclusion: a mailpiece uses stamp OR indicia, at most one
  * total. Returns the kinds that may still be ADDED given current elements.
