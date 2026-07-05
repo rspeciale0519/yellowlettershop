@@ -1,8 +1,18 @@
 # yls brain — STATE
-Updated: 2026-06-15
+Updated: 2026-07-05
 
 ## Current focus
-**NEW (2026-06-15): Permission Template resource picker — name-based picker +
+**(2026-07-05): light-dark-theme site-wide redesign — SCRAPPED by owner post-completion.**
+6-phase warm-paper/warm-charcoal theme redesign was finished, QA-clean, and
+merge-ready, but owner rejected the design direction on review (no specific
+reason given). Branch deleted (`git branch -D`, never pushed — zero blast
+radius); full history preserved at tag `archive/light-dark-theme-5978f79` if
+ever revisited. `develop` unaffected, back to `0a135dd`. Lesson: check in on
+direction with a lightweight preview *before* a full multi-phase build-out next
+time a full-site visual redesign is attempted. Detail: [[journal/2026-07-05]].
+
+## (prior focus)
+**(2026-06-15): Permission Template resource picker — name-based picker +
 wildcard grants; built via /goal, e2e-PASSED, ready to merge.** Replaced the raw
 `resource_id` UUID text box in the Create/Edit Permission Template form with a
 searchable picker (All [type] vs specific multi-select, by name). Branch
