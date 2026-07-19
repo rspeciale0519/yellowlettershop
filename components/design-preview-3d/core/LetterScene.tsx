@@ -21,12 +21,6 @@ export interface LetterSceneProps {
 const SWAY_RESUME_MS = 2600;
 const SWAY_AMP = 0.26; // rad ≈ 15°
 const AZIMUTH_CLAMP = 0.7; // rad ≈ 40°
-/**
- * Camera distance below which the view counts as "zoomed in": left-drag /
- * one-finger switches from orbit to screen-space PAN so users can pull the
- * design around, and the idle sway pauses. Above it, drag orbits as before.
- */
-const ZOOM_PAN_DIST = 1.15;
 
 /**
  * Lighting rig + camera + orbit controls for the letter inspector.
@@ -40,6 +34,14 @@ const ZOOM_PAN_DIST = 1.15;
  * the current flip side, so the "Flip / Show" button always matches what's
  * on screen, and the shown face is always the key-lit one (never the dark
  * away side). Grabbing the sheet or the background pauses the sway.
+ *
+ * Three DISTINCT gestures, none of which shadow another: LEFT-drag on the
+ * background rotates the camera; RIGHT-drag (or two-finger drag on
+ * touch/trackpad) PANS — always available, at any zoom level, so users can
+ * pull the design around once they're zoomed in close. Grabbing the sheet's
+ * outer EDGE BAND (see LetterSheet) turns the page instead of orbiting. No
+ * gesture changes meaning based on hidden state (e.g. zoom distance) — every
+ * mode is reachable by a fixed, discoverable input.
  */
 export function LetterScene({ stock, flipped, onFlippedChange, art }: LetterSceneProps): React.ReactElement {
   const resumeTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -61,20 +63,15 @@ export function LetterScene({ stock, flipped, onFlippedChange, art }: LetterScen
     };
   }, []);
 
-  // Per-frame control management:
-  //  - zoomed in → left-drag/one-finger PAN (pull the design around), no sway;
-  //  - zoomed out → left-drag orbits, gentle idle sway;
-  //  - pan target clamped to the sheet so the piece can't be dragged away.
+  // Keep the pan target from drifting off the piece (right-drag/two-finger
+  // pan has no other bound), then run the idle sway when nothing is grabbed.
   useFrame((st, delta) => {
     const c = controlsRef.current;
     if (!c) return;
-    const zoomed = c.getDistance() < ZOOM_PAN_DIST;
-    c.mouseButtons.LEFT = zoomed ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE;
-    c.touches.ONE = zoomed ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE;
     c.target.x = THREE.MathUtils.clamp(c.target.x, -stockSceneWidth(stock) / 2, stockSceneWidth(stock) / 2);
     c.target.y = THREE.MathUtils.clamp(c.target.y, -stockSceneHeight(stock) / 2, stockSceneHeight(stock) / 2);
     c.target.z = THREE.MathUtils.clamp(c.target.z, -0.25, 0.25);
-    if (!swaying || zoomed) return;
+    if (!swaying) return;
     const target = SWAY_AMP * Math.sin(st.clock.elapsedTime * 0.32);
     c.setAzimuthalAngle(THREE.MathUtils.damp(c.getAzimuthalAngle(), target, 1.4, delta));
   });
@@ -138,6 +135,9 @@ export function LetterScene({ stock, flipped, onFlippedChange, art }: LetterScen
         maxAzimuthAngle={AZIMUTH_CLAMP}
         enableDamping
         dampingFactor={0.08}
+        // Fixed mapping — no gesture changes meaning based on zoom state.
+        mouseButtons={{ LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN }}
+        touches={{ ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN }}
         onStart={handleStart}
         onEnd={handleEnd}
       />

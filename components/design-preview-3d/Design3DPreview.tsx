@@ -93,7 +93,7 @@ export default function Design3DPreview({
 
       <div className="flex items-center justify-between pt-3">
         <span className="text-xs uppercase tracking-wide text-gray-500">
-          Drag to rotate — pan when zoomed · grab an edge to turn the page · scroll to zoom
+          Left-drag to rotate · right-drag (or 2 fingers) to pan · grab an edge to turn the page · scroll to zoom
         </span>
         <Button
           type="button"
