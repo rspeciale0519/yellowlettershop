@@ -7,7 +7,7 @@ import { ContactShadows, OrbitControls, PerspectiveCamera } from '@react-three/d
 import { LetterSheet } from './LetterSheet';
 import type { DesignArt } from './art-textures';
 import { LocalEnvironment } from './LocalEnvironment';
-import { stockSceneHeight } from './paper-stocks';
+import { stockSceneHeight, stockSceneWidth } from './paper-stocks';
 import type { PaperStock } from './paper-stocks';
 
 export interface LetterSceneProps {
@@ -21,6 +21,12 @@ export interface LetterSceneProps {
 const SWAY_RESUME_MS = 2600;
 const SWAY_AMP = 0.26; // rad ≈ 15°
 const AZIMUTH_CLAMP = 0.7; // rad ≈ 40°
+/**
+ * Camera distance below which the view counts as "zoomed in": left-drag /
+ * one-finger switches from orbit to screen-space PAN so users can pull the
+ * design around, and the idle sway pauses. Above it, drag orbits as before.
+ */
+const ZOOM_PAN_DIST = 1.15;
 
 /**
  * Lighting rig + camera + orbit controls for the letter inspector.
@@ -55,10 +61,20 @@ export function LetterScene({ stock, flipped, onFlippedChange, art }: LetterScen
     };
   }, []);
 
-  // Idle sway: ease the azimuth toward a slow sine within the front cone.
+  // Per-frame control management:
+  //  - zoomed in → left-drag/one-finger PAN (pull the design around), no sway;
+  //  - zoomed out → left-drag orbits, gentle idle sway;
+  //  - pan target clamped to the sheet so the piece can't be dragged away.
   useFrame((st, delta) => {
     const c = controlsRef.current;
-    if (!c || !swaying) return;
+    if (!c) return;
+    const zoomed = c.getDistance() < ZOOM_PAN_DIST;
+    c.mouseButtons.LEFT = zoomed ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE;
+    c.touches.ONE = zoomed ? THREE.TOUCH.PAN : THREE.TOUCH.ROTATE;
+    c.target.x = THREE.MathUtils.clamp(c.target.x, -stockSceneWidth(stock) / 2, stockSceneWidth(stock) / 2);
+    c.target.y = THREE.MathUtils.clamp(c.target.y, -stockSceneHeight(stock) / 2, stockSceneHeight(stock) / 2);
+    c.target.z = THREE.MathUtils.clamp(c.target.z, -0.25, 0.25);
+    if (!swaying || zoomed) return;
     const target = SWAY_AMP * Math.sin(st.clock.elapsedTime * 0.32);
     c.setAzimuthalAngle(THREE.MathUtils.damp(c.getAzimuthalAngle(), target, 1.4, delta));
   });
@@ -110,7 +126,8 @@ export function LetterScene({ stock, flipped, onFlippedChange, art }: LetterScen
       <OrbitControls
         ref={controlsRef}
         makeDefault
-        enablePan={false}
+        enablePan
+        screenSpacePanning
         enableZoom
         zoomToCursor
         minDistance={0.35}

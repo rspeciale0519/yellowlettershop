@@ -2,7 +2,8 @@
 
 import * as React from 'react';
 import * as THREE from 'three';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
+import type { ThreeEvent } from '@react-three/fiber';
 import { stockSceneHeight, stockSceneWidth } from './paper-stocks';
 import type { PaperStock } from './paper-stocks';
 import { usePieceTextures } from './art-textures';
@@ -13,6 +14,13 @@ import { applyRest, breatheEnvelope, buildRestState } from './rest-state';
 import { usePageTurn } from './use-page-turn';
 
 const BREATHE_WINDOW = 0.45;
+
+/**
+ * Outer fraction of each half-extent that acts as the page-turn grab zone
+ * (0.35 → roughly the outer 17% of the sheet on every side). Center drags
+ * pass through to the camera controls.
+ */
+const EDGE_GRAB_FRAC = 0.35;
 
 export interface LetterSheetProps {
   stock: PaperStock;
@@ -42,6 +50,7 @@ export function LetterSheet({
   art,
 }: LetterSheetProps): React.ReactElement {
   const meshRef = React.useRef<THREE.Mesh>(null);
+  const gl = useThree((s) => s.gl);
   const textures = usePieceTextures(stock, art);
 
   const dims = React.useMemo<SheetDims>(
@@ -188,6 +197,57 @@ export function LetterSheet({
     };
   }, [materials]);
 
+  // ---- Edge-band grab gating -------------------------------------------
+  // A real page is turned by its EDGE. Only pointer-downs landing in the
+  // outer band start a page-turn; center drags fall through to the camera
+  // controls (rotate, and pan when zoomed) so users can pull the view around
+  // without accidentally flipping the piece. The turn hook itself is
+  // untouched — gating happens before delegation.
+  const grabbing = React.useRef(false);
+
+  const inEdgeBand = React.useCallback(
+    (e: ThreeEvent<PointerEvent>): boolean => {
+      const mesh = meshRef.current;
+      if (!mesh) return false;
+      const local = mesh.worldToLocal(e.point.clone());
+      return (
+        Math.abs(local.x) > dims.halfW * (1 - EDGE_GRAB_FRAC) ||
+        Math.abs(local.y) > dims.halfH * (1 - EDGE_GRAB_FRAC)
+      );
+    },
+    [dims],
+  );
+
+  const handlers = React.useMemo(
+    () => ({
+      onPointerDown: (e: ThreeEvent<PointerEvent>) => {
+        if (!inEdgeBand(e)) return; // center drag → camera controls
+        grabbing.current = true;
+        turn.handlers.onPointerDown(e);
+      },
+      onPointerMove: (e: ThreeEvent<PointerEvent>) => {
+        turn.handlers.onPointerMove(e);
+        // Hover affordance: 'grab' cursor only over the turnable edge band.
+        if (!grabbing.current) {
+          gl.domElement.style.cursor = inEdgeBand(e) ? 'grab' : '';
+        }
+      },
+      onPointerUp: (e: ThreeEvent<PointerEvent>) => {
+        turn.handlers.onPointerUp(e);
+        grabbing.current = false;
+      },
+      onPointerCancel: (e: ThreeEvent<PointerEvent>) => {
+        turn.handlers.onPointerCancel(e);
+        grabbing.current = false;
+      },
+      onPointerOver: (e: ThreeEvent<PointerEvent>) => {
+        if (inEdgeBand(e)) turn.handlers.onPointerOver(e);
+      },
+      onPointerOut: turn.handlers.onPointerOut,
+    }),
+    [gl, inEdgeBand, turn.handlers],
+  );
+
   return (
     <mesh
       ref={meshRef}
@@ -195,12 +255,12 @@ export function LetterSheet({
       material={materials}
       castShadow
       receiveShadow
-      onPointerDown={turn.handlers.onPointerDown}
-      onPointerMove={turn.handlers.onPointerMove}
-      onPointerUp={turn.handlers.onPointerUp}
-      onPointerCancel={turn.handlers.onPointerCancel}
-      onPointerOver={turn.handlers.onPointerOver}
-      onPointerOut={turn.handlers.onPointerOut}
+      onPointerDown={handlers.onPointerDown}
+      onPointerMove={handlers.onPointerMove}
+      onPointerUp={handlers.onPointerUp}
+      onPointerCancel={handlers.onPointerCancel}
+      onPointerOver={handlers.onPointerOver}
+      onPointerOut={handlers.onPointerOut}
     />
   );
 }
