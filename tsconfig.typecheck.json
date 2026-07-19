@@ -9,6 +9,9 @@
     "app/dashboard/page.tsx",
     "components/dashboard/media-upload.tsx",
     "components/media/upload-dialog.tsx",
+    "components/design-preview-3d/**/*.ts",
+    "components/design-preview-3d/**/*.tsx",
+    "components/designer/preview-modal.tsx",
     "hooks/use-assets.ts",
     "types/**/*.ts"
   ],
