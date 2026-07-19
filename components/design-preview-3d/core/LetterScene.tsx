@@ -112,6 +112,7 @@ export function LetterScene({ stock, flipped, onFlippedChange, art }: LetterScen
         makeDefault
         enablePan={false}
         enableZoom
+        zoomToCursor
         minDistance={1.7}
         maxDistance={4.4}
         minPolarAngle={Math.PI / 3.2}
