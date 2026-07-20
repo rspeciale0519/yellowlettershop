@@ -118,12 +118,15 @@ Read [[knowledge/orientation]].
 
 ## Latest synopsis
 Shipped production-readiness Phases 0-3 (code) + 2 security fixes; resolved a
-Supabase project-identity mixup. The app's real DB is `lmtpfgfulkynrktdkgpu`
-(proven by anon+service JWT `ref` claims in `.env.local`), NOT the dashboard
-project *named* "YLS" (`jgkkcrnegquqbizfuhqr`). Lesson: identify "which X does
-this app use" from the app's own config/JWT, never an external listing's
-display name. Goal paused on owner blocker (migrations + browser smoke).
-See [[journal/2026-06-13]].
+Supabase project-identity mixup. The app's ONLY real DB is `lmtpfgfulkynrktdkgpu`,
+managed under the **corp@yellowlettershop.com** Supabase account (proven by
+anon+service JWT `ref` claims in `.env.local`). An unrelated, differently-owned
+dashboard project that once shared a confusing display name has been fully
+purged from this repo (2026-07-19, owner request) and must never be
+referenced again — if you see any other Supabase project ref anywhere in this
+codebase, it is wrong. Lesson: identify "which X does this app use" from the
+app's own config/JWT, never an external listing's display name.
+See [[journal/2026-06-13]], memory:project_supabase_key_rotation.
 
 ## Open threads
 - **B8 — hidden type-debt → RESOLVED to ZERO** (`docs/temp/typecheck-debt-finding.md`):

@@ -1,17 +1,25 @@
 {
   "mcpServers": {
-    "playwright": {
+    "stripe": {
+      "type": "http",
+      "url": "https://mcp.stripe.com"
+    },
+    "supabase-pat": {
       "command": "cmd",
       "args": [
         "/c",
         "npx",
-        "mcp-server-playwright",
-        "--allowed-origins=https://localhost"
-      ]
-    },
-    "stripe": {
-      "type": "http",
-      "url": "https://mcp.stripe.com"
+        "-y",
+        "--package=@supabase/mcp-server-supabase",
+        "--package=@modelcontextprotocol/sdk",
+        "--package=zod",
+        "mcp-server-supabase",
+        "--project-ref",
+        "lmtpfgfulkynrktdkgpu"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "${SUPABASE_ACCESS_TOKEN}"
+      }
     }
   }
 }
