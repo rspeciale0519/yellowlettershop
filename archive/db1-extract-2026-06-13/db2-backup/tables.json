@@ -1,0 +1,14 @@
+[
+  "admin_audit_log",
+  "campaigns",
+  "contact_cards",
+  "design_templates",
+  "mailing_lists",
+  "order_drafts",
+  "orders",
+  "pricing_change_log",
+  "pricing_config",
+  "user_credits",
+  "user_notes",
+  "user_profiles"
+]

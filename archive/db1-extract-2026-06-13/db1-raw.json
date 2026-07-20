@@ -1,0 +1,5130 @@
+{
+  "enums": [
+    {
+      "name": "campaign_status",
+      "vals": "{draft,scheduled,sending,sent,archived}"
+    },
+    {
+      "name": "order_status",
+      "vals": "{draft,submitted,processing,shipped,completed,failed}"
+    }
+  ],
+  "columns": [
+    {
+      "table_name": "campaign_mailing_lists",
+      "column_name": "campaign_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "campaign_mailing_lists",
+      "column_name": "mailing_list_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "campaign_mailing_lists",
+      "column_name": "added_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "campaign_records",
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "uuid_generate_v4()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "campaign_records",
+      "column_name": "campaign_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "campaign_records",
+      "column_name": "record_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "campaign_records",
+      "column_name": "mailing_list_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "campaign_records",
+      "column_name": "drop_number",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "campaign_records",
+      "column_name": "scheduled_date",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "campaign_records",
+      "column_name": "short_link_code",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "campaign_records",
+      "column_name": "delivery_status",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": "'pending'::text",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 8
+    },
+    {
+      "table_name": "campaign_records",
+      "column_name": "delivered_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 9
+    },
+    {
+      "table_name": "campaign_records",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 10
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "name",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": 255,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "description",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "type",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 50,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "metadata",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 8
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "created_by",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 9
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "scheduled_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 10
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "sent_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 11
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "completed_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 12
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "active_order_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 13
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "status",
+      "data_type": "USER-DEFINED",
+      "udt_name": "campaign_status",
+      "is_nullable": "YES",
+      "column_default": "'draft'::campaign_status",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 14
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "team_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 15
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "contact_card_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 16
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "design_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 17
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "campaign_type",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 18
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "split_config",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 19
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "repeat_config",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 20
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "fulfillment_type",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 21
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "postage_type",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 22
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "total_records",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "ordinal_position": 23
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "estimated_cost",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2,
+      "ordinal_position": 24
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "actual_cost",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2,
+      "ordinal_position": 25
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "scheduled_start_date",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 26
+    },
+    {
+      "table_name": "campaigns",
+      "column_name": "execution_dates",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 27
+    },
+    {
+      "table_name": "contact_cards",
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "uuid_generate_v4()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "contact_cards",
+      "column_name": "user_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "contact_cards",
+      "column_name": "team_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "contact_cards",
+      "column_name": "name",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "contact_cards",
+      "column_name": "company",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "contact_cards",
+      "column_name": "first_name",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "contact_cards",
+      "column_name": "last_name",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "contact_cards",
+      "column_name": "street_address",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 8
+    },
+    {
+      "table_name": "contact_cards",
+      "column_name": "suite_unit_apt",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 9
+    },
+    {
+      "table_name": "contact_cards",
+      "column_name": "city",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 10
+    },
+    {
+      "table_name": "contact_cards",
+      "column_name": "state",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 11
+    },
+    {
+      "table_name": "contact_cards",
+      "column_name": "zip_code",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 12
+    },
+    {
+      "table_name": "contact_cards",
+      "column_name": "email",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 13
+    },
+    {
+      "table_name": "contact_cards",
+      "column_name": "phone",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 14
+    },
+    {
+      "table_name": "contact_cards",
+      "column_name": "is_default",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "YES",
+      "column_default": "false",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 15
+    },
+    {
+      "table_name": "contact_cards",
+      "column_name": "is_soft_deleted",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "YES",
+      "column_default": "false",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 16
+    },
+    {
+      "table_name": "contact_cards",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 17
+    },
+    {
+      "table_name": "contact_cards",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 18
+    },
+    {
+      "table_name": "mail_pieces",
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "mail_pieces",
+      "column_name": "name",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": 255,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "mail_pieces",
+      "column_name": "description",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "mail_pieces",
+      "column_name": "dimensions",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 50,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "mail_pieces",
+      "column_name": "type",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 50,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "mail_pieces",
+      "column_name": "metadata",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "mail_pieces",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "mail_pieces",
+      "column_name": "created_by",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 8
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "mailing_list_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "first_name",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 100,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "last_name",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 100,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "middle_name",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 100,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "full_name",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 255,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "email",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 255,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "phone",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 20,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 8
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "address_line1",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 255,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 9
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "address_line2",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 255,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 10
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "city",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 100,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 11
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "state",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 2,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 12
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "zip_code",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 10,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 13
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "county",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 100,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 14
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "latitude",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 8,
+      "ordinal_position": 15
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "longitude",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 11,
+      "numeric_scale": 8,
+      "ordinal_position": 16
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "property_type",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 50,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 17
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "bedrooms",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "ordinal_position": 18
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "bathrooms",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 3,
+      "numeric_scale": 1,
+      "ordinal_position": 19
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "square_feet",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "ordinal_position": 20
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "lot_size",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2,
+      "ordinal_position": 21
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "year_built",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "ordinal_position": 22
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "estimated_value",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 12,
+      "numeric_scale": 2,
+      "ordinal_position": 23
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "last_sale_date",
+      "data_type": "date",
+      "udt_name": "date",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 24
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "last_sale_price",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 12,
+      "numeric_scale": 2,
+      "ordinal_position": 25
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "loan_type",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 50,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 26
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "loan_amount",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 12,
+      "numeric_scale": 2,
+      "ordinal_position": 27
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "interest_rate",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 5,
+      "numeric_scale": 3,
+      "ordinal_position": 28
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "loan_to_value",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 5,
+      "numeric_scale": 2,
+      "ordinal_position": 29
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "origination_date",
+      "data_type": "date",
+      "udt_name": "date",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 30
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "maturity_date",
+      "data_type": "date",
+      "udt_name": "date",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 31
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "lender_name",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 255,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 32
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "age",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "ordinal_position": 33
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "gender",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 20,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 34
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "marital_status",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 20,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 35
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "income",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 12,
+      "numeric_scale": 2,
+      "ordinal_position": 36
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "net_worth",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 15,
+      "numeric_scale": 2,
+      "ordinal_position": 37
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "home_ownership",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 20,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 38
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "occupation",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 100,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 39
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "education_level",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 50,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 40
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "foreclosure_status",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 50,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 41
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "filing_date",
+      "data_type": "date",
+      "udt_name": "date",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 42
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "auction_date",
+      "data_type": "date",
+      "udt_name": "date",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 43
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "redemption_date",
+      "data_type": "date",
+      "udt_name": "date",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 44
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "likely_to_move",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 45
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "likely_to_sell",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 46
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "likely_to_refinance",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 47
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "motivation_score",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "ordinal_position": 48
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "data_source",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 50,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 49
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "external_id",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 255,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 50
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "metadata",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 51
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 52
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 53
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "is_valid",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "YES",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 54
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "validation_errors",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 55
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "modified_by",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 56
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "status",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": "'active'::character varying",
+      "character_maximum_length": 50,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 57
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "additional_data",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": "'{}'::jsonb",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 58
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "last_used_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 59
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "usage_count",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "ordinal_position": 60
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "validation_status",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": "'pending'::text",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 61
+    },
+    {
+      "table_name": "mailing_list_records",
+      "column_name": "deliverability_score",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 3,
+      "numeric_scale": 2,
+      "ordinal_position": 62
+    },
+    {
+      "table_name": "mailing_list_tags",
+      "column_name": "mailing_list_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "mailing_list_tags",
+      "column_name": "tag_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "mailing_list_tags",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "mailing_list_usage",
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "uuid_generate_v4()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "mailing_list_usage",
+      "column_name": "mailing_list_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "mailing_list_usage",
+      "column_name": "campaign_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "mailing_list_usage",
+      "column_name": "user_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "mailing_list_usage",
+      "column_name": "usage_type",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "mailing_list_usage",
+      "column_name": "record_count",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "mailing_list_usage",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "mailing_list_versions",
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "mailing_list_versions",
+      "column_name": "mailing_list_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "mailing_list_versions",
+      "column_name": "version_number",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "mailing_list_versions",
+      "column_name": "name",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": 255,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "mailing_list_versions",
+      "column_name": "description",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "mailing_list_versions",
+      "column_name": "record_count",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "mailing_list_versions",
+      "column_name": "criteria",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "mailing_list_versions",
+      "column_name": "metadata",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 8
+    },
+    {
+      "table_name": "mailing_list_versions",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 9
+    },
+    {
+      "table_name": "mailing_list_versions",
+      "column_name": "created_by",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 10
+    },
+    {
+      "table_name": "mailing_list_versions",
+      "column_name": "change_description",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 11
+    },
+    {
+      "table_name": "mailing_list_versions",
+      "column_name": "snapshot",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 12
+    },
+    {
+      "table_name": "mailing_lists",
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "mailing_lists",
+      "column_name": "name",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": 255,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "mailing_lists",
+      "column_name": "description",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "mailing_lists",
+      "column_name": "record_count",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "mailing_lists",
+      "column_name": "criteria",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "mailing_lists",
+      "column_name": "metadata",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "mailing_lists",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "mailing_lists",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 8
+    },
+    {
+      "table_name": "mailing_lists",
+      "column_name": "created_by",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 9
+    },
+    {
+      "table_name": "mailing_lists",
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "YES",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 10
+    },
+    {
+      "table_name": "mailing_lists",
+      "column_name": "last_used_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 11
+    },
+    {
+      "table_name": "mailing_lists",
+      "column_name": "purchase_count",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "ordinal_position": 12
+    },
+    {
+      "table_name": "mailing_lists",
+      "column_name": "team_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 13
+    },
+    {
+      "table_name": "mailing_lists",
+      "column_name": "estimated_cost",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2,
+      "ordinal_position": 14
+    },
+    {
+      "table_name": "mailing_lists",
+      "column_name": "source_type",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 15
+    },
+    {
+      "table_name": "mailing_lists",
+      "column_name": "source_criteria",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 16
+    },
+    {
+      "table_name": "mailing_lists",
+      "column_name": "file_url",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 17
+    },
+    {
+      "table_name": "orders",
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "orders",
+      "column_name": "campaign_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "orders",
+      "column_name": "mail_piece_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "orders",
+      "column_name": "vendor_order_id",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 255,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "orders",
+      "column_name": "status",
+      "data_type": "USER-DEFINED",
+      "udt_name": "order_status",
+      "is_nullable": "YES",
+      "column_default": "'draft'::order_status",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "orders",
+      "column_name": "record_count",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "orders",
+      "column_name": "cost_per_piece",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 4,
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "orders",
+      "column_name": "total_cost",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 12,
+      "numeric_scale": 2,
+      "ordinal_position": 8
+    },
+    {
+      "table_name": "orders",
+      "column_name": "mail_class",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 50,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 9
+    },
+    {
+      "table_name": "orders",
+      "column_name": "postage_type",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 50,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 10
+    },
+    {
+      "table_name": "orders",
+      "column_name": "submitted_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 11
+    },
+    {
+      "table_name": "orders",
+      "column_name": "expected_delivery_date",
+      "data_type": "date",
+      "udt_name": "date",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 12
+    },
+    {
+      "table_name": "orders",
+      "column_name": "metadata",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 13
+    },
+    {
+      "table_name": "orders",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 14
+    },
+    {
+      "table_name": "orders",
+      "column_name": "created_by",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 15
+    },
+    {
+      "table_name": "orders",
+      "column_name": "stripe_payment_intent_id",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 16
+    },
+    {
+      "table_name": "orders",
+      "column_name": "amount_authorized",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2,
+      "ordinal_position": 17
+    },
+    {
+      "table_name": "orders",
+      "column_name": "amount_captured",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2,
+      "ordinal_position": 18
+    },
+    {
+      "table_name": "orders",
+      "column_name": "payment_status",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": "'pending'::text",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 19
+    },
+    {
+      "table_name": "orders",
+      "column_name": "vendor_assignments",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 20
+    },
+    {
+      "table_name": "orders",
+      "column_name": "proof_urls",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 21
+    },
+    {
+      "table_name": "orders",
+      "column_name": "proof_approved_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 22
+    },
+    {
+      "table_name": "orders",
+      "column_name": "proof_approved_by",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 23
+    },
+    {
+      "table_name": "orders",
+      "column_name": "tracking_numbers",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 24
+    },
+    {
+      "table_name": "orders",
+      "column_name": "shipped_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 25
+    },
+    {
+      "table_name": "orders",
+      "column_name": "delivered_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 26
+    },
+    {
+      "table_name": "proof_annotations",
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "uuid_generate_v4()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "proof_annotations",
+      "column_name": "order_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "proof_annotations",
+      "column_name": "page_number",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "proof_annotations",
+      "column_name": "x_coordinate",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 6,
+      "numeric_scale": 3,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "proof_annotations",
+      "column_name": "y_coordinate",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 6,
+      "numeric_scale": 3,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "proof_annotations",
+      "column_name": "comment",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "proof_annotations",
+      "column_name": "status",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": "'open'::text",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "proof_annotations",
+      "column_name": "created_by",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 8
+    },
+    {
+      "table_name": "proof_annotations",
+      "column_name": "resolved_by",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 9
+    },
+    {
+      "table_name": "proof_annotations",
+      "column_name": "resolved_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 10
+    },
+    {
+      "table_name": "proof_annotations",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 11
+    },
+    {
+      "table_name": "record_usage",
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "uuid_generate_v4()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "record_usage",
+      "column_name": "record_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "record_usage",
+      "column_name": "campaign_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "record_usage",
+      "column_name": "usage_type",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "record_usage",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "saved_designs",
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "uuid_generate_v4()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "saved_designs",
+      "column_name": "user_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "saved_designs",
+      "column_name": "team_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "saved_designs",
+      "column_name": "name",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "saved_designs",
+      "column_name": "description",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "saved_designs",
+      "column_name": "design_type",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "saved_designs",
+      "column_name": "design_data",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "saved_designs",
+      "column_name": "thumbnail_url",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 8
+    },
+    {
+      "table_name": "saved_designs",
+      "column_name": "is_template",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "YES",
+      "column_default": "false",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 9
+    },
+    {
+      "table_name": "saved_designs",
+      "column_name": "usage_count",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "ordinal_position": 10
+    },
+    {
+      "table_name": "saved_designs",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 11
+    },
+    {
+      "table_name": "saved_designs",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 12
+    },
+    {
+      "table_name": "short_link_tracking",
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "uuid_generate_v4()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "short_link_tracking",
+      "column_name": "short_code",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "short_link_tracking",
+      "column_name": "campaign_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "short_link_tracking",
+      "column_name": "record_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "short_link_tracking",
+      "column_name": "target_url",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "short_link_tracking",
+      "column_name": "clicks",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": "'[]'::jsonb",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "short_link_tracking",
+      "column_name": "total_clicks",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "short_link_tracking",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 8
+    },
+    {
+      "table_name": "skip_trace_orders",
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "uuid_generate_v4()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "skip_trace_orders",
+      "column_name": "user_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "skip_trace_orders",
+      "column_name": "vendor_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "skip_trace_orders",
+      "column_name": "record_ids",
+      "data_type": "ARRAY",
+      "udt_name": "_uuid",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "skip_trace_orders",
+      "column_name": "status",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": "'pending'::text",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "skip_trace_orders",
+      "column_name": "cost",
+      "data_type": "numeric",
+      "udt_name": "numeric",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 10,
+      "numeric_scale": 2,
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "skip_trace_orders",
+      "column_name": "submitted_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "skip_trace_orders",
+      "column_name": "completed_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 8
+    },
+    {
+      "table_name": "skip_trace_orders",
+      "column_name": "results_file_url",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 9
+    },
+    {
+      "table_name": "skip_trace_orders",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 10
+    },
+    {
+      "table_name": "system_templates",
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "uuid_generate_v4()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "system_templates",
+      "column_name": "name",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "system_templates",
+      "column_name": "description",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "system_templates",
+      "column_name": "category",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "system_templates",
+      "column_name": "design_type",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "system_templates",
+      "column_name": "design_data",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "system_templates",
+      "column_name": "thumbnail_url",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "system_templates",
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "YES",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 8
+    },
+    {
+      "table_name": "system_templates",
+      "column_name": "usage_count",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": "0",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "ordinal_position": 9
+    },
+    {
+      "table_name": "system_templates",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 10
+    },
+    {
+      "table_name": "tags",
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "gen_random_uuid()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "tags",
+      "column_name": "name",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": 100,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "tags",
+      "column_name": "color",
+      "data_type": "character varying",
+      "udt_name": "varchar",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": 7,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "tags",
+      "column_name": "description",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "tags",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "tags",
+      "column_name": "created_by",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "tags",
+      "column_name": "user_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "tags",
+      "column_name": "team_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 8
+    },
+    {
+      "table_name": "tags",
+      "column_name": "category",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 9
+    },
+    {
+      "table_name": "teams",
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "uuid_generate_v4()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "teams",
+      "column_name": "name",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "teams",
+      "column_name": "plan",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "teams",
+      "column_name": "max_seats",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "NO",
+      "column_default": "3",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "teams",
+      "column_name": "owner_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "teams",
+      "column_name": "stripe_subscription_id",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "teams",
+      "column_name": "settings",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": "'{}'::jsonb",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "teams",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 8
+    },
+    {
+      "table_name": "teams",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 9
+    },
+    {
+      "table_name": "user_profiles",
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "user_profiles",
+      "column_name": "full_name",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "user_profiles",
+      "column_name": "company_name",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "user_profiles",
+      "column_name": "avatar_url",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "user_profiles",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "user_profiles",
+      "column_name": "subscription_plan",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": "'free'::text",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "user_profiles",
+      "column_name": "subscription_status",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": "'active'::text",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "user_profiles",
+      "column_name": "stripe_customer_id",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 8
+    },
+    {
+      "table_name": "user_profiles",
+      "column_name": "team_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 9
+    },
+    {
+      "table_name": "user_profiles",
+      "column_name": "role",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": "'user'::text",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 10
+    },
+    {
+      "table_name": "user_profiles",
+      "column_name": "settings",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": "'{}'::jsonb",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 11
+    },
+    {
+      "table_name": "user_profiles",
+      "column_name": "onboarding_completed",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "YES",
+      "column_default": "false",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 12
+    },
+    {
+      "table_name": "user_profiles",
+      "column_name": "last_login_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 13
+    },
+    {
+      "table_name": "vendors",
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "uuid_generate_v4()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "vendors",
+      "column_name": "name",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "vendors",
+      "column_name": "vendor_type",
+      "data_type": "ARRAY",
+      "udt_name": "_text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "vendors",
+      "column_name": "contact_info",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "vendors",
+      "column_name": "pricing_tiers",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "vendors",
+      "column_name": "performance_metrics",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "YES",
+      "column_default": "'{}'::jsonb",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "vendors",
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "YES",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "vendors",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 8
+    },
+    {
+      "table_name": "vendors",
+      "column_name": "updated_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 9
+    },
+    {
+      "table_name": "webhook_deliveries",
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "uuid_generate_v4()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "webhook_deliveries",
+      "column_name": "webhook_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "webhook_deliveries",
+      "column_name": "event_type",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "webhook_deliveries",
+      "column_name": "payload",
+      "data_type": "jsonb",
+      "udt_name": "jsonb",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "webhook_deliveries",
+      "column_name": "response_status",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "webhook_deliveries",
+      "column_name": "response_body",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "webhook_deliveries",
+      "column_name": "delivery_attempts",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": "1",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "webhook_deliveries",
+      "column_name": "delivered_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 8
+    },
+    {
+      "table_name": "webhook_deliveries",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 9
+    },
+    {
+      "table_name": "webhooks",
+      "column_name": "id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "NO",
+      "column_default": "uuid_generate_v4()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 1
+    },
+    {
+      "table_name": "webhooks",
+      "column_name": "user_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 2
+    },
+    {
+      "table_name": "webhooks",
+      "column_name": "team_id",
+      "data_type": "uuid",
+      "udt_name": "uuid",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 3
+    },
+    {
+      "table_name": "webhooks",
+      "column_name": "url",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 4
+    },
+    {
+      "table_name": "webhooks",
+      "column_name": "events",
+      "data_type": "ARRAY",
+      "udt_name": "_text",
+      "is_nullable": "NO",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 5
+    },
+    {
+      "table_name": "webhooks",
+      "column_name": "secret",
+      "data_type": "text",
+      "udt_name": "text",
+      "is_nullable": "YES",
+      "column_default": null,
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 6
+    },
+    {
+      "table_name": "webhooks",
+      "column_name": "is_active",
+      "data_type": "boolean",
+      "udt_name": "bool",
+      "is_nullable": "YES",
+      "column_default": "true",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 7
+    },
+    {
+      "table_name": "webhooks",
+      "column_name": "retry_count",
+      "data_type": "integer",
+      "udt_name": "int4",
+      "is_nullable": "YES",
+      "column_default": "3",
+      "character_maximum_length": null,
+      "numeric_precision": 32,
+      "numeric_scale": 0,
+      "ordinal_position": 8
+    },
+    {
+      "table_name": "webhooks",
+      "column_name": "created_at",
+      "data_type": "timestamp with time zone",
+      "udt_name": "timestamptz",
+      "is_nullable": "YES",
+      "column_default": "now()",
+      "character_maximum_length": null,
+      "numeric_precision": null,
+      "numeric_scale": null,
+      "ordinal_position": 9
+    }
+  ],
+  "constraints": [
+    {
+      "tbl": "campaign_mailing_lists",
+      "conname": "campaign_mailing_lists_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (campaign_id, mailing_list_id)"
+    },
+    {
+      "tbl": "campaign_mailing_lists",
+      "conname": "campaign_mailing_lists_campaign_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "campaign_mailing_lists",
+      "conname": "campaign_mailing_lists_mailing_list_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (mailing_list_id) REFERENCES mailing_lists(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "campaign_records",
+      "conname": "campaign_records_campaign_id_record_id_key",
+      "contype": "u",
+      "def": "UNIQUE (campaign_id, record_id)"
+    },
+    {
+      "tbl": "campaign_records",
+      "conname": "campaign_records_short_link_code_key",
+      "contype": "u",
+      "def": "UNIQUE (short_link_code)"
+    },
+    {
+      "tbl": "campaign_records",
+      "conname": "campaign_records_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "campaign_records",
+      "conname": "campaign_records_campaign_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "campaign_records",
+      "conname": "campaign_records_mailing_list_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (mailing_list_id) REFERENCES mailing_lists(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "campaign_records",
+      "conname": "campaign_records_record_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (record_id) REFERENCES mailing_list_records(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "campaign_records",
+      "conname": "campaign_records_delivery_status_check",
+      "contype": "c",
+      "def": "CHECK ((delivery_status = ANY (ARRAY['pending'::text, 'printed'::text, 'shipped'::text, 'delivered'::text, 'returned'::text])))"
+    },
+    {
+      "tbl": "campaigns",
+      "conname": "campaigns_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "campaigns",
+      "conname": "campaigns_active_order_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (active_order_id) REFERENCES orders(id) ON DELETE SET NULL"
+    },
+    {
+      "tbl": "campaigns",
+      "conname": "campaigns_contact_card_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (contact_card_id) REFERENCES contact_cards(id)"
+    },
+    {
+      "tbl": "campaigns",
+      "conname": "campaigns_created_by_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL"
+    },
+    {
+      "tbl": "campaigns",
+      "conname": "campaigns_team_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (team_id) REFERENCES teams(id)"
+    },
+    {
+      "tbl": "campaigns",
+      "conname": "campaigns_campaign_type_check",
+      "contype": "c",
+      "def": "CHECK ((campaign_type = ANY (ARRAY['single'::text, 'split'::text, 'recurring'::text])))"
+    },
+    {
+      "tbl": "campaigns",
+      "conname": "campaigns_fulfillment_type_check",
+      "contype": "c",
+      "def": "CHECK ((fulfillment_type = ANY (ARRAY['full_service'::text, 'ship_to_user'::text, 'print_only'::text])))"
+    },
+    {
+      "tbl": "campaigns",
+      "conname": "campaigns_postage_type_check",
+      "contype": "c",
+      "def": "CHECK ((postage_type = ANY (ARRAY['first_class_forever'::text, 'first_class_discounted'::text, 'standard_class'::text])))"
+    },
+    {
+      "tbl": "contact_cards",
+      "conname": "contact_cards_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "contact_cards",
+      "conname": "contact_cards_team_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (team_id) REFERENCES teams(id)"
+    },
+    {
+      "tbl": "contact_cards",
+      "conname": "contact_cards_user_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "mailing_list_records",
+      "conname": "mailing_list_records_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "mailing_list_records",
+      "conname": "mailing_list_records_mailing_list_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (mailing_list_id) REFERENCES mailing_lists(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "mailing_list_records",
+      "conname": "mailing_list_records_modified_by_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (modified_by) REFERENCES auth.users(id) ON DELETE SET NULL"
+    },
+    {
+      "tbl": "mailing_list_records",
+      "conname": "mailing_list_records_validation_status_check",
+      "contype": "c",
+      "def": "CHECK ((validation_status = ANY (ARRAY['pending'::text, 'valid'::text, 'invalid'::text, 'corrected'::text])))"
+    },
+    {
+      "tbl": "mailing_lists",
+      "conname": "mailing_lists_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "mailing_lists",
+      "conname": "mailing_lists_created_by_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL"
+    },
+    {
+      "tbl": "mailing_lists",
+      "conname": "mailing_lists_team_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (team_id) REFERENCES teams(id)"
+    },
+    {
+      "tbl": "mailing_lists",
+      "conname": "mailing_lists_source_type_check",
+      "contype": "c",
+      "def": "CHECK ((source_type = ANY (ARRAY['upload'::text, 'list_builder'::text, 'manual'::text, 'imported'::text])))"
+    },
+    {
+      "tbl": "mailing_list_tags",
+      "conname": "mailing_list_tags_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (mailing_list_id, tag_id)"
+    },
+    {
+      "tbl": "mailing_list_tags",
+      "conname": "mailing_list_tags_mailing_list_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (mailing_list_id) REFERENCES mailing_lists(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "mailing_list_tags",
+      "conname": "mailing_list_tags_tag_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "mailing_list_usage",
+      "conname": "mailing_list_usage_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "mailing_list_usage",
+      "conname": "mailing_list_usage_campaign_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "mailing_list_usage",
+      "conname": "mailing_list_usage_mailing_list_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (mailing_list_id) REFERENCES mailing_lists(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "mailing_list_usage",
+      "conname": "mailing_list_usage_user_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (user_id) REFERENCES auth.users(id)"
+    },
+    {
+      "tbl": "mailing_list_usage",
+      "conname": "mailing_list_usage_usage_type_check",
+      "contype": "c",
+      "def": "CHECK ((usage_type = ANY (ARRAY['campaign'::text, 'export'::text, 'preview'::text, 'merge'::text, 'split'::text])))"
+    },
+    {
+      "tbl": "mailing_list_versions",
+      "conname": "mailing_list_versions_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "mailing_list_versions",
+      "conname": "mailing_list_versions_created_by_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL"
+    },
+    {
+      "tbl": "mailing_list_versions",
+      "conname": "mailing_list_versions_mailing_list_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (mailing_list_id) REFERENCES mailing_lists(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "mail_pieces",
+      "conname": "mail_pieces_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "mail_pieces",
+      "conname": "mail_pieces_created_by_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL"
+    },
+    {
+      "tbl": "orders",
+      "conname": "orders_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "orders",
+      "conname": "orders_campaign_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "orders",
+      "conname": "orders_created_by_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL"
+    },
+    {
+      "tbl": "orders",
+      "conname": "orders_mail_piece_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (mail_piece_id) REFERENCES mail_pieces(id) ON DELETE SET NULL"
+    },
+    {
+      "tbl": "orders",
+      "conname": "orders_proof_approved_by_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (proof_approved_by) REFERENCES auth.users(id)"
+    },
+    {
+      "tbl": "orders",
+      "conname": "orders_payment_status_check",
+      "contype": "c",
+      "def": "CHECK ((payment_status = ANY (ARRAY['pending'::text, 'authorized'::text, 'captured'::text, 'failed'::text, 'refunded'::text])))"
+    },
+    {
+      "tbl": "proof_annotations",
+      "conname": "proof_annotations_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "proof_annotations",
+      "conname": "proof_annotations_created_by_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (created_by) REFERENCES auth.users(id)"
+    },
+    {
+      "tbl": "proof_annotations",
+      "conname": "proof_annotations_order_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "proof_annotations",
+      "conname": "proof_annotations_resolved_by_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (resolved_by) REFERENCES auth.users(id)"
+    },
+    {
+      "tbl": "proof_annotations",
+      "conname": "proof_annotations_status_check",
+      "contype": "c",
+      "def": "CHECK ((status = ANY (ARRAY['open'::text, 'resolved'::text])))"
+    },
+    {
+      "tbl": "record_usage",
+      "conname": "record_usage_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "record_usage",
+      "conname": "record_usage_campaign_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "record_usage",
+      "conname": "record_usage_record_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (record_id) REFERENCES mailing_list_records(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "record_usage",
+      "conname": "record_usage_usage_type_check",
+      "contype": "c",
+      "def": "CHECK ((usage_type = ANY (ARRAY['mailed'::text, 'exported'::text, 'skip_traced'::text])))"
+    },
+    {
+      "tbl": "saved_designs",
+      "conname": "saved_designs_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "saved_designs",
+      "conname": "saved_designs_team_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (team_id) REFERENCES teams(id)"
+    },
+    {
+      "tbl": "saved_designs",
+      "conname": "saved_designs_user_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "saved_designs",
+      "conname": "saved_designs_design_type_check",
+      "contype": "c",
+      "def": "CHECK ((design_type = ANY (ARRAY['letter'::text, 'postcard'::text, 'envelope'::text, 'self_mailer'::text])))"
+    },
+    {
+      "tbl": "short_link_tracking",
+      "conname": "short_link_tracking_short_code_key",
+      "contype": "u",
+      "def": "UNIQUE (short_code)"
+    },
+    {
+      "tbl": "short_link_tracking",
+      "conname": "short_link_tracking_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "short_link_tracking",
+      "conname": "short_link_tracking_campaign_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "short_link_tracking",
+      "conname": "short_link_tracking_record_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (record_id) REFERENCES mailing_list_records(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "skip_trace_orders",
+      "conname": "skip_trace_orders_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "skip_trace_orders",
+      "conname": "skip_trace_orders_user_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (user_id) REFERENCES auth.users(id)"
+    },
+    {
+      "tbl": "skip_trace_orders",
+      "conname": "skip_trace_orders_vendor_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (vendor_id) REFERENCES vendors(id)"
+    },
+    {
+      "tbl": "skip_trace_orders",
+      "conname": "skip_trace_orders_status_check",
+      "contype": "c",
+      "def": "CHECK ((status = ANY (ARRAY['pending'::text, 'submitted'::text, 'processing'::text, 'completed'::text, 'failed'::text])))"
+    },
+    {
+      "tbl": "system_templates",
+      "conname": "system_templates_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "system_templates",
+      "conname": "system_templates_design_type_check",
+      "contype": "c",
+      "def": "CHECK ((design_type = ANY (ARRAY['letter'::text, 'postcard'::text, 'envelope'::text, 'self_mailer'::text])))"
+    },
+    {
+      "tbl": "tags",
+      "conname": "tags_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "tags",
+      "conname": "tags_created_by_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (created_by) REFERENCES auth.users(id) ON DELETE SET NULL"
+    },
+    {
+      "tbl": "tags",
+      "conname": "tags_team_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (team_id) REFERENCES teams(id)"
+    },
+    {
+      "tbl": "tags",
+      "conname": "tags_user_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (user_id) REFERENCES auth.users(id)"
+    },
+    {
+      "tbl": "teams",
+      "conname": "teams_stripe_subscription_id_key",
+      "contype": "u",
+      "def": "UNIQUE (stripe_subscription_id)"
+    },
+    {
+      "tbl": "teams",
+      "conname": "teams_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "teams",
+      "conname": "teams_owner_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (owner_id) REFERENCES auth.users(id)"
+    },
+    {
+      "tbl": "teams",
+      "conname": "teams_plan_check",
+      "contype": "c",
+      "def": "CHECK ((plan = ANY (ARRAY['team'::text, 'enterprise'::text])))"
+    },
+    {
+      "tbl": "user_profiles",
+      "conname": "user_profiles_stripe_customer_id_key",
+      "contype": "u",
+      "def": "UNIQUE (stripe_customer_id)"
+    },
+    {
+      "tbl": "user_profiles",
+      "conname": "user_profiles_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "user_profiles",
+      "conname": "user_profiles_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "user_profiles",
+      "conname": "user_profiles_team_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (team_id) REFERENCES teams(id)"
+    },
+    {
+      "tbl": "user_profiles",
+      "conname": "user_profiles_role_check",
+      "contype": "c",
+      "def": "CHECK ((role = ANY (ARRAY['free_user'::text, 'pro_user'::text, 'team_member'::text, 'team_manager'::text, 'enterprise_member'::text, 'enterprise_manager'::text, 'admin'::text, 'super_admin'::text])))"
+    },
+    {
+      "tbl": "user_profiles",
+      "conname": "user_profiles_subscription_plan_check",
+      "contype": "c",
+      "def": "CHECK ((subscription_plan = ANY (ARRAY['free'::text, 'pro'::text, 'team'::text, 'enterprise'::text])))"
+    },
+    {
+      "tbl": "user_profiles",
+      "conname": "user_profiles_subscription_status_check",
+      "contype": "c",
+      "def": "CHECK ((subscription_status = ANY (ARRAY['active'::text, 'cancelled'::text, 'past_due'::text, 'unpaid'::text])))"
+    },
+    {
+      "tbl": "vendors",
+      "conname": "vendors_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "webhook_deliveries",
+      "conname": "webhook_deliveries_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "webhook_deliveries",
+      "conname": "webhook_deliveries_webhook_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE CASCADE"
+    },
+    {
+      "tbl": "webhooks",
+      "conname": "webhooks_pkey",
+      "contype": "p",
+      "def": "PRIMARY KEY (id)"
+    },
+    {
+      "tbl": "webhooks",
+      "conname": "webhooks_team_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (team_id) REFERENCES teams(id)"
+    },
+    {
+      "tbl": "webhooks",
+      "conname": "webhooks_user_id_fkey",
+      "contype": "f",
+      "def": "FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE"
+    }
+  ],
+  "indexes": [
+    {
+      "tbl": "campaign_mailing_lists",
+      "indexname": "campaign_mailing_lists_pkey",
+      "indexdef": "CREATE UNIQUE INDEX campaign_mailing_lists_pkey ON public.campaign_mailing_lists USING btree (campaign_id, mailing_list_id)"
+    },
+    {
+      "tbl": "campaign_records",
+      "indexname": "campaign_records_campaign_id_record_id_key",
+      "indexdef": "CREATE UNIQUE INDEX campaign_records_campaign_id_record_id_key ON public.campaign_records USING btree (campaign_id, record_id)"
+    },
+    {
+      "tbl": "campaign_records",
+      "indexname": "campaign_records_pkey",
+      "indexdef": "CREATE UNIQUE INDEX campaign_records_pkey ON public.campaign_records USING btree (id)"
+    },
+    {
+      "tbl": "campaign_records",
+      "indexname": "campaign_records_short_link_code_key",
+      "indexdef": "CREATE UNIQUE INDEX campaign_records_short_link_code_key ON public.campaign_records USING btree (short_link_code)"
+    },
+    {
+      "tbl": "campaign_records",
+      "indexname": "idx_campaign_records_campaign_id",
+      "indexdef": "CREATE INDEX idx_campaign_records_campaign_id ON public.campaign_records USING btree (campaign_id)"
+    },
+    {
+      "tbl": "campaign_records",
+      "indexname": "idx_campaign_records_delivery_status",
+      "indexdef": "CREATE INDEX idx_campaign_records_delivery_status ON public.campaign_records USING btree (delivery_status)"
+    },
+    {
+      "tbl": "campaign_records",
+      "indexname": "idx_campaign_records_record_id",
+      "indexdef": "CREATE INDEX idx_campaign_records_record_id ON public.campaign_records USING btree (record_id)"
+    },
+    {
+      "tbl": "campaign_records",
+      "indexname": "idx_campaign_records_short_link_code",
+      "indexdef": "CREATE INDEX idx_campaign_records_short_link_code ON public.campaign_records USING btree (short_link_code)"
+    },
+    {
+      "tbl": "campaigns",
+      "indexname": "campaigns_pkey",
+      "indexdef": "CREATE UNIQUE INDEX campaigns_pkey ON public.campaigns USING btree (id)"
+    },
+    {
+      "tbl": "campaigns",
+      "indexname": "idx_campaigns_contact_card_id",
+      "indexdef": "CREATE INDEX idx_campaigns_contact_card_id ON public.campaigns USING btree (contact_card_id)"
+    },
+    {
+      "tbl": "campaigns",
+      "indexname": "idx_campaigns_created_by",
+      "indexdef": "CREATE INDEX idx_campaigns_created_by ON public.campaigns USING btree (created_by)"
+    },
+    {
+      "tbl": "campaigns",
+      "indexname": "idx_campaigns_scheduled_start_date",
+      "indexdef": "CREATE INDEX idx_campaigns_scheduled_start_date ON public.campaigns USING btree (scheduled_start_date)"
+    },
+    {
+      "tbl": "campaigns",
+      "indexname": "idx_campaigns_status",
+      "indexdef": "CREATE INDEX idx_campaigns_status ON public.campaigns USING btree (status)"
+    },
+    {
+      "tbl": "campaigns",
+      "indexname": "idx_campaigns_team_id",
+      "indexdef": "CREATE INDEX idx_campaigns_team_id ON public.campaigns USING btree (team_id)"
+    },
+    {
+      "tbl": "contact_cards",
+      "indexname": "contact_cards_pkey",
+      "indexdef": "CREATE UNIQUE INDEX contact_cards_pkey ON public.contact_cards USING btree (id)"
+    },
+    {
+      "tbl": "contact_cards",
+      "indexname": "idx_contact_cards_is_default",
+      "indexdef": "CREATE INDEX idx_contact_cards_is_default ON public.contact_cards USING btree (is_default) WHERE (is_default = true)"
+    },
+    {
+      "tbl": "contact_cards",
+      "indexname": "idx_contact_cards_team_id",
+      "indexdef": "CREATE INDEX idx_contact_cards_team_id ON public.contact_cards USING btree (team_id)"
+    },
+    {
+      "tbl": "contact_cards",
+      "indexname": "idx_contact_cards_user_id",
+      "indexdef": "CREATE INDEX idx_contact_cards_user_id ON public.contact_cards USING btree (user_id)"
+    },
+    {
+      "tbl": "contact_cards",
+      "indexname": "idx_contact_cards_user_name_unique",
+      "indexdef": "CREATE UNIQUE INDEX idx_contact_cards_user_name_unique ON public.contact_cards USING btree (user_id, name) WHERE (is_soft_deleted = false)"
+    },
+    {
+      "tbl": "mail_pieces",
+      "indexname": "mail_pieces_pkey",
+      "indexdef": "CREATE UNIQUE INDEX mail_pieces_pkey ON public.mail_pieces USING btree (id)"
+    },
+    {
+      "tbl": "mailing_list_records",
+      "indexname": "idx_mailing_list_records_additional_data",
+      "indexdef": "CREATE INDEX idx_mailing_list_records_additional_data ON public.mailing_list_records USING gin (additional_data)"
+    },
+    {
+      "tbl": "mailing_list_records",
+      "indexname": "idx_mailing_list_records_city",
+      "indexdef": "CREATE INDEX idx_mailing_list_records_city ON public.mailing_list_records USING btree (city)"
+    },
+    {
+      "tbl": "mailing_list_records",
+      "indexname": "idx_mailing_list_records_email",
+      "indexdef": "CREATE INDEX idx_mailing_list_records_email ON public.mailing_list_records USING btree (email)"
+    },
+    {
+      "tbl": "mailing_list_records",
+      "indexname": "idx_mailing_list_records_foreclosure",
+      "indexdef": "CREATE INDEX idx_mailing_list_records_foreclosure ON public.mailing_list_records USING btree (foreclosure_status)"
+    },
+    {
+      "tbl": "mailing_list_records",
+      "indexname": "idx_mailing_list_records_full_name",
+      "indexdef": "CREATE INDEX idx_mailing_list_records_full_name ON public.mailing_list_records USING btree (full_name)"
+    },
+    {
+      "tbl": "mailing_list_records",
+      "indexname": "idx_mailing_list_records_list_id",
+      "indexdef": "CREATE INDEX idx_mailing_list_records_list_id ON public.mailing_list_records USING btree (mailing_list_id)"
+    },
+    {
+      "tbl": "mailing_list_records",
+      "indexname": "idx_mailing_list_records_phone",
+      "indexdef": "CREATE INDEX idx_mailing_list_records_phone ON public.mailing_list_records USING btree (phone)"
+    },
+    {
+      "tbl": "mailing_list_records",
+      "indexname": "idx_mailing_list_records_property_type",
+      "indexdef": "CREATE INDEX idx_mailing_list_records_property_type ON public.mailing_list_records USING btree (property_type)"
+    },
+    {
+      "tbl": "mailing_list_records",
+      "indexname": "idx_mailing_list_records_state",
+      "indexdef": "CREATE INDEX idx_mailing_list_records_state ON public.mailing_list_records USING btree (state)"
+    },
+    {
+      "tbl": "mailing_list_records",
+      "indexname": "idx_mailing_list_records_usage",
+      "indexdef": "CREATE INDEX idx_mailing_list_records_usage ON public.mailing_list_records USING btree (last_used_at, usage_count)"
+    },
+    {
+      "tbl": "mailing_list_records",
+      "indexname": "idx_mailing_list_records_validation_status",
+      "indexdef": "CREATE INDEX idx_mailing_list_records_validation_status ON public.mailing_list_records USING btree (validation_status)"
+    },
+    {
+      "tbl": "mailing_list_records",
+      "indexname": "idx_mailing_list_records_zip",
+      "indexdef": "CREATE INDEX idx_mailing_list_records_zip ON public.mailing_list_records USING btree (zip_code)"
+    },
+    {
+      "tbl": "mailing_list_records",
+      "indexname": "mailing_list_records_pkey",
+      "indexdef": "CREATE UNIQUE INDEX mailing_list_records_pkey ON public.mailing_list_records USING btree (id)"
+    },
+    {
+      "tbl": "mailing_list_tags",
+      "indexname": "mailing_list_tags_pkey",
+      "indexdef": "CREATE UNIQUE INDEX mailing_list_tags_pkey ON public.mailing_list_tags USING btree (mailing_list_id, tag_id)"
+    },
+    {
+      "tbl": "mailing_list_usage",
+      "indexname": "idx_mailing_list_usage_list_date",
+      "indexdef": "CREATE INDEX idx_mailing_list_usage_list_date ON public.mailing_list_usage USING btree (mailing_list_id, created_at)"
+    },
+    {
+      "tbl": "mailing_list_usage",
+      "indexname": "idx_mailing_list_usage_user_id",
+      "indexdef": "CREATE INDEX idx_mailing_list_usage_user_id ON public.mailing_list_usage USING btree (user_id)"
+    },
+    {
+      "tbl": "mailing_list_usage",
+      "indexname": "mailing_list_usage_pkey",
+      "indexdef": "CREATE UNIQUE INDEX mailing_list_usage_pkey ON public.mailing_list_usage USING btree (id)"
+    },
+    {
+      "tbl": "mailing_list_versions",
+      "indexname": "mailing_list_versions_pkey",
+      "indexdef": "CREATE UNIQUE INDEX mailing_list_versions_pkey ON public.mailing_list_versions USING btree (id)"
+    },
+    {
+      "tbl": "mailing_lists",
+      "indexname": "idx_mailing_lists_created_at",
+      "indexdef": "CREATE INDEX idx_mailing_lists_created_at ON public.mailing_lists USING btree (created_at)"
+    },
+    {
+      "tbl": "mailing_lists",
+      "indexname": "idx_mailing_lists_created_by",
+      "indexdef": "CREATE INDEX idx_mailing_lists_created_by ON public.mailing_lists USING btree (created_by)"
+    },
+    {
+      "tbl": "mailing_lists",
+      "indexname": "idx_mailing_lists_is_active",
+      "indexdef": "CREATE INDEX idx_mailing_lists_is_active ON public.mailing_lists USING btree (is_active)"
+    },
+    {
+      "tbl": "mailing_lists",
+      "indexname": "idx_mailing_lists_last_used_at",
+      "indexdef": "CREATE INDEX idx_mailing_lists_last_used_at ON public.mailing_lists USING btree (last_used_at)"
+    },
+    {
+      "tbl": "mailing_lists",
+      "indexname": "idx_mailing_lists_source_criteria",
+      "indexdef": "CREATE INDEX idx_mailing_lists_source_criteria ON public.mailing_lists USING gin (source_criteria)"
+    },
+    {
+      "tbl": "mailing_lists",
+      "indexname": "idx_mailing_lists_source_type",
+      "indexdef": "CREATE INDEX idx_mailing_lists_source_type ON public.mailing_lists USING btree (source_type)"
+    },
+    {
+      "tbl": "mailing_lists",
+      "indexname": "idx_mailing_lists_team_id",
+      "indexdef": "CREATE INDEX idx_mailing_lists_team_id ON public.mailing_lists USING btree (team_id)"
+    },
+    {
+      "tbl": "mailing_lists",
+      "indexname": "mailing_lists_pkey",
+      "indexdef": "CREATE UNIQUE INDEX mailing_lists_pkey ON public.mailing_lists USING btree (id)"
+    },
+    {
+      "tbl": "orders",
+      "indexname": "idx_orders_payment_status",
+      "indexdef": "CREATE INDEX idx_orders_payment_status ON public.orders USING btree (payment_status)"
+    },
+    {
+      "tbl": "orders",
+      "indexname": "idx_orders_stripe_payment_intent_id",
+      "indexdef": "CREATE INDEX idx_orders_stripe_payment_intent_id ON public.orders USING btree (stripe_payment_intent_id)"
+    },
+    {
+      "tbl": "orders",
+      "indexname": "orders_pkey",
+      "indexdef": "CREATE UNIQUE INDEX orders_pkey ON public.orders USING btree (id)"
+    },
+    {
+      "tbl": "proof_annotations",
+      "indexname": "idx_proof_annotations_order_id",
+      "indexdef": "CREATE INDEX idx_proof_annotations_order_id ON public.proof_annotations USING btree (order_id)"
+    },
+    {
+      "tbl": "proof_annotations",
+      "indexname": "idx_proof_annotations_status",
+      "indexdef": "CREATE INDEX idx_proof_annotations_status ON public.proof_annotations USING btree (status)"
+    },
+    {
+      "tbl": "proof_annotations",
+      "indexname": "proof_annotations_pkey",
+      "indexdef": "CREATE UNIQUE INDEX proof_annotations_pkey ON public.proof_annotations USING btree (id)"
+    },
+    {
+      "tbl": "record_usage",
+      "indexname": "idx_record_usage_campaign_id",
+      "indexdef": "CREATE INDEX idx_record_usage_campaign_id ON public.record_usage USING btree (campaign_id)"
+    },
+    {
+      "tbl": "record_usage",
+      "indexname": "idx_record_usage_record_date",
+      "indexdef": "CREATE INDEX idx_record_usage_record_date ON public.record_usage USING btree (record_id, created_at)"
+    },
+    {
+      "tbl": "record_usage",
+      "indexname": "record_usage_pkey",
+      "indexdef": "CREATE UNIQUE INDEX record_usage_pkey ON public.record_usage USING btree (id)"
+    },
+    {
+      "tbl": "saved_designs",
+      "indexname": "idx_saved_designs_design_type",
+      "indexdef": "CREATE INDEX idx_saved_designs_design_type ON public.saved_designs USING btree (design_type)"
+    },
+    {
+      "tbl": "saved_designs",
+      "indexname": "idx_saved_designs_team_id",
+      "indexdef": "CREATE INDEX idx_saved_designs_team_id ON public.saved_designs USING btree (team_id)"
+    },
+    {
+      "tbl": "saved_designs",
+      "indexname": "idx_saved_designs_user_id",
+      "indexdef": "CREATE INDEX idx_saved_designs_user_id ON public.saved_designs USING btree (user_id)"
+    },
+    {
+      "tbl": "saved_designs",
+      "indexname": "saved_designs_pkey",
+      "indexdef": "CREATE UNIQUE INDEX saved_designs_pkey ON public.saved_designs USING btree (id)"
+    },
+    {
+      "tbl": "short_link_tracking",
+      "indexname": "idx_short_link_tracking_campaign_id",
+      "indexdef": "CREATE INDEX idx_short_link_tracking_campaign_id ON public.short_link_tracking USING btree (campaign_id)"
+    },
+    {
+      "tbl": "short_link_tracking",
+      "indexname": "idx_short_link_tracking_short_code",
+      "indexdef": "CREATE INDEX idx_short_link_tracking_short_code ON public.short_link_tracking USING btree (short_code)"
+    },
+    {
+      "tbl": "short_link_tracking",
+      "indexname": "short_link_tracking_pkey",
+      "indexdef": "CREATE UNIQUE INDEX short_link_tracking_pkey ON public.short_link_tracking USING btree (id)"
+    },
+    {
+      "tbl": "short_link_tracking",
+      "indexname": "short_link_tracking_short_code_key",
+      "indexdef": "CREATE UNIQUE INDEX short_link_tracking_short_code_key ON public.short_link_tracking USING btree (short_code)"
+    },
+    {
+      "tbl": "skip_trace_orders",
+      "indexname": "idx_skip_trace_orders_status",
+      "indexdef": "CREATE INDEX idx_skip_trace_orders_status ON public.skip_trace_orders USING btree (status)"
+    },
+    {
+      "tbl": "skip_trace_orders",
+      "indexname": "idx_skip_trace_orders_user_id",
+      "indexdef": "CREATE INDEX idx_skip_trace_orders_user_id ON public.skip_trace_orders USING btree (user_id)"
+    },
+    {
+      "tbl": "skip_trace_orders",
+      "indexname": "skip_trace_orders_pkey",
+      "indexdef": "CREATE UNIQUE INDEX skip_trace_orders_pkey ON public.skip_trace_orders USING btree (id)"
+    },
+    {
+      "tbl": "system_templates",
+      "indexname": "idx_system_templates_category",
+      "indexdef": "CREATE INDEX idx_system_templates_category ON public.system_templates USING btree (category)"
+    },
+    {
+      "tbl": "system_templates",
+      "indexname": "idx_system_templates_design_type",
+      "indexdef": "CREATE INDEX idx_system_templates_design_type ON public.system_templates USING btree (design_type)"
+    },
+    {
+      "tbl": "system_templates",
+      "indexname": "system_templates_pkey",
+      "indexdef": "CREATE UNIQUE INDEX system_templates_pkey ON public.system_templates USING btree (id)"
+    },
+    {
+      "tbl": "tags",
+      "indexname": "idx_tags_category",
+      "indexdef": "CREATE INDEX idx_tags_category ON public.tags USING btree (category)"
+    },
+    {
+      "tbl": "tags",
+      "indexname": "idx_tags_name",
+      "indexdef": "CREATE INDEX idx_tags_name ON public.tags USING btree (name)"
+    },
+    {
+      "tbl": "tags",
+      "indexname": "idx_tags_team_id",
+      "indexdef": "CREATE INDEX idx_tags_team_id ON public.tags USING btree (team_id)"
+    },
+    {
+      "tbl": "tags",
+      "indexname": "idx_tags_team_name_unique",
+      "indexdef": "CREATE UNIQUE INDEX idx_tags_team_name_unique ON public.tags USING btree (team_id, name) WHERE (team_id IS NOT NULL)"
+    },
+    {
+      "tbl": "tags",
+      "indexname": "idx_tags_user_id",
+      "indexdef": "CREATE INDEX idx_tags_user_id ON public.tags USING btree (user_id)"
+    },
+    {
+      "tbl": "tags",
+      "indexname": "idx_tags_user_name_unique",
+      "indexdef": "CREATE UNIQUE INDEX idx_tags_user_name_unique ON public.tags USING btree (user_id, name) WHERE ((team_id IS NULL) AND (user_id IS NOT NULL))"
+    },
+    {
+      "tbl": "tags",
+      "indexname": "tags_pkey",
+      "indexdef": "CREATE UNIQUE INDEX tags_pkey ON public.tags USING btree (id)"
+    },
+    {
+      "tbl": "teams",
+      "indexname": "teams_pkey",
+      "indexdef": "CREATE UNIQUE INDEX teams_pkey ON public.teams USING btree (id)"
+    },
+    {
+      "tbl": "teams",
+      "indexname": "teams_stripe_subscription_id_key",
+      "indexdef": "CREATE UNIQUE INDEX teams_stripe_subscription_id_key ON public.teams USING btree (stripe_subscription_id)"
+    },
+    {
+      "tbl": "user_profiles",
+      "indexname": "idx_user_profiles_role",
+      "indexdef": "CREATE INDEX idx_user_profiles_role ON public.user_profiles USING btree (role)"
+    },
+    {
+      "tbl": "user_profiles",
+      "indexname": "idx_user_profiles_subscription_plan",
+      "indexdef": "CREATE INDEX idx_user_profiles_subscription_plan ON public.user_profiles USING btree (subscription_plan)"
+    },
+    {
+      "tbl": "user_profiles",
+      "indexname": "idx_user_profiles_team_id",
+      "indexdef": "CREATE INDEX idx_user_profiles_team_id ON public.user_profiles USING btree (team_id)"
+    },
+    {
+      "tbl": "user_profiles",
+      "indexname": "user_profiles_pkey",
+      "indexdef": "CREATE UNIQUE INDEX user_profiles_pkey ON public.user_profiles USING btree (id)"
+    },
+    {
+      "tbl": "user_profiles",
+      "indexname": "user_profiles_stripe_customer_id_key",
+      "indexdef": "CREATE UNIQUE INDEX user_profiles_stripe_customer_id_key ON public.user_profiles USING btree (stripe_customer_id)"
+    },
+    {
+      "tbl": "vendors",
+      "indexname": "idx_vendors_vendor_type",
+      "indexdef": "CREATE INDEX idx_vendors_vendor_type ON public.vendors USING gin (vendor_type)"
+    },
+    {
+      "tbl": "vendors",
+      "indexname": "vendors_pkey",
+      "indexdef": "CREATE UNIQUE INDEX vendors_pkey ON public.vendors USING btree (id)"
+    },
+    {
+      "tbl": "webhook_deliveries",
+      "indexname": "idx_webhook_deliveries_created_at",
+      "indexdef": "CREATE INDEX idx_webhook_deliveries_created_at ON public.webhook_deliveries USING btree (created_at)"
+    },
+    {
+      "tbl": "webhook_deliveries",
+      "indexname": "idx_webhook_deliveries_webhook_id",
+      "indexdef": "CREATE INDEX idx_webhook_deliveries_webhook_id ON public.webhook_deliveries USING btree (webhook_id)"
+    },
+    {
+      "tbl": "webhook_deliveries",
+      "indexname": "webhook_deliveries_pkey",
+      "indexdef": "CREATE UNIQUE INDEX webhook_deliveries_pkey ON public.webhook_deliveries USING btree (id)"
+    },
+    {
+      "tbl": "webhooks",
+      "indexname": "idx_webhooks_team_id",
+      "indexdef": "CREATE INDEX idx_webhooks_team_id ON public.webhooks USING btree (team_id)"
+    },
+    {
+      "tbl": "webhooks",
+      "indexname": "idx_webhooks_user_id",
+      "indexdef": "CREATE INDEX idx_webhooks_user_id ON public.webhooks USING btree (user_id)"
+    },
+    {
+      "tbl": "webhooks",
+      "indexname": "webhooks_pkey",
+      "indexdef": "CREATE UNIQUE INDEX webhooks_pkey ON public.webhooks USING btree (id)"
+    }
+  ],
+  "policies": [
+    {
+      "tbl": "campaign_records",
+      "policyname": "Users can view own campaign records",
+      "permissive": "PERMISSIVE",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "qual": "(campaign_id IN ( SELECT campaigns.id\n   FROM campaigns\n  WHERE (campaigns.created_by = auth.uid())))",
+      "with_check": null
+    },
+    {
+      "tbl": "campaigns",
+      "policyname": "Users can manage own campaigns",
+      "permissive": "PERMISSIVE",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "((created_by = auth.uid()) OR ((team_id IS NOT NULL) AND (team_id IN ( SELECT user_profiles.team_id\n   FROM user_profiles\n  WHERE (user_profiles.id = auth.uid())))))",
+      "with_check": null
+    },
+    {
+      "tbl": "campaigns",
+      "policyname": "Users can manage their campaign",
+      "permissive": "PERMISSIVE",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.uid() = created_by)",
+      "with_check": null
+    },
+    {
+      "tbl": "contact_cards",
+      "policyname": "Team members can view team contact cards",
+      "permissive": "PERMISSIVE",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "qual": "(team_id IN ( SELECT user_profiles.team_id\n   FROM user_profiles\n  WHERE (user_profiles.id = auth.uid())))",
+      "with_check": null
+    },
+    {
+      "tbl": "contact_cards",
+      "policyname": "Users can manage own contact cards",
+      "permissive": "PERMISSIVE",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(user_id = auth.uid())",
+      "with_check": null
+    },
+    {
+      "tbl": "mail_pieces",
+      "policyname": "All users can view mail pieces",
+      "permissive": "PERMISSIVE",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tbl": "mailing_list_records",
+      "policyname": "Users can manage records in own lists",
+      "permissive": "PERMISSIVE",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(mailing_list_id IN ( SELECT mailing_lists.id\n   FROM mailing_lists\n  WHERE ((mailing_lists.created_by = auth.uid()) OR ((mailing_lists.team_id IS NOT NULL) AND (mailing_lists.team_id IN ( SELECT user_profiles.team_id\n           FROM user_profiles\n          WHERE (user_profiles.id = auth.uid())))))))",
+      "with_check": null
+    },
+    {
+      "tbl": "mailing_list_records",
+      "policyname": "Users can manage records of their lists",
+      "permissive": "PERMISSIVE",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(EXISTS ( SELECT 1\n   FROM mailing_lists\n  WHERE ((mailing_lists.id = mailing_list_records.mailing_list_id) AND (mailing_lists.created_by = auth.uid()))))",
+      "with_check": null
+    },
+    {
+      "tbl": "mailing_list_records",
+      "policyname": "Users can view records of their lists",
+      "permissive": "PERMISSIVE",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "qual": "(EXISTS ( SELECT 1\n   FROM mailing_lists\n  WHERE ((mailing_lists.id = mailing_list_records.mailing_list_id) AND ((mailing_lists.created_by = auth.uid()) OR (mailing_lists.is_active = true)))))",
+      "with_check": null
+    },
+    {
+      "tbl": "mailing_list_tags",
+      "policyname": "Users can manage tags on own lists",
+      "permissive": "PERMISSIVE",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(mailing_list_id IN ( SELECT mailing_lists.id\n   FROM mailing_lists\n  WHERE ((mailing_lists.created_by = auth.uid()) OR ((mailing_lists.team_id IS NOT NULL) AND (mailing_lists.team_id IN ( SELECT user_profiles.team_id\n           FROM user_profiles\n          WHERE (user_profiles.id = auth.uid())))))))",
+      "with_check": null
+    },
+    {
+      "tbl": "mailing_list_usage",
+      "policyname": "Users can view own list usage",
+      "permissive": "PERMISSIVE",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "qual": "(user_id = auth.uid())",
+      "with_check": null
+    },
+    {
+      "tbl": "mailing_lists",
+      "policyname": "Team members can view team mailing lists",
+      "permissive": "PERMISSIVE",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "qual": "(team_id IN ( SELECT user_profiles.team_id\n   FROM user_profiles\n  WHERE (user_profiles.id = auth.uid())))",
+      "with_check": null
+    },
+    {
+      "tbl": "mailing_lists",
+      "policyname": "Users can create mailing lists",
+      "permissive": "PERMISSIVE",
+      "cmd": "INSERT",
+      "roles": "{public}",
+      "qual": null,
+      "with_check": "(auth.uid() = created_by)"
+    },
+    {
+      "tbl": "mailing_lists",
+      "policyname": "Users can delete their own mailing lists",
+      "permissive": "PERMISSIVE",
+      "cmd": "DELETE",
+      "roles": "{public}",
+      "qual": "(auth.uid() = created_by)",
+      "with_check": null
+    },
+    {
+      "tbl": "mailing_lists",
+      "policyname": "Users can manage own mailing lists",
+      "permissive": "PERMISSIVE",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "((created_by = auth.uid()) OR ((team_id IS NOT NULL) AND (team_id IN ( SELECT user_profiles.team_id\n   FROM user_profiles\n  WHERE (user_profiles.id = auth.uid())))))",
+      "with_check": null
+    },
+    {
+      "tbl": "mailing_lists",
+      "policyname": "Users can update their own mailing lists",
+      "permissive": "PERMISSIVE",
+      "cmd": "UPDATE",
+      "roles": "{public}",
+      "qual": "(auth.uid() = created_by)",
+      "with_check": null
+    },
+    {
+      "tbl": "mailing_lists",
+      "policyname": "Users can view their own mailing lists",
+      "permissive": "PERMISSIVE",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "qual": "((auth.uid() = created_by) OR (is_active = true))",
+      "with_check": null
+    },
+    {
+      "tbl": "orders",
+      "policyname": "Users can manage own orders",
+      "permissive": "PERMISSIVE",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(created_by = auth.uid())",
+      "with_check": null
+    },
+    {
+      "tbl": "orders",
+      "policyname": "Users can manage their own orders",
+      "permissive": "PERMISSIVE",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(auth.uid() = created_by)",
+      "with_check": null
+    },
+    {
+      "tbl": "record_usage",
+      "policyname": "Users can view own record usage",
+      "permissive": "PERMISSIVE",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "qual": "(campaign_id IN ( SELECT campaigns.id\n   FROM campaigns\n  WHERE (campaigns.created_by = auth.uid())))",
+      "with_check": null
+    },
+    {
+      "tbl": "saved_designs",
+      "policyname": "Users can manage own designs",
+      "permissive": "PERMISSIVE",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "((user_id = auth.uid()) OR ((team_id IS NOT NULL) AND (team_id IN ( SELECT user_profiles.team_id\n   FROM user_profiles\n  WHERE (user_profiles.id = auth.uid())))))",
+      "with_check": null
+    },
+    {
+      "tbl": "system_templates",
+      "policyname": "All users can view system templates",
+      "permissive": "PERMISSIVE",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "qual": "(auth.role() = 'authenticated'::text)",
+      "with_check": null
+    },
+    {
+      "tbl": "tags",
+      "policyname": "All users can view tags",
+      "permissive": "PERMISSIVE",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "qual": "true",
+      "with_check": null
+    },
+    {
+      "tbl": "tags",
+      "policyname": "Users can create tags",
+      "permissive": "PERMISSIVE",
+      "cmd": "INSERT",
+      "roles": "{public}",
+      "qual": null,
+      "with_check": "(auth.uid() = created_by)"
+    },
+    {
+      "tbl": "tags",
+      "policyname": "Users can manage own tags",
+      "permissive": "PERMISSIVE",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "((created_by = auth.uid()) OR ((team_id IS NOT NULL) AND (team_id IN ( SELECT user_profiles.team_id\n   FROM user_profiles\n  WHERE (user_profiles.id = auth.uid())))))",
+      "with_check": null
+    },
+    {
+      "tbl": "teams",
+      "policyname": "Team members can view teams",
+      "permissive": "PERMISSIVE",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "qual": "(id IN ( SELECT user_profiles.team_id\n   FROM user_profiles\n  WHERE (user_profiles.id = auth.uid())))",
+      "with_check": null
+    },
+    {
+      "tbl": "teams",
+      "policyname": "Team owners can manage teams",
+      "permissive": "PERMISSIVE",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "(owner_id = auth.uid())",
+      "with_check": null
+    },
+    {
+      "tbl": "user_profiles",
+      "policyname": "Users can insert own profile",
+      "permissive": "PERMISSIVE",
+      "cmd": "INSERT",
+      "roles": "{public}",
+      "qual": null,
+      "with_check": "(id = auth.uid())"
+    },
+    {
+      "tbl": "user_profiles",
+      "policyname": "Users can update own profile",
+      "permissive": "PERMISSIVE",
+      "cmd": "UPDATE",
+      "roles": "{public}",
+      "qual": "(id = auth.uid())",
+      "with_check": null
+    },
+    {
+      "tbl": "user_profiles",
+      "policyname": "Users can update their own profile",
+      "permissive": "PERMISSIVE",
+      "cmd": "UPDATE",
+      "roles": "{public}",
+      "qual": "(auth.uid() = id)",
+      "with_check": null
+    },
+    {
+      "tbl": "user_profiles",
+      "policyname": "Users can view own profile",
+      "permissive": "PERMISSIVE",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "qual": "(id = auth.uid())",
+      "with_check": null
+    },
+    {
+      "tbl": "user_profiles",
+      "policyname": "Users can view their own profile",
+      "permissive": "PERMISSIVE",
+      "cmd": "SELECT",
+      "roles": "{public}",
+      "qual": "(auth.uid() = id)",
+      "with_check": null
+    },
+    {
+      "tbl": "webhooks",
+      "policyname": "Users can manage own webhooks",
+      "permissive": "PERMISSIVE",
+      "cmd": "ALL",
+      "roles": "{public}",
+      "qual": "((user_id = auth.uid()) OR ((team_id IS NOT NULL) AND (team_id IN ( SELECT user_profiles.team_id\n   FROM user_profiles\n  WHERE (user_profiles.id = auth.uid())))))",
+      "with_check": null
+    }
+  ],
+  "rls": [
+    {
+      "tbl": "campaign_mailing_lists"
+    },
+    {
+      "tbl": "campaign_records"
+    },
+    {
+      "tbl": "campaigns"
+    },
+    {
+      "tbl": "contact_cards"
+    },
+    {
+      "tbl": "mail_pieces"
+    },
+    {
+      "tbl": "mailing_list_records"
+    },
+    {
+      "tbl": "mailing_list_tags"
+    },
+    {
+      "tbl": "mailing_list_usage"
+    },
+    {
+      "tbl": "mailing_list_versions"
+    },
+    {
+      "tbl": "mailing_lists"
+    },
+    {
+      "tbl": "orders"
+    },
+    {
+      "tbl": "record_usage"
+    },
+    {
+      "tbl": "saved_designs"
+    },
+    {
+      "tbl": "short_link_tracking"
+    },
+    {
+      "tbl": "skip_trace_orders"
+    },
+    {
+      "tbl": "system_templates"
+    },
+    {
+      "tbl": "tags"
+    },
+    {
+      "tbl": "teams"
+    },
+    {
+      "tbl": "user_profiles"
+    },
+    {
+      "tbl": "vendors"
+    },
+    {
+      "tbl": "webhook_deliveries"
+    },
+    {
+      "tbl": "webhooks"
+    }
+  ],
+  "functions": [
+    {
+      "proname": "create_audit_log_entry",
+      "def": "CREATE OR REPLACE FUNCTION public.create_audit_log_entry()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    IF TG_OP = 'INSERT' THEN\r\n        INSERT INTO mailing_list_audit_log (\r\n            mailing_list_id, record_id, action_type, after_data, user_id\r\n        ) VALUES (\r\n            NEW.mailing_list_id, NEW.id, 'create', to_jsonb(NEW), auth.uid()\r\n        );\r\n        RETURN NEW;\r\n    ELSIF TG_OP = 'UPDATE' THEN\r\n        INSERT INTO mailing_list_audit_log (\r\n            mailing_list_id, record_id, action_type, before_data, after_data, user_id\r\n        ) VALUES (\r\n            NEW.mailing_list_id, NEW.id, 'update', to_jsonb(OLD), to_jsonb(NEW), auth.uid()\r\n        );\r\n        RETURN NEW;\r\n    ELSIF TG_OP = 'DELETE' THEN\r\n        INSERT INTO mailing_list_audit_log (\r\n            mailing_list_id, record_id, action_type, before_data, user_id\r\n        ) VALUES (\r\n            OLD.mailing_list_id, OLD.id, 'delete', to_jsonb(OLD), auth.uid()\r\n        );\r\n        RETURN OLD;\r\n    END IF;\r\n    RETURN NULL;\r\nEND;\r\n$function$\n"
+    },
+    {
+      "proname": "update_mailing_list_record_count",
+      "def": "CREATE OR REPLACE FUNCTION public.update_mailing_list_record_count()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    IF TG_OP = 'INSERT' THEN\r\n        UPDATE mailing_lists \r\n        SET record_count = record_count + 1,\r\n            updated_at = NOW()\r\n        WHERE id = NEW.mailing_list_id;\r\n        RETURN NEW;\r\n    ELSIF TG_OP = 'DELETE' THEN\r\n        UPDATE mailing_lists \r\n        SET record_count = record_count - 1,\r\n            updated_at = NOW()\r\n        WHERE id = OLD.mailing_list_id;\r\n        RETURN OLD;\r\n    END IF;\r\n    RETURN NULL;\r\nEND;\r\n$function$\n"
+    },
+    {
+      "proname": "update_updated_at_column",
+      "def": "CREATE OR REPLACE FUNCTION public.update_updated_at_column()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\r\nBEGIN\r\n    NEW.updated_at = NOW();\r\n    RETURN NEW;\r\nEND;\r\n$function$\n"
+    }
+  ],
+  "triggers": [
+    {
+      "tgname": "update_campaigns_updated_at",
+      "tbl": "campaigns",
+      "def": "CREATE TRIGGER update_campaigns_updated_at BEFORE UPDATE ON public.campaigns FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()"
+    },
+    {
+      "tgname": "update_contact_cards_updated_at",
+      "tbl": "contact_cards",
+      "def": "CREATE TRIGGER update_contact_cards_updated_at BEFORE UPDATE ON public.contact_cards FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()"
+    },
+    {
+      "tgname": "create_audit_log_trigger",
+      "tbl": "mailing_list_records",
+      "def": "CREATE TRIGGER create_audit_log_trigger AFTER INSERT OR DELETE OR UPDATE ON public.mailing_list_records FOR EACH ROW EXECUTE FUNCTION create_audit_log_entry()"
+    },
+    {
+      "tgname": "update_list_record_count",
+      "tbl": "mailing_list_records",
+      "def": "CREATE TRIGGER update_list_record_count AFTER INSERT OR DELETE OR UPDATE OF is_valid ON public.mailing_list_records FOR EACH ROW EXECUTE FUNCTION update_mailing_list_record_count()"
+    },
+    {
+      "tgname": "update_mailing_list_record_count_trigger",
+      "tbl": "mailing_list_records",
+      "def": "CREATE TRIGGER update_mailing_list_record_count_trigger AFTER INSERT OR DELETE ON public.mailing_list_records FOR EACH ROW EXECUTE FUNCTION update_mailing_list_record_count()"
+    },
+    {
+      "tgname": "update_mailing_list_records_updated_at",
+      "tbl": "mailing_list_records",
+      "def": "CREATE TRIGGER update_mailing_list_records_updated_at BEFORE UPDATE ON public.mailing_list_records FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()"
+    },
+    {
+      "tgname": "update_mailing_lists_updated_at",
+      "tbl": "mailing_lists",
+      "def": "CREATE TRIGGER update_mailing_lists_updated_at BEFORE UPDATE ON public.mailing_lists FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()"
+    },
+    {
+      "tgname": "update_saved_designs_updated_at",
+      "tbl": "saved_designs",
+      "def": "CREATE TRIGGER update_saved_designs_updated_at BEFORE UPDATE ON public.saved_designs FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()"
+    },
+    {
+      "tgname": "update_teams_updated_at",
+      "tbl": "teams",
+      "def": "CREATE TRIGGER update_teams_updated_at BEFORE UPDATE ON public.teams FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()"
+    },
+    {
+      "tgname": "update_vendors_updated_at",
+      "tbl": "vendors",
+      "def": "CREATE TRIGGER update_vendors_updated_at BEFORE UPDATE ON public.vendors FOR EACH ROW EXECUTE FUNCTION update_updated_at_column()"
+    }
+  ]
+}
