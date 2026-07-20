@@ -5,12 +5,10 @@ import type { DesignElement } from "@/types/designer"
 // (non-interactive) equivalent of the react-rnd wrapper in
 // components/designer/canvas/canvas-area.tsx.
 //
-// Deliberately NO rotation: canvas-area passes `rotate()` in the Rnd style,
-// but react-draggable overwrites `transform` with its own translate, so the
-// editor never actually renders rotation — and the server PDF renderer
-// ignores element rotation too. The 3D capture must match what the editor
-// shows and print produces today. (Rotation being a phantom in both places
-// is a pre-existing gap, tracked separately.)
+// Rotation is applied here (CSS rotate about the element center, matching the
+// editor's inner content wrapper and the PDF renderer's center-rotation) so
+// the captured 3D face reproduces what the editor shows and print produces.
+// (Transform-origin defaults to 50% 50%, i.e. the element center.)
 export function elementFrameStyle(element: DesignElement): CSSProperties {
   return {
     position: "absolute",
@@ -20,5 +18,6 @@ export function elementFrameStyle(element: DesignElement): CSSProperties {
     height: element.height,
     zIndex: element.zIndex,
     opacity: element.opacity ?? 1,
+    transform: element.rotation ? `rotate(${element.rotation}deg)` : undefined,
   }
 }
