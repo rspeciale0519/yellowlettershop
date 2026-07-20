@@ -175,7 +175,6 @@ export function CanvasArea({
                 style={{
                   zIndex: element.zIndex,
                   opacity: element.opacity ?? 1,
-                  transform: element.rotation ? `rotate(${element.rotation}deg)` : undefined,
                 }}
                 className={`border-2 ${
                   selectedElement === element.id ? "border-yellow-500" : "border-transparent hover:border-yellow-500/50"
@@ -232,13 +231,24 @@ export function CanvasArea({
                     )}
                   </div>
                 )}
-                <RenderElement
-                  element={element}
-                  fonts={fonts}
-                  editing={editingElement === element.id}
-                  onEdit={() => setEditingElement(element.id)}
-                  onUpdate={(updates) => onUpdateElement(element.id, updates)}
-                />
+                {/* Rotation lives on this inner wrapper, NOT the Rnd node:
+                    react-rnd (react-draggable) writes `transform: translate()`
+                    to the Rnd node for positioning, so a `transform: rotate()`
+                    there is clobbered. Rotating the content wrapper (about its
+                    center) keeps drag/resize on the axis-aligned frame while
+                    the artwork rotates — matching the PDF + 3D output. */}
+                <div
+                  className="h-full w-full"
+                  style={{ transform: element.rotation ? `rotate(${element.rotation}deg)` : undefined }}
+                >
+                  <RenderElement
+                    element={element}
+                    fonts={fonts}
+                    editing={editingElement === element.id}
+                    onEdit={() => setEditingElement(element.id)}
+                    onUpdate={(updates) => onUpdateElement(element.id, updates)}
+                  />
+                </div>
               </Rnd>
             ))}
           <SnapGuides guides={activeGuides} />
