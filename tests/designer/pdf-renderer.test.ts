@@ -3,8 +3,39 @@ import { strict as assert } from 'assert'
 import { PDFDocument } from 'pdf-lib'
 import { hexToRgb01 } from '../../app/api/design/preview/_render/colors'
 import { renderDesignToPdf } from '../../app/api/design/preview/_render/pdf-renderer'
+import { pdfAngleFromCss, rotateAbout } from '../../app/api/design/preview/_render/transform'
 import { buildTokenContext } from '../../components/designer/tokens/recipient-map'
 import type { DesignerDocument } from '../../types/designer'
+
+describe('pdf transform helpers', () => {
+  it('pdfAngleFromCss negates CSS (clockwise, y-down) into pdf-lib (CCW, y-up)', () => {
+    assert.equal(pdfAngleFromCss(undefined), 0)
+    assert.equal(pdfAngleFromCss(0), 0)
+    assert.equal(pdfAngleFromCss(30), -30)
+    assert.equal(pdfAngleFromCss(-90), 90)
+  })
+
+  it('rotateAbout is identity at 0deg (unrotated path untouched)', () => {
+    assert.deepEqual(rotateAbout({ x: 7, y: 3 }, { x: 1, y: 1 }, 0), { x: 7, y: 3 })
+  })
+
+  it('rotateAbout spins a point 90deg CCW about the origin', () => {
+    const p = rotateAbout({ x: 1, y: 0 }, { x: 0, y: 0 }, 90)
+    assert.ok(Math.abs(p.x - 0) < 1e-9 && Math.abs(p.y - 1) < 1e-9)
+  })
+
+  it('rotateAbout pivots about a non-origin center', () => {
+    // (2,1) about (1,1) by 90deg CCW => (1,2)
+    const p = rotateAbout({ x: 2, y: 1 }, { x: 1, y: 1 }, 90)
+    assert.ok(Math.abs(p.x - 1) < 1e-9 && Math.abs(p.y - 2) < 1e-9)
+  })
+
+  it('rotateAbout leaves the center fixed at any angle', () => {
+    const c = { x: 4, y: 9 }
+    const p = rotateAbout({ ...c }, c, 137)
+    assert.ok(Math.abs(p.x - c.x) < 1e-9 && Math.abs(p.y - c.y) < 1e-9)
+  })
+})
 
 describe('hexToRgb01', () => {
   it('parses #rrggbb to 0..1 channels', () => {
@@ -68,6 +99,30 @@ describe('renderDesignToPdf', () => {
       },
     }
     const bytes = await renderDesignToPdf(withMedia, ctx, 'postcard_6x9', 'landscape')
+    const pdf = await PDFDocument.load(bytes)
+    assert.equal(pdf.getPageCount(), 2)
+  })
+
+  it('renders rotated + semi-opaque elements of every type without throwing', async () => {
+    const png =
+      'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
+    const rotated: DesignerDocument = {
+      ...doc,
+      pages: {
+        front: [
+          { id: 't', name: 't', type: 'text', x: 40, y: 40, width: 180, height: 40, zIndex: 1, rotation: 30, opacity: 0.5, content: 'Tilt {{first_name}}', fontSize: 16, fontWeight: 'bold' },
+          { id: 'g', name: 'g', type: 'graphic', x: 10, y: 10, width: 80, height: 30, zIndex: 0, rotation: 45, opacity: 0.4, shape: 'rectangle', fill: '#facc15', strokeWidth: 2, stroke: '#000000' },
+          { id: 'c', name: 'c', type: 'graphic', x: 100, y: 100, width: 60, height: 40, zIndex: 2, rotation: 20, shape: 'circle', fill: '#3366ff' },
+          { id: 'l', name: 'l', type: 'graphic', x: 10, y: 150, width: 120, height: 10, zIndex: 3, rotation: 15, shape: 'line', fill: '#ff0000', strokeWidth: 3 },
+          { id: 'img', name: 'img', type: 'image', x: 5, y: 5, width: 60, height: 60, zIndex: 4, rotation: 90, opacity: 0.8, src: png, fit: 'cover' },
+          { id: 'qr', name: 'qr', type: 'qr', x: 120, y: 5, width: 50, height: 50, zIndex: 5, rotation: 12, value: 'https://x/{{state}}', foreground: '#000000', background: '#ffffff' },
+          { id: 'tbl', name: 'tbl', type: 'table', x: 10, y: 200, width: 160, height: 60, zIndex: 6, rotation: 8, opacity: 0.9, rows: 2, columns: 2, cells: [['A', 'B'], ['C', 'D']], headerRow: true },
+        ],
+        back: [],
+      },
+    }
+    const bytes = await renderDesignToPdf(rotated, ctx, 'postcard_4x6', 'portrait')
+    assert.ok(bytes instanceof Uint8Array && bytes.length > 100)
     const pdf = await PDFDocument.load(bytes)
     assert.equal(pdf.getPageCount(), 2)
   })

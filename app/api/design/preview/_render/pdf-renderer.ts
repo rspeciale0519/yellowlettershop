@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts, rgb, type PDFDocument as PDFDoc, type PDFFont, type PDFPage } from "pdf-lib"
+import { PDFDocument, StandardFonts, degrees, rgb, type PDFDocument as PDFDoc, type PDFFont, type PDFPage } from "pdf-lib"
 import fontkit from "@pdf-lib/fontkit"
 import QRCode from "qrcode"
 import { MAIL_FORMATS, canvasSizePx, DESIGN_PPI, type MailFormatId, type MailOrientation } from "@/components/designer/mail-spec"
@@ -6,6 +6,7 @@ import { substitute } from "@/components/designer/tokens/token-engine"
 import type { TokenContext } from "@/components/designer/tokens/recipient-map"
 import type { DesignElement, DesignerDocument, DesignerPage, PageBackground } from "@/types/designer"
 import { hexToRgb01 } from "@/app/api/design/preview/_render/colors"
+import { pdfAngleFromCss, rotateAbout, type Pt } from "@/app/api/design/preview/_render/transform"
 
 const PT_PER_IN = 72
 const PX_TO_PT = PT_PER_IN / DESIGN_PPI
@@ -72,18 +73,35 @@ async function drawElement(
   const h = element.height * PX_TO_PT
   const yBottom = geom.mediaH - geom.bleedPt - (element.y + element.height) * PX_TO_PT
 
+  // Element rotation (CSS clockwise, about the box center) + opacity. Both are
+  // no-ops when unset, so unrotated/opaque elements render exactly as before.
+  const opacity = element.opacity ?? 1
+  const a = pdfAngleFromCss(element.rotation) // pdf-lib angle (CCW, y-up)
+  const center: Pt = { x: x + w / 2, y: yBottom + h / 2 }
+  const rot = a ? { rotate: degrees(a) } : {}
+  // Move a primitive's draw anchor so that, once pdf-lib spins it about that
+  // anchor by `a`, its body pivots around the box center instead of a corner.
+  const anchor = (px: number, py: number): Pt => rotateAbout({ x: px, y: py }, center, a)
+
   if (element.type === "graphic") {
     const fill = col(element.fill)
     if (element.shape === "circle") {
-      page.drawEllipse({ x: x + w / 2, y: yBottom + h / 2, xScale: w / 2, yScale: h / 2, color: fill })
+      // Ellipse anchor IS the box center, so it pivots about itself.
+      page.drawEllipse({ x: center.x, y: center.y, xScale: w / 2, yScale: h / 2, color: fill, opacity, ...rot })
     } else if (element.shape === "line") {
       const thickness = Math.max(1, (element.strokeWidth ?? 4) * PX_TO_PT)
-      page.drawLine({ start: { x, y: yBottom + h / 2 }, end: { x: x + w, y: yBottom + h / 2 }, thickness, color: col(element.stroke ?? element.fill) })
+      // drawLine has no rotate option; rotate both endpoints about the center.
+      const s = anchor(x, yBottom + h / 2)
+      const e = anchor(x + w, yBottom + h / 2)
+      page.drawLine({ start: s, end: e, thickness, color: col(element.stroke ?? element.fill), opacity })
     } else {
+      const p = anchor(x, yBottom)
       page.drawRectangle({
-        x, y: yBottom, width: w, height: h, color: fill,
+        x: p.x, y: p.y, width: w, height: h, color: fill, opacity,
         borderColor: element.strokeWidth ? col(element.stroke ?? element.fill) : undefined,
         borderWidth: element.strokeWidth ? element.strokeWidth * PX_TO_PT : undefined,
+        borderOpacity: element.strokeWidth ? opacity : undefined,
+        ...rot,
       })
     }
     return
@@ -94,21 +112,27 @@ async function drawElement(
     if (!text) return
     const size = element.fontSize * PX_TO_PT
     const bold = element.fontWeight === "bold" || (typeof element.fontWeight === "number" && element.fontWeight >= 600)
+    const p = anchor(x + 2, geom.mediaH - geom.bleedPt - element.y * PX_TO_PT - size)
     page.drawText(text, {
-      x: x + 2,
-      y: geom.mediaH - geom.bleedPt - element.y * PX_TO_PT - size,
+      x: p.x,
+      y: p.y,
       size,
       font: pickFont(fonts, element.fontFamily, bold, element.fontStyle === "italic"),
       color: col(element.color ?? "#111827"),
       maxWidth: w,
       lineHeight: size * (element.lineHeight ?? 1.2),
+      opacity,
+      ...rot,
     })
     return
   }
 
   if (element.type === "image") {
     const embedded = await embedImage(pdf, element.src)
-    if (embedded) page.drawImage(embedded, { x, y: yBottom, width: w, height: h })
+    if (embedded) {
+      const p = anchor(x, yBottom)
+      page.drawImage(embedded, { x: p.x, y: p.y, width: w, height: h, opacity, ...rot })
+    }
     return
   }
 
@@ -122,7 +146,8 @@ async function drawElement(
         width: Math.max(64, Math.round(w)),
       })
       const embedded = await pdf.embedPng(Uint8Array.from(png))
-      page.drawImage(embedded, { x, y: yBottom, width: w, height: h })
+      const p = anchor(x, yBottom)
+      page.drawImage(embedded, { x: p.x, y: p.y, width: w, height: h, opacity, ...rot })
     } catch {
       /* skip unrenderable QR */
     }
@@ -138,10 +163,13 @@ async function drawElement(
       for (let c = 0; c < cols; c++) {
         const cx = x + c * cw
         const cy = yBottom + h - (r + 1) * ch
-        page.drawRectangle({ x: cx, y: cy, width: cw, height: ch, borderColor: rgb(0.6, 0.6, 0.6), borderWidth: 0.5 })
+        // Each cell pivots about the whole table's center → rigid rotation.
+        const cp = anchor(cx, cy)
+        page.drawRectangle({ x: cp.x, y: cp.y, width: cw, height: ch, borderColor: rgb(0.6, 0.6, 0.6), borderWidth: 0.5, borderOpacity: opacity, ...rot })
         const cell = substitute(element.cells[r]?.[c] ?? "", ctx)
         if (cell) {
-          page.drawText(cell, { x: cx + 3, y: cy + ch / 2 - 4, size: 8, font: fonts.sans, color: rgb(0.06, 0.06, 0.06), maxWidth: cw - 6 })
+          const tp = anchor(cx + 3, cy + ch / 2 - 4)
+          page.drawText(cell, { x: tp.x, y: tp.y, size: 8, font: fonts.sans, color: rgb(0.06, 0.06, 0.06), maxWidth: cw - 6, opacity, ...rot })
         }
       }
     }
