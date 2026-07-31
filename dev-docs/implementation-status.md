@@ -86,6 +86,17 @@ signed URL) → approve → capture → confirmation email → live status timel
 - CSV/XLSX/ODS import → `mailing_list_records` (ExcelJS, 10MB cap), column mapping w/ required-field gate, dedup (real grouping/keep-strategy/version backup), version history + restore, audit log, manager UI (84 components)
 - Real AccuZip on the order path (`/validate/batch`, loud 503 in prod without key) — `lib/api/accuzip/validation.ts`
 
+### Browser-smoke verification (2026-07-31, full loop through the real UI)
+Customer: login → wizard (manual entry → mapping → validation → contact card →
+designer handoff → review with real generated proof) → **$1.18 authorized** on
+a test Visa → submit → success page → status page → approve → **capture** →
+**auto-dispatch fired**. Admin: order detail shows captured payment + dispatch
+panel → accepted → in production → **mailed with tracking** → delivered →
+order `completed`; customer page shows tracking. Four bugs found and fixed in
+the same pass, the critical one being **order pricing 10× under** (cents
+divided by 1000 — Stripe rejected small orders as `amount_too_small` and every
+real order would have undercharged 10×).
+
 ### Vendor fulfillment (2026-07-31)
 - **Dispatch loop**: proof approval → capture → **auto-dispatch to a print
   vendor** → vendor emailed the approved proof + recipient CSV (7-day signed
@@ -134,6 +145,15 @@ signed URL) → approve → capture → confirmation email → live status timel
 
 ## 5. NOT BUILT — planned in docs, zero meaningful code
 
+- **Card-entry UI (CRITICAL for new customers)** — found in the 2026-07-31
+  browser smoke: `PaymentStep`'s "Add New Payment Method" opens
+  `/account/payment-methods?add=true`, a route that does not exist, and no
+  Stripe Elements card-collection UI exists anywhere (the
+  `PaymentMethodManager` component cited in older inventories is gone). A
+  first-time customer cannot attach a card and therefore cannot pay; only
+  customers with an already-attached Stripe payment method get through.
+  Needs a SetupIntent + Payment Element dialog wired into the payment step.
+  (June's journal had flagged "card-entry unverified" — this is that gap.)
 - Proof **annotation** workflow (PDF.js viewer, threaded comments, x/y pins) — PRD §3.10
 - **Inbound** vendor file/email processing (vendor replies are recorded by an
   admin today; outbound dispatch IS built — see §3) — PRD §3.8
