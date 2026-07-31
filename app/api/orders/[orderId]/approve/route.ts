@@ -120,6 +120,20 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
       })
     )
 
+    // Fulfillment hand-off. Deliberately non-fatal: the payment is already
+    // captured and the customer's approval succeeded, so a dispatch problem
+    // (no active print vendor, vendor missing an email) must not surface as a
+    // failed approval. It lands in the admin dispatch panel to be retried.
+    try {
+      const { dispatchOrder } = await import('@/lib/fulfillment/dispatch-service')
+      await dispatchOrder({ orderId, actorId: userId })
+    } catch (dispatchErr) {
+      console.error(
+        `Auto-dispatch failed for order ${orderId} (admin action required):`,
+        dispatchErr
+      )
+    }
+
     return NextResponse.json({ status: 'processing' })
   } catch (err) {
     if (err instanceof z.ZodError) {
