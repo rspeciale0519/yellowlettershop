@@ -143,9 +143,11 @@ export async function updateOrderStatus(
     .eq('id', orderId)
     .single();
 
+  // `orders` has no updated_at column — it records lifecycle moments in
+  // dedicated columns (submitted_at / captured_at / shipped_at / delivered_at).
   const { error } = await supabase
     .from('orders')
-    .update({ status, updated_at: new Date().toISOString() })
+    .update({ status })
     .eq('id', orderId);
 
   if (error) throw new Error(`Failed to update order: ${error.message}`);
@@ -175,7 +177,7 @@ export async function captureOrderPayment(
   const supabase = createServiceClient();
   const { error } = await supabase
     .from('orders')
-    .update({ status: 'processing', updated_at: new Date().toISOString() })
+    .update({ status: 'processing' })
     .eq('id', orderId);
   if (error) throw new Error(`Failed to advance order after capture: ${error.message}`);
 
@@ -204,7 +206,7 @@ export async function refundOrder(
   const supabase = createServiceClient();
   const { error } = await supabase
     .from('orders')
-    .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+    .update({ status: 'cancelled' })
     .eq('id', orderId);
   if (error) throw new Error(`Failed to cancel order after refund: ${error.message}`);
 

@@ -57,8 +57,39 @@ function resolveListData(order: OrderRow): ListDataLike {
   return consolidated ?? (state.listData as ListDataLike | undefined) ?? {}
 }
 
+// mailing_list_records uses address_line1/address_line2 (no underscore before
+// the digit) and has no company column, while wizard-state manual records use
+// address_line_1/address_line_2/company. buildRecipientCsv reads the latter, so
+// DB rows are normalized to that shape on the way out.
 const RECIPIENT_COLUMNS =
-  'first_name, last_name, address_line_1, address_line_2, city, state, zip_code, company, email, phone'
+  'first_name, last_name, address_line1, address_line2, city, state, zip_code, email, phone'
+
+interface RecipientRow {
+  first_name?: string | null
+  last_name?: string | null
+  address_line1?: string | null
+  address_line2?: string | null
+  city?: string | null
+  state?: string | null
+  zip_code?: string | null
+  email?: string | null
+  phone?: string | null
+}
+
+function normalizeRecipient(row: RecipientRow): Record<string, unknown> {
+  return {
+    first_name: row.first_name ?? '',
+    last_name: row.last_name ?? '',
+    address_line_1: row.address_line1 ?? '',
+    address_line_2: row.address_line2 ?? '',
+    city: row.city ?? '',
+    state: row.state ?? '',
+    zip_code: row.zip_code ?? '',
+    company: '',
+    email: row.email ?? '',
+    phone: row.phone ?? '',
+  }
+}
 
 async function loadRecipients(
   supabase: ReturnType<typeof createServiceClient>,
@@ -72,7 +103,7 @@ async function loadRecipients(
       .select(RECIPIENT_COLUMNS)
       .eq('mailing_list_id', listData.selectedListId)
     if (error) throw new Error(`Failed to load recipients: ${error.message}`)
-    return (data ?? []) as unknown as Record<string, unknown>[]
+    return ((data ?? []) as unknown as RecipientRow[]).map(normalizeRecipient)
   }
 
   return (listData.manualRecords ?? []) as Record<string, unknown>[]
@@ -226,7 +257,6 @@ export async function dispatchOrder(opts: {
         dispatchId,
         dispatchedAt: new Date().toISOString(),
       },
-      updated_at: new Date().toISOString(),
     })
     .eq('id', orderId)
 
@@ -283,9 +313,22 @@ export async function updateDispatchStatus(opts: {
   if (updateError) throw new Error(`Failed to update dispatch: ${updateError.message}`)
 
   if (transition.orderStatus) {
+    // NOTE: `orders` has no updated_at column — it tracks lifecycle moments
+    // individually (shipped_at / delivered_at / captured_at).
+    const orderUpdate: Record<string, unknown> = { status: transition.orderStatus }
+    if (status === 'shipped') {
+      orderUpdate.shipped_at = new Date().toISOString()
+      if (trackingNumber) {
+        orderUpdate.tracking_numbers = trackingCarrier
+          ? [{ carrier: trackingCarrier, number: trackingNumber }]
+          : [{ number: trackingNumber }]
+      }
+    }
+    if (status === 'delivered') orderUpdate.delivered_at = new Date().toISOString()
+
     const { error: orderError } = await supabase
       .from('orders')
-      .update({ status: transition.orderStatus, updated_at: new Date().toISOString() })
+      .update(orderUpdate)
       .eq('id', orderId)
     if (orderError) throw new Error(`Failed to advance order: ${orderError.message}`)
   }
