@@ -97,6 +97,16 @@ the same pass, the critical one being **order pricing 10× under** (cents
 divided by 1000 — Stripe rejected small orders as `amount_too_small` and every
 real order would have undercharged 10×).
 
+### Card entry (2026-07-31)
+`POST /api/payments/setup-intent` + `AddPaymentMethodDialog` (Stripe Payment
+Element) let a **first-time customer save a card** — previously impossible
+(the add-card button opened a route that did not exist, so only customers with
+a pre-attached Stripe method could pay). Saved `off_session` so the card is
+reusable for drip touches (D7) and re-authorization before vendor-gated
+capture (D9). Backend verified end-to-end for a brand-new customer incl. the
+declined-card path; the Element's visual mount is not browser-verified (local
+CDP failure — see §7).
+
 ### Vendor fulfillment (2026-07-31)
 - **Dispatch loop**: proof approval → capture → **auto-dispatch to a print
   vendor** → vendor emailed the approved proof + recipient CSV (7-day signed
@@ -145,15 +155,6 @@ real order would have undercharged 10×).
 
 ## 5. NOT BUILT — planned in docs, zero meaningful code
 
-- **Card-entry UI (CRITICAL for new customers)** — found in the 2026-07-31
-  browser smoke: `PaymentStep`'s "Add New Payment Method" opens
-  `/account/payment-methods?add=true`, a route that does not exist, and no
-  Stripe Elements card-collection UI exists anywhere (the
-  `PaymentMethodManager` component cited in older inventories is gone). A
-  first-time customer cannot attach a card and therefore cannot pay; only
-  customers with an already-attached Stripe payment method get through.
-  Needs a SetupIntent + Payment Element dialog wired into the payment step.
-  (June's journal had flagged "card-entry unverified" — this is that gap.)
 - Proof **annotation** workflow (PDF.js viewer, threaded comments, x/y pins) — PRD §3.10
 - **Inbound** vendor file/email processing (vendor replies are recorded by an
   admin today; outbound dispatch IS built — see §3) — PRD §3.8
