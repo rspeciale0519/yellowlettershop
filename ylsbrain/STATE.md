@@ -2,6 +2,19 @@
 Updated: 2026-07-31
 
 ## Current focus
+**(2026-07-31): Vendor fulfillment loop BUILT on `feature/vendor-fulfillment`
+(16 commits, not yet PR'd).** proof-approval → capture → auto-dispatch → vendor
+emailed proof+CSV → admin advances accepted/in-production/mailed(+tracking)/
+delivered → order `completed` + customer notified. Also completed the
+inline-payment refactor (killed all `payment_transactions` references) and found
+that **`orders` has no `updated_at`** despite 6 call sites writing it — which
+silently voided admin status changes, capture/refund, and the Stripe webhook
+capture backstop. Gates: 230 tests, typecheck:full 0, build 0. **Open:** the
+storage/CSV-upload leg of dispatch is UNVERIFIED (local storage container won't
+pass the CLI health check); then `/git-workflow-planning:finish` to PR.
+Detail: [[journal/2026-07-31]].
+
+## (prior focus)
 **(2026-07-31): Full codebase-vs-dev-docs audit DONE; docs reconciled.**
 3-agent audit + delta re-verification against the 2026-06-14 completeness
 report. New authoritative doc: `dev-docs/implementation-status.md` (BUILT /
