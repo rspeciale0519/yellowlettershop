@@ -72,6 +72,7 @@ git commit -m "feat(db): orders refund columns + cancelled status (inline-paymen
   - `netRevenue(rows: RevenueOrderRow[]): number` — dollars: Σ amount_captured − Σ amount_refunded.
   - `revenueByDay(rows: RevenueOrderRow[]): { date: string; revenue: number; orders: number }[]` — buckets by `(captured_at ?? updated_at ?? created_at).slice(0,10)`, ascending; skips rows with null amount_captured.
   - `topCustomerTotals(rows: RevenueOrderRow[]): { userId: string; total: number; orderCount: number }[]` — grouped by `created_by`, sorted desc by total; skips null created_by/amount.
+  - **DECIDED DURING BUILD (2026-07-31):** all three aggregates NET refunds (refund attributed to the original capture date), so the daily series always sums to `netRevenue`. Gross-per-day would have made the chart disagree with the headline KPI. An invariant test pins this.
 
 - [ ] **Step 1: Write the failing tests**
 
