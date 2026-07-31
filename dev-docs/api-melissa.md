@@ -1,3 +1,8 @@
+> [!IMPORTANT]
+> **STALE PLANNING BASELINE (April/August 2025).** Audited against the codebase
+> on **2026-07-31** — see **[`implementation-status.md`](./implementation-status.md)**
+> for what is actually built, partial, or dropped. Known-superseded here: field mappings still useful; only the estimate path is wired — no purchase flow exists.
+> Treat feature intent as valid, statuses/stack claims as unreliable.
 # Melissa Property API Implementation Guide
 
 ## Complete Developer Reference for Mailing List Applications

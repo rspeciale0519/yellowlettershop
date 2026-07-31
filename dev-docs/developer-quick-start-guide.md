@@ -1,3 +1,8 @@
+> [!IMPORTANT]
+> **STALE PLANNING BASELINE (April/August 2025).** Audited against the codebase
+> on **2026-07-31** — see **[`implementation-status.md`](./implementation-status.md)**
+> for what is actually built, partial, or dropped. Known-superseded here: repo name, Next 14 (now 15), npm scripts, env var names; dev server runs on port 3010, not 3000.
+> Treat feature intent as valid, statuses/stack claims as unreliable.
 # **Getting Started with Yellow Letter Shop** 🚀
 
 ## Your First Day as a YLS Developer

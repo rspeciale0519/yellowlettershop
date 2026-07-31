@@ -1,3 +1,8 @@
+> [!IMPORTANT]
+> **STALE PLANNING BASELINE (April/August 2025).** Audited against the codebase
+> on **2026-07-31** — see **[`implementation-status.md`](./implementation-status.md)**
+> for what is actually built, partial, or dropped. Known-superseded here: this is an AI-generated cookbook truncated mid-document; its "existing" paths, Jest tests, and schema claims are aspirational, not real.
+> Treat feature intent as valid, statuses/stack claims as unreliable.
 # **Cross-Reference Mapping with Code Examples**
 
 ## Complete Implementation Cookbook for YLS Features

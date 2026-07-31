@@ -1,3 +1,8 @@
+> [!IMPORTANT]
+> **STALE PLANNING BASELINE (April/August 2025).** Audited against the codebase
+> on **2026-07-31** — see **[`implementation-status.md`](./implementation-status.md)**
+> for what is actually built, partial, or dropped. Known-superseded here: the §7 status matrix (Stripe is fully live; FPD dropped; subscriptions dropped); file paths partially renamed.
+> Treat feature intent as valid, statuses/stack claims as unreliable.
 # External API to Feature Mapping - Yellow Letter Shop
 
 This document provides a comprehensive mapping of external APIs integrated within the Yellow Letter Shop (YLS) platform to their corresponding features and functionalities.
