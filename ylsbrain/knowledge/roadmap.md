@@ -18,12 +18,20 @@ Live deduped view (2026-07-31 audit). Delivered items removed — see
 
 ## Near-term (correctness for launch)
 
-- **`payment_transactions` migration** (or refactor the 6 referencing files to
-  the inline-on-orders model) — admin revenue metrics/capture persistence are
-  broken without it. `lib/admin/analytics-service.ts` et al.
-- **Admin order-service schema fix** — `user_id` → `created_by` + join repair.
+- ~~**`payment_transactions` migration**~~ **DONE 2026-07-31** (`feature/vendor-fulfillment`
+  Phase 1): refactored all 6 referencing files to the inline-on-orders model
+  instead of adding the table. Revenue/capture/refund now persist and aggregate
+  on `orders`; migration `20260801000000` added `captured_at`/`amount_refunded`/
+  `refunded_at` + the missing `cancelled` enum value. Zero live
+  `payment_transactions` queries remain.
+- ~~**Admin order-service schema fix**~~ **DONE 2026-07-31** — `created_by` +
+  batch profile load (no FK join path); `user-service` drift (`order_state`,
+  `user_id`) fixed too; dead bare `capture-payment`/`refund-payment` routes
+  archived.
 - **Vendor fulfillment hand-off** — orders dead-end at `processing` post-capture;
   routing/dispatch automation is the biggest unbuilt PRD core piece (feeds D9).
+  **IN PROGRESS 2026-07-31** — plan `.claude/plans/feature-vendor-fulfillment.md`,
+  Phase 2 next.
 - **Wire the DB-backed rate limiter** (built, zero callers) into login/sensitive
   routes; retire the in-memory Map.
 - **Middleware/auth hardening** — extend matcher beyond `/dashboard/*`; wrap
