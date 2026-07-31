@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { withAuth } from '@/lib/auth/middleware'
 import { withAdmin } from '@/lib/admin/require-admin'
 import type { AdminUser } from '@/lib/admin/types'
 import {
@@ -10,10 +9,11 @@ import {
   deactivateVendor,
 } from '@/lib/vendors/vendor-directory'
 
-// Vendors are an operational directory: any signed-in user may read them (the
-// dispatch UI lists them), but only admins may change them. These handlers were
-// previously unauthenticated and delegated to a service that wrote columns the
-// vendors table does not have.
+// Vendors are ADMIN-ONLY (owner decision 2026-07-31): contact info and
+// wholesale pricing tiers are operational data no customer needs. The only UI
+// consumers (dispatch panel, vendor management) are admin surfaces anyway.
+// These handlers were previously unauthenticated and delegated to a service
+// that wrote columns the vendors table does not have.
 
 const vendorTypeSchema = z.enum(['print', 'skip_trace', 'data', 'fulfillment', 'other'])
 
@@ -41,7 +41,7 @@ function fail(error: unknown, fallback: string) {
   return NextResponse.json({ error: message }, { status: 500 })
 }
 
-export const GET = withAuth(async (request: NextRequest) => {
+export const GET = withAdmin(async (request: NextRequest, _admin: AdminUser) => {
   try {
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type') ?? undefined

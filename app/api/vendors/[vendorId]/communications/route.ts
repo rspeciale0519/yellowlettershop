@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { VendorService } from '@/lib/vendors/vendor-service'
+import { requireAdmin } from '@/lib/admin/require-admin'
+
+// Vendor data is admin-only (owner decision 2026-07-31). requireAdmin is
+// called inline (not the withAdmin HOF) because these handlers need `params`.
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { vendorId: string } }
 ) {
+  const admin = await requireAdmin(request)
+  if (admin instanceof NextResponse) return admin
   try {
     const vendorId = params.vendorId
 
@@ -26,6 +32,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: { vendorId: string } }
 ) {
+  const admin = await requireAdmin(request)
+  if (admin instanceof NextResponse) return admin
   try {
     const vendorId = params.vendorId
     const { type, subject, content, direction } = await request.json()
