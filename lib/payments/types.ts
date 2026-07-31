@@ -21,9 +21,12 @@ export class PaymentServiceError extends Error {
 export interface PaymentIntent {
   id: string;
   clientSecret: string;
+  /** Stripe's amount, in CENTS (as returned by the API). */
   amount: number;
   status: PaymentStatus;
   customerId?: string;
+  /** Captured amount in DOLLARS; set by capturePayment, null if unavailable. */
+  amountReceived?: number | null;
 }
 
 export interface PaymentMethodData {

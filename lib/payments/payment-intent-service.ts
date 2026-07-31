@@ -57,26 +57,10 @@ export class PaymentIntentService {
         },
       });
 
-      // Log transaction in database
-      const { error: transactionError } = await this.supabase
-        .from('payment_transactions')
-        .insert({
-          stripe_payment_intent_id: paymentIntent.id,
-          user_id: userId,
-          campaign_id: campaignId,
-          amount,
-          currency,
-          status: 'pending' as PaymentStatus,
-          metadata: {
-            description,
-            ...metadata,
-          },
-        });
-
-      if (transactionError) {
-        console.error('Failed to log payment transaction:', transactionError);
-        // Don't throw error here as payment intent was created successfully
-      }
+      // No DB write here by design: the intent is created BEFORE the order row
+      // exists (the wizard authorizes, then submits). The PaymentIntent id is
+      // recorded on the order at submit time (lib/orders/order-insert.ts), which
+      // is what capture/refund below key off.
 
       return {
         id: paymentIntent.id,
@@ -112,17 +96,24 @@ export class PaymentIntentService {
         metadata,
       });
 
-      // Update transaction in database
+      // Persist inline on the order. Stripe reports CENTS; orders store DOLLARS
+      // — this is the only place that conversion happens.
+      const amountReceived =
+        typeof paymentIntent.amount_received === 'number'
+          ? paymentIntent.amount_received / 100
+          : null;
+
       const { error: updateError } = await this.supabase
-        .from('payment_transactions')
+        .from('orders')
         .update({
-          status: 'captured' as PaymentStatus,
+          payment_status: 'captured',
+          amount_captured: amountReceived,
           captured_at: new Date().toISOString(),
         })
         .eq('stripe_payment_intent_id', paymentIntentId);
 
       if (updateError) {
-        console.error('Failed to update payment transaction:', updateError);
+        console.error('Failed to record capture on order:', updateError);
       }
 
       return {
@@ -130,6 +121,7 @@ export class PaymentIntentService {
         clientSecret: paymentIntent.client_secret!,
         amount: paymentIntent.amount,
         status: this.mapStripeStatus(paymentIntent.status),
+        amountReceived,
       };
     } catch (error) {
       if (error instanceof Stripe.errors.StripeError) {
@@ -160,18 +152,18 @@ export class PaymentIntentService {
         metadata,
       });
 
-      // Update transaction in database
+      // Persist inline on the order (Stripe cents → dollars).
       const { error: updateError } = await this.supabase
-        .from('payment_transactions')
+        .from('orders')
         .update({
-          status: 'refunded' as PaymentStatus,
+          payment_status: 'refunded',
+          amount_refunded: refund.amount / 100,
           refunded_at: new Date().toISOString(),
-          refund_amount: refund.amount,
         })
         .eq('stripe_payment_intent_id', paymentIntentId);
 
       if (updateError) {
-        console.error('Failed to update refund transaction:', updateError);
+        console.error('Failed to record refund on order:', updateError);
       }
 
       return refund;
