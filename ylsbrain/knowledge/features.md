@@ -61,11 +61,15 @@ path); **PARTIAL** = wired but degraded/mock/unwired; else PLANNED/UNVERIFIED.
 
 ## PARTIAL (re-verified 2026-07-31 — the live gap list)
 
+> Three rows CLEARED 2026-07-31 by `feature/vendor-fulfillment`: admin revenue/
+> LTV (inline-payment refactor), admin order-service drift, and vendor
+> fulfillment (now BUILT — `lib/fulfillment/`, `order_dispatches`, dispatch API
+> + admin panel; live-verified). Also fixed there: `orders.updated_at` was
+> written by 6 call sites but **does not exist**, silently voiding those updates
+> including the Stripe webhook capture backstop.
+
 | Feature | Gap | Evidence |
 |---|---|---|
-| Admin revenue analytics / capture-refund persistence / LTV | `payment_transactions` referenced by 6 files, **no migration creates it** | `lib/admin/analytics-service.ts` et al. |
-| Admin order service | queries `orders.user_id`; live column is `created_by` | `lib/admin/order-service.ts:26` |
-| Vendor fulfillment | `assignVendor` = audit row only; no dispatch; orders dead-end at `processing` | `lib/admin/order-service.ts:155` |
 | Template galleries (both) | static/mock arrays; `mail_templates` has no migration | `app/dashboard/templates/page.tsx:27` |
 | List-builder estimate | silent mock fallback w/o Melissa key; `accuzip/count.ts` random w/o key | `hooks/use-list-estimate.ts:29` |
 | `/api/validation/address` | still simulated CASS (order path IS real) | `lib/validation/address-validation.ts:127` |

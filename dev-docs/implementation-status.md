@@ -86,6 +86,23 @@ signed URL) → approve → capture → confirmation email → live status timel
 - CSV/XLSX/ODS import → `mailing_list_records` (ExcelJS, 10MB cap), column mapping w/ required-field gate, dedup (real grouping/keep-strategy/version backup), version history + restore, audit log, manager UI (84 components)
 - Real AccuZip on the order path (`/validate/batch`, loud 503 in prod without key) — `lib/api/accuzip/validation.ts`
 
+### Vendor fulfillment (2026-07-31)
+- **Dispatch loop**: proof approval → capture → **auto-dispatch to a print
+  vendor** → vendor emailed the approved proof + recipient CSV (7-day signed
+  links, private bucket) → admin advances accepted → in production → mailed
+  (with tracking) → delivered → order reaches `completed`, customer emailed on
+  ship. `lib/fulfillment/` (pure `dispatch-core` + IO `dispatch-service`),
+  `order_dispatches` table (`20260801010000`), admin API
+  `app/api/admin/orders/[orderId]/dispatch/`, panel
+  `components/admin/orders/order-dispatch-panel.tsx`
+- **Inline-payment model completed**: `payment_transactions` (which no
+  migration ever created) removed from all 6 referencing files; revenue,
+  capture, refund, and LTV now read/write `orders` directly. Migration
+  `20260801000000` added `captured_at`/`amount_refunded`/`refunded_at` + the
+  missing `cancelled` status
+- **Vendor directory** (`lib/vendors/vendor-directory.ts`) targeting the real
+  `vendors` schema; `/api/vendors` is now authenticated (was open CRUD)
+
 ### Platform services
 - Outbound transactional email: Resend-preferred/Mailgun-fallback adapter, XSS-escaped templates, wired into submit / proof-ready / captured / team-invite — `lib/email/`
 - Durable DB-backed job queue (`background_jobs`), outbound webhooks w/ HMAC + retry/backoff + dead-letter, bulk operations, tags (hierarchy/categories/bulk), contact cards, profile, vendors CRUD + performance + communications log, enhanced campaigns (create/execute/split), version-history undo/redo, short-link tracking + engagement events + admin analytics dashboard
@@ -98,9 +115,9 @@ signed URL) → approve → capture → confirmation email → live status timel
 
 | # | Feature | Gap | Evidence |
 |---|---|---|---|
-| 1 | Admin revenue analytics + admin capture/refund persistence + user LTV | Query **`payment_transactions` — no migration creates it** (6 files reference it) → revenue metrics 0 / persistence fails | `lib/admin/analytics-service.ts`, `order-service.ts`, `user-service.ts`, `app/api/payments/{capture,refund}-payment/` |
-| 2 | Admin order service | Schema drift: queries `orders.user_id` + `user_profiles!inner` join; live table uses `created_by` (no FK join path) | `lib/admin/order-service.ts:20-26` vs `20260613000000` line 285 |
-| 3 | Vendor fulfillment | `assignVendor` bumps `updated_at` + audit row only; **no routing/dispatch automation** — orders dead-end at `processing` after capture | `lib/admin/order-service.ts:155-178` |
+| ~~1~~ | ~~Admin revenue / capture-refund persistence / LTV~~ | **FIXED 2026-07-31** — refactored to the inline-on-orders model | `lib/admin/analytics-core.ts` |
+| ~~2~~ | ~~Admin order service drift~~ | **FIXED 2026-07-31** — `created_by` + batch profile load | `lib/admin/order-service.ts` |
+| ~~3~~ | ~~Vendor fulfillment~~ | **BUILT 2026-07-31** — see §3 Vendor fulfillment | `lib/fulfillment/` |
 | 4 | Template galleries (both) | `app/templates/` reads static `data/templates-data.ts`; `app/dashboard/templates/` is hardcoded mocks; `mail_templates` route targets a table no migration creates | `app/dashboard/templates/page.tsx:27`, `app/api/templates/[templateId]/` |
 | 5 | List-builder estimate | Silent client-side mock fallback ($0.12/rec) without `MELISSA_DATA_API_KEY`; `lib/api/accuzip/count.ts` returns `Math.random()` counts without key | `hooks/use-list-estimate.ts:29,133-140` |
 | 6 | Secondary address validation | `/api/validation/address` engine still **simulates CASS** (canned zip4/county); order path is real, this one isn't | `lib/validation/address-validation.ts:127-128,330` |
@@ -118,7 +135,8 @@ signed URL) → approve → capture → confirmation email → live status timel
 ## 5. NOT BUILT — planned in docs, zero meaningful code
 
 - Proof **annotation** workflow (PDF.js viewer, threaded comments, x/y pins) — PRD §3.10
-- Automated vendor routing/dispatch + email order dispatch + inbound vendor file processing — PRD §3.8
+- **Inbound** vendor file/email processing (vendor replies are recorded by an
+  admin today; outbound dispatch IS built — see §3) — PRD §3.8
 - Admin impersonation (type-only) — PRD §3.15
 - Report builder / saved / scheduled reports — PRD §3.14
 - NPS / feedback system, support ticketing — PRD §3.16

@@ -28,10 +28,13 @@ Live deduped view (2026-07-31 audit). Delivered items removed — see
   batch profile load (no FK join path); `user-service` drift (`order_state`,
   `user_id`) fixed too; dead bare `capture-payment`/`refund-payment` routes
   archived.
-- **Vendor fulfillment hand-off** — orders dead-end at `processing` post-capture;
-  routing/dispatch automation is the biggest unbuilt PRD core piece (feeds D9).
-  **IN PROGRESS 2026-07-31** — plan `.claude/plans/feature-vendor-fulfillment.md`,
-  Phase 2 next.
+- ~~**Vendor fulfillment hand-off**~~ **DONE 2026-07-31** (branch
+  `feature/vendor-fulfillment`): auto-dispatch after capture → vendor emailed
+  proof + recipient CSV (signed, 7-day) → admin advances accepted/in-production/
+  mailed(+tracking)/delivered → order completes, customer emailed on ship.
+  `lib/fulfillment/`, `order_dispatches`, admin dispatch API + panel.
+  Live-verified against the local DB (transitions, order advance, tracking,
+  backwards-refusal). Remaining: inbound vendor replies are still manual.
 - **Wire the DB-backed rate limiter** (built, zero callers) into login/sensitive
   routes; retire the in-memory Map.
 - **Middleware/auth hardening** — extend matcher beyond `/dashboard/*`; wrap
