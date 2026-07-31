@@ -9,10 +9,12 @@ delivered → order `completed` + customer notified. Also completed the
 inline-payment refactor (killed all `payment_transactions` references) and found
 that **`orders` has no `updated_at`** despite 6 call sites writing it — which
 silently voided admin status changes, capture/refund, and the Stripe webhook
-capture backstop. Gates: 230 tests, typecheck:full 0, build 0. **Open:** the
-storage/CSV-upload leg of dispatch is UNVERIFIED (local storage container won't
-pass the CLI health check); then `/git-workflow-planning:finish` to PR.
-Detail: [[journal/2026-07-31]].
+capture backstop. Gates: 230 tests, typecheck:full 0, build 0. **Storage leg VERIFIED
+2026-07-31 (2nd pass):** CLI 2.107→2.111 upgrade pulled storage-api v1.67.20 →
+container healthy; full `dispatchOrder` ran live (CSV staged + both links
+signed) and the signed CSV fetched back 200 with the exact column contract.
+Branch pushed; PR to develop next. **Open:** admin-panel browser smoke +
+money-path code review before merge. Detail: [[journal/2026-07-31]].
 
 ## (prior focus)
 **(2026-07-31): Full codebase-vs-dev-docs audit DONE; docs reconciled.**

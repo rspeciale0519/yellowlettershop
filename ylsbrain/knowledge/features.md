@@ -64,7 +64,8 @@ path); **PARTIAL** = wired but degraded/mock/unwired; else PLANNED/UNVERIFIED.
 > Three rows CLEARED 2026-07-31 by `feature/vendor-fulfillment`: admin revenue/
 > LTV (inline-payment refactor), admin order-service drift, and vendor
 > fulfillment (now BUILT — `lib/fulfillment/`, `order_dispatches`, dispatch API
-> + admin panel; live-verified). Also fixed there: `orders.updated_at` was
+> + admin panel; live-verified end-to-end INCLUDING the storage leg: CSV staged,
+> links signed, signed CSV fetched back 200 w/ exact column contract). Also fixed there: `orders.updated_at` was
 > written by 6 call sites but **does not exist**, silently voiding those updates
 > including the Stripe webhook capture backstop.
 
