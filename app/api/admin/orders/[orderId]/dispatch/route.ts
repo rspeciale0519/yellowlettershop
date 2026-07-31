@@ -75,7 +75,8 @@ export const POST = withAdmin(async (request: NextRequest, admin: AdminUser) => 
 });
 
 export const PATCH = withAdmin(async (request: NextRequest, admin: AdminUser) => {
-  const parsed = statusSchema.safeParse(await request.json());
+  // Malformed JSON degrades to {} → structured 400 from Zod, matching POST.
+  const parsed = statusSchema.safeParse(await request.json().catch(() => ({})));
   if (!parsed.success) {
     return NextResponse.json(
       { error: 'Invalid input', details: parsed.error.flatten() },

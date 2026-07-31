@@ -10,7 +10,6 @@ export interface RevenueOrderRow {
   amount_captured: number | null
   amount_refunded?: number | null
   captured_at?: string | null
-  updated_at?: string | null
   created_at?: string | null
   created_by?: string | null
 }
@@ -29,10 +28,10 @@ export interface CustomerTotal {
 
 /**
  * Capture-time for bucketing. Legacy rows predate `captured_at`, so fall back
- * to the row's last write and finally its creation.
+ * to creation time. (`orders` has NO updated_at column — never reference one.)
  */
 function captureDate(row: RevenueOrderRow): string {
-  return (row.captured_at ?? row.updated_at ?? row.created_at ?? '').slice(0, 10)
+  return (row.captured_at ?? row.created_at ?? '').slice(0, 10)
 }
 
 /** Net dollars actually collected: captured minus refunded. */

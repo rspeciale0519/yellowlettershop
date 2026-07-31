@@ -207,6 +207,13 @@ export async function dispatchOrder(opts: {
     .single()
 
   if (insertError || !dispatchRow) {
+    // 23505 = unique_violation on uq_order_dispatches_live: a concurrent
+    // dispatch won the race (the latestDispatch guard above is advisory only —
+    // the partial unique index is the real gate). No vendor email was sent yet
+    // for THIS attempt, so losing cleanly here means the vendor hears once.
+    if (insertError?.code === '23505') {
+      throw new Error('Order was just dispatched by another request — refresh to see it')
+    }
     throw new Error(`Failed to record dispatch: ${insertError?.message ?? 'unknown error'}`)
   }
   const dispatchId = (dispatchRow as { id: string }).id

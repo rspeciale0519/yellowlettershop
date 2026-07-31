@@ -6,12 +6,16 @@ import {
   type RevenueOrderRow,
 } from './analytics-core';
 
-/** Columns backing every revenue figure (payment state is inline on orders). */
-const REVENUE_COLUMNS = 'amount_captured, amount_refunded, captured_at, updated_at, created_at, created_by';
+/**
+ * Columns backing every revenue figure (payment state is inline on orders).
+ * NOTE: `orders` has NO updated_at column — selecting one makes PostgREST
+ * reject the whole query and silently zeroes every metric (caught in review).
+ */
+const REVENUE_COLUMNS = 'amount_captured, amount_refunded, captured_at, created_at, created_by';
 
 /** Capture-time used for windowing, mirroring analytics-core's fallback order. */
 function capturedAt(row: RevenueOrderRow): string {
-  return row.captured_at ?? row.updated_at ?? row.created_at ?? '';
+  return row.captured_at ?? row.created_at ?? '';
 }
 
 function inWindow(row: RevenueOrderRow, from: string, to?: string): boolean {
@@ -88,6 +92,10 @@ export async function getAnalyticsMetrics(): Promise<AnalyticsMetrics> {
     supabase.from('user_profiles').select('id', { count: 'exact' }).gte('created_at', lastMonthStart).lte('created_at', lastMonthEnd),
   ]);
 
+  // Surface query failures — a silent [] here reports $0 revenue to admins.
+  if (capturedOrders.error) {
+    throw new Error(`Failed to load revenue rows: ${capturedOrders.error.message}`);
+  }
   const revenueRows = (capturedOrders.data ?? []) as unknown as RevenueOrderRow[];
 
   const totalRevenue = netRevenue(revenueRows);
@@ -137,10 +145,11 @@ export async function getRevenueTimeline(days = 30): Promise<RevenueDataPoint[]>
   const supabase = createServiceClient();
   const since = new Date(Date.now() - days * 86400000).toISOString();
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('orders')
     .select(REVENUE_COLUMNS)
     .not('amount_captured', 'is', null);
+  if (error) throw new Error(`Failed to load revenue timeline: ${error.message}`);
 
   // Window in memory: captured_at is null on legacy rows, so the fallback chain
   // in analytics-core (captured_at → updated_at → created_at) decides the date.
@@ -168,10 +177,11 @@ export async function getTopCustomers(limit = 10): Promise<TopCustomer[]> {
   const supabase = createServiceClient();
 
   // Captured orders grouped by their owner (orders.created_by).
-  const { data: capturedOrders } = await supabase
+  const { data: capturedOrders, error } = await supabase
     .from('orders')
     .select(REVENUE_COLUMNS)
     .not('amount_captured', 'is', null);
+  if (error) throw new Error(`Failed to load top customers: ${error.message}`);
 
   const sorted = topCustomerTotals(
     (capturedOrders ?? []) as unknown as RevenueOrderRow[]

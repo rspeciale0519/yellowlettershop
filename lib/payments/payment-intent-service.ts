@@ -96,8 +96,9 @@ export class PaymentIntentService {
         metadata,
       });
 
-      // Persist inline on the order. Stripe reports CENTS; orders store DOLLARS
-      // — this is the only place that conversion happens.
+      // Persist inline on the order. Stripe reports CENTS; orders store
+      // DOLLARS — converted only at the Stripe boundaries in this file
+      // (capture here, refund below).
       const amountReceived =
         typeof paymentIntent.amount_received === 'number'
           ? paymentIntent.amount_received / 100
@@ -113,7 +114,15 @@ export class PaymentIntentService {
         .eq('stripe_payment_intent_id', paymentIntentId);
 
       if (updateError) {
-        console.error('Failed to record capture on order:', updateError);
+        // These columns are the SOLE record of payment state — swallowing this
+        // would let the DB silently diverge from Stripe (money moved, nothing
+        // recorded). Throw so the caller surfaces it; the Stripe-side capture
+        // is idempotent to retry, and the webhook reconcile is a backstop.
+        throw new PaymentServiceError(
+          `Payment captured on Stripe but recording it failed: ${updateError.message}`,
+          'CAPTURE_RECORD_ERROR',
+          500
+        );
       }
 
       return {
@@ -163,7 +172,13 @@ export class PaymentIntentService {
         .eq('stripe_payment_intent_id', paymentIntentId);
 
       if (updateError) {
-        console.error('Failed to record refund on order:', updateError);
+        // Refunds have NO webhook backstop — a swallowed failure here would
+        // diverge the DB from Stripe permanently. Surface it loudly.
+        throw new PaymentServiceError(
+          `Refund issued on Stripe but recording it failed: ${updateError.message}`,
+          'REFUND_RECORD_ERROR',
+          500
+        );
       }
 
       return refund;

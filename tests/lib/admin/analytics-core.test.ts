@@ -9,10 +9,12 @@ import {
 // Money on orders is stored in DOLLARS (numeric). The dead payment_transactions
 // code these functions replace stored CENTS and divided by 100 — these tests
 // exist to pin that the division must NOT come along with the port.
+// No updated_at anywhere: orders has no such column (selecting one zeroes the
+// whole query) — the fallback chain is captured_at → created_at only.
 const rows = [
   { amount_captured: 217.5, captured_at: '2026-08-01T10:00:00Z', created_by: 'u1' },
   { amount_captured: 100, amount_refunded: 25, captured_at: '2026-08-01T12:00:00Z', created_by: 'u2' },
-  { amount_captured: 50, captured_at: null, updated_at: '2026-08-02T09:00:00Z', created_by: 'u1' },
+  { amount_captured: 50, captured_at: null, created_at: '2026-08-02T09:00:00Z', created_by: 'u1' },
   { amount_captured: null, created_at: '2026-08-02T09:00:00Z', created_by: 'u3' },
 ]
 
