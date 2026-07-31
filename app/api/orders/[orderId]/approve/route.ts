@@ -104,6 +104,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
         status: 'processing',
         payment_status: 'captured',
         amount_captured: capturedAmount ?? order.total_cost ?? null,
+        captured_at: now,
       })
       .eq('id', orderId)
       .eq('created_by', userId)

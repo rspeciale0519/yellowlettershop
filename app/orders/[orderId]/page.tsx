@@ -139,6 +139,17 @@ export default function OrderStatusPage({ params }: { params: Promise<{ orderId:
                   {order.mailClass?.replace(/_/g, ' ') ?? '—'}
                 </div>
               </div>
+              {order.trackingNumber && (
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-gray-500">Tracking</div>
+                  <div className="text-lg font-semibold">
+                    <span className="font-mono text-base">{order.trackingNumber}</span>
+                    {order.trackingCarrier && (
+                      <span className="ml-1 text-sm text-gray-500">({order.trackingCarrier})</span>
+                    )}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
