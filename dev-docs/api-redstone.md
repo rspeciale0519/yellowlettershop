@@ -1,8 +1,22 @@
-> [!IMPORTANT]
-> **STALE PLANNING BASELINE (April/August 2025).** Audited against the codebase
-> on **2026-07-31** — see **[`implementation-status.md`](./implementation-status.md)**
-> for what is actually built, partial, or dropped. Known-superseded here: zero code references exist for Redstone; integration is long-term/unscoped.
-> Treat feature intent as valid, statuses/stack claims as unreliable.
+> [!CAUTION]
+> **THIS FILE IS NOT REDSTONE DOCUMENTATION. DO NOT BUILD FROM IT.**
+>
+> Verified against the live API on **2026-08-01**. This document is fabricated —
+> it was not written by Redstone. Demonstrated falsehoods:
+>
+> | This file claims | Verified reality |
+> |---|---|
+> | Hosts `api.redstonemail.com` / `test-api.redstonemail.com` | Neither presents a valid TLS certificate; they are not API hosts |
+> | Endpoints `postNewOrder`, `postJSONorder`, `uploadArtwork`, `getBatchStatus`, `getFileStatus` | The real endpoint is `POST https://redstonemail.com/apis/createOrder?API=<key>` |
+> | API key is "32-character alphanumeric" | The real key is a 36-character UUID |
+> | Support `(555) 123-MAIL`, webhook source ranges `192.168.1.0/24` | Fake phone number; RFC1918 private ranges cannot originate webhooks |
+> | HMAC-SHA256 webhook signature scheme | Redstone's real spec defines no webhook authentication at all |
+>
+> **The authoritative spec is the vendor PDF:**
+> `docs/temp/vendors/redstone/rsm_api_specs_pre-r631-1.pdf`.
+> Live-verified findings and the integration status live in
+> [`implementation-status.md`](./implementation-status.md).
+> Kept only as a record of what was wrong; it should be moved to `archive/`.
 # Redstone Mail API Documentation - Complete Developer Guide
 
 ## Table of Contents

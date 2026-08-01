@@ -200,6 +200,43 @@ branches (`new-ui-*`, `marketing-s2`, `dashboard-s2`, `yls-ui-002`); nothing
 merged. The earlier light-dark-theme redesign was completed then scrapped by
 the owner (archived at tag `archive/light-dark-theme-5978f79`).
 
+## 8b. Redstone Mail API — live-verified findings (2026-08-01)
+
+**`dev-docs/api-redstone.md` is fabricated and must not be used.** The real spec
+is `docs/temp/vendors/redstone/rsm_api_specs_pre-r631-1.pdf`. See that file's
+banner for the falsehood-by-falsehood comparison.
+
+Verified by probing the live API with the real `REDSTONE_API_KEY`:
+
+| Finding | Evidence |
+|---|---|
+| Real endpoint is `POST https://redstonemail.com/apis/createOrder?API=<key>` | `api.`/`test-api.redstonemail.com` present no valid TLS cert |
+| The key authenticated at first | No key and a bogus UUID both return `{"fail":true,"msg":"Where did you come from?"}`; the real key got past that gate into the handler |
+| **HTTP 200 does not mean success** | Failures arrive as `200` + `{"fail":true,...}` |
+| Malformed/unaccepted payloads return an **HTML 500**, not the spec's `422` JSON | The PDF is labelled *pre-*r631-1; the deployed build predates that response-code table |
+| **`createOrder` returned HTML 500 for every well-formed payload** — flat, `{"Order":{…}}`-wrapped, with `seeds`, and form-encoded | 4 shapes, identical opaque failure |
+| After ~8 posts, **all three endpoints began rejecting the valid key** with "Where did you come from?" | Almost certainly a rate/abuse guard. Probing stopped. |
+
+**Most likely explanation (inference, not confirmed):** the spec says in §4.1/§4.2
+that Redstone *generates the endpoint per customer after reviewing your data*.
+Our account appears not to be provisioned yet — the key authenticates but there
+is no intake configured behind it. **If that is right, outbound `createOrder`
+cannot be completed unilaterally either**, and contacting Redstone is the
+critical path for both directions, not just for webhooks.
+
+Built anyway and ready to switch on (`feature/vendor-fulfillment`):
+`lib/fulfillment/redstone-core.ts` (pure mapping + response classification, 25
+tests), `redstone-client.ts` (retries only throttling/network, never a rejected
+payload), `redstone-dispatch.ts` (dispatch leg). A vendor opts in via
+`contact_info.integration = "redstone"`; everything else keeps the email
+hand-off, which remains the working fallback. `REDSTONE_API_TEST` defaults to
+test mode and only the literal string `false` disables it.
+
+Open questions for Redstone: is our endpoint provisioned; does the payload need
+an `{"Order": …}` wrapper; is a Supabase signed URL's `?token=` acceptable under
+their "no credentials in URL" rule; and what webhook authentication do they want
+(their spec defines none).
+
 ## 9. Doc map — status of every dev-doc
 
 | File | Verdict |

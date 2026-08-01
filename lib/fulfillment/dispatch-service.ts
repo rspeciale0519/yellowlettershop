@@ -15,6 +15,9 @@ import {
   type DispatchableOrder,
   type DispatchTransition,
 } from './dispatch-core'
+import { buildRedstoneCsv, deriveDueDate, isRedstoneVendor } from './redstone-core'
+import { isRedstoneConfigured } from './redstone-client'
+import { handOffToRedstone } from './redstone-dispatch'
 
 /**
  * Vendor fulfillment hand-off (IO layer). Pure decisions live in dispatch-core.
@@ -55,6 +58,18 @@ function resolveListData(order: OrderRow): ListDataLike {
   const state = (order.metadata?.order_state ?? {}) as Record<string, unknown>
   const consolidated = (state.dataAndMapping as { listData?: ListDataLike } | undefined)?.listData
   return consolidated ?? (state.listData as ListDataLike | undefined) ?? {}
+}
+
+interface MailingOptionsLike {
+  serviceLevel?: string
+  mailPieceFormat?: string
+  postageType?: string
+}
+
+/** Piece format / service level for the vendor payload live in wizard state. */
+function resolveMailingOptions(order: OrderRow): MailingOptionsLike {
+  const state = (order.metadata?.order_state ?? {}) as Record<string, unknown>
+  return (state.mailingOptions as MailingOptionsLike | undefined) ?? {}
 }
 
 // mailing_list_records uses address_line1/address_line2 (no underscore before
@@ -175,11 +190,18 @@ export async function dispatchOrder(opts: {
     throw new Error('Order has no recipients to mail — nothing to dispatch')
   }
 
+  // API dispatch is opt-in per vendor and only when a key is present, so an
+  // unconfigured environment silently keeps the (working) email hand-off.
+  const useRedstone = isRedstoneVendor(vendor.contactInfo) && isRedstoneConfigured()
+
   // Recipient CSV joins the proof in the private bucket (both contain PII).
+  // Redstone recognizes a different header set than our email contract
+  // (address/zip, not Address_1/Zip_Code), so the staged file depends on
+  // where it is headed.
   const csvPath = `dispatch/${orderId}/recipients.csv`
   const { error: uploadError } = await supabase.storage
     .from(PROOF_BUCKET)
-    .upload(csvPath, buildRecipientCsv(recipients), {
+    .upload(csvPath, useRedstone ? buildRedstoneCsv(recipients) : buildRecipientCsv(recipients), {
       contentType: 'text/csv',
       upsert: true,
     })
@@ -200,7 +222,12 @@ export async function dispatchOrder(opts: {
       order_id: orderId,
       vendor_id: vendor.id,
       status: 'sent',
-      package: { csvPath, proofPath, recordCount: recipients.length },
+      package: {
+        csvPath,
+        proofPath,
+        recordCount: recipients.length,
+        provider: useRedstone ? 'redstone' : 'email',
+      },
       created_by: actorId,
     })
     .select('id')
@@ -218,41 +245,64 @@ export async function dispatchOrder(opts: {
   }
   const dispatchId = (dispatchRow as { id: string }).id
 
-  const vendorEmail = vendorContactEmail(vendor.contactInfo)
-  if (!vendorEmail) {
-    await supabase
-      .from('order_dispatches')
-      .update({
-        status: 'failed',
-        error: 'vendor has no contact email',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', dispatchId)
-    throw new Error(
-      `Vendor "${vendor.name}" has no contact email — add one before dispatching`
-    )
-  }
-
   const shortId = orderId.split('-')[0].toUpperCase()
-  const sent = await trySendEmail(
-    vendorEmail,
-    vendorDispatchEmail({
+  let handoff: string
+
+  if (useRedstone) {
+    // Throws (after marking the dispatch failed) on anything but accepted or
+    // duplicate — unlike email, the API tells us immediately whether the vendor
+    // actually has the job, so there is no silent-bounce case to tolerate.
+    const mailingOptions = resolveMailingOptions(order)
+    const message = await handOffToRedstone({
+      supabase,
+      orderId,
+      dispatchId,
       shortId,
-      vendorName: vendor.name,
       recordCount: recipients.length,
-      mailClass: order.mail_class ?? null,
-      postageType: order.postage_type ?? null,
-      proofUrl,
       csvUrl,
+      proofUrl,
+      mailPieceFormat: mailingOptions.mailPieceFormat,
+      postageType: mailingOptions.postageType ?? order.postage_type,
+      serviceLevel: mailingOptions.serviceLevel,
     })
-  )
-  if (!sent) {
-    // The row stays 'sent' with the failure noted: the package is staged and an
-    // admin can resend, which is better than losing the dispatch entirely.
-    await supabase
-      .from('order_dispatches')
-      .update({ error: 'dispatch email failed to send', updated_at: new Date().toISOString() })
-      .eq('id', dispatchId)
+    handoff = `redstone-api: ${message}`
+  } else {
+    const vendorEmail = vendorContactEmail(vendor.contactInfo)
+    if (!vendorEmail) {
+      await supabase
+        .from('order_dispatches')
+        .update({
+          status: 'failed',
+          error: 'vendor has no contact email',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', dispatchId)
+      throw new Error(
+        `Vendor "${vendor.name}" has no contact email — add one before dispatching`
+      )
+    }
+
+    const sent = await trySendEmail(
+      vendorEmail,
+      vendorDispatchEmail({
+        shortId,
+        vendorName: vendor.name,
+        recordCount: recipients.length,
+        mailClass: order.mail_class ?? null,
+        postageType: order.postage_type ?? null,
+        proofUrl,
+        csvUrl,
+      })
+    )
+    if (!sent) {
+      // The row stays 'sent' with the failure noted: the package is staged and an
+      // admin can resend, which is better than losing the dispatch entirely.
+      await supabase
+        .from('order_dispatches')
+        .update({ error: 'dispatch email failed to send', updated_at: new Date().toISOString() })
+        .eq('id', dispatchId)
+    }
+    handoff = sent ? 'email: sent' : 'email: send failed'
   }
 
   await supabase
@@ -272,7 +322,7 @@ export async function dispatchOrder(opts: {
     action: 'order_dispatched',
     targetType: 'order',
     targetId: orderId,
-    newValue: { vendorId: vendor.id, vendorName: vendor.name, dispatchId, emailSent: sent },
+    newValue: { vendorId: vendor.id, vendorName: vendor.name, dispatchId, handoff },
   })
 
   return { dispatchId, vendorId: vendor.id, vendorName: vendor.name, recordCount: recipients.length }
