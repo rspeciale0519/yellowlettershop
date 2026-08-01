@@ -151,11 +151,12 @@ export interface AddOnService {
   totalPrice: number
 }
 
+// Two affirmative acknowledgements, both enforced by validateCurrentStep:
+// designLocked covers the artwork, termsAccepted bundles terms + privacy +
+// the non-refundable notice (the checkbox label spells all three out).
 export interface OrderApproval {
   designLocked: boolean
   termsAccepted: boolean
-  noRefundAcknowledged: boolean
-  privacyPolicyAccepted: boolean
   approvedAt?: Date
   approvedBy: string
 }

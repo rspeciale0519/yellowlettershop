@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation'
 import { PaymentSecurityInfo } from './payment/PaymentSecurityInfo'
 import { PaymentMethodList, type PaymentMethod } from './payment/PaymentMethodList'
 import { AddPaymentMethodDialog } from './payment/AddPaymentMethodDialog'
+import { ConfirmActionDialog } from '../confirm-action-dialog'
 
 export function PaymentStep({ orderState }: OrderStepProps) {
   const { updateOrderState, submitOrder } = useOrderWorkflow()
@@ -26,6 +27,7 @@ export function PaymentStep({ orderState }: OrderStepProps) {
   const [pricingData, setPricingData] = useState<PricingBreakdown | null>(null)
   const [isCalculatingPrice, setIsCalculatingPrice] = useState(false)
   const [isAddCardOpen, setIsAddCardOpen] = useState(false)
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
 
   const calculateFinalPricing = async () => {
     setIsCalculatingPrice(true)
@@ -240,6 +242,16 @@ export function PaymentStep({ orderState }: OrderStepProps) {
     return selectedPaymentMethod && paymentIntent && pricingData && !isCalculatingPrice
   }
 
+  const authorizeAmount = pricingData?.totalPrice ?? orderState.pricing?.totalPrice ?? 0
+  const formatAuthorizeAmount = authorizeAmount.toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  })
+  const selectedCard = paymentMethods.find((m) => m.id === selectedPaymentMethod)
+  const selectedCardLabel = selectedCard
+    ? `${selectedCard.brand.toUpperCase()} ····${selectedCard.last4}`
+    : 'your card'
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="text-center">
@@ -293,6 +305,28 @@ export function PaymentStep({ orderState }: OrderStepProps) {
         onAdded={handlePaymentMethodAdded}
       />
 
+      {/* A hold, not a charge — this dialog exists to set that expectation, so
+          the pending amount on the customer's statement isn't a surprise. */}
+      <ConfirmActionDialog
+        open={isConfirmOpen}
+        onOpenChange={setIsConfirmOpen}
+        title="Place a hold and submit your order?"
+        amount={authorizeAmount}
+        amountCaption={`Held on ${selectedCardLabel} — not charged yet`}
+        description="We reserve this amount on your card now and prepare your proof. You are only charged after you review and approve that proof."
+        consequences={[
+          'Your card is authorized, not charged.',
+          'We generate your proof and email you when it is ready.',
+          'Nothing is printed or mailed until you approve it.',
+        ]}
+        confirmLabel={`Authorize ${formatAuthorizeAmount} hold`}
+        isPending={isProcessingPayment}
+        onConfirm={() => {
+          setIsConfirmOpen(false)
+          authorizePayment()
+        }}
+      />
+
       {/* Security information + authorization explainer */}
       <PaymentSecurityInfo />
 
@@ -328,7 +362,7 @@ export function PaymentStep({ orderState }: OrderStepProps) {
             
             <Button
               size="lg"
-              onClick={authorizePayment}
+              onClick={() => setIsConfirmOpen(true)}
               disabled={!canProceed() || isProcessingPayment}
               className="flex items-center space-x-2"
             >

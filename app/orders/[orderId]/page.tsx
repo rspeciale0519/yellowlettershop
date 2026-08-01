@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import { OrderStatusBadge } from '@/components/orders/order-status-badge'
 import { ORDER_STATUS_STEPS, statusProgress, type OrderSummary } from '@/lib/orders/order-summary'
+import { ConfirmActionDialog, formatUsd } from '@/components/orders/confirm-action-dialog'
 
 interface OrderResponse {
   order: OrderSummary
@@ -32,9 +33,12 @@ export default function OrderStatusPage({ params }: { params: Promise<{ orderId:
   const [loading, setLoading] = useState(true)
   const [deciding, setDeciding] = useState(false)
   const [decisionError, setDecisionError] = useState<string | null>(null)
+  const [pendingAction, setPendingAction] = useState<'approve' | 'reject' | null>(null)
 
+  // Both decisions route through ConfirmActionDialog. Approving is the only
+  // irreversible action in the customer flow — it captures the payment and
+  // releases the job to the printer — so it must not be reachable in one tap.
   const decide = async (action: 'approve' | 'reject') => {
-    if (action === 'reject' && !window.confirm('Reject this proof? The order will be parked and no payment captured.')) return
     setDeciding(true)
     setDecisionError(null)
     try {
@@ -75,6 +79,9 @@ export default function OrderStatusPage({ params }: { params: Promise<{ orderId:
   }, [orderId])
 
   const order = data?.order
+  // What capture will actually take: the authorized hold, falling back to the
+  // order total if the hold amount was never recorded.
+  const captureAmount = order?.amountAuthorized ?? order?.total ?? 0
   const progress = order ? statusProgress(order.displayStatus) : -1
   const offPath = order && progress === -1
   const historyFor = (status: string): string | null => {
@@ -201,14 +208,14 @@ export default function OrderStatusPage({ params }: { params: Promise<{ orderId:
                 )}
                 <div className="flex gap-3">
                   <Button
-                    onClick={() => decide('approve')}
+                    onClick={() => setPendingAction('approve')}
                     disabled={deciding}
                     className="bg-amber-500 text-white hover:bg-amber-600"
                   >
                     {deciding ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
                     Approve & capture payment
                   </Button>
-                  <Button variant="outline" onClick={() => decide('reject')} disabled={deciding}>
+                  <Button variant="outline" onClick={() => setPendingAction('reject')} disabled={deciding}>
                     Reject proof
                   </Button>
                 </div>
@@ -276,6 +283,46 @@ export default function OrderStatusPage({ params }: { params: Promise<{ orderId:
           </Card>
         </>
       ) : null}
+
+      <ConfirmActionDialog
+        open={pendingAction !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingAction(null)
+        }}
+        tone={pendingAction === 'approve' ? 'commit' : 'default'}
+        title={
+          pendingAction === 'approve'
+            ? 'Charge your card and send this to print?'
+            : 'Reject this proof?'
+        }
+        amount={pendingAction === 'approve' ? captureAmount : undefined}
+        amountCaption="Charged now — this cannot be undone"
+        description={
+          pendingAction === 'approve'
+            ? 'Approving captures the payment you authorized and releases your job to the printer. Please make sure the proof is exactly right.'
+            : 'Your order will be parked and no payment will be captured. Our team will follow up with you.'
+        }
+        consequences={
+          pendingAction === 'approve'
+            ? [
+                'Your card is charged the amount above.',
+                'The design is locked and cannot be changed.',
+                `${order?.recordCount?.toLocaleString() ?? 'Your'} mail pieces go into production.`,
+              ]
+            : ['No payment is captured.', 'Your authorization hold is released.']
+        }
+        confirmLabel={
+          pendingAction === 'approve'
+            ? `Charge ${formatUsd(captureAmount)} and print`
+            : 'Reject proof'
+        }
+        isPending={deciding}
+        onConfirm={() => {
+          const action = pendingAction
+          setPendingAction(null)
+          if (action) decide(action)
+        }}
+      />
     </div>
   )
 }

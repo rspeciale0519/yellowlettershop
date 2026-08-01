@@ -115,8 +115,6 @@ export function ReviewApprovalStep({ orderState }: OrderStepProps) {
     const baseApproval: OrderApproval = orderState.approval ?? {
       designLocked: false,
       termsAccepted: false,
-      noRefundAcknowledged: false,
-      privacyPolicyAccepted: false,
       approvedBy: 'current_user',
     }
     updateOrderState({
@@ -154,13 +152,14 @@ export function ReviewApprovalStep({ orderState }: OrderStepProps) {
     }
   }
 
+  // Must stay in lockstep with validateCurrentStep's 'review' case, which is
+  // what actually gates the Continue button. They disagreed before: this screen
+  // demanded four boxes while the gate accepted two, so the red "complete all
+  // approval items" banner could show above an enabled Continue button.
   const canProceed = () => {
     if (!orderState.approval) return false
-    
-    return orderState.approval.designLocked && 
-           orderState.approval.termsAccepted && 
-           orderState.approval.noRefundAcknowledged &&
-           orderState.approval.privacyPolicyAccepted
+
+    return orderState.approval.designLocked && orderState.approval.termsAccepted
   }
 
   const getServiceLevelDescription = () => {
@@ -412,70 +411,39 @@ export function ReviewApprovalStep({ orderState }: OrderStepProps) {
             <span>Final Approval</span>
           </CardTitle>
           <CardDescription>
-            Please review and approve all items before proceeding to payment
+            Please confirm both items before proceeding to payment
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-start space-x-3">
-            <Checkbox 
+            <Checkbox
               id="design-locked"
               checked={orderState.approval?.designLocked || false}
               onCheckedChange={(checked) => handleApprovalChange('designLocked', !!checked)}
             />
             <div className="flex-1">
               <Label htmlFor="design-locked" className="font-medium cursor-pointer">
-                I approve the design and understand it will be locked for production
+                I approve this design. Once I continue, it is locked for production and cannot be changed.
               </Label>
               <p className="text-sm text-gray-600 mt-1">
-                Once locked, the design cannot be modified. Please review the proof carefully.
+                Please review the proof above carefully before checking this box.
               </p>
             </div>
           </div>
 
           <div className="flex items-start space-x-3">
-            <Checkbox 
+            <Checkbox
               id="terms-accepted"
               checked={orderState.approval?.termsAccepted || false}
               onCheckedChange={(checked) => handleApprovalChange('termsAccepted', !!checked)}
             />
             <div className="flex-1">
               <Label htmlFor="terms-accepted" className="font-medium cursor-pointer">
-                I accept the Terms of Service and understand the order details
+                I accept the Terms of Service and Privacy Policy, and I understand that all orders
+                are non-refundable.
               </Label>
               <p className="text-sm text-gray-600 mt-1">
-                By checking this box, you agree to our terms and conditions.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start space-x-3">
-            <Checkbox 
-              id="no-refund"
-              checked={orderState.approval?.noRefundAcknowledged || false}
-              onCheckedChange={(checked) => handleApprovalChange('noRefundAcknowledged', !!checked)}
-            />
-            <div className="flex-1">
-              <Label htmlFor="no-refund" className="font-medium cursor-pointer">
-                I understand that custom print orders are non-refundable
-              </Label>
-              <p className="text-sm text-gray-600 mt-1">
-                Due to the custom nature of print production, orders cannot be refunded once approved.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-start space-x-3">
-            <Checkbox 
-              id="privacy-policy"
-              checked={orderState.approval?.privacyPolicyAccepted || false}
-              onCheckedChange={(checked) => handleApprovalChange('privacyPolicyAccepted', !!checked)}
-            />
-            <div className="flex-1">
-              <Label htmlFor="privacy-policy" className="font-medium cursor-pointer">
-                I acknowledge the Privacy Policy regarding data handling
-              </Label>
-              <p className="text-sm text-gray-600 mt-1">
-                Your mailing list data will be handled according to our privacy policy.
+                Your mailing list data is handled according to our Privacy Policy.
               </p>
             </div>
           </div>
@@ -487,7 +455,7 @@ export function ReviewApprovalStep({ orderState }: OrderStepProps) {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Please complete all approval items above before proceeding to payment.
+            Please confirm both items above before proceeding to payment.
           </AlertDescription>
         </Alert>
       )}
