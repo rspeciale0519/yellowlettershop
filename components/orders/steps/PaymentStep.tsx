@@ -12,6 +12,8 @@ import { useToast } from '@/components/ui/use-toast'
 import { useRouter } from 'next/navigation'
 import { PaymentSecurityInfo } from './payment/PaymentSecurityInfo'
 import { PaymentMethodList, type PaymentMethod } from './payment/PaymentMethodList'
+import { AddPaymentMethodDialog } from './payment/AddPaymentMethodDialog'
+import { ConfirmActionDialog } from '../confirm-action-dialog'
 
 export function PaymentStep({ orderState }: OrderStepProps) {
   const { updateOrderState, submitOrder } = useOrderWorkflow()
@@ -24,6 +26,8 @@ export function PaymentStep({ orderState }: OrderStepProps) {
   const [isLoadingPaymentMethods, setIsLoadingPaymentMethods] = useState(true)
   const [pricingData, setPricingData] = useState<PricingBreakdown | null>(null)
   const [isCalculatingPrice, setIsCalculatingPrice] = useState(false)
+  const [isAddCardOpen, setIsAddCardOpen] = useState(false)
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
 
   const calculateFinalPricing = async () => {
     setIsCalculatingPrice(true)
@@ -221,13 +225,32 @@ export function PaymentStep({ orderState }: OrderStepProps) {
   }
 
   const addNewPaymentMethod = () => {
-    // Open Stripe payment method setup
-    window.open('/account/payment-methods?add=true', '_blank')
+    setIsAddCardOpen(true)
+  }
+
+  /** A card was just saved via SetupIntent — reload the list and select it. */
+  const handlePaymentMethodAdded = async (paymentMethodId: string) => {
+    await loadPaymentMethods()
+    setSelectedPaymentMethod(paymentMethodId)
+    toast({
+      title: 'Card saved',
+      description: 'Your card is ready — it will be authorized when you submit this order.'
+    })
   }
 
   const canProceed = () => {
     return selectedPaymentMethod && paymentIntent && pricingData && !isCalculatingPrice
   }
+
+  const authorizeAmount = pricingData?.totalPrice ?? orderState.pricing?.totalPrice ?? 0
+  const formatAuthorizeAmount = authorizeAmount.toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  })
+  const selectedCard = paymentMethods.find((m) => m.id === selectedPaymentMethod)
+  const selectedCardLabel = selectedCard
+    ? `${selectedCard.brand.toUpperCase()} ····${selectedCard.last4}`
+    : 'your card'
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -276,6 +299,34 @@ export function PaymentStep({ orderState }: OrderStepProps) {
         onAddNew={addNewPaymentMethod}
       />
 
+      <AddPaymentMethodDialog
+        open={isAddCardOpen}
+        onOpenChange={setIsAddCardOpen}
+        onAdded={handlePaymentMethodAdded}
+      />
+
+      {/* A hold, not a charge — this dialog exists to set that expectation, so
+          the pending amount on the customer's statement isn't a surprise. */}
+      <ConfirmActionDialog
+        open={isConfirmOpen}
+        onOpenChange={setIsConfirmOpen}
+        title="Place a hold and submit your order?"
+        amount={authorizeAmount}
+        amountCaption={`Held on ${selectedCardLabel} — not charged yet`}
+        description="We reserve this amount on your card now and prepare your proof. You are only charged after you review and approve that proof."
+        consequences={[
+          'Your card is authorized, not charged.',
+          'We generate your proof and email you when it is ready.',
+          'Nothing is printed or mailed until you approve it.',
+        ]}
+        confirmLabel={`Authorize ${formatAuthorizeAmount} hold`}
+        isPending={isProcessingPayment}
+        onConfirm={() => {
+          setIsConfirmOpen(false)
+          authorizePayment()
+        }}
+      />
+
       {/* Security information + authorization explainer */}
       <PaymentSecurityInfo />
 
@@ -311,7 +362,7 @@ export function PaymentStep({ orderState }: OrderStepProps) {
             
             <Button
               size="lg"
-              onClick={authorizePayment}
+              onClick={() => setIsConfirmOpen(true)}
               disabled={!canProceed() || isProcessingPayment}
               className="flex items-center space-x-2"
             >

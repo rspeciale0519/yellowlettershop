@@ -78,12 +78,13 @@ async function handleOrderPaymentCaptured(data: any, supabase: any) {
   console.log('Processing order.payment_captured webhook:', data.order_id)
   
   // Update order status and trigger fulfillment
+  // `orders` has no updated_at column; including it fails the whole update.
   await supabase
     .from('orders')
     .update({
       payment_status: 'captured',
       amount_captured: data.amount_captured,
-      updated_at: new Date().toISOString()
+      captured_at: new Date().toISOString()
     })
     .eq('id', data.order_id)
 

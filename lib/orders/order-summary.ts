@@ -16,6 +16,15 @@ export interface OrderSummary {
   recordCount: number
   mailClass: string | null
   postageType: string | null
+  /** From the order's vendor dispatch, once the vendor reports shipment. */
+  trackingNumber: string | null
+  trackingCarrier: string | null
+}
+
+/** Tracking fields off the latest order_dispatches row, when one exists. */
+export interface DispatchTracking {
+  tracking_number?: string | null
+  tracking_carrier?: string | null
 }
 
 /** Customer-facing happy-path timeline (display order). */
@@ -86,7 +95,7 @@ export function deriveDisplayStatus(row: OrderRow): string {
 }
 
 /** Flatten a normalized orders row into the list/detail summary. */
-export function summarizeOrderRow(row: OrderRow): OrderSummary {
+export function summarizeOrderRow(row: OrderRow, tracking?: DispatchTracking): OrderSummary {
   return {
     id: row.id,
     status: row.status,
@@ -101,5 +110,7 @@ export function summarizeOrderRow(row: OrderRow): OrderSummary {
     recordCount: typeof row.record_count === 'number' ? row.record_count : 0,
     mailClass: row.mail_class ?? null,
     postageType: row.postage_type ?? null,
+    trackingNumber: tracking?.tracking_number ?? null,
+    trackingCarrier: tracking?.tracking_carrier ?? null,
   }
 }

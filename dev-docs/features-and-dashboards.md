@@ -1,3 +1,8 @@
+> [!IMPORTANT]
+> **STALE PLANNING BASELINE (April/August 2025).** Audited against the codebase
+> on **2026-07-31** — see **[`implementation-status.md`](./implementation-status.md)**
+> for what is actually built, partial, or dropped. Known-superseded here: plan tiers/gating matrix, FPD, 8-tier roles, per-record AccuZip billing, MRR KPIs.
+> Treat feature intent as valid, statuses/stack claims as unreliable.
 # **Features & Administration Documentation — Yellow Letter Shop (YLS)**
 
 *Last Updated: April 2025*

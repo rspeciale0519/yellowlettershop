@@ -19,7 +19,9 @@ export const GET = withAuth(async (req: NextRequest, { userId }) => {
 
     if (error) throw error
 
-    return NextResponse.json({ orders: (data ?? []).map(summarizeOrderRow) })
+    // Explicit arrow: summarizeOrderRow takes an optional second argument, so
+    // passing it point-free to map would feed it the array index as tracking.
+    return NextResponse.json({ orders: (data ?? []).map((row) => summarizeOrderRow(row)) })
   } catch (err) {
     console.error('List orders error:', err)
     return NextResponse.json({ error: 'Failed to load orders' }, { status: 500 })

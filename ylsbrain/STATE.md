@@ -1,7 +1,48 @@
 # yls brain — STATE
-Updated: 2026-07-05
+Updated: 2026-08-02
 
 ## Current focus
+**(2026-08-02): PR #24 (`feature/vendor-fulfillment`) is smoke-verified and
+ultrareviewed; 8 review findings + 1 self-found defect all fixed, NOT yet
+committed.** Two were security: a cross-tenant PII IDOR on the dispatch path
+(service-role read of `mailing_list_records` keyed on a customer-supplied list
+id) and CWE-1236 CSV formula injection into the vendor's spreadsheet. One was
+money: `amount_refunded` was overwritten rather than accumulated, so repeated
+partial refunds silently inflated admin revenue; `refundOrder` also cancelled
+the whole order on any partial. Gates: typecheck:full 0, 269 tests, build 0.
+**Open:** owner decides commit + merge to `develop`. Redstone remains blocked on
+their reply (endpoint provisioning). Detail: [[journal/2026-08-02]].
+
+## (prior focus)
+**(2026-07-31): Vendor fulfillment loop BUILT on `feature/vendor-fulfillment`
+(16 commits, not yet PR'd).** proof-approval → capture → auto-dispatch → vendor
+emailed proof+CSV → admin advances accepted/in-production/mailed(+tracking)/
+delivered → order `completed` + customer notified. Also completed the
+inline-payment refactor (killed all `payment_transactions` references) and found
+that **`orders` has no `updated_at`** despite 6 call sites writing it — which
+silently voided admin status changes, capture/refund, and the Stripe webhook
+capture backstop. Gates: 230 tests, typecheck:full 0, build 0. **Storage leg VERIFIED
+2026-07-31 (2nd pass):** CLI 2.107→2.111 upgrade pulled storage-api v1.67.20 →
+container healthy; full `dispatchOrder` ran live (CSV staged + both links
+signed) and the signed CSV fetched back 200 with the exact column contract.
+Branch pushed; PR to develop next. **Open:** admin-panel browser smoke +
+money-path code review before merge. Detail: [[journal/2026-07-31]].
+
+## (prior focus)
+**(2026-07-31): Full codebase-vs-dev-docs audit DONE; docs reconciled.**
+3-agent audit + delta re-verification against the 2026-06-14 completeness
+report. New authoritative doc: `dev-docs/implementation-status.md` (BUILT /
+PARTIAL / NOT BUILT / D1-D10 / risks); all 13 stale dev-docs bannered;
+`dev-docs/README.md` v2.0; knowledge/{features,roadmap} refreshed to
+2026-07-31; project `CLAUDE.md` de-staled (FPD/subscriptions/Prisma/NextAuth/
+port/branching). Gates: 199 tests green, typecheck:full 0 (fixed 2
+regressions), build exit 0. Top open correctness gaps (see knowledge/roadmap
+Near-term): `payment_transactions` migration missing, admin order-service
+`user_id`→`created_by` drift, vendor dispatch unbuilt, rate limiter uncalled,
+auth-surface hardening (middleware matcher, IDOR, bare handlers, test
+endpoints). Detail: [[journal/2026-07-31]].
+
+## (prior focus)
 **(2026-07-05): light-dark-theme site-wide redesign — SCRAPPED by owner post-completion.**
 6-phase warm-paper/warm-charcoal theme redesign was finished, QA-clean, and
 merge-ready, but owner rejected the design direction on review (no specific

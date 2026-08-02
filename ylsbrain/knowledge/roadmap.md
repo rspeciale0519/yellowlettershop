@@ -2,42 +2,77 @@
 kind: knowledge
 slug: roadmap
 status: current
-updated: 2026-05-18
+updated: 2026-07-31
 layer: roadmap
 sources:
+  - dev-docs/implementation-status.md
   - dev-docs/roadmap.md
   - dev-docs/todo.md
+  - docs/temp/yls-feature-audit-report.md
 ---
 
 # Roadmap — reconciled unbuilt work
 
-Reconciles the April-2025 plan to the current transactional direction. Items the code already delivers are removed (see [[knowledge/features]]); killed strategy is in `## Superseded / dropped`. Original phase-by-phase detail lives in `dev-docs/roadmap.md` (6 phases + todo.md Phases 7–10 ongoing) — this is the live, deduped view only.
+Live deduped view (2026-07-31 audit). Delivered items removed — see
+[[knowledge/features]]. Killed strategy in `## Superseded / dropped`.
 
-## Near-term
+## Near-term (correctness for launch)
 
-- **Promote AccuZip validation from simulated → live.** The order-flow job path is hardcoded `Math.random()` with no env branch (`app/api/accuzip/upload/route.ts:135`) — wire it to the real AccuZip client that already exists for list-builder (`lib/api/accuzip/count.ts`). Confirmed gap: [[knowledge/superseded]] F1 (CONFIRMED 2026-05-19).
-- **Distributed rate limiting.** Replace in-memory limiter with shared store (see [[knowledge/features]] PARTIAL).
-- **User orders dashboard → real data.** Replace mock `lib/data-structures.ts` read with live queries; admin orders is already real ([[knowledge/superseded]] F5).
-- **Template gallery → DB-backed.** Unify static `data/templates-data.ts` browse with the partial `mail_templates` DB path ([[knowledge/superseded]] F4).
+- ~~**`payment_transactions` migration**~~ **DONE 2026-07-31** (`feature/vendor-fulfillment`
+  Phase 1): refactored all 6 referencing files to the inline-on-orders model
+  instead of adding the table. Revenue/capture/refund now persist and aggregate
+  on `orders`; migration `20260801000000` added `captured_at`/`amount_refunded`/
+  `refunded_at` + the missing `cancelled` enum value. Zero live
+  `payment_transactions` queries remain.
+- ~~**Admin order-service schema fix**~~ **DONE 2026-07-31** — `created_by` +
+  batch profile load (no FK join path); `user-service` drift (`order_state`,
+  `user_id`) fixed too; dead bare `capture-payment`/`refund-payment` routes
+  archived.
+- ~~**Vendor fulfillment hand-off**~~ **DONE 2026-07-31** (branch
+  `feature/vendor-fulfillment`): auto-dispatch after capture → vendor emailed
+  proof + recipient CSV (signed, 7-day) → admin advances accepted/in-production/
+  mailed(+tracking)/delivered → order completes, customer emailed on ship.
+  `lib/fulfillment/`, `order_dispatches`, admin dispatch API + panel.
+  Live-verified against the local DB (transitions, order advance, tracking,
+  backwards-refusal). Remaining: inbound vendor replies are still manual.
+- **Wire the DB-backed rate limiter** (built, zero callers) into login/sensitive
+  routes; retire the in-memory Map.
+- **Middleware/auth hardening** — extend matcher beyond `/dashboard/*`; wrap
+  bare payment + mailing-list + `/api/teams/*` handlers; fix
+  `analytics/performance` IDOR; delete shipped test/debug endpoints.
+- **Template gallery → DB-backed** (both galleries mock; `mail_templates`
+  unmigrated).
 
 ## Mid-term
 
-- **MelissaData list-purchase + payment wiring.** Add purchase route and payment integration; current code hardcodes $0.10/record with no buy flow ([[knowledge/superseded]] F2).
-- **Mailgun outbound / transactional email.** Build send path; only inbound webhook parsing exists today ([[knowledge/superseded]] F3).
-- **Notification settings backend + API-keys page.** Back the existing UI shells (see [[knowledge/features]] PARTIAL/UNVERIFIED).
-- **Project-level RBAC clarification.** Define scope and add the missing `projects` table/migrations (see [[knowledge/features]] UNVERIFIED).
-- **Security / 2FA page.** Verify and complete (see [[knowledge/features]] UNVERIFIED).
+- Proof **annotation** UI (PRD §3.10; `proof_annotations` table exists, 0 refs).
+- Melissa list-purchase + payment wiring (client exists; wizard says
+  "coming soon").
+- Skip-trace completion or removal (webhook no-op).
+- Drafts autosave activation; activity page real data; in-app notification
+  center decision; undo/redo beyond one resource type.
+- Duplicate-stack consolidation (`/api/team` vs `/api/teams`, payment services,
+  tags UIs, signup/register); archive dead subscription code.
+- D9 vendor-gated capture + D1 per-recipient pURL generation (both depend on
+  fulfillment/vendor loop).
 
-## Long-term
+## Long-term / needs owner input
 
-- **Redstone integration.** Doc-only today (`dev-docs/api-redstone.md`, 2622 lines, zero code refs) — scope before committing.
-- **AI features (OpenAI/Anthropic).** Keys present via MCP, no app wiring — define product use before building.
-- Remaining `dev-docs/roadmap.md` Phases 7–10 (todo.md ongoing) to be reconciled against the transactional model before scheduling.
+- D2 AI copy, D10 AI proof comparison (AI Gateway; keys exist, no wiring).
+- D5 win-back emails (needs scheduler), D6 CallRail (needs owner OAuth creds —
+  `memory:project_callrail_integration`), D8 checkout deliverability score.
+- Report builder / scheduled reports, NPS/feedback, admin impersonation,
+  mail-tracking add-on, Redstone (doc-only), onboarding, discount codes.
+- Owner-provisioned env: `ACCUZIP_API_KEY`, `MELISSA_DATA_API_KEY`, prod email
+  key, CallRail creds (`docs/temp/production-blockers.md`).
+- **New UI ("Masthead") rollout** — direction chosen 2026-07-10, exploratory
+  branches only; nothing merged (`docs/temp/NEW_UI_DIRECTION_CHOICE.md`).
 
 ## Superseded / dropped
 
-- **Subscription tiers & plan-gating (Free/Pro/Team/Enterprise).** Dropped — transactional only, MLM separate app. → see [[knowledge/superseded]] D1.
-- **Fancy Product Designer (FPD) integration.** Dropped — custom in-house designer shipped. → see [[knowledge/superseded]] D2.
-- **8-tier / 4-role permission model.** Dropped — code is `admin|super_admin` only. → see [[knowledge/superseded]] D5.
-- **Per-record AccuZip billing + plan free-quotas.** Dropped — tiered per-job pricing, free with mail orders. → see [[knowledge/superseded]] D3.
-- **Admin pricing UI (was a future phase).** Already delivered, not roadmap work. → see [[knowledge/superseded]] D4.
+- Subscriptions/plan-gating → transactional only ([[knowledge/superseded]] D1).
+- FPD → custom designer shipped (D2).
+- 8-tier/4-role model → admin|super_admin + per-team Owner/Admin/Member (D5;
+  team roles delivered 2026-06-16).
+- Per-record AccuZip billing → tiered per-job (D3).
+- Admin pricing UI → delivered (D4).

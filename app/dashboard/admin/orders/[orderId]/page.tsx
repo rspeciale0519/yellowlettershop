@@ -12,6 +12,7 @@ import {
 import { ArrowLeft, User, Package } from 'lucide-react';
 import { OrderTimeline } from '@/components/admin/orders/order-timeline';
 import { OrderPaymentActions } from '@/components/admin/orders/order-payment-actions';
+import { OrderDispatchPanel } from '@/components/admin/orders/order-dispatch-panel';
 import { createClient } from '@/utils/supabase/client';
 
 const statusOptions = ['submitted', 'processing', 'completed', 'cancelled'];
@@ -86,7 +87,11 @@ export default function AdminOrderDetailPage() {
   const payments = (detail.payments ?? []) as Parameters<typeof OrderPaymentActions>[0]['payments'];
   const timeline = (detail.timeline ?? []) as Parameters<typeof OrderTimeline>[0]['entries'];
   const status = order.status as string;
-  const orderState = order.order_state as Record<string, unknown> | null;
+  // Wizard state lives under metadata.order_state on the normalized model
+  // (the standalone order_state column was dropped in the June consolidation).
+  const orderState =
+    ((order.metadata as Record<string, unknown> | null)?.order_state as Record<string, unknown> | null) ??
+    null;
 
   return (
     <div className="space-y-6">
@@ -198,6 +203,12 @@ export default function AdminOrderDetailPage() {
               onCapture={handleCapture}
               onRefund={handleRefund}
             />
+          </div>
+
+          {/* Vendor fulfillment */}
+          <div>
+            <h3 className="text-sm font-semibold mb-3">Fulfillment</h3>
+            <OrderDispatchPanel orderId={orderId} />
           </div>
         </div>
 

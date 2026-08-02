@@ -1,8 +1,11 @@
-// Pricing. Printing/postage/shipping values are in raw units where each unit =
-// $0.001 (divide by 1000 for dollars). Volume-discount amounts use cents scaling
-// (divide by 100). The constants below are the DEFAULT/fallback; admins can
-// override them via the pricing_config table (see lib/orders/pricing-config.ts),
-// which is loaded by the pricing API routes and passed into calculatePricing.
+// Pricing. ALL rate values — these defaults and pricing_config.unit_amount —
+// are CENTS per piece (45 = $0.45 postcard print, 73 = $0.73 Forever stamp,
+// shipping base 1500 = $15.00). Divide by 100 exactly once, at the dollars
+// conversion below. The previous divisor (1000, "each unit = $0.001") priced
+// every order 10× under — a 1-piece postcard totalled $0.12 and Stripe
+// rejected it as amount_too_small; at volume it silently undercharged.
+// Admins override these defaults via the pricing_config table
+// (lib/orders/pricing-config.ts), loaded by the pricing API routes.
 
 export type MailPieceFormat = 'postcard_4x6' | 'postcard_5x7' | 'letter_8_5x11' | 'letter_folded'
 export type PaperStock = 'standard_14pt' | 'premium_16pt' | 'luxury_18pt'
@@ -83,8 +86,8 @@ export type PricingResult = {
   }
 }
 
-const UNIT = 1000 // raw units → dollars divisor
-const DISC = 100 // discount raw units → dollars divisor
+const UNIT = 100 // cents → dollars divisor
+const DISC = 100 // discount cents → dollars divisor
 
 export function calculatePricing(
   opts: MailingOptions,

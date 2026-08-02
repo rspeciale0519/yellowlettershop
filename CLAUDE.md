@@ -28,18 +28,17 @@ Yellow Letter Shop is a comprehensive SaaS platform for direct mail automation, 
 - **Recharts** - Analytics visualizations
 
 ### Backend & Database
-- **Supabase** - Backend-as-a-service with PostgreSQL
+- **Supabase** - Backend-as-a-service with PostgreSQL (Supabase JS client only — no ORM, no NextAuth)
 - **Next.js API Routes** - RESTful backend endpoints
 - **Row-Level Security (RLS)** - Database-level access control
-- **Prisma ORM** - Type-safe database access (planned)
-- **JWT Authentication** - Secure session management
+- **JWT Authentication** - Supabase Auth sessions (Bearer + cookie via `withAuth`)
 
 ### External Integrations
 - **Stripe** - Payment processing with manual capture
 - **AccuZip API** - Address validation and standardization
-- **Mailgun** - Email services and webhook processing
-- **Fancy Product Designer (FPD)** - Design canvas integration
-- **AWS S3** (via Supabase Storage) - File storage
+- **Resend / Mailgun** - Transactional email via `lib/email/` adapter (Resend preferred)
+- **Custom in-house designer** - `components/designer/` (react-rnd canvas, pdf-lib server rendering, three.js 3D preview) — FPD was rejected and is NOT used
+- **Supabase Storage** - File storage (assets, private proof bucket)
 
 ### Development Tools
 - **TypeScript 5** - Strict typing throughout
@@ -83,11 +82,12 @@ Yellow Letter Shop is a comprehensive SaaS platform for direct mail automation, 
 ## Key Development Scripts
 
 From package.json:
-- `npm run dev` - Start development server
+- `npm run dev` - Start development server (port **3010**)
 - `npm run build` - Build for production
 - `npm start` - Start production server
-- `npm run lint` - Run ESLint
+- `npm run lint` - Run ESLint (~743 pre-existing errors — known backlog; delta-gate only)
 - `npm test` - Run Mocha test suite
+- `npm run typecheck:ui` / `npm run typecheck:full` - TypeScript gates
 
 ## Development Workflow
 
@@ -95,18 +95,17 @@ From package.json:
 1. **Clone and Setup**:
    ```bash
    git clone <repository-url>
-   cd new-001
+   cd yls
    npm install
    ```
 
 2. **Environment Setup**:
-   - Copy `.env.example` to `.env.local`
-   - Configure Supabase, Stripe, and other API keys
-   - Set up database connections
+   - Configure `.env.local` (Supabase, Stripe, and other API keys)
+   - Dev uses the **local Docker Supabase stack** (`supabase start`); hosted project is production only
 
 3. **Start Development**:
    ```bash
-   npm run dev  # Starts on http://localhost:3000
+   npm run dev  # Starts on http://localhost:3010
    ```
 
 ### Code Standards
@@ -118,14 +117,11 @@ From package.json:
 - **Component Structure**: Follow existing patterns in `components/`
 - **API Validation**: Use Zod for all API endpoint validation
 - **Testing**: Write tests for new components and utilities
-- **File Size Limit**: All code files MUST be ≤350 lines of code (LOC)
-- **Modularization Priority**: When writing new or modifying existing code, ALWAYS prioritize modularization over monolithic files
 
 ### Branch Strategy
-- **Feature branches**: `feature/feature-name`
+- **Feature branches**: `feature/feature-name` (off `develop`)
 - **Bug fixes**: `fix/issue-description`
-- **Target branch**: `main` for production deployment
-- **Current branch**: `feat/mod-phase-1b-demographics-split`
+- **Daily work / PR target**: `develop`; `develop` → `main` only for production releases
 - **Parallel sessions / worktrees**: when running more than one Claude Code or dev session on this repo, give each its own worktree via the helper — `./scripts/wt.ps1 new <branch>` (sibling container `../yls.worktrees/`, one folder per branch). Never hand-run `git worktree add`, and never run concurrent sessions sharing one working tree (their shared Git HEAD collides mid-task).
 
 ## Architecture Patterns
@@ -174,18 +170,16 @@ npm test                    # Run all tests
 npx mocha tests/specific.test.tsx  # Run specific test
 ```
 
-## Current Development Phase
+## Current Development State
 
-### Phase 1B: Demographics Split (In Progress)
-- **Goal**: Split large `demographics-filters.tsx` into focused subcomponents
-- **Target**: Each component <350 LOC for maintainability
-- **Status**: Creating `components/list-builder/demographics/` directory
-- **Components**: `DemographicsGroup`, `MultiSelectField`, `RangeSliderField`, etc.
-
-### Recent Completions
-- **Phase 1A**: Extracted common components (MultiSelect, DraggableSlider)
-- **Phase 0**: Scaffolded shared primitives and documentation
-- **API Documentation**: Updated with AccuZip integration details
+See **`dev-docs/implementation-status.md`** (code-verified audit, 2026-07-31)
+for what is built/partial/not-built, and `ylsbrain/` STATE + journals for the
+live session-to-session record. Highlights: customer money path works
+end-to-end (wizard → validate → design → authorize → proof → approve →
+capture → email → status); custom designer suite incl. postage areas + 3D
+preview; teams/access-control with RLS + SQL assertion tests; real TOTP 2FA.
+Biggest known gaps: `payment_transactions` migration missing (admin revenue
+metrics), vendor fulfillment dispatch, template galleries still mock.
 
 ## Key Business Logic
 
@@ -193,24 +187,23 @@ npx mocha tests/specific.test.tsx  # Run specific test
 1. **Template Selection** - Choose from library or upload custom
 2. **Mailing List Upload** - CSV/XLSX with validation
 3. **Address Validation** - AccuZip CASS certification
-4. **Design Customization** - FPD integration with personalization
+4. **Design Customization** - custom in-house designer with merge-token personalization
 5. **Contact Card Selection** - Sender information management
 6. **Payment Authorization** - Stripe hold (not capture)
-7. **Proof Review** - PDF annotation and approval system
-8. **Payment Capture** - On approval, funds captured
-9. **Fulfillment** - Vendor routing and production
+7. **Proof Review** - generated PDF proof, approve/reject (annotation UI not built yet)
+8. **Payment Capture** - On approval, funds captured (reject cancels the hold)
+9. **Fulfillment** - Vendor routing and production (dispatch automation not built yet)
 
 ### User Roles & Permissions
-- **Admin**: System-wide access and impersonation
-- **Manager**: Team-level control and oversight
-- **User**: Core functionality access
-- **Client**: View-only restricted access
+- **Platform roles**: `admin` | `super_admin` (`lib/admin/require-admin.ts`)
+- **Per-team roles**: Owner / Admin / Member via `team_members` + authority RPCs
+- Everything else is gated by auth + RLS, not role tiers
 
-### Subscription Tiers
-- **Free**: $0, 1 user, limited features
-- **Pro**: $49, 1 user, full features
-- **Team**: $99, 3 users, collaboration tools
-- **Enterprise**: $499, 10 users, advanced features
+### Revenue Model
+**Transactional only — there are NO subscriptions.** (MLM is a separate app.)
+Standalone AccuZip validation is tiered per-job ($8–$400), free with mail
+orders. Legacy subscription code (`lib/payments/subscription-service.ts`) is
+dead and pending archive — never build on it.
 
 ## Important Implementation Notes
 
@@ -229,19 +222,19 @@ npx mocha tests/specific.test.tsx  # Run specific test
 - **Component memoization** for expensive operations
 
 ### External API Integrations
-- **AccuZip**: Address validation requires specific field mapping
+- **AccuZip**: Address validation requires specific field mapping (order path is live; count/search fall back to mock without a key)
 - **Stripe**: Manual capture workflow for order approvals
-- **Mailgun**: Inbound email parsing for vendor communications
-- **FPD**: Design state stored as JSON with version control
+- **Resend/Mailgun**: Outbound transactional email via `lib/email/`; Mailgun inbound webhook parsing for vendor communications
+- **Designer**: Design state stored as `DesignElement[]` JSON (`types/designer.ts`) in `saved_designs`
 
 ## Documentation Resources
 
 The project includes comprehensive documentation:
-- `docs/prd.md` - Product Requirements Document
-- `docs/technical-architecture.md` - Technical specifications
-- `docs/development-guide.md` - Development workflows
-- `docs/api-*.md` - API integration guides
-- `docs/modularization/` - Refactoring phase documentation
+- `dev-docs/implementation-status.md` - **Authoritative code-verified build status (read first)**
+- `dev-docs/PRD.md`, `roadmap.md`, `todo.md` - April-2025 planning baseline (stale-bannered; intent only)
+- `dev-docs/api-*.md` - Vendor API references (AccuZip, Melissa, Redstone, integrations)
+- `ylsbrain/knowledge/` - Live reconciled knowledge (features, roadmap, superseded, orientation)
+- `docs/temp/` - Working notes and audit reports
 
 ## Common Development Tasks
 

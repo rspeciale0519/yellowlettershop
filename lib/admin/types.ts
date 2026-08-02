@@ -25,6 +25,8 @@ export type AdminAction =
   | 'order_payment_captured'
   | 'order_refunded'
   | 'order_vendor_assigned'
+  | 'order_dispatched'
+  | 'order_dispatch_status_changed'
   | 'settings_updated';
 
 export type PricingCategory =

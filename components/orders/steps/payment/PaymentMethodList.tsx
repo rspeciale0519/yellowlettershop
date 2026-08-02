@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { CreditCard, CheckCircle, ExternalLink } from 'lucide-react'
+import { CreditCard, CheckCircle, Plus } from 'lucide-react'
 
 export interface PaymentMethod {
   id: string
@@ -76,10 +76,11 @@ export function PaymentMethodList({ methods, selectedId, isLoading, onSelect, on
               </div>
             )}
 
+            {/* Opens an in-page dialog now, not a new tab — an external-link
+                icon here promised a navigation that no longer happens. */}
             <Button variant="outline" className="w-full flex items-center space-x-2" onClick={onAddNew}>
-              <CreditCard className="h-4 w-4" />
+              <Plus className="h-4 w-4" />
               <span>Add New Payment Method</span>
-              <ExternalLink className="h-4 w-4" />
             </Button>
           </div>
         )}

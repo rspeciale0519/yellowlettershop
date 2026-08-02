@@ -40,6 +40,21 @@ describe('summarizeOrderRow (normalized orders)', () => {
     assert.equal(s.recordCount, 0)
     assert.equal(s.proofUrl, null)
   })
+
+  it('exposes vendor tracking when a dispatch supplies it', () => {
+    const s = summarizeOrderRow(
+      { id: 'o3', status: 'shipped' },
+      { tracking_number: '9400111899', tracking_carrier: 'USPS' }
+    )
+    assert.equal(s.trackingNumber, '9400111899')
+    assert.equal(s.trackingCarrier, 'USPS')
+  })
+
+  it('defaults tracking to null when no dispatch is passed', () => {
+    const s = summarizeOrderRow({ id: 'o4', status: 'processing' })
+    assert.equal(s.trackingNumber, null)
+    assert.equal(s.trackingCarrier, null)
+  })
 })
 
 describe('deriveDisplayStatus', () => {

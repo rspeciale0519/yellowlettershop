@@ -1,5 +1,7 @@
 import { createServiceClient } from '@/utils/supabase/service';
 import { logAdminAction } from './audit-logger';
+import { inlinePayments } from './order-service';
+import { netRevenue, type RevenueOrderRow } from './analytics-core';
 import type { AdminUserFilters } from './types';
 
 interface UserListResult {
@@ -44,12 +46,17 @@ export async function listUsers(filters: AdminUserFilters): Promise<UserListResu
 export async function getUserDetail(userId: string): Promise<Record<string, unknown>> {
   const supabase = createServiceClient();
 
-  const [profileRes, ordersRes, paymentsRes, notesRes, creditRes] = await Promise.all([
+  // Orders are owned via created_by and carry their payment state inline
+  // (no payment_transactions table; `order_state` was replaced by `metadata`).
+  const [profileRes, ordersRes, notesRes, creditRes] = await Promise.all([
     supabase.from('user_profiles').select('*').eq('user_id', userId).single(),
-    supabase.from('orders').select('id, status, order_state, submitted_at, created_at')
-      .eq('user_id', userId).order('created_at', { ascending: false }).limit(20),
-    supabase.from('payment_transactions').select('*')
-      .eq('user_id', userId).order('created_at', { ascending: false }).limit(20),
+    supabase.from('orders')
+      .select(
+        'id, status, metadata, submitted_at, created_at, created_by, total_cost, ' +
+          'payment_status, stripe_payment_intent_id, amount_captured, amount_refunded, ' +
+          'captured_at, refunded_at'
+      )
+      .eq('created_by', userId).order('created_at', { ascending: false }).limit(20),
     supabase.from('user_notes').select('*')
       .eq('user_id', userId).order('created_at', { ascending: false }).limit(50),
     supabase.from('user_credits').select('*')
@@ -65,14 +72,17 @@ export async function getUserDetail(userId: string): Promise<Record<string, unkn
   });
   const authUser = authUsers?.find((u: { id: string }) => u.id === userId);
 
+  const orders = (ordersRes.data ?? []) as unknown as Record<string, unknown>[];
+
   return {
     profile: profileRes.data,
     email: authUser?.email ?? profileRes.data?.email ?? null,
     lastSignIn: authUser?.last_sign_in_at ?? null,
     emailConfirmed: authUser?.email_confirmed_at ?? null,
-    orders: ordersRes.data ?? [],
-    orderCount: ordersRes.data?.length ?? 0,
-    payments: paymentsRes.data ?? [],
+    orders,
+    orderCount: orders.length,
+    payments: orders.flatMap((o) => inlinePayments(o)),
+    lifetimeValue: netRevenue(orders as unknown as RevenueOrderRow[]),
     notes: notesRes.data ?? [],
     creditBalance: creditRes.data?.[0]?.balance_after ?? 0,
   };

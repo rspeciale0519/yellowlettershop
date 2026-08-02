@@ -1,3 +1,8 @@
+> [!IMPORTANT]
+> **STALE PLANNING BASELINE (April/August 2025).** Audited against the codebase
+> on **2026-07-31** — see **[`implementation-status.md`](./implementation-status.md)**
+> for what is actually built, partial, or dropped. Known-superseded here: Mailgun outbound now exists via lib/email (Resend-preferred); subscriptions/FPD sections dead.
+> Treat feature intent as valid, statuses/stack claims as unreliable.
 # **API Integrations Guide — Yellow Letter Shop**
 
 *Complete Implementation Examples for All External Services*  

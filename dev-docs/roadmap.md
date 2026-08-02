@@ -1,3 +1,8 @@
+> [!IMPORTANT]
+> **STALE PLANNING BASELINE (April/August 2025).** Audited against the codebase
+> on **2026-07-31** — see **[`implementation-status.md`](./implementation-status.md)**
+> for what is actually built, partial, or dropped. Known-superseded here: subscription-plan enforcement, FPD integration, 8-tier roles, MRR KPIs.
+> Treat feature intent as valid, statuses/stack claims as unreliable.
 # **Yellow Letter Shop (YLS) — Comprehensive Product Roadmap**
 
 *Last Updated: April 2025*
