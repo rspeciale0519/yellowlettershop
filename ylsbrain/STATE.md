@@ -1,7 +1,19 @@
 # yls brain — STATE
-Updated: 2026-07-31
+Updated: 2026-08-02
 
 ## Current focus
+**(2026-08-02): PR #24 (`feature/vendor-fulfillment`) is smoke-verified and
+ultrareviewed; 8 review findings + 1 self-found defect all fixed, NOT yet
+committed.** Two were security: a cross-tenant PII IDOR on the dispatch path
+(service-role read of `mailing_list_records` keyed on a customer-supplied list
+id) and CWE-1236 CSV formula injection into the vendor's spreadsheet. One was
+money: `amount_refunded` was overwritten rather than accumulated, so repeated
+partial refunds silently inflated admin revenue; `refundOrder` also cancelled
+the whole order on any partial. Gates: typecheck:full 0, 269 tests, build 0.
+**Open:** owner decides commit + merge to `develop`. Redstone remains blocked on
+their reply (endpoint provisioning). Detail: [[journal/2026-08-02]].
+
+## (prior focus)
 **(2026-07-31): Vendor fulfillment loop BUILT on `feature/vendor-fulfillment`
 (16 commits, not yet PR'd).** proof-approval → capture → auto-dispatch → vendor
 emailed proof+CSV → admin advances accepted/in-production/mailed(+tracking)/
