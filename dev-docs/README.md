@@ -71,7 +71,7 @@ mail orders.
 | [`technical-architecture.md`](./technical-architecture.md) | Architecture baseline | Stale on stack details |
 | [`development-guide.md`](./development-guide.md) / [`developer-quick-start-guide.md`](./developer-quick-start-guide.md) | Dev workflow | Stale on scripts/stack — trust root `CLAUDE.md` + `package.json` |
 | [`api-accuzip.md`](./api-accuzip.md) / [`api-melissa.md`](./api-melissa.md) / [`api-integrations.md`](./api-integrations.md) / [`external-api-mapping.md`](./external-api-mapping.md) | Vendor API references, field mappings | Useful reference; status columns stale |
-| [`api-redstone.md`](./api-redstone.md) | Redstone vendor API reference | Doc-only, zero code refs |
+| ~~`api-redstone.md`~~ | **FABRICATED — archived 2026-08-02** to `archive/api-redstone-fabricated-2026-08/`. Real spec: `docs/temp/vendors/redstone/rsm_api_specs_pre-r631-1.pdf` | Removed |
 | [`cross-reference-mapping-with-code.md`](./cross-reference-mapping-with-code.md) | AI-generated implementation cookbook | Aspirational; truncated |
 
 ## Getting started

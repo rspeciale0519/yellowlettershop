@@ -164,7 +164,8 @@ CDP failure — see §7).
 - AI features: content generation, contextual help (zero AI wiring in app) — PRD §3.11
 - Mail tracking / delivery confirmation add-on — PRD §3.5
 - Onboarding/guided first-run, address autocomplete, discount/referral codes
-- Redstone API (doc-only: `dev-docs/api-redstone.md`, zero code refs)
+- ~~Redstone API~~ — **outbound path now BUILT** (see §8b); blocked on Redstone
+  provisioning our endpoint, not on our code
 - Public API keys / external REST API management, Zapier
 - One-off single-recipient mail flow, reorder-with-edit flow
 - GDPR export/deletion tooling, Sentry (or any error-monitoring service)
@@ -202,9 +203,10 @@ the owner (archived at tag `archive/light-dark-theme-5978f79`).
 
 ## 8b. Redstone Mail API — live-verified findings (2026-08-01)
 
-**`dev-docs/api-redstone.md` is fabricated and must not be used.** The real spec
-is `docs/temp/vendors/redstone/rsm_api_specs_pre-r631-1.pdf`. See that file's
-banner for the falsehood-by-falsehood comparison.
+**`dev-docs/api-redstone.md` was fabricated and is gone** — archived 2026-08-02
+to `archive/api-redstone-fabricated-2026-08/`, whose README carries the
+falsehood-by-falsehood comparison. The real spec is
+`docs/temp/vendors/redstone/rsm_api_specs_pre-r631-1.pdf`.
 
 Verified by probing the live API with the real `REDSTONE_API_KEY`:
 
@@ -245,7 +247,7 @@ their "no credentials in URL" rule; and what webhook authentication do they want
 | `PRD.md`, `roadmap.md`, `todo.md`, `features-and-dashboards.md` | Historical April-2025 plan — useful for feature *intent*; checkboxes/statuses unreliable; superseded on FPD/subscriptions/roles/billing |
 | `technical-architecture.md`, `development-guide.md`, `developer-quick-start-guide.md` | Stale on stack (FPD, Prisma, NextAuth, Jest/Cypress, Next 14, repo name, scripts); structure/intent partially valid |
 | `api-accuzip.md`, `api-melissa.md`, `api-integrations.md`, `external-api-mapping.md` | Vendor/API reference — field mappings still useful; implementation-status columns stale (e.g. external-api-mapping calls Stripe "planned") |
-| `api-redstone.md` | Doc-only; zero code refs; long-term |
+| ~~`api-redstone.md`~~ | **FABRICATED. Archived 2026-08-02** → `archive/api-redstone-fabricated-2026-08/`. Real spec: `docs/temp/vendors/redstone/rsm_api_specs_pre-r631-1.pdf`. See §8b |
 | `cross-reference-mapping-with-code.md` | AI-generated cookbook, truncated mid-document; treat all "existing paths" claims as aspirational |
 | `urls.txt` | Reference list |
 

@@ -2,9 +2,10 @@
 // (redstone-client.ts) applies these decisions.
 //
 // Source of truth: docs/temp/vendors/redstone/rsm_api_specs_pre-r631-1.pdf.
-// NOTE: dev-docs/api-redstone.md is NOT Redstone documentation — it is a
-// fabricated file (wrong host, wrong endpoint, wrong key format) and must not
-// be used. Verified against the live API on 2026-08-01.
+// NOTE: the former dev-docs/api-redstone.md was NOT Redstone documentation — it
+// was fabricated (wrong host, wrong endpoint, wrong key format) and is archived
+// at archive/api-redstone-fabricated-2026-08/. Verified against the live API on
+// 2026-08-01.
 
 /** Redstone accepts exactly these four job types. */
 export type RedstoneJobType = 'Letter' | 'Post Card' | 'Snap Pack' | 'Self Mailer'
