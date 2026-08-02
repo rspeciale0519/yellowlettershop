@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { MapPin, Home, UserCircle, Landmark, Gavel, SlidersHorizontal } from "lucide-react"
 import type React from "react"
 
-const categories: { id: string; name: string; icon: React.ElementType }[] = [
+const categories: { id: string; name: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "geography", name: "Geography", icon: MapPin },
   { id: "property", name: "Property", icon: Home },
   { id: "demographics", name: "Demographics", icon: UserCircle },

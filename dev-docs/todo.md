@@ -1,3 +1,8 @@
+> [!IMPORTANT]
+> **STALE PLANNING BASELINE (April/August 2025).** Audited against the codebase
+> on **2026-07-31** — see **[`implementation-status.md`](./implementation-status.md)**
+> for what is actually built, partial, or dropped. Known-superseded here: checkbox states do not reflect code; FPD and subscription items are dead by decision.
+> Treat feature intent as valid, statuses/stack claims as unreliable.
 # **Yellow Letter Shop (YLS) - Optimized Development To-Do**
 
 *Last Updated: April 2025*

@@ -7,13 +7,15 @@ import Stripe from 'stripe';
 import { requireStripe, STRIPE_CONFIG } from './stripe-config';
 import { createServiceClient } from '@/utils/supabase/service';
 import { CustomerService } from './customer-service';
-import { 
-  PaymentServiceError, 
-  PaymentIntent, 
+import {
+  PaymentServiceError,
+  PaymentIntent,
   CreatePaymentIntentParams,
   CapturePaymentParams,
-  RefundPaymentParams
+  RefundPaymentParams,
+  RefundOutcome
 } from './types';
+import { resolveRefundState } from './refund-core';
 import type { PaymentStatus } from '@/types/supabase';
 
 export class PaymentIntentService {
@@ -57,26 +59,10 @@ export class PaymentIntentService {
         },
       });
 
-      // Log transaction in database
-      const { error: transactionError } = await this.supabase
-        .from('payment_transactions')
-        .insert({
-          stripe_payment_intent_id: paymentIntent.id,
-          user_id: userId,
-          campaign_id: campaignId,
-          amount,
-          currency,
-          status: 'pending' as PaymentStatus,
-          metadata: {
-            description,
-            ...metadata,
-          },
-        });
-
-      if (transactionError) {
-        console.error('Failed to log payment transaction:', transactionError);
-        // Don't throw error here as payment intent was created successfully
-      }
+      // No DB write here by design: the intent is created BEFORE the order row
+      // exists (the wizard authorizes, then submits). The PaymentIntent id is
+      // recorded on the order at submit time (lib/orders/order-insert.ts), which
+      // is what capture/refund below key off.
 
       return {
         id: paymentIntent.id,
@@ -112,17 +98,33 @@ export class PaymentIntentService {
         metadata,
       });
 
-      // Update transaction in database
+      // Persist inline on the order. Stripe reports CENTS; orders store
+      // DOLLARS — converted only at the Stripe boundaries in this file
+      // (capture here, refund below).
+      const amountReceived =
+        typeof paymentIntent.amount_received === 'number'
+          ? paymentIntent.amount_received / 100
+          : null;
+
       const { error: updateError } = await this.supabase
-        .from('payment_transactions')
+        .from('orders')
         .update({
-          status: 'captured' as PaymentStatus,
+          payment_status: 'captured',
+          amount_captured: amountReceived,
           captured_at: new Date().toISOString(),
         })
         .eq('stripe_payment_intent_id', paymentIntentId);
 
       if (updateError) {
-        console.error('Failed to update payment transaction:', updateError);
+        // These columns are the SOLE record of payment state — swallowing this
+        // would let the DB silently diverge from Stripe (money moved, nothing
+        // recorded). Throw so the caller surfaces it; the Stripe-side capture
+        // is idempotent to retry, and the webhook reconcile is a backstop.
+        throw new PaymentServiceError(
+          `Payment captured on Stripe but recording it failed: ${updateError.message}`,
+          'CAPTURE_RECORD_ERROR',
+          500
+        );
       }
 
       return {
@@ -130,6 +132,7 @@ export class PaymentIntentService {
         clientSecret: paymentIntent.client_secret!,
         amount: paymentIntent.amount,
         status: this.mapStripeStatus(paymentIntent.status),
+        amountReceived,
       };
     } catch (error) {
       if (error instanceof Stripe.errors.StripeError) {
@@ -147,7 +150,7 @@ export class PaymentIntentService {
   /**
    * Refund payment
    */
-  async refundPayment(params: RefundPaymentParams): Promise<Stripe.Refund> {
+  async refundPayment(params: RefundPaymentParams): Promise<RefundOutcome> {
     const stripe = requireStripe();
 
     const { paymentIntentId, amount, reason = 'requested_by_customer', metadata = {} } = params;
@@ -160,21 +163,58 @@ export class PaymentIntentService {
         metadata,
       });
 
-      // Update transaction in database
+      // amount_refunded is cumulative, so read before writing: Stripe allows
+      // several partial refunds against one PaymentIntent and reports only the
+      // latest one's amount.
+      const { data: current, error: readError } = await this.supabase
+        .from('orders')
+        .select('amount_captured, amount_refunded')
+        .eq('stripe_payment_intent_id', paymentIntentId)
+        .maybeSingle();
+
+      if (readError) {
+        throw new PaymentServiceError(
+          `Refund issued on Stripe but reading the order to record it failed: ${readError.message}`,
+          'REFUND_RECORD_ERROR',
+          500
+        );
+      }
+
+      const row = current as {
+        amount_captured?: number | null;
+        amount_refunded?: number | null;
+      } | null;
+
+      const { totalRefunded, isFullRefund } = resolveRefundState({
+        previouslyRefunded: row?.amount_refunded,
+        amountCaptured: row?.amount_captured,
+        refundCents: refund.amount,
+      });
+
+      // Persist inline on the order (Stripe cents → dollars). payment_status
+      // only flips once everything captured has been returned — a partial stays
+      // 'captured' so the remainder is still refundable and the admin list does
+      // not call a $1 refund on a $100 order a refunded order.
       const { error: updateError } = await this.supabase
-        .from('payment_transactions')
+        .from('orders')
         .update({
-          status: 'refunded' as PaymentStatus,
+          ...(isFullRefund ? { payment_status: 'refunded' as PaymentStatus } : {}),
+          amount_refunded: totalRefunded,
           refunded_at: new Date().toISOString(),
-          refund_amount: refund.amount,
         })
         .eq('stripe_payment_intent_id', paymentIntentId);
 
       if (updateError) {
-        console.error('Failed to update refund transaction:', updateError);
+        // Refunds have NO webhook backstop — a swallowed failure here would
+        // diverge the DB from Stripe permanently. Surface it loudly.
+        throw new PaymentServiceError(
+          `Refund issued on Stripe but recording it failed: ${updateError.message}`,
+          'REFUND_RECORD_ERROR',
+          500
+        );
       }
 
-      return refund;
+      return { refund, totalRefunded, isFullRefund };
     } catch (error) {
       if (error instanceof Stripe.errors.StripeError) {
         throw new PaymentServiceError(

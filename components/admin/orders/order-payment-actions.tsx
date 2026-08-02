@@ -13,13 +13,18 @@ import {
 } from '@/components/ui/alert-dialog';
 import { DollarSign, ArrowDownCircle, RotateCcw } from 'lucide-react';
 
+/**
+ * Derived from the order's inline payment columns (lib/admin/order-service
+ * inlinePayments). All amounts are DOLLARS — orders store dollars, not cents.
+ */
 interface Payment {
-  id: string;
   stripe_payment_intent_id: string;
-  amount: number;
-  status: string;
+  amount: number | null;
+  amount_captured: number | null;
+  amount_refunded: number | null;
+  status: string | null;
   captured_at: string | null;
-  created_at: string;
+  refunded_at: string | null;
 }
 
 interface OrderPaymentActionsProps {
@@ -71,17 +76,18 @@ export function OrderPaymentActions({ payments, onCapture, onRefund }: OrderPaym
   return (
     <div className="space-y-4">
       {payments.map((payment) => {
-        const config = paymentStatusConfig[payment.status] ?? paymentStatusConfig.pending;
+        const config = paymentStatusConfig[payment.status ?? 'pending'] ?? paymentStatusConfig.pending;
         const canCapture = payment.status === 'authorized';
         const canRefund = payment.status === 'captured';
+        const displayAmount = payment.amount_captured ?? payment.amount ?? 0;
 
         return (
-          <Card key={payment.id} className="overflow-hidden">
+          <Card key={payment.stripe_payment_intent_id} className="overflow-hidden">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm flex items-center gap-2">
                   <DollarSign className="h-4 w-4" />
-                  <span className="font-mono">${(payment.amount / 100).toFixed(2)}</span>
+                  <span className="font-mono">${displayAmount.toFixed(2)}</span>
                 </CardTitle>
                 <Badge className={`text-xs ${config.className}`}>{config.label}</Badge>
               </div>
@@ -89,8 +95,13 @@ export function OrderPaymentActions({ payments, onCapture, onRefund }: OrderPaym
             <CardContent className="space-y-3">
               <div className="text-xs space-y-1 text-muted-foreground">
                 <p>Stripe: <code className="font-mono">{payment.stripe_payment_intent_id}</code></p>
-                <p>Created: {new Date(payment.created_at).toLocaleString()}</p>
                 {payment.captured_at && <p>Captured: {new Date(payment.captured_at).toLocaleString()}</p>}
+                {payment.amount_refunded != null && payment.amount_refunded > 0 && (
+                  <p className="text-purple-500">
+                    Refunded ${payment.amount_refunded.toFixed(2)}
+                    {payment.refunded_at && ` on ${new Date(payment.refunded_at).toLocaleDateString()}`}
+                  </p>
+                )}
               </div>
 
               <div className="flex gap-2 pt-1">
@@ -104,7 +115,7 @@ export function OrderPaymentActions({ payments, onCapture, onRefund }: OrderPaym
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Capture ${(payment.amount / 100).toFixed(2)}?</AlertDialogTitle>
+                        <AlertDialogTitle>Capture ${displayAmount.toFixed(2)}?</AlertDialogTitle>
                         <AlertDialogDescription>
                           This will finalize the charge on the customer's card. This action cannot be undone.
                         </AlertDialogDescription>
@@ -131,7 +142,7 @@ export function OrderPaymentActions({ payments, onCapture, onRefund }: OrderPaym
                       <AlertDialogHeader>
                         <AlertDialogTitle>Refund this payment?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Original amount: ${(payment.amount / 100).toFixed(2)}. Leave amount blank for a full refund.
+                          Original amount: ${displayAmount.toFixed(2)}. Leave amount blank for a full refund.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <div className="space-y-3 py-2">

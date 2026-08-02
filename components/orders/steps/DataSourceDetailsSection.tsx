@@ -207,23 +207,43 @@ export function DataSourceDetailsSection({
               <h4 className="text-md font-medium">Enter Recipients Manually</h4>
               <ManualEntryForm
                 records={
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  (orderState.dataAndMapping?.listData as any)?.manualRecords ??
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  (orderState.listData as any)?.manualRecords ??
-                  []
+                  // Stored records are snake_case (the AccuZip/proof/dispatch
+                  // contract); the form works in camelCase — translate on the
+                  // way IN so previously added recipients display and survive.
+                  (
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    ((orderState.dataAndMapping?.listData as any)?.manualRecords ??
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      (orderState.listData as any)?.manualRecords ??
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      []) as any[]
+                  ).map(r => ({
+                    id: r.id ?? crypto.randomUUID(),
+                    firstName: r.firstName ?? r.first_name ?? '',
+                    lastName: r.lastName ?? r.last_name ?? '',
+                    addressLine1: r.addressLine1 ?? r.address_line_1 ?? '',
+                    addressLine2: r.addressLine2 ?? r.address_line_2 ?? '',
+                    city: r.city ?? '',
+                    state: r.state ?? '',
+                    zipCode: r.zipCode ?? r.zip_code ?? ''
+                  }))
                 }
                 onRecordsChange={(records) => {
-                  // Normalize camelCase → snake_case for AccuZip compatibility
+                  // Normalize camelCase → snake_case for AccuZip compatibility.
+                  // Fallback reads guard against mixed shapes: before this fix,
+                  // stored snake_case rows re-normalized through camelCase-only
+                  // reads, wiping earlier recipients on every add.
                   const normalized = records.map(r => ({
-                    first_name: (r as any).firstName,
-                    last_name: (r as any).lastName,
-                    address_line_1: (r as any).addressLine1,
-                    address_line_2: (r as any).addressLine2,
+                    /* eslint-disable @typescript-eslint/no-explicit-any */
+                    first_name: (r as any).firstName ?? (r as any).first_name,
+                    last_name: (r as any).lastName ?? (r as any).last_name,
+                    address_line_1: (r as any).addressLine1 ?? (r as any).address_line_1,
+                    address_line_2: (r as any).addressLine2 ?? (r as any).address_line_2,
                     city: (r as any).city,
                     state: (r as any).state,
-                    zip_code: (r as any).zipCode,
+                    zip_code: (r as any).zipCode ?? (r as any).zip_code,
                     id: (r as any).id
+                    /* eslint-enable @typescript-eslint/no-explicit-any */
                   }))
                   onDataComplete?.({
                     source: 'manual',

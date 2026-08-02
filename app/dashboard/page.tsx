@@ -31,7 +31,7 @@ async function loadDashboardData() {
     orderCount: orders.count ?? 0,
     designCount: designs.count ?? 0,
     campaignCount: campaigns.count ?? 0,
-    recentOrders: (recent.data ?? []).map(summarizeOrderRow),
+    recentOrders: (recent.data ?? []).map((row) => summarizeOrderRow(row)),
   }
 }
 

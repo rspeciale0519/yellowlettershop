@@ -1,7 +1,61 @@
 # yls brain — STATE
-Updated: 2026-07-05
+Updated: 2026-08-02
 
 ## Current focus
+**(2026-08-02): PR #24 MERGED to `develop` (merge commit dca90eb).** The vendor
+fulfillment loop, inline-payment refactor, money-moment confirmations, Redstone
+Phase 1 and the ultrareview fixes are all on `develop`. Those fixes closed two
+security holes on the vendor path (a cross-tenant PII IDOR in recipient loading
+and CWE-1236 CSV formula injection) and three money bugs (cumulative
+`amount_refunded`, partial refunds mislabelling `payment_status`, partial
+refunds cancelling the whole order). Gates at merge: typecheck:full 0, 269
+tests, build 0, unit tests green on Ubuntu AND Windows.
+
+**Vercel: ONE project, settled 2026-08-02.** `yellowlettershop` /
+`prj_snSyPlSbgjz6sd6hql7JTdfm9mt2` / `team_9aYvnhHwLiazNz7OoE8BsRVC` (slug
+`robs-projects-c72886ba`) — owns `app.yellowlettershop.com`, matches
+`.vercel/project.json`. Rob deleted the two decoys (a domain-less `yls` and a
+second `yellowlettershop` on account `robs-projects-d8ad5232`) after they
+produced a permanent red X and one wrong "my commits broke the build"
+conclusion — both `yellowlettershop` projects had been publishing the same
+`Vercel - yellowlettershop` GitHub status context and overwriting each other.
+Historical statuses on commits up to dca90eb still show the stale
+`Vercel - yls: failure`; that is frozen, not live. Detail:
+[[journal/2026-08-02]], memory:project-vercel-project.
+
+**Open:** decide the fate of the two decoy Vercel projects; Redstone endpoint
+provisioning (awaiting their reply); live smoke of the new dispatch auth gate.
+
+## (prior focus)
+**(2026-07-31): Vendor fulfillment loop BUILT on `feature/vendor-fulfillment`
+(16 commits, not yet PR'd).** proof-approval → capture → auto-dispatch → vendor
+emailed proof+CSV → admin advances accepted/in-production/mailed(+tracking)/
+delivered → order `completed` + customer notified. Also completed the
+inline-payment refactor (killed all `payment_transactions` references) and found
+that **`orders` has no `updated_at`** despite 6 call sites writing it — which
+silently voided admin status changes, capture/refund, and the Stripe webhook
+capture backstop. Gates: 230 tests, typecheck:full 0, build 0. **Storage leg VERIFIED
+2026-07-31 (2nd pass):** CLI 2.107→2.111 upgrade pulled storage-api v1.67.20 →
+container healthy; full `dispatchOrder` ran live (CSV staged + both links
+signed) and the signed CSV fetched back 200 with the exact column contract.
+Branch pushed; PR to develop next. **Open:** admin-panel browser smoke +
+money-path code review before merge. Detail: [[journal/2026-07-31]].
+
+## (prior focus)
+**(2026-07-31): Full codebase-vs-dev-docs audit DONE; docs reconciled.**
+3-agent audit + delta re-verification against the 2026-06-14 completeness
+report. New authoritative doc: `dev-docs/implementation-status.md` (BUILT /
+PARTIAL / NOT BUILT / D1-D10 / risks); all 13 stale dev-docs bannered;
+`dev-docs/README.md` v2.0; knowledge/{features,roadmap} refreshed to
+2026-07-31; project `CLAUDE.md` de-staled (FPD/subscriptions/Prisma/NextAuth/
+port/branching). Gates: 199 tests green, typecheck:full 0 (fixed 2
+regressions), build exit 0. Top open correctness gaps (see knowledge/roadmap
+Near-term): `payment_transactions` migration missing, admin order-service
+`user_id`→`created_by` drift, vendor dispatch unbuilt, rate limiter uncalled,
+auth-surface hardening (middleware matcher, IDOR, bare handlers, test
+endpoints). Detail: [[journal/2026-07-31]].
+
+## (prior focus)
 **(2026-07-05): light-dark-theme site-wide redesign — SCRAPPED by owner post-completion.**
 6-phase warm-paper/warm-charcoal theme redesign was finished, QA-clean, and
 merge-ready, but owner rejected the design direction on review (no specific

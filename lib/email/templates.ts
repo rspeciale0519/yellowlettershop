@@ -109,6 +109,79 @@ export function paymentCapturedEmail(p: {
   }
 }
 
+/** Human labels for the enum-ish values stored on orders. */
+function prettyLabel(value: string | null): string {
+  if (!value) return 'Not specified'
+  return value.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+}
+
+/**
+ * Sent to the print vendor when an order is handed off. Carries the two signed
+ * artifacts (approved proof + recipient CSV) plus the specs needed to run it.
+ * Vendor-supplied values are escaped — this goes out from our trusted domain.
+ */
+export function vendorDispatchEmail(p: {
+  shortId: string
+  vendorName: string
+  recordCount: number
+  mailClass: string | null
+  postageType: string | null
+  proofUrl: string
+  csvUrl: string
+}): EmailContent {
+  const vendor = esc(p.vendorName)
+  return {
+    subject: `New print job — order #${p.shortId} (${p.recordCount.toLocaleString()} pieces)`,
+    html: layout(
+      `New print job: #${p.shortId}`,
+      `<p>Hi ${vendor},</p>
+       <p>A new mail job is ready for production.</p>
+       <table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;">
+         <tr><td style="padding:6px 0;color:#666;">Order</td><td style="padding:6px 0;"><strong>#${esc(p.shortId)}</strong></td></tr>
+         <tr><td style="padding:6px 0;color:#666;">Quantity</td><td style="padding:6px 0;"><strong>${p.recordCount.toLocaleString()}</strong> pieces</td></tr>
+         <tr><td style="padding:6px 0;color:#666;">Mail class</td><td style="padding:6px 0;">${esc(prettyLabel(p.mailClass))}</td></tr>
+         <tr><td style="padding:6px 0;color:#666;">Postage</td><td style="padding:6px 0;">${esc(prettyLabel(p.postageType))}</td></tr>
+       </table>
+       <p>The customer has approved this proof and payment is captured.</p>
+       ${button(p.proofUrl, 'Download approved proof')}
+       <br>
+       ${button(p.csvUrl, 'Download recipient list')}
+       <p style="color:#666;font-size:13px;">These links expire in 7 days. Reply to this email with tracking once the job ships.</p>`
+    ),
+    text: `New print job — order #${p.shortId}: ${p.recordCount} pieces, ${prettyLabel(p.mailClass)}, ${prettyLabel(p.postageType)}. Approved proof: ${safeUrl(p.proofUrl)} Recipient list: ${safeUrl(p.csvUrl)} (links expire in 7 days).`,
+  }
+}
+
+/** Sent to the customer when the vendor reports the job as shipped/mailed. */
+export function orderShippedEmail(p: {
+  orderId: string
+  shortId: string
+  trackingNumber?: string | null
+  trackingCarrier?: string | null
+  appUrl: string
+}): EmailContent {
+  const orderUrl = `${p.appUrl}/orders/${p.orderId}`
+  const hasTracking = !!p.trackingNumber
+  const trackingHtml = hasTracking
+    ? `<p>Tracking${p.trackingCarrier ? ` (${esc(p.trackingCarrier)})` : ''}: <strong>${esc(p.trackingNumber as string)}</strong></p>`
+    : ''
+  const trackingText = hasTracking
+    ? ` Tracking${p.trackingCarrier ? ` (${p.trackingCarrier})` : ''}: ${p.trackingNumber}.`
+    : ''
+
+  return {
+    subject: `Order #${p.shortId} is in the mail`,
+    html: layout(
+      'Your mail is on its way',
+      `<p>Order <strong>#${esc(p.shortId)}</strong> has been printed and handed to the postal service.</p>
+       ${trackingHtml}
+       <p>Delivery typically takes several business days depending on your mail class.</p>
+       ${button(orderUrl, 'View order status')}`
+    ),
+    text: `Order #${p.shortId} has shipped.${trackingText} Status: ${orderUrl}`,
+  }
+}
+
 export function teamInviteEmail(p: { teamName: string; inviteUrl: string; role: string }): EmailContent {
   // teamName and role are user-supplied → escape in HTML to prevent injecting
   // markup/phishing links into an email sent from our trusted domain.

@@ -39,7 +39,7 @@ Where the April-2025 dev-docs diverge from project reality. Memory overrides sta
 
 ### D5 — Role model: 8-tier / 4-role → admin|super_admin only
 - **doc said:** 8-tier role model (`dev-docs/features-and-dashboards.md §1.1`) / 4-role model (`dev-docs/PRD.md §3.1`).
-- **truth is:** Code has `admin|super_admin` only (`lib/admin/types.ts:3`, `lib/admin/require-admin.ts`); non-admins ungated beyond auth; `free|pro|team|enterprise` is a now-stale plan type, not a role.
+- **truth is:** Platform roles are `admin|super_admin` (`lib/admin/types.ts:3`, `lib/admin/require-admin.ts`); since 2026-06-16 per-team roles Owner/Admin/Member exist via `team_members` + authority RPCs (`supabase/migrations/20260616000100_team_authority_helpers.sql`); `free|pro|team|enterprise` is a now-stale plan type, not a role.
 - **why:** The 8-tier model was never implemented; role-gating docs and KPIs based on it are stale.
 
 ### F1 — AccuZip validation job: live vs simulated

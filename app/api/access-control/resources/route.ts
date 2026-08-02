@@ -85,7 +85,7 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query.order(src.labelColumn, { ascending: true }).limit(limit)
     if (error) throw error
 
-    const resources = ((data ?? []) as Record<string, unknown>[]).map(row => ({
+    const resources = ((data ?? []) as unknown as Record<string, unknown>[]).map(row => ({
       id: row.id as string,
       label: (row[src.labelColumn] as string) || '(untitled)',
       meta: src.metaColumn ? formatMeta(type, row[src.metaColumn]) : undefined

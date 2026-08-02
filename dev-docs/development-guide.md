@@ -1,3 +1,8 @@
+> [!IMPORTANT]
+> **STALE PLANNING BASELINE (April/August 2025).** Audited against the codebase
+> on **2026-07-31** — see **[`implementation-status.md`](./implementation-status.md)**
+> for what is actually built, partial, or dropped. Known-superseded here: repo name, Prisma, Jest/Cypress, subscription types, FPD env vars, npm scripts (see package.json: dev/build/lint/test/typecheck:ui/typecheck:full).
+> Treat feature intent as valid, statuses/stack claims as unreliable.
 # **Development Guide — Yellow Letter Shop (YLS)**
 
 *Complete Setup Instructions for New Developers*  

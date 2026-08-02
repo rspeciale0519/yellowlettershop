@@ -24,7 +24,17 @@ export const GET = withAuth(async (req: NextRequest, { userId }) => {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
-    const order = summarizeOrderRow(data)
+    // Tracking lives on the vendor dispatch, not the order. Read-only here:
+    // the customer sees carrier + number once the vendor reports shipment.
+    const { data: dispatch } = await supabase
+      .from('order_dispatches')
+      .select('tracking_number, tracking_carrier')
+      .eq('order_id', orderId)
+      .order('dispatched_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    const order = summarizeOrderRow(data, dispatch ?? undefined)
     order.proofUrl = await signProofUrl(supabase, order.proofUrl)
     return NextResponse.json({ order })
   } catch (err) {

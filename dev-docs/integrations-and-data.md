@@ -375,7 +375,10 @@ This contact point ensures efficient routing of technical requests to the approp
 - `api-integrations.md` - Complete external API integration patterns and implementation guidelines
 - `api-melissa.md` - Melissa Global Intelligence API specifications and usage patterns  
 - `api-accuzip.md` - AccuZIP data processing API documentation and workflow guidance
-- `api-redstone.md` - Redstone print fulfillment API integration and order management
+- `api-redstone.md` - REMOVED 2026-08-02: the file was fabricated, not Redstone's
+  documentation. Archived at `archive/api-redstone-fabricated-2026-08/`. The real
+  spec is `docs/temp/vendors/redstone/rsm_api_specs_pre-r631-1.pdf`; live-verified
+  findings are in `implementation-status.md` section 8b.
 
 This documentation serves as the definitive reference for Yellow Letter Shop platform development, providing both immediate implementation guidance and long-term architectural direction for platform evolution and scaling.  async getDatabaseCacheItem(key) {
     // Retrieve cache item from database

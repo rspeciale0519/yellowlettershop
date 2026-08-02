@@ -1,4 +1,27 @@
 import { createServiceClient } from '@/utils/supabase/service';
+import {
+  netRevenue,
+  revenueByDay,
+  topCustomerTotals,
+  type RevenueOrderRow,
+} from './analytics-core';
+
+/**
+ * Columns backing every revenue figure (payment state is inline on orders).
+ * NOTE: `orders` has NO updated_at column — selecting one makes PostgREST
+ * reject the whole query and silently zeroes every metric (caught in review).
+ */
+const REVENUE_COLUMNS = 'amount_captured, amount_refunded, captured_at, created_at, created_by';
+
+/** Capture-time used for windowing, mirroring analytics-core's fallback order. */
+function capturedAt(row: RevenueOrderRow): string {
+  return row.captured_at ?? row.created_at ?? '';
+}
+
+function inWindow(row: RevenueOrderRow, from: string, to?: string): boolean {
+  const at = capturedAt(row);
+  return !!at && at >= from && (!to || at <= to);
+}
 
 export interface AnalyticsMetrics {
   revenue: {
@@ -50,9 +73,7 @@ export async function getAnalyticsMetrics(): Promise<AnalyticsMetrics> {
   const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59).toISOString();
 
   const [
-    allPayments,
-    thisMonthPayments,
-    lastMonthPayments,
+    capturedOrders,
     allOrders,
     thisMonthOrders,
     lastMonthOrders,
@@ -60,9 +81,9 @@ export async function getAnalyticsMetrics(): Promise<AnalyticsMetrics> {
     newUsersThisMonth,
     newUsersLastMonth,
   ] = await Promise.all([
-    supabase.from('payment_transactions').select('amount').eq('status', 'captured'),
-    supabase.from('payment_transactions').select('amount').eq('status', 'captured').gte('captured_at', thisMonthStart),
-    supabase.from('payment_transactions').select('amount').eq('status', 'captured').gte('captured_at', lastMonthStart).lte('captured_at', lastMonthEnd),
+    // One pass over captured orders; the three revenue windows are derived in
+    // memory below (payment state is inline — there is no transactions table).
+    supabase.from('orders').select(REVENUE_COLUMNS).not('amount_captured', 'is', null),
     supabase.from('orders').select('status', { count: 'exact' }),
     supabase.from('orders').select('id', { count: 'exact' }).gte('created_at', thisMonthStart),
     supabase.from('orders').select('id', { count: 'exact' }).gte('created_at', lastMonthStart).lte('created_at', lastMonthEnd),
@@ -71,12 +92,17 @@ export async function getAnalyticsMetrics(): Promise<AnalyticsMetrics> {
     supabase.from('user_profiles').select('id', { count: 'exact' }).gte('created_at', lastMonthStart).lte('created_at', lastMonthEnd),
   ]);
 
-  const sumAmounts = (rows: { amount: number }[] | null) =>
-    (rows ?? []).reduce((sum, r) => sum + (Number(r.amount) || 0), 0) / 100;
+  // Surface query failures — a silent [] here reports $0 revenue to admins.
+  if (capturedOrders.error) {
+    throw new Error(`Failed to load revenue rows: ${capturedOrders.error.message}`);
+  }
+  const revenueRows = (capturedOrders.data ?? []) as unknown as RevenueOrderRow[];
 
-  const totalRevenue = sumAmounts(allPayments.data as { amount: number }[] | null);
-  const thisMonthRevenue = sumAmounts(thisMonthPayments.data as { amount: number }[] | null);
-  const lastMonthRevenue = sumAmounts(lastMonthPayments.data as { amount: number }[] | null);
+  const totalRevenue = netRevenue(revenueRows);
+  const thisMonthRevenue = netRevenue(revenueRows.filter((r) => inWindow(r, thisMonthStart)));
+  const lastMonthRevenue = netRevenue(
+    revenueRows.filter((r) => inWindow(r, lastMonthStart, lastMonthEnd))
+  );
 
   const thisMonthOrderCount = thisMonthOrders.count ?? 0;
   const lastMonthOrderCount = lastMonthOrders.count ?? 0;
@@ -119,20 +145,18 @@ export async function getRevenueTimeline(days = 30): Promise<RevenueDataPoint[]>
   const supabase = createServiceClient();
   const since = new Date(Date.now() - days * 86400000).toISOString();
 
-  const { data } = await supabase
-    .from('payment_transactions')
-    .select('amount, captured_at')
-    .eq('status', 'captured')
-    .gte('captured_at', since)
-    .order('captured_at', { ascending: true });
+  const { data, error } = await supabase
+    .from('orders')
+    .select(REVENUE_COLUMNS)
+    .not('amount_captured', 'is', null);
+  if (error) throw new Error(`Failed to load revenue timeline: ${error.message}`);
 
-  // Group by date
+  // Window in memory: captured_at is null on legacy rows, so the fallback in
+  // analytics-core (captured_at → created_at) decides the date.
+  const sinceDate = since.slice(0, 10);
   const grouped: Record<string, { revenue: number; orders: number }> = {};
-  for (const row of (data ?? []) as { amount: number; captured_at: string }[]) {
-    const date = row.captured_at.slice(0, 10);
-    if (!grouped[date]) grouped[date] = { revenue: 0, orders: 0 };
-    grouped[date].revenue += Number(row.amount) / 100;
-    grouped[date].orders += 1;
+  for (const day of revenueByDay((data ?? []) as unknown as RevenueOrderRow[])) {
+    if (day.date >= sinceDate) grouped[day.date] = { revenue: day.revenue, orders: day.orders };
   }
 
   // Fill missing days
@@ -152,43 +176,38 @@ export async function getRevenueTimeline(days = 30): Promise<RevenueDataPoint[]>
 export async function getTopCustomers(limit = 10): Promise<TopCustomer[]> {
   const supabase = createServiceClient();
 
-  // Get captured payments grouped by user
-  const { data: payments } = await supabase
-    .from('payment_transactions')
-    .select('user_id, amount')
-    .eq('status', 'captured');
+  // Captured orders grouped by their owner (orders.created_by).
+  const { data: capturedOrders, error } = await supabase
+    .from('orders')
+    .select(REVENUE_COLUMNS)
+    .not('amount_captured', 'is', null);
+  if (error) throw new Error(`Failed to load top customers: ${error.message}`);
 
-  if (!payments || payments.length === 0) return [];
+  const sorted = topCustomerTotals(
+    (capturedOrders ?? []) as unknown as RevenueOrderRow[]
+  ).slice(0, limit);
 
-  // Aggregate by user
-  const userTotals: Record<string, { total: number; count: number }> = {};
-  for (const p of payments as { user_id: string; amount: number }[]) {
-    if (!userTotals[p.user_id]) userTotals[p.user_id] = { total: 0, count: 0 };
-    userTotals[p.user_id].total += Number(p.amount) / 100;
-    userTotals[p.user_id].count += 1;
-  }
-
-  // Sort by total spent and take top N
-  const sorted = Object.entries(userTotals)
-    .sort((a, b) => b[1].total - a[1].total)
-    .slice(0, limit);
+  if (sorted.length === 0) return [];
 
   // Fetch profiles
-  const userIds = sorted.map(([id]) => id);
+  const userIds = sorted.map((s) => s.userId);
   const { data: profiles } = await supabase
     .from('user_profiles')
     .select('user_id, full_name, email')
     .in('user_id', userIds);
 
-  const profileMap = new Map((profiles ?? []).map((p: { user_id: string; full_name: string | null; email: string | null }) => [p.user_id, p]));
+  type ProfileRow = { user_id: string; full_name: string | null; email: string | null };
+  const profileMap = new Map(
+    ((profiles ?? []) as unknown as ProfileRow[]).map((p) => [p.user_id, p])
+  );
 
-  return sorted.map(([userId, stats]) => {
-    const profile = profileMap.get(userId);
+  return sorted.map((stats) => {
+    const profile = profileMap.get(stats.userId);
     return {
-      userId,
+      userId: stats.userId,
       fullName: profile?.full_name ?? null,
       email: profile?.email ?? null,
-      orderCount: stats.count,
+      orderCount: stats.orderCount,
       totalSpent: stats.total,
     };
   });

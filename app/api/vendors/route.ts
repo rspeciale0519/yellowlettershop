@@ -1,102 +1,110 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { VendorService, CreateVendorRequest, UpdateVendorRequest } from '@/lib/vendors/vendor-service'
+import { z } from 'zod'
+import { withAdmin } from '@/lib/admin/require-admin'
+import type { AdminUser } from '@/lib/admin/types'
+import {
+  listVendors,
+  createVendor,
+  updateVendor,
+  deactivateVendor,
+} from '@/lib/vendors/vendor-directory'
 
-export async function GET(request: NextRequest) {
+// Vendors are ADMIN-ONLY (owner decision 2026-07-31): contact info and
+// wholesale pricing tiers are operational data no customer needs. The only UI
+// consumers (dispatch panel, vendor management) are admin surfaces anyway.
+// These handlers were previously unauthenticated and delegated to a service
+// that wrote columns the vendors table does not have.
+
+const vendorTypeSchema = z.enum(['print', 'skip_trace', 'data', 'fulfillment', 'other'])
+
+const createSchema = z.object({
+  name: z.string().min(1).max(200),
+  type: z.union([vendorTypeSchema, z.array(vendorTypeSchema).min(1)]),
+  contactInfo: z.record(z.unknown()).optional(),
+  pricingTiers: z.unknown().optional(),
+})
+
+const updateSchema = z.object({
+  vendorId: z.string().uuid(),
+  name: z.string().min(1).max(200).optional(),
+  type: z.union([vendorTypeSchema, z.array(vendorTypeSchema).min(1)]).optional(),
+  contactInfo: z.record(z.unknown()).optional(),
+  pricingTiers: z.unknown().optional(),
+  isActive: z.boolean().optional(),
+})
+
+const deleteSchema = z.object({ vendorId: z.string().uuid() })
+
+function fail(error: unknown, fallback: string) {
+  const message = error instanceof Error ? error.message : fallback
+  console.error(fallback, error)
+  return NextResponse.json({ error: message }, { status: 500 })
+}
+
+export const GET = withAdmin(async (request: NextRequest, _admin: AdminUser) => {
   try {
     const { searchParams } = new URL(request.url)
-    const type = searchParams.get('type')
+    const type = searchParams.get('type') ?? undefined
     const status = searchParams.get('status')
-    const services = searchParams.get('services')?.split(',')
 
-    const vendorService = new VendorService()
-    const vendors = await vendorService.getVendors({
-      type: type || undefined,
-      status: status || undefined,
-      services: services || undefined
+    const vendors = await listVendors({
+      type,
+      status: status === 'active' || status === 'inactive' ? status : undefined,
     })
 
     return NextResponse.json(vendors)
-
   } catch (error) {
-    console.error('Get vendors error:', error)
+    return fail(error, 'Failed to get vendors')
+  }
+})
+
+export const POST = withAdmin(async (request: NextRequest, _admin: AdminUser) => {
+  const parsed = createSchema.safeParse(await request.json())
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to get vendors' },
-      { status: 500 }
+      { error: 'Invalid input', details: parsed.error.flatten() },
+      { status: 400 }
     )
   }
-}
 
-export async function POST(request: NextRequest) {
   try {
-    const requestData: CreateVendorRequest = await request.json()
-
-    if (!requestData.name || !requestData.type) {
-      return NextResponse.json(
-        { error: 'Vendor name and type are required' },
-        { status: 400 }
-      )
-    }
-
-    const vendorService = new VendorService()
-    const vendor = await vendorService.createVendor(requestData)
-
-    return NextResponse.json(vendor)
-
+    return NextResponse.json(await createVendor(parsed.data))
   } catch (error) {
-    console.error('Create vendor error:', error)
+    return fail(error, 'Failed to create vendor')
+  }
+})
+
+export const PATCH = withAdmin(async (request: NextRequest, _admin: AdminUser) => {
+  const parsed = updateSchema.safeParse(await request.json())
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create vendor' },
-      { status: 500 }
+      { error: 'Invalid input', details: parsed.error.flatten() },
+      { status: 400 }
     )
   }
-}
 
-export async function PATCH(request: NextRequest) {
+  const { vendorId, ...patch } = parsed.data
   try {
-    const { vendorId, ...updateData }: { vendorId: string } & UpdateVendorRequest = await request.json()
-
-    if (!vendorId) {
-      return NextResponse.json(
-        { error: 'Vendor ID is required' },
-        { status: 400 }
-      )
-    }
-
-    const vendorService = new VendorService()
-    const vendor = await vendorService.updateVendor(vendorId, updateData)
-
-    return NextResponse.json(vendor)
-
+    return NextResponse.json(await updateVendor(vendorId, patch))
   } catch (error) {
-    console.error('Update vendor error:', error)
+    return fail(error, 'Failed to update vendor')
+  }
+})
+
+export const DELETE = withAdmin(async (request: NextRequest, _admin: AdminUser) => {
+  const parsed = deleteSchema.safeParse(await request.json())
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update vendor' },
-      { status: 500 }
+      { error: 'Invalid input', details: parsed.error.flatten() },
+      { status: 400 }
     )
   }
-}
 
-export async function DELETE(request: NextRequest) {
   try {
-    const { vendorId } = await request.json()
-
-    if (!vendorId) {
-      return NextResponse.json(
-        { error: 'Vendor ID is required' },
-        { status: 400 }
-      )
-    }
-
-    const vendorService = new VendorService()
-    await vendorService.deleteVendor(vendorId)
-
+    // Soft-delete: order_dispatches reference vendors, so history must survive.
+    await deactivateVendor(parsed.data.vendorId)
     return NextResponse.json({ success: true })
-
   } catch (error) {
-    console.error('Delete vendor error:', error)
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to delete vendor' },
-      { status: 500 }
-    )
+    return fail(error, 'Failed to deactivate vendor')
   }
-}
+})

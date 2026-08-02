@@ -187,20 +187,34 @@ export function ColumnMappingPage({
       income: ['income', 'household_income']
     }
 
-    sourceColumns.forEach(sourceCol => {
-      const normalizedSource = sourceCol.toLowerCase().trim()
-      
-      for (const [ylsField, patterns] of Object.entries(mappingPatterns)) {
-        if (patterns.some(pattern => 
-          normalizedSource === pattern || 
-          normalizedSource.includes(pattern) ||
-          pattern.includes(normalizedSource)
-        )) {
-          mapping[ylsField] = sourceCol
-          break
+    // Field-outer, score-based matching with used-source tracking — the same
+    // algorithm as the toolbar autoMap below. The previous source-outer loop
+    // let a later `address_line_2` column OVERWRITE the correct
+    // address_line_1 pairing via the broad "address" substring (last writer
+    // won, and the early break meant address_line_2 itself never mapped).
+    const usedSources = new Set<string>()
+    const norm = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]/g, '')
+
+    for (const [ylsField, patterns] of Object.entries(mappingPatterns)) {
+      let best: { col: string; score: number } | null = null
+      for (const sourceCol of sourceColumns) {
+        if (usedSources.has(sourceCol)) continue
+        const ns = norm(sourceCol)
+        let score = 0
+        for (const pattern of patterns) {
+          const np = norm(pattern)
+          if (ns === np) score = Math.max(score, 3)
+          else if (ns.includes(np) || np.includes(ns)) score = Math.max(score, 1)
+        }
+        if (score > 0 && (!best || score > best.score)) {
+          best = { col: sourceCol, score }
         }
       }
-    })
+      if (best) {
+        mapping[ylsField] = best.col
+        usedSources.add(best.col)
+      }
+    }
 
     return mapping
   }

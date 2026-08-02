@@ -1,3 +1,8 @@
+> [!IMPORTANT]
+> **STALE PLANNING BASELINE (April/August 2025).** Audited against the codebase
+> on **2026-07-31** — see **[`implementation-status.md`](./implementation-status.md)**
+> for what is actually built, partial, or dropped. Known-superseded here: field mappings still useful; order-path validation IS live, but count/search fall back to mock data without an API key.
+> Treat feature intent as valid, statuses/stack claims as unreliable.
 # **AccuZIP API Integration Guide for Direct Mail Campaign Order Processing**
 
 This document outlines the necessary steps, API calls, and considerations for integrating the AccuZIP REST API into your web application to validate customer mailing lists, obtain deliverable and undeliverable address counts, update order quantities, and generate a filtered list of only deliverable addresses.

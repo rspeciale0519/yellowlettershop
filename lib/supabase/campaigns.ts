@@ -218,7 +218,8 @@ export async function updateOrderPaymentStatus(
     .update({
       payment_status: paymentStatus,
       amount_captured: amountCaptured,
-      updated_at: new Date().toISOString()
+      // `orders` has no updated_at column; including it fails the update.
+      ...(paymentStatus === 'captured' ? { captured_at: new Date().toISOString() } : {})
     })
     .eq('id', orderId)
     .select()

@@ -2,6 +2,7 @@
  * Payment Service Types
  */
 
+import type Stripe from 'stripe';
 import type { PaymentStatus } from '@/types/supabase';
 import type { SubscriptionStatus } from '@/types/supabase-comprehensive';
 
@@ -21,9 +22,12 @@ export class PaymentServiceError extends Error {
 export interface PaymentIntent {
   id: string;
   clientSecret: string;
+  /** Stripe's amount, in CENTS (as returned by the API). */
   amount: number;
   status: PaymentStatus;
   customerId?: string;
+  /** Captured amount in DOLLARS; set by capturePayment, null if unavailable. */
+  amountReceived?: number | null;
 }
 
 export interface PaymentMethodData {
@@ -58,6 +62,14 @@ export interface RefundPaymentParams {
   amount?: number;
   reason?: string;
   metadata?: Record<string, string>;
+}
+
+export interface RefundOutcome {
+  refund: Stripe.Refund;
+  /** Cumulative dollars refunded on the order after this refund. */
+  totalRefunded: number;
+  /** False when money is still held against the order. */
+  isFullRefund: boolean;
 }
 
 export interface SubscriptionParams {

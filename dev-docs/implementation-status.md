@@ -1,0 +1,255 @@
+# YLS Implementation Status — Codebase-vs-Docs Audit
+
+**Date:** 2026-07-31 · **Branch:** `develop` · **Method:** evidence-gated code
+verification (3 parallel audit agents: full codebase inventory, planned-feature
+extraction from the April-2025 dev-docs, factual-claim extraction from the
+technical docs), reconciled against the two prior audits
+(`docs/temp/yls-feature-audit-report.md` 2026-06-12,
+`docs/temp/reports/feature-completeness-report-2026-06-14.md`) with every
+previously-open gap re-verified directly in code this session.
+
+**This file is the authoritative "what is actually built" document.** Every
+other file in `dev-docs/` is an April/August-2025 planning baseline and carries
+a staleness banner pointing here. Ground truth = code, never doc checkboxes.
+
+---
+
+## 1. Superseded decisions (read first)
+
+These overrule anything else in `dev-docs/` (detail:
+`ylsbrain/knowledge/superseded.md`):
+
+| Docs say | Reality |
+|---|---|
+| Subscription tiers (Free/Pro/Team/Enterprise, MRR) | **Transactional revenue only.** No subscriptions; MLM is a separate app. `lib/payments/subscription-service.ts` is dead code pending archive |
+| Fancy Product Designer (FPD) | **Custom in-house designer** (`components/designer/`, 69 modules; zero FPD refs) |
+| 8-tier / 4-role model | Code is `admin \| super_admin` + per-team roles (Owner/Admin/Member via `team_members`) |
+| AccuZip $0.05/record billing | Tiered per-job pricing $8–$400, free with mail orders (seeded in `20260328000003`) |
+| Prisma ORM, NextAuth.js | Neither is used. Supabase JS client + Supabase Auth (JWT/cookie) throughout |
+| Jest + Cypress | **Mocha + RTL** (`npm test`); a leftover jest config exists but is unwired |
+| Repo `yellow-letter-shop`, main-only branching | Repo folder `yls`, `develop` branch workflow; `package.json` name is still `my-v0-project` (scaffold leftover) |
+| MelissaData vs AccuZip provider confusion | AccuZip = validation + count/search; Melissa = list-build data source (client exists, purchase flow not built) |
+
+## 2. Verification gates (this session, develop)
+
+| Gate | Result |
+|---|---|
+| `npm test` (Mocha) | **199 passing, 0 failing** |
+| `npm run typecheck:full` | **0 errors** (2 regressions from the June zero-baseline found and fixed this session) |
+| `npm run build` | **exit 0** |
+| `npm run lint` | ~743 pre-existing errors repo-wide — known debt, own backlog ticket (`memory:project_lint_debt_cleanup`); delta-gate model in use |
+
+Scale (inventoried 2026-07-31): 34 page routes · 113 API route files ·
+483 component files · 110 lib modules · 42 hooks · 34 migrations creating
+46 tables + 31 functions/RPCs with 84 RLS policies · 32 Mocha test files +
+9 SQL assertion tests (`supabase/tests/`).
+
+---
+
+## 3. BUILT — verified working (entrypoint + non-stub logic + wired end-to-end)
+
+### Customer money path (end-to-end since 2026-06-13, hardened since)
+Signup → build/upload list → validate (real AccuZip on the order path) →
+design → authorize (Stripe manual capture) → real PDF proof (private bucket,
+signed URL) → approve → capture → confirmation email → live status timeline.
+
+- Order wizard + drafts (30-day) — `app/orders/new/`, `components/orders/` (17 step files), `app/api/orders/drafts/`
+- Proof generation (pdf-lib) + approval→capture / reject→cancel — `app/api/orders/proof/`, `app/api/orders/[orderId]/approve/`
+- Success + status pages — `app/orders/[orderId]/`, `success/`
+- Payments lifecycle: intent/authorize/capture/refund/methods + idempotent Stripe webhook (sig verify, IP allowlist, `webhook_events` dedupe) — `app/api/payments/*`
+- Server-side payment re-verification on submit; price from deliverable count — `lib/orders/verify-payment.ts`, `app/api/orders/submit/`
+- Real user orders dashboard + real home-dashboard KPIs — `app/dashboard/orders/`, `app/dashboard/page.tsx`
+- DB-config-driven pricing engine — `lib/orders/pricing*.ts`, admin pricing CRUD UI
+
+### Designer suite (custom, no FPD)
+- WYSIWYG canvas: 69 modules — canvas/snap/alignment, inspector (fields/panels/sections incl. table/QR/image-crop), layers/pages/background, merge-token engine + recipient mapping, design-system `ui/`
+- Server-side PDF preview/proof renderer (pdf-lib + fontkit, bleed-aware, crop marks) — `app/api/design/preview/_render/`
+- Print-accurate mail sizes, bleed/safe/USPS overlays, preflight rules engine — `mail-spec.ts`, `preflight/`
+- **Postage areas** (2026-06-17): Stamp/Indicia modules, singleton gating, keep-clear enforcement, guarded delete — `components/designer/postage.ts`
+- **3D mail-piece preview** (2026-07, three.js/R3F): paper stocks, ink engine, page curl, art-driven textures, cursor zoom, drag-to-look/grab-to-flip — `components/design-preview-3d/` (20 modules), wired into `preview-modal.tsx`
+- Element **rotation + opacity** honored across editor, PDF render, and 3D capture (2026-07-30 fix)
+- Design save/load (`saved_designs`), fonts API (DB + fallback), asset library CRUD + share links + storage fallback, recipient-data preview vs real rows
+
+### Teams / access control (rebuilt 2026-06-15→16, browser-E2E'd)
+- Teams, membership, invitations: tables + SECURITY DEFINER RPCs + RLS in migrations (`20260616000000`–`000600`) — invite (Resend email), accept, roles (Owner/Admin/Member), transfer, delete, seat cap
+- Access-control layer: access requests, permission templates (+ **name-based resource picker** with All-\[type\] wildcard grants, e2e-passed 2026-06-16), time-based permissions, team activity log — `app/api/access-control/*`, `components/access-control/`
+- 9 SQL assertion tests in `supabase/tests/` (authority matrix, RLS, grants)
+
+### Auth / security
+- Email + Google OAuth, signup w/ auto-profile creation, verify, forgot/reset, working sign-out
+- `withAuth` (Bearer **and** cookie session), `withAdmin` (`admin|super_admin`)
+- **Real TOTP 2FA** (Supabase MFA enroll/verify), password change — `lib/auth/mfa.ts`
+- **Real login history** (`get_my_sessions` RPC over `auth.sessions`) + "sign out all other sessions" — `app/dashboard/security/`
+- PII RLS hardening, private proof bucket, secret-leak remediation + `sb_*` key migration (2026-06-14)
+
+### Mailing lists / validation
+- CSV/XLSX/ODS import → `mailing_list_records` (ExcelJS, 10MB cap), column mapping w/ required-field gate, dedup (real grouping/keep-strategy/version backup), version history + restore, audit log, manager UI (84 components)
+- Real AccuZip on the order path (`/validate/batch`, loud 503 in prod without key) — `lib/api/accuzip/validation.ts`
+
+### Browser-smoke verification (2026-07-31, full loop through the real UI)
+Customer: login → wizard (manual entry → mapping → validation → contact card →
+designer handoff → review with real generated proof) → **$1.18 authorized** on
+a test Visa → submit → success page → status page → approve → **capture** →
+**auto-dispatch fired**. Admin: order detail shows captured payment + dispatch
+panel → accepted → in production → **mailed with tracking** → delivered →
+order `completed`; customer page shows tracking. Four bugs found and fixed in
+the same pass, the critical one being **order pricing 10× under** (cents
+divided by 1000 — Stripe rejected small orders as `amount_too_small` and every
+real order would have undercharged 10×).
+
+### Card entry (2026-07-31)
+`POST /api/payments/setup-intent` + `AddPaymentMethodDialog` (Stripe Payment
+Element) let a **first-time customer save a card** — previously impossible
+(the add-card button opened a route that did not exist, so only customers with
+a pre-attached Stripe method could pay). Saved `off_session` so the card is
+reusable for drip touches (D7) and re-authorization before vendor-gated
+capture (D9). Backend verified end-to-end for a brand-new customer incl. the
+declined-card path; the Element's visual mount is not browser-verified (local
+CDP failure — see §7).
+
+### Vendor fulfillment (2026-07-31)
+- **Dispatch loop**: proof approval → capture → **auto-dispatch to a print
+  vendor** → vendor emailed the approved proof + recipient CSV (7-day signed
+  links, private bucket) → admin advances accepted → in production → mailed
+  (with tracking) → delivered → order reaches `completed`, customer emailed on
+  ship. `lib/fulfillment/` (pure `dispatch-core` + IO `dispatch-service`),
+  `order_dispatches` table (`20260801010000`), admin API
+  `app/api/admin/orders/[orderId]/dispatch/`, panel
+  `components/admin/orders/order-dispatch-panel.tsx`
+- **Inline-payment model completed**: `payment_transactions` (which no
+  migration ever created) removed from all 6 referencing files; revenue,
+  capture, refund, and LTV now read/write `orders` directly. Migration
+  `20260801000000` added `captured_at`/`amount_refunded`/`refunded_at` + the
+  missing `cancelled` status
+- **Vendor directory** (`lib/vendors/vendor-directory.ts`) targeting the real
+  `vendors` schema; `/api/vendors` is now authenticated (was open CRUD)
+
+### Platform services
+- Outbound transactional email: Resend-preferred/Mailgun-fallback adapter, XSS-escaped templates, wired into submit / proof-ready / captured / team-invite — `lib/email/`
+- Durable DB-backed job queue (`background_jobs`), outbound webhooks w/ HMAC + retry/backoff + dead-letter, bulk operations, tags (hierarchy/categories/bulk), contact cards, profile, vendors CRUD + performance + communications log, enhanced campaigns (create/execute/split), version-history undo/redo, short-link tracking + engagement events + admin analytics dashboard
+- Admin suite: users CRUD/credits/notes/password-reset, pricing CRUD + change log, orders list/detail UI (`app/dashboard/admin/orders/`), health checks, settings
+- Local Docker Supabase dev stack + replayable migration baseline; prod migration runner + CI workflow; prod DB reconciled 2026-06-17 (6 missing migrations applied)
+
+---
+
+## 4. PARTIAL — exists but degraded, mock, or unwired (all re-verified 2026-07-31)
+
+| # | Feature | Gap | Evidence |
+|---|---|---|---|
+| ~~1~~ | ~~Admin revenue / capture-refund persistence / LTV~~ | **FIXED 2026-07-31** — refactored to the inline-on-orders model | `lib/admin/analytics-core.ts` |
+| ~~2~~ | ~~Admin order service drift~~ | **FIXED 2026-07-31** — `created_by` + batch profile load | `lib/admin/order-service.ts` |
+| ~~3~~ | ~~Vendor fulfillment~~ | **BUILT 2026-07-31** — see §3 Vendor fulfillment | `lib/fulfillment/` |
+| 4 | Template galleries (both) | `app/templates/` reads static `data/templates-data.ts`; `app/dashboard/templates/` is hardcoded mocks; `mail_templates` route targets a table no migration creates | `app/dashboard/templates/page.tsx:27`, `app/api/templates/[templateId]/` |
+| 5 | List-builder estimate | Silent client-side mock fallback ($0.12/rec) without `MELISSA_DATA_API_KEY`; `lib/api/accuzip/count.ts` returns `Math.random()` counts without key | `hooks/use-list-estimate.ts:29,133-140` |
+| 6 | Secondary address validation | `/api/validation/address` engine still **simulates CASS** (canned zip4/county); order path is real, this one isn't | `lib/validation/address-validation.ts:127-128,330` |
+| 7 | Skip tracing | Inbound webhook is a no-op (`TODO` line 89); no selection UI/export/vendor dispatch despite `skip_trace_orders` table | `app/api/skip-trace/webhook/results/route.ts:89` |
+| 8 | Campaign recurring/drip (D7) | Scheduler is a `console.log` stub; record processing has no vendor integration | `lib/campaigns/enhanced-campaign-service.ts:441,550` |
+| 9 | Drafts autosave | Interval only runs after `orderId` exists → dormant until first manual save | `components/orders/OrderProvider.tsx:48-55` |
+| 10 | Rate limiting | DB-backed limiter (`lib/rate-limit/`, `rate_limit_counters` + RPC) has **zero callers**; in-memory Map still the live path | `lib/auth/middleware.ts:198` |
+| 11 | Proof annotations | `proof_annotations` table exists; **zero code references** — no viewer/annotation UI (PRD §3.10) | migrations vs grep |
+| 12 | Activity page | Mock data | `app/dashboard/activity/page.tsx:27` |
+| 13 | In-app notifications | Toasts (sonner) only; no notification center/preferences (mock settings page was removed rather than backed) | `components/ui/toaster.tsx` |
+| 14 | Melissa list purchase | Client exists, estimate wired; **no purchase/payment flow**; wizard says "List Builder integration coming soon" | `components/orders/steps/ListDataStep.tsx:312,593` |
+| 15 | Undo/redo | Implemented for one resource type only (TODOs) | `lib/version-history/undo-redo.ts:90-115` |
+| 16 | Subscription code (dead by design) | `lib/payments/subscription-service.ts` + `SubscriptionPlanCard` still present; `app/api/subscriptions/` + RBAC already archived | pending archive per transactional model |
+
+## 5. NOT BUILT — planned in docs, zero meaningful code
+
+- Proof **annotation** workflow (PDF.js viewer, threaded comments, x/y pins) — PRD §3.10
+- **Inbound** vendor file/email processing (vendor replies are recorded by an
+  admin today; outbound dispatch IS built — see §3) — PRD §3.8
+- Admin impersonation (type-only) — PRD §3.15
+- Report builder / saved / scheduled reports — PRD §3.14
+- NPS / feedback system, support ticketing — PRD §3.16
+- AI features: content generation, contextual help (zero AI wiring in app) — PRD §3.11
+- Mail tracking / delivery confirmation add-on — PRD §3.5
+- Onboarding/guided first-run, address autocomplete, discount/referral codes
+- ~~Redstone API~~ — **outbound path now BUILT** (see §8b); blocked on Redstone
+  provisioning our endpoint, not on our code
+- Public API keys / external REST API management, Zapier
+- One-off single-recipient mail flow, reorder-with-edit flow
+- GDPR export/deletion tooling, Sentry (or any error-monitoring service)
+
+## 6. Differentiators D1–D10 (owner-approved 2026-06-12/13)
+
+| D# | Feature | Status 2026-07-31 |
+|---|---|---|
+| D1 | Per-recipient QR / pURLs | PARTIAL — QR renderer + short-link backend; no per-recipient generation flow |
+| D2 | AI copy assistant | NOT BUILT (zero AI wiring) |
+| D3 | A/B split sending | BUILT (scheduling layer); winner declaration unverified |
+| D4 | Template marketplace + stats | PARTIAL — galleries still static/mock |
+| D5 | Win-back emails | NOT BUILT |
+| D6 | CallRail integration | NOT BUILT (decision recorded; needs owner OAuth creds — `memory:project_callrail_integration`) |
+| D7 | Drip sequences | PARTIAL — config/schema present, scheduler stub |
+| D8 | Deliverability score | PARTIAL — designer preflight half BUILT; checkout combined score not built |
+| D9 | Vendor-gated capture | PARTIAL — capture still fires on customer approval, not vendor confirmation |
+| D10 | AI proof comparison | NOT BUILT |
+
+## 7. Known risks / hygiene (from the 2026-07-31 inventory)
+
+- **Security review candidates:** `middleware.ts` matcher covers only `/dashboard/:path*` — `/orders/*`, `/design/customize`, `/mailing-services/*` rely on client-side guards + per-route `withAuth`; `analytics/performance` trusts a `userId` query param (IDOR); several bare (unwrapped) API handlers incl. `payments/create-payment-intent`, `capture-payment`, `refund-payment`, all `mailing-lists/*`, `/api/teams/*`; shipped test/debug endpoints `api/test-db`, `api/test-db-verification`, `api/test-auth-state`, page `/test-types`.
+- **Parallel/duplicate systems to consolidate or delete:** `/api/team/*` vs `/api/teams/*`; `components/team/` vs `teams/`; `components/tags/` vs `tag-management/`; `lib/payments/payment-service.ts` vs `payment-service-new.ts`; `payments/intent` vs `create-payment-intent`; two advanced-search generations; `hooks/filters/useMailingListManager.ts` vs `use-mailing-list-manager/`; `/signup` vs `/register`; orphan `app/dashboard/users/loading.tsx`.
+- **Test coverage gaps:** designer + orders libs well covered; zero tests for list builder, media/assets, payments, admin services, campaigns, vendors, API routes, component rendering.
+- `@playwright/mcp` sits in prod `dependencies`; `@types/react` v19 vs React 18; unused jest stack.
+- ~743 pre-existing ESLint errors (agreed cleanup backlog, separate ticket).
+
+## 8. In-flight (not on develop)
+
+Full frontend redesign ("Masthead" direction, chosen 2026-07-10 per
+`docs/temp/NEW_UI_DIRECTION_CHOICE.md` + `NEW_UI_DESIGN_SPEC.md`) — exploratory
+branches (`new-ui-*`, `marketing-s2`, `dashboard-s2`, `yls-ui-002`); nothing
+merged. The earlier light-dark-theme redesign was completed then scrapped by
+the owner (archived at tag `archive/light-dark-theme-5978f79`).
+
+## 8b. Redstone Mail API — live-verified findings (2026-08-01)
+
+**`dev-docs/api-redstone.md` was fabricated and is gone** — archived 2026-08-02
+to `archive/api-redstone-fabricated-2026-08/`, whose README carries the
+falsehood-by-falsehood comparison. The real spec is
+`docs/temp/vendors/redstone/rsm_api_specs_pre-r631-1.pdf`.
+
+Verified by probing the live API with the real `REDSTONE_API_KEY`:
+
+| Finding | Evidence |
+|---|---|
+| Real endpoint is `POST https://redstonemail.com/apis/createOrder?API=<key>` | `api.`/`test-api.redstonemail.com` present no valid TLS cert |
+| The key authenticated at first | No key and a bogus UUID both return `{"fail":true,"msg":"Where did you come from?"}`; the real key got past that gate into the handler |
+| **HTTP 200 does not mean success** | Failures arrive as `200` + `{"fail":true,...}` |
+| Malformed/unaccepted payloads return an **HTML 500**, not the spec's `422` JSON | The PDF is labelled *pre-*r631-1; the deployed build predates that response-code table |
+| **`createOrder` returned HTML 500 for every well-formed payload** — flat, `{"Order":{…}}`-wrapped, with `seeds`, and form-encoded | 4 shapes, identical opaque failure |
+| After ~8 posts, **all three endpoints began rejecting the valid key** with "Where did you come from?" | Almost certainly a rate/abuse guard. Probing stopped. |
+
+**Most likely explanation (inference, not confirmed):** the spec says in §4.1/§4.2
+that Redstone *generates the endpoint per customer after reviewing your data*.
+Our account appears not to be provisioned yet — the key authenticates but there
+is no intake configured behind it. **If that is right, outbound `createOrder`
+cannot be completed unilaterally either**, and contacting Redstone is the
+critical path for both directions, not just for webhooks.
+
+Built anyway and ready to switch on (`feature/vendor-fulfillment`):
+`lib/fulfillment/redstone-core.ts` (pure mapping + response classification, 25
+tests), `redstone-client.ts` (retries only throttling/network, never a rejected
+payload), `redstone-dispatch.ts` (dispatch leg). A vendor opts in via
+`contact_info.integration = "redstone"`; everything else keeps the email
+hand-off, which remains the working fallback. `REDSTONE_API_TEST` defaults to
+test mode and only the literal string `false` disables it.
+
+Open questions for Redstone: is our endpoint provisioned; does the payload need
+an `{"Order": …}` wrapper; is a Supabase signed URL's `?token=` acceptable under
+their "no credentials in URL" rule; and what webhook authentication do they want
+(their spec defines none).
+
+## 9. Doc map — status of every dev-doc
+
+| File | Verdict |
+|---|---|
+| `implementation-status.md` | **Authoritative** (this file) |
+| `PRD.md`, `roadmap.md`, `todo.md`, `features-and-dashboards.md` | Historical April-2025 plan — useful for feature *intent*; checkboxes/statuses unreliable; superseded on FPD/subscriptions/roles/billing |
+| `technical-architecture.md`, `development-guide.md`, `developer-quick-start-guide.md` | Stale on stack (FPD, Prisma, NextAuth, Jest/Cypress, Next 14, repo name, scripts); structure/intent partially valid |
+| `api-accuzip.md`, `api-melissa.md`, `api-integrations.md`, `external-api-mapping.md` | Vendor/API reference — field mappings still useful; implementation-status columns stale (e.g. external-api-mapping calls Stripe "planned") |
+| ~~`api-redstone.md`~~ | **FABRICATED. Archived 2026-08-02** → `archive/api-redstone-fabricated-2026-08/`. Real spec: `docs/temp/vendors/redstone/rsm_api_specs_pre-r631-1.pdf`. See §8b |
+| `cross-reference-mapping-with-code.md` | AI-generated cookbook, truncated mid-document; treat all "existing paths" claims as aspirational |
+| `urls.txt` | Reference list |
+
+Live reconciled knowledge (kept current by the ylsbrain protocol):
+`ylsbrain/knowledge/{features,roadmap,superseded,orientation}.md`.
