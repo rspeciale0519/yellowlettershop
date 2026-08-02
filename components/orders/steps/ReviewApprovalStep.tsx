@@ -162,6 +162,20 @@ export function ReviewApprovalStep({ orderState }: OrderStepProps) {
     return orderState.approval.designLocked && orderState.approval.termsAccepted
   }
 
+  // Mirrors the fallback chain in /api/orders/pricing so the breakdown can never
+  // render "× 0" against a non-zero charge.
+  const listData = orderState.dataAndMapping?.listData ?? orderState.listData
+  const billablePieces =
+    orderState.accuzipValidation?.deliverableRecords ??
+    orderState.addressValidation?.deliverableRecords ??
+    listData?.selectedRecords?.length ??
+    listData?.manualRecords?.length ??
+    0
+
+  // pricePerPiece is the ALL-IN rate (total / pieces), so it must not label the
+  // base-printing line — that read as "1.180 × 1 = $0.45".
+  const printingUnitPrice = billablePieces > 0 ? (pricing?.basePrice ?? 0) / billablePieces : 0
+
   const getServiceLevelDescription = () => {
     switch (orderState.mailingOptions?.serviceLevel) {
       case 'full_service':
@@ -351,7 +365,7 @@ export function ReviewApprovalStep({ orderState }: OrderStepProps) {
           <CardContent>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span>Base printing ({pricing.pricePerPiece?.toFixed(3)} × {orderState.accuzipValidation?.deliverableRecords || 0})</span>
+                <span>Base printing (${printingUnitPrice.toFixed(3)} × {billablePieces})</span>
                 <span>${pricing.basePrice.toFixed(2)}</span>
               </div>
               
@@ -384,11 +398,18 @@ export function ReviewApprovalStep({ orderState }: OrderStepProps) {
               )}
               
               <Separator />
-              
+
               <div className="flex justify-between font-bold text-lg">
                 <span>Total</span>
                 <span>${pricing.totalPrice.toFixed(2)}</span>
               </div>
+
+              {billablePieces > 0 && (
+                <div className="flex justify-between text-sm text-gray-500">
+                  <span>All-in cost per piece</span>
+                  <span>${pricing.pricePerPiece.toFixed(3)}</span>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
