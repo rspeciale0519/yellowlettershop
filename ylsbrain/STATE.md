@@ -2,30 +2,30 @@
 Updated: 2026-08-02
 
 ## Current focus
-**(2026-08-02): PR #24 MERGED to `develop` (merge commit dca90eb).** The vendor
-fulfillment loop, inline-payment refactor, money-moment confirmations, Redstone
-Phase 1 and the ultrareview fixes are all on `develop`. Those fixes closed two
-security holes on the vendor path (a cross-tenant PII IDOR in recipient loading
-and CWE-1236 CSV formula injection) and three money bugs (cumulative
-`amount_refunded`, partial refunds mislabelling `payment_status`, partial
-refunds cancelling the whole order). Gates at merge: typecheck:full 0, 269
-tests, build 0, unit tests green on Ubuntu AND Windows.
+**(2026-08-02, 23:20): PRODUCTION RELEASE — vendor fulfillment loop is LIVE.**
+`develop` merged to `main` (1cbc0ee, --no-ff) and pushed; the three pending
+migrations (orders_refund_columns, order_dispatches,
+dispatch_uniqueness_and_payment_status) were applied to the hosted Supabase
+project (`lmtpfgfulkynrktdkgpu`) first. Gates re-run fresh on the merged main
+tree: typecheck:full 0, 269 tests, build 0. This is the first time proof
+approval -> capture -> dispatch -> vendor hand-off -> shipped/delivered, the
+inline-payment refactor, the two money-moment confirmation dialogs, and the
+security/refund fixes from the PR #24 ultrareview have been live on
+`app.yellowlettershop.com`.
 
-**Vercel: ONE project, settled 2026-08-02.** `yellowlettershop` /
-`prj_snSyPlSbgjz6sd6hql7JTdfm9mt2` / `team_9aYvnhHwLiazNz7OoE8BsRVC` (slug
-`robs-projects-c72886ba`) — owns `app.yellowlettershop.com`, matches
-`.vercel/project.json`. Rob deleted the two decoys (a domain-less `yls` and a
-second `yellowlettershop` on account `robs-projects-d8ad5232`) after they
-produced a permanent red X and one wrong "my commits broke the build"
-conclusion — both `yellowlettershop` projects had been publishing the same
-`Vercel - yellowlettershop` GitHub status context and overwriting each other.
-Historical statuses on commits up to dca90eb still show the stale
-`Vercel - yls: failure`; that is frozen, not live. Detail:
-[[journal/2026-08-02]], memory:project-vercel-project.
+Also: the two Vercel decoy projects are deleted (see prior entry) — only
+`yellowlettershop` (prj_snSy…) remains and is what serves that domain.
+Post-release cleanup done: remote `feature/vendor-fulfillment` deleted (fully
+merged, history preserved via merge commits on both develop and main), dev
+server restarted clean (killed a stale process still holding a blanked
+ACCUZIP_API_KEY from an earlier smoke test).
 
-**Open:** decide the fate of the two decoy Vercel projects; Redstone endpoint
-provisioning (awaiting their reply); live smoke of the new dispatch auth gate.
+**Open:** confirm the app.yellowlettershop.com deployment for 1cbc0ee reaches
+READY; Redstone still blocked on their reply; consider a live smoke test of
+the real order flow now that fulfillment is genuinely in production. Detail:
+[[journal/2026-08-02]].
 
+## (prior focus)
 ## (prior focus)
 **(2026-07-31): Vendor fulfillment loop BUILT on `feature/vendor-fulfillment`
 (16 commits, not yet PR'd).** proof-approval → capture → auto-dispatch → vendor
