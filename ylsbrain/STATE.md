@@ -2,16 +2,29 @@
 Updated: 2026-08-02
 
 ## Current focus
-**(2026-08-02): PR #24 (`feature/vendor-fulfillment`) is smoke-verified and
-ultrareviewed; 8 review findings + 1 self-found defect all fixed, NOT yet
-committed.** Two were security: a cross-tenant PII IDOR on the dispatch path
-(service-role read of `mailing_list_records` keyed on a customer-supplied list
-id) and CWE-1236 CSV formula injection into the vendor's spreadsheet. One was
-money: `amount_refunded` was overwritten rather than accumulated, so repeated
-partial refunds silently inflated admin revenue; `refundOrder` also cancelled
-the whole order on any partial. Gates: typecheck:full 0, 269 tests, build 0.
-**Open:** owner decides commit + merge to `develop`. Redstone remains blocked on
-their reply (endpoint provisioning). Detail: [[journal/2026-08-02]].
+**(2026-08-02): PR #24 MERGED to `develop` (merge commit dca90eb).** The vendor
+fulfillment loop, inline-payment refactor, money-moment confirmations, Redstone
+Phase 1 and the ultrareview fixes are all on `develop`. Those fixes closed two
+security holes on the vendor path (a cross-tenant PII IDOR in recipient loading
+and CWE-1236 CSV formula injection) and three money bugs (cumulative
+`amount_refunded`, partial refunds mislabelling `payment_status`, partial
+refunds cancelling the whole order). Gates at merge: typecheck:full 0, 269
+tests, build 0, unit tests green on Ubuntu AND Windows.
+
+**Vercel: ONE project, settled 2026-08-02.** `yellowlettershop` /
+`prj_snSyPlSbgjz6sd6hql7JTdfm9mt2` / `team_9aYvnhHwLiazNz7OoE8BsRVC` (slug
+`robs-projects-c72886ba`) — owns `app.yellowlettershop.com`, matches
+`.vercel/project.json`. Rob deleted the two decoys (a domain-less `yls` and a
+second `yellowlettershop` on account `robs-projects-d8ad5232`) after they
+produced a permanent red X and one wrong "my commits broke the build"
+conclusion — both `yellowlettershop` projects had been publishing the same
+`Vercel - yellowlettershop` GitHub status context and overwriting each other.
+Historical statuses on commits up to dca90eb still show the stale
+`Vercel - yls: failure`; that is frozen, not live. Detail:
+[[journal/2026-08-02]], memory:project-vercel-project.
+
+**Open:** decide the fate of the two decoy Vercel projects; Redstone endpoint
+provisioning (awaiting their reply); live smoke of the new dispatch auth gate.
 
 ## (prior focus)
 **(2026-07-31): Vendor fulfillment loop BUILT on `feature/vendor-fulfillment`
