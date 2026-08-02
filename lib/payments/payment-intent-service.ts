@@ -7,13 +7,15 @@ import Stripe from 'stripe';
 import { requireStripe, STRIPE_CONFIG } from './stripe-config';
 import { createServiceClient } from '@/utils/supabase/service';
 import { CustomerService } from './customer-service';
-import { 
-  PaymentServiceError, 
-  PaymentIntent, 
+import {
+  PaymentServiceError,
+  PaymentIntent,
   CreatePaymentIntentParams,
   CapturePaymentParams,
-  RefundPaymentParams
+  RefundPaymentParams,
+  RefundOutcome
 } from './types';
+import { resolveRefundState } from './refund-core';
 import type { PaymentStatus } from '@/types/supabase';
 
 export class PaymentIntentService {
@@ -148,7 +150,7 @@ export class PaymentIntentService {
   /**
    * Refund payment
    */
-  async refundPayment(params: RefundPaymentParams): Promise<Stripe.Refund> {
+  async refundPayment(params: RefundPaymentParams): Promise<RefundOutcome> {
     const stripe = requireStripe();
 
     const { paymentIntentId, amount, reason = 'requested_by_customer', metadata = {} } = params;
@@ -161,12 +163,43 @@ export class PaymentIntentService {
         metadata,
       });
 
-      // Persist inline on the order (Stripe cents → dollars).
+      // amount_refunded is cumulative, so read before writing: Stripe allows
+      // several partial refunds against one PaymentIntent and reports only the
+      // latest one's amount.
+      const { data: current, error: readError } = await this.supabase
+        .from('orders')
+        .select('amount_captured, amount_refunded')
+        .eq('stripe_payment_intent_id', paymentIntentId)
+        .maybeSingle();
+
+      if (readError) {
+        throw new PaymentServiceError(
+          `Refund issued on Stripe but reading the order to record it failed: ${readError.message}`,
+          'REFUND_RECORD_ERROR',
+          500
+        );
+      }
+
+      const row = current as {
+        amount_captured?: number | null;
+        amount_refunded?: number | null;
+      } | null;
+
+      const { totalRefunded, isFullRefund } = resolveRefundState({
+        previouslyRefunded: row?.amount_refunded,
+        amountCaptured: row?.amount_captured,
+        refundCents: refund.amount,
+      });
+
+      // Persist inline on the order (Stripe cents → dollars). payment_status
+      // only flips once everything captured has been returned — a partial stays
+      // 'captured' so the remainder is still refundable and the admin list does
+      // not call a $1 refund on a $100 order a refunded order.
       const { error: updateError } = await this.supabase
         .from('orders')
         .update({
-          payment_status: 'refunded',
-          amount_refunded: refund.amount / 100,
+          ...(isFullRefund ? { payment_status: 'refunded' as PaymentStatus } : {}),
+          amount_refunded: totalRefunded,
           refunded_at: new Date().toISOString(),
         })
         .eq('stripe_payment_intent_id', paymentIntentId);
@@ -181,7 +214,7 @@ export class PaymentIntentService {
         );
       }
 
-      return refund;
+      return { refund, totalRefunded, isFullRefund };
     } catch (error) {
       if (error instanceof Stripe.errors.StripeError) {
         throw new PaymentServiceError(

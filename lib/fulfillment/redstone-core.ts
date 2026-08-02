@@ -7,6 +7,8 @@
 // at archive/api-redstone-fabricated-2026-08/. Verified against the live API on
 // 2026-08-01.
 
+import { neutralizeSpreadsheetFormula } from './dispatch-core'
+
 /** Redstone accepts exactly these four job types. */
 export type RedstoneJobType = 'Letter' | 'Post Card' | 'Snap Pack' | 'Self Mailer'
 
@@ -145,7 +147,7 @@ const FIELD_KEYS = [
  */
 export function sanitizeRedstoneCell(value: unknown): string {
   if (value == null) return ''
-  return String(value)
+  const cleaned = String(value)
     .normalize('NFKD')
     // Drop combining marks left by the decomposition (é -> e).
     .replace(/[̀-ͯ]/g, '')
@@ -155,6 +157,11 @@ export function sanitizeRedstoneCell(value: unknown): string {
     .replace(/["',]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
+
+  // Applied last, after the apostrophe strip above would have eaten the guard.
+  // Redstone parses this file programmatically, but a human on their side may
+  // still open it in Excel — same formula-execution risk as the email path.
+  return neutralizeSpreadsheetFormula(cleaned)
 }
 
 export function buildRedstoneCsv(records: Record<string, unknown>[]): string {

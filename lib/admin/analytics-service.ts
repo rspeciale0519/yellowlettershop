@@ -151,8 +151,8 @@ export async function getRevenueTimeline(days = 30): Promise<RevenueDataPoint[]>
     .not('amount_captured', 'is', null);
   if (error) throw new Error(`Failed to load revenue timeline: ${error.message}`);
 
-  // Window in memory: captured_at is null on legacy rows, so the fallback chain
-  // in analytics-core (captured_at → updated_at → created_at) decides the date.
+  // Window in memory: captured_at is null on legacy rows, so the fallback in
+  // analytics-core (captured_at → created_at) decides the date.
   const sinceDate = since.slice(0, 10);
   const grouped: Record<string, { revenue: number; orders: number }> = {};
   for (const day of revenueByDay((data ?? []) as unknown as RevenueOrderRow[])) {

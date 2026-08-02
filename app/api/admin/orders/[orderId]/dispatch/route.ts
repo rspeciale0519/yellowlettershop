@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withAdmin } from '@/lib/admin/require-admin';
-import {
-  dispatchOrder,
-  updateDispatchStatus,
-  latestDispatch,
-} from '@/lib/fulfillment/dispatch-service';
+import { dispatchOrder, latestDispatch } from '@/lib/fulfillment/dispatch-service';
+import { updateDispatchStatus } from '@/lib/fulfillment/dispatch-status';
 import type { AdminUser } from '@/lib/admin/types';
 
 // Vendor fulfillment hand-off for a single order.
@@ -32,13 +29,17 @@ function orderIdFrom(request: NextRequest): string {
  * Guard refusals ("not captured", "already dispatched", "no active print
  * vendor") are actionable, so they return 409 with the message intact rather
  * than a generic 500.
+ *
+ * "was just dispatched|updated" cover the two concurrency losers — a race that
+ * the database resolved correctly is a 409, not a server error, and paging
+ * someone at 3am for one is noise.
  */
 function handleError(error: unknown, fallback: string) {
   const message = error instanceof Error ? error.message : fallback;
   console.error(fallback, error);
   const isGuard =
     error instanceof Error &&
-    /not found|already dispatched|no active print vendor|refusing to dispatch|only captured|no recipients|no approved proof|no contact email|inactive|Cannot move|not been dispatched|Unknown dispatch state/i.test(
+    /not found|already dispatched|was just dispatched|was just updated|no active print vendor|refusing to dispatch|only captured|no recipients|no approved proof|no contact email|inactive|Cannot move|not been dispatched|Unknown dispatch state/i.test(
       message
     );
   return NextResponse.json({ error: message }, { status: isGuard ? 409 : 500 });

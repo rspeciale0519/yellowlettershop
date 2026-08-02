@@ -90,10 +90,25 @@ export async function handOffToRedstone(input: RedstoneHandoffInput): Promise<st
     )
   }
 
+  // PostgREST replaces a jsonb column wholesale rather than merging it, so read
+  // the package dispatchOrder just wrote and spread it — csvPath and proofPath
+  // are the only record of what we actually staged, and the migration documents
+  // them as part of this column's shape.
+  const { data: existing } = await supabase
+    .from('order_dispatches')
+    .select('package')
+    .eq('id', dispatchId)
+    .maybeSingle()
+  const staged = ((existing as { package?: unknown } | null)?.package ?? {}) as Record<
+    string,
+    unknown
+  >
+
   await supabase
     .from('order_dispatches')
     .update({
       package: {
+        ...staged,
         provider: 'redstone',
         outcome: outcome.kind,
         message: outcome.message,

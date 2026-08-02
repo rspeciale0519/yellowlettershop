@@ -9,9 +9,6 @@ export {
   type TransitionResult,
 } from './dispatch-core'
 
-export {
-  dispatchOrder,
-  updateDispatchStatus,
-  latestDispatch,
-  type DispatchResult,
-} from './dispatch-service'
+export { dispatchOrder, latestDispatch, type DispatchResult } from './dispatch-service'
+
+export { updateDispatchStatus } from './dispatch-status'

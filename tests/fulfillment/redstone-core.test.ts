@@ -106,6 +106,22 @@ describe('buildRedstoneCsv', () => {
     assert.equal(sanitizeRedstoneCell('a—b'), 'a b')
     assert.equal(sanitizeRedstoneCell(null), '')
   })
+
+  // The apostrophe strip above runs before the guard, so this only holds if
+  // the guard is applied last (CWE-1236).
+  it('defuses spreadsheet formulas after stripping', () => {
+    assert.equal(sanitizeRedstoneCell('=SUM(A1)'), "'=SUM(A1)")
+    assert.equal(sanitizeRedstoneCell('@import'), "'@import")
+    assert.equal(sanitizeRedstoneCell('=cmd|\'/C calc\'!A0'), "'=cmd| /C calc !A0")
+    // Ordinary values keep their exact shape.
+    assert.equal(sanitizeRedstoneCell('Ann'), 'Ann')
+    assert.equal(sanitizeRedstoneCell('33601'), '33601')
+  })
+
+  it('keeps the column count stable when a formula is defused', () => {
+    const csv = buildRedstoneCsv([{ first_name: '=HYPERLINK("http://evil.test")' }])
+    assert.equal(csv.split('\n')[1].split(',').length, 10)
+  })
 })
 
 describe('deriveDueDate', () => {

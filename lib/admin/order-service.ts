@@ -201,20 +201,28 @@ export async function refundOrder(
   const { PaymentIntentService } = await import('@/lib/payments/payment-intent-service');
   const service = new PaymentIntentService();
 
-  await service.refundPayment({ paymentIntentId, amount, reason });
+  const { totalRefunded, isFullRefund } = await service.refundPayment({
+    paymentIntentId,
+    amount,
+    reason,
+  });
 
-  const supabase = createServiceClient();
-  const { error } = await supabase
-    .from('orders')
-    .update({ status: 'cancelled' })
-    .eq('id', orderId);
-  if (error) throw new Error(`Failed to cancel order after refund: ${error.message}`);
+  // A partial refund is a price adjustment — the order still mails, so it must
+  // not be cancelled. Only returning everything captured cancels it.
+  if (isFullRefund) {
+    const supabase = createServiceClient();
+    const { error } = await supabase
+      .from('orders')
+      .update({ status: 'cancelled' })
+      .eq('id', orderId);
+    if (error) throw new Error(`Failed to cancel order after refund: ${error.message}`);
+  }
 
   await logAdminAction({
     actorId,
     action: 'order_refunded',
     targetType: 'order',
     targetId: orderId,
-    newValue: { paymentIntentId, amount, reason },
+    newValue: { paymentIntentId, amount, reason, totalRefunded, isFullRefund },
   });
 }
