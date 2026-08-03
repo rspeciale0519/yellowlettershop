@@ -309,7 +309,10 @@ command prints or a file diff shows — never "looks right".
   list for `accuzip_validation_jobs` is printed showing `accuzip_guid`,
   `raw_quote`, `last_error`.
 - A **live** job runs end to end against AccuZip with the three known-valid
-  addresses; the printed QUOTE shows **deliverable = 3, undeliverable = 0**.
+  addresses; the printed QUOTE shows a **non-zero deliverable count**, and each
+  record's verdict plus its DQ code is printed. If a known-good address comes
+  back undeliverable, print the raw record and say why before continuing — do
+  not tune the fixture until the number looks right.
 - typecheck 0, `npm test` 0 failures, `npm run build` 0.
 
 **Phase 4 — completion signal**
@@ -359,10 +362,25 @@ command prints or a file diff shows — never "looks right".
 - **Do not download `ftype=csv` during development.** Use the free
   `prev.csv`. Log every GUID used.
 - Files ≤350 LOC, no `any`, Zod on new API input, dev server on port 3010 only.
-- **Rule 8 order:** `/git-workflow-planning:start bugfix accuzip-validation`
-  before any code; roadmap updated (Rule 7) then
-  `/git-workflow-planning:checkpoint <n> <desc>` after each phase; never begin
-  phase N+1 until phase N's checkpoint passed its gates.
+- **Rule 8 order, with one documented deviation:**
+  `/git-workflow-planning:start bugfix accuzip-validation` before any code;
+  roadmap updated (Rule 7) after each phase; never begin phase N+1 until phase
+  N's gate passed.
+  **Do NOT use `/git-workflow-planning:checkpoint`.** That command gates the
+  commit on repo-wide `npm run lint`, which is a known ~743-error backlog this
+  work is not chartered to fix (project CLAUDE.md: "delta-gate only"), and it
+  refuses to commit when lint fails. It would convert every phase boundary into
+  the lint-cleanup ticket. The per-phase gate is instead:
+  1. `npm run typecheck:full` → exit 0
+  2. `npm test` → 0 failures and **≥ 290 passing** (the current baseline; a
+     drop means a test was deleted or skipped)
+  3. `npx eslint <only the files this phase changed>` → 0 errors on the delta
+  4. `git add -A && git commit -m "Phase <n>: <description>"`
+  5. `git push origin bugfix/accuzip-validation` — explicit, because checkpoint
+     never pushes and §12's progress page is useless unless it reaches GitHub.
+- **At `/git-workflow-planning:finish`, decline the merge offer.** It asks
+  "Should I merge it into develop?" — the answer is no. Leave the PR open for
+  the owner.
 - If AccuZip returns something the spec does not document, **stop and report
   it** rather than guessing at the shape.
 
@@ -376,8 +394,18 @@ production. An honest **blocked-on-vendor** stop at Phase 1, documented in
 
 ## 12. Progress page
 
-Maintain `docs/temp/accuzip-run-progress.md` — update it at the end of every
-phase with: phase, status, what was proved, the command output that proved it,
-and what is next. It exists so the run can be checked from a phone without
-interrupting it. Keep it short; the transcript is the record of truth.
+Maintain **`.claude/plans/accuzip-run-progress.md`** — update it at the end of
+every phase with: phase, status, what was proved, the command output that
+proved it, and what is next. Commit and push it with that phase's commit.
+
+It must live in `.claude/plans/` and be pushed, **not** in `docs/temp/`, which
+is gitignored (`.gitignore:74` `temp/`) and would never leave this machine. The
+whole point is that the owner can read it from a phone at
+`github.com/rspeciale0519/yellowlettershop/blob/bugfix/accuzip-validation/.claude/plans/accuzip-run-progress.md`
+without interrupting the run. Keep it short; the transcript is the record of
+truth.
+
+The Phase 1 blocker file is the one exception: `docs/temp/accuzip-blocker.md`
+stays untracked because it will contain a verbatim vendor response. Print it in
+the transcript as well, with the API key redacted.
 
