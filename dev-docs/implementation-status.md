@@ -331,12 +331,76 @@ Verified by probing the live API with the real `REDSTONE_API_KEY`:
 | **`createOrder` returned HTML 500 for every well-formed payload** — flat, `{"Order":{…}}`-wrapped, with `seeds`, and form-encoded | 4 shapes, identical opaque failure |
 | After ~8 posts, **all three endpoints began rejecting the valid key** with "Where did you come from?" | Almost certainly a rate/abuse guard. Probing stopped. |
 
-**Most likely explanation (inference, not confirmed):** the spec says in §4.1/§4.2
-that Redstone *generates the endpoint per customer after reviewing your data*.
-Our account appears not to be provisioned yet — the key authenticates but there
-is no intake configured behind it. **If that is right, outbound `createOrder`
-cannot be completed unilaterally either**, and contacting Redstone is the
-critical path for both directions, not just for webhooks.
+### ~~Most likely explanation (inference)~~ — REFUTED 2026-08-03 by Redstone
+
+We inferred from spec §4.1/§4.2 that Redstone provisions an endpoint per
+customer and that ours was not yet provisioned. **Travis at Redstone confirmed
+this is wrong.** Recording it because the inference was reasonable, was
+documented as an inference, and was still wrong — the spec described a
+deprecated process.
+
+| Our inference | What Redstone actually said (2026-08-03) |
+|---|---|
+| Per-customer endpoint not yet provisioned | **Per-customer endpoints are deprecated.** They were replaced by the generic `createOrder` endpoint precisely so clients do not wait on Redstone to hand-write one. A custom endpoint is still possible but "a couple of weeks" |
+| Key may authenticate without intake behind it | **"Your API key is good, I just checked it and it's live and valid."** |
+| Payload may need an `{"Order": …}` wrapper | **No wrapper.** "The payload does not need to be wrapped in Order, we do that on our end. It just needs to be a valid JSON or XML post." Our flat payload was already correct |
+| The 500 might be our malformed body | **"The fact you're getting a 500 error tells me it's most likely on our end."** It is brand-new code. He found **nothing in their logs** for our order ids `YLS-APITEST-20260801-A`–`E`, so our posts are failing before reaching their internal processes |
+
+Also newly answered: `data`/`art` "needs to be a downloadable file on the net"
+so their system can cURL it — which is what our signed Supabase URLs are.
+He did **not** comment on whether a `?token=` query string is acceptable, so
+that one stays open.
+
+**Status tracking is now unblocked and the ball is in our court.** Redstone
+needs *us* to give them a URL to POST status data to; they save it against our
+company profile and post automatically once it exists. They define **no
+authentication** for it, and Travis did not propose one, so we must choose and
+tell them. This is Phase 3 and it is no longer blocked on Redstone.
+
+**Open on their side:** Travis asked for (a) the unique API ID their endpoint
+generates for internal errors, and (b) our exact POST body so he can reproduce.
+We do not have any API ID — every failure we saw was an opaque HTML 500 error
+page, and the client does not persist raw response bodies
+(`redstone-client.ts` classifies and discards). Capturing one verbatim needs a
+fresh post with live public file URLs.
+
+**Our exact wire request**, for reference and for the reply to Travis:
+
+```
+POST https://redstonemail.com/apis/createOrder?API=<key>
+Content-Type: application/json
+```
+```json
+{
+  "id": "YLS-APITEST-20260801-A",
+  "name": "YLS order #YLS-APIT",
+  "duedate": "2026-08-10",
+  "qty_est": "2",
+  "notes": "Submitted via the Yellow Letter Shop API.",
+  "jobtype": "Post Card",
+  "postcardH": "4",
+  "postcardW": "6",
+  "color": "4/4",
+  "bleeds": true,
+  "purls": false,
+  "qr_code": false,
+  "streetview": false,
+  "response_boost": false,
+  "postage_class": "First Class",
+  "postage_type": "Stamp",
+  "dist_type": "None",
+  "api_test": true,
+  "api_type": "json",
+  "data": "https://<project>.supabase.co/storage/v1/object/sign/proofs/dispatch/<orderId>/recipients.csv?token=<JWT>",
+  "art":  "https://<project>.supabase.co/storage/v1/object/sign/proofs/orders/<orderId>/proof.pdf?token=<JWT>"
+}
+```
+
+One thing worth flagging to them: `bleeds`, `purls`, `qr_code`, `streetview`,
+`response_boost` and `api_test` are sent as JSON **booleans**, while
+`qty_est`/`postcardH`/`postcardW` are **strings**, following the spec's example
+table. If their parser expects `"true"`/`"1"` strings for the flags, that is a
+plausible source of a 500 in brand-new code and is cheap for them to check.
 
 Built anyway and ready to switch on (`feature/vendor-fulfillment`):
 `lib/fulfillment/redstone-core.ts` (pure mapping + response classification, 25
