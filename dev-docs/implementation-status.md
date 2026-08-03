@@ -43,6 +43,38 @@ history, not a live signal.
 `main` tracks production and lags `develop` by design (`develop` → `main` only
 for releases), so a stale live site is expected between releases, not a fault.
 
+### 0b. Production verification (2026-08-03)
+
+Read-only smoke against `https://app.yellowlettershop.com` and the hosted DB.
+**Everything checked is green.**
+
+| Check | Result |
+|---|---|
+| Public pages `/`, `/login`, `/signup` | 200 |
+| `orders` payment columns | `amount_authorized, amount_captured, amount_refunded, captured_at, refunded_at` all present |
+| `order_dispatches` | exists, 14 columns, **RLS enabled** (no policy = service-role only, by design) |
+| `uq_order_dispatches_live` | present, correctly `WHERE (status <> 'failed')` |
+| `orders_payment_status_check` | accepts `pending/authorized/captured/failed/refunded/canceled` |
+| `order_status` enum | includes `cancelled` |
+| `dispatch_status` enum | `sent → accepted → in_production → shipped → delivered → failed` |
+| Anonymous `GET /api/vendors`, `/api/orders`, `/api/admin/orders`, `/api/access-control/activity` | **401** |
+| Anonymous `PATCH /api/admin/orders/…/dispatch` | **401** |
+| Archived debug endpoints | **404** (were 200 before this release) |
+
+**The money path itself has NOT been smoked against production.** It is blocked
+on two things, neither of which an agent should decide alone:
+
+1. **No production credentials** — a real order needs an interactive login.
+2. **Unknown Stripe mode.** The publishable key is only inlined into
+   authenticated-page bundles, so live-vs-test could not be determined from
+   outside. If production runs live keys, a smoke order charges a real card.
+
+Blast radius if one is run: **`vendors` is empty in production (0 rows, 0
+active)**, so auto-dispatch would fail with "No active print vendor configured"
+— which the design already treats as non-fatal — meaning **no physical mail
+would be sent**. The residual risk is therefore the card charge alone. Note
+production already holds 2 orders and 2 user profiles from prior use.
+
 ---
 
 ## 1. Superseded decisions (read first)
@@ -199,7 +231,12 @@ ninth found while fixing them. None had ever reached production (see §0).
 
 ---
 
-## 4. PARTIAL — exists but degraded, mock, or unwired (all re-verified 2026-07-31)
+## 4. PARTIAL — exists but degraded, mock, or unwired
+
+> **Re-audited 2026-08-03 against the code, not carried forward.** Every row
+> below was re-checked at its cited path this session; all still hold. Rows 1–3
+> remain cleared. Nothing in the 2026-08-02 release touched any of these, which
+> the audit confirms rather than assumes.
 
 | # | Feature | Gap | Evidence |
 |---|---|---|---|
@@ -222,6 +259,12 @@ ninth found while fixing them. None had ever reached production (see §0).
 
 ## 5. NOT BUILT — planned in docs, zero meaningful code
 
+> **Re-audited 2026-08-03.** Spot-checked by grep across `app/`, `lib/`,
+> `components/`: no AI SDK/provider wiring, no `@sentry`, no report-builder
+> routes, no GDPR export/deletion, no discount/referral codes, no API-key
+> management. Admin impersonation remains **type-only** (`lib/admin/types.ts`
+> and nothing else). All rows below still hold.
+
 - Proof **annotation** workflow (PDF.js viewer, threaded comments, x/y pins) — PRD §3.10
 - **Inbound** vendor file/email processing (vendor replies are recorded by an
   admin today; outbound dispatch IS built — see §3) — PRD §3.8
@@ -243,7 +286,7 @@ ninth found while fixing them. None had ever reached production (see §0).
 |---|---|---|
 | D1 | Per-recipient QR / pURLs | PARTIAL — QR renderer + short-link backend; no per-recipient generation flow |
 | D2 | AI copy assistant | NOT BUILT (zero AI wiring) |
-| D3 | A/B split sending | BUILT (scheduling layer); winner declaration unverified |
+| D3 | A/B split sending | PARTIAL — split/scheduling layer BUILT; **winner declaration confirmed absent 2026-08-03** (no `declareWinner` or equivalent anywhere in `lib/campaigns/`). Previously logged as "unverified"; now verified |
 | D4 | Template marketplace + stats | PARTIAL — galleries still static/mock |
 | D5 | Win-back emails | NOT BUILT |
 | D6 | CallRail integration | NOT BUILT (decision recorded; needs owner OAuth creds — `memory:project_callrail_integration`) |
@@ -254,7 +297,8 @@ ninth found while fixing them. None had ever reached production (see §0).
 
 ## 7. Known risks / hygiene (from the 2026-07-31 inventory)
 
-- **Security review candidates** (re-verified 2026-08-02): `middleware.ts` matcher covers only `/dashboard/:path*` — `/orders/*`, `/design/customize`, `/mailing-services/*` rely on client-side guards + per-route `withAuth`; `analytics/performance` trusts a `userId` query param (IDOR); bare (unwrapped) API handlers remain at `payments/create-payment-intent`, all `mailing-lists/*`, `/api/teams/*` (the bare `capture-payment` / `refund-payment` routes were **archived** to `archive/api-payments-2026-08/` and are no longer live); shipped test/debug endpoints `api/test-db`, `api/test-db-verification`, `api/test-auth-state`, page `/test-types` — **all four confirmed still present 2026-08-02 and now live in production**, which raises their priority.
+- **Security review candidates** (re-verified 2026-08-03): `middleware.ts` matcher covers only `/dashboard/:path*` — `/orders/*`, `/design/customize`, `/mailing-services/*` rely on client-side guards + per-route `withAuth`; `analytics/performance` trusts a `userId` query param (IDOR); bare (unwrapped) API handlers remain at `payments/create-payment-intent`, all `mailing-lists/*`, `/api/teams/*` (the bare `capture-payment` / `refund-payment` routes were **archived** to `archive/api-payments-2026-08/` and are no longer live).
+- ~~**Shipped test/debug endpoints**~~ **RESOLVED 2026-08-03.** `api/test-db`, `api/test-db-verification`, `api/test-auth-state` and `/test-types` were confirmed live on the public domain after the 2026-08-02 release and are now archived to `archive/debug-endpoints-2026-08/`. The material one was `test-db-verification`: a bare unauthenticated `GET` that built a **service-role** Supabase client (RLS bypassed, plus a hard-coded public demo-key fallback so it could not fail closed) and answered anonymous callers with table-existence, schema-version and function-count reconnaissance. `test-auth-state` was already correctly `NODE_ENV`-gated (403 in prod). See that folder's README for the evidence and safe-restore guidance.
 - **Dispatch auth-gate tripwire (new 2026-08-02):** the §3b ownership check requires `mailing_lists.created_by === orders.created_by` **or** a shared `team_id`. A team-shared list whose `team_id` is NULL will now be refused with "refusing to dispatch" where it previously dispatched. This is the same rule `app/api/accuzip/upload/route.ts` already enforces, so any list that validates can dispatch — but a NULL `team_id` is the first thing to check if a real dispatch starts failing.
 - **Parallel/duplicate systems to consolidate or delete:** `/api/team/*` vs `/api/teams/*`; `components/team/` vs `teams/`; `components/tags/` vs `tag-management/`; `lib/payments/payment-service.ts` vs `payment-service-new.ts`; `payments/intent` vs `create-payment-intent`; two advanced-search generations; `hooks/filters/useMailingListManager.ts` vs `use-mailing-list-manager/`; `/signup` vs `/register`; orphan `app/dashboard/users/loading.tsx`.
 - **Test coverage gaps:** designer + orders libs well covered; zero tests for list builder, media/assets, payments, admin services, campaigns, vendors, API routes, component rendering.
@@ -287,12 +331,76 @@ Verified by probing the live API with the real `REDSTONE_API_KEY`:
 | **`createOrder` returned HTML 500 for every well-formed payload** — flat, `{"Order":{…}}`-wrapped, with `seeds`, and form-encoded | 4 shapes, identical opaque failure |
 | After ~8 posts, **all three endpoints began rejecting the valid key** with "Where did you come from?" | Almost certainly a rate/abuse guard. Probing stopped. |
 
-**Most likely explanation (inference, not confirmed):** the spec says in §4.1/§4.2
-that Redstone *generates the endpoint per customer after reviewing your data*.
-Our account appears not to be provisioned yet — the key authenticates but there
-is no intake configured behind it. **If that is right, outbound `createOrder`
-cannot be completed unilaterally either**, and contacting Redstone is the
-critical path for both directions, not just for webhooks.
+### ~~Most likely explanation (inference)~~ — REFUTED 2026-08-03 by Redstone
+
+We inferred from spec §4.1/§4.2 that Redstone provisions an endpoint per
+customer and that ours was not yet provisioned. **Travis at Redstone confirmed
+this is wrong.** Recording it because the inference was reasonable, was
+documented as an inference, and was still wrong — the spec described a
+deprecated process.
+
+| Our inference | What Redstone actually said (2026-08-03) |
+|---|---|
+| Per-customer endpoint not yet provisioned | **Per-customer endpoints are deprecated.** They were replaced by the generic `createOrder` endpoint precisely so clients do not wait on Redstone to hand-write one. A custom endpoint is still possible but "a couple of weeks" |
+| Key may authenticate without intake behind it | **"Your API key is good, I just checked it and it's live and valid."** |
+| Payload may need an `{"Order": …}` wrapper | **No wrapper.** "The payload does not need to be wrapped in Order, we do that on our end. It just needs to be a valid JSON or XML post." Our flat payload was already correct |
+| The 500 might be our malformed body | **"The fact you're getting a 500 error tells me it's most likely on our end."** It is brand-new code. He found **nothing in their logs** for our order ids `YLS-APITEST-20260801-A`–`E`, so our posts are failing before reaching their internal processes |
+
+Also newly answered: `data`/`art` "needs to be a downloadable file on the net"
+so their system can cURL it — which is what our signed Supabase URLs are.
+He did **not** comment on whether a `?token=` query string is acceptable, so
+that one stays open.
+
+**Status tracking is now unblocked and the ball is in our court.** Redstone
+needs *us* to give them a URL to POST status data to; they save it against our
+company profile and post automatically once it exists. They define **no
+authentication** for it, and Travis did not propose one, so we must choose and
+tell them. This is Phase 3 and it is no longer blocked on Redstone.
+
+**Open on their side:** Travis asked for (a) the unique API ID their endpoint
+generates for internal errors, and (b) our exact POST body so he can reproduce.
+We do not have any API ID — every failure we saw was an opaque HTML 500 error
+page, and the client does not persist raw response bodies
+(`redstone-client.ts` classifies and discards). Capturing one verbatim needs a
+fresh post with live public file URLs.
+
+**Our exact wire request**, for reference and for the reply to Travis:
+
+```
+POST https://redstonemail.com/apis/createOrder?API=<key>
+Content-Type: application/json
+```
+```json
+{
+  "id": "YLS-APITEST-20260801-A",
+  "name": "YLS order #YLS-APIT",
+  "duedate": "2026-08-10",
+  "qty_est": "2",
+  "notes": "Submitted via the Yellow Letter Shop API.",
+  "jobtype": "Post Card",
+  "postcardH": "4",
+  "postcardW": "6",
+  "color": "4/4",
+  "bleeds": true,
+  "purls": false,
+  "qr_code": false,
+  "streetview": false,
+  "response_boost": false,
+  "postage_class": "First Class",
+  "postage_type": "Stamp",
+  "dist_type": "None",
+  "api_test": true,
+  "api_type": "json",
+  "data": "https://<project>.supabase.co/storage/v1/object/sign/proofs/dispatch/<orderId>/recipients.csv?token=<JWT>",
+  "art":  "https://<project>.supabase.co/storage/v1/object/sign/proofs/orders/<orderId>/proof.pdf?token=<JWT>"
+}
+```
+
+One thing worth flagging to them: `bleeds`, `purls`, `qr_code`, `streetview`,
+`response_boost` and `api_test` are sent as JSON **booleans**, while
+`qty_est`/`postcardH`/`postcardW` are **strings**, following the spec's example
+table. If their parser expects `"true"`/`"1"` strings for the flags, that is a
+plausible source of a 500 in brand-new code and is cheap for them to check.
 
 Built anyway and ready to switch on (`feature/vendor-fulfillment`):
 `lib/fulfillment/redstone-core.ts` (pure mapping + response classification, 25

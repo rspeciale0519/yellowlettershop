@@ -81,10 +81,21 @@ removed — see [[knowledge/features]]. Killed strategy in
   `memory:project_callrail_integration`), D8 checkout deliverability score.
 - Report builder / scheduled reports, NPS/feedback, admin impersonation,
   mail-tracking add-on, onboarding, discount codes.
-- **Redstone**: outbound `createOrder` is BUILT and opt-in; blocked on Redstone
-  confirming our endpoint is provisioned (outreach email sent 2026-08-02,
-  awaiting reply). Inbound status/tracking webhooks (Phase 3) cannot start until
-  they answer. `implementation-status.md` §8b.
+- **Redstone** (status changed 2026-08-03 — Redstone replied):
+  - Outbound `createOrder` is BUILT and opt-in. The 500 is **their** bug in
+    brand-new code, not our payload: our key is valid, no `{"Order":…}` wrapper
+    is needed, and our order ids never reached their logs. Per-customer
+    endpoints are **deprecated** — the generic endpoint is correct, which
+    refutes the inference we had documented. They are troubleshooting with us.
+  - **Inbound status webhook (Phase 3) is now OUR work, not blocked on them.**
+    Redstone needs a URL from us to POST status/tracking to; they save it
+    against our company profile and post automatically once it exists. Their
+    spec defines **no authentication** for it, so we must choose one and tell
+    them — proposed: shared secret header or HMAC, falling back to a
+    high-entropy token in the URL path if they have no preference. The receiver
+    should feed the existing `updateDispatchStatus` transition logic.
+  - Still open with them: whether a `?token=` signed-URL query string is
+    acceptable for `data`/`art`. `implementation-status.md` §8b.
 - Owner-provisioned env: `ACCUZIP_API_KEY`, `MELISSA_DATA_API_KEY`, prod email
   key, CallRail creds (`docs/temp/production-blockers.md`).
 - **New UI ("Masthead") rollout** — direction chosen 2026-07-10, exploratory
