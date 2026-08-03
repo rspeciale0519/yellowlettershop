@@ -3,6 +3,7 @@ import { strict as assert } from 'assert'
 import {
   assertPublicFileUrl,
   buildOrderPayload,
+  buildRawResponse,
   buildRedstoneCsv,
   classifyRedstoneResponse,
   deriveDueDate,
@@ -10,6 +11,7 @@ import {
   mapJobType,
   mapPostage,
   sanitizeRedstoneCell,
+  MAX_RAW_BODY_CHARS,
 } from '../../lib/fulfillment/redstone-core'
 
 describe('classifyRedstoneResponse', () => {
@@ -215,5 +217,64 @@ describe('buildOrderPayload', () => {
     const p = buildOrderPayload({ ...base, campaignName: 'x'.repeat(400), notes: 'y'.repeat(900) })
     assert.equal(String(p.name).length, 255)
     assert.equal(String(p.notes).length, 500)
+  })
+})
+
+describe('buildRawResponse', () => {
+  const base = {
+    status: 500,
+    headers: { 'Content-Type': 'text/html', 'X-Trace': 'abc' },
+    body: '<html>Server Error</html>',
+    apiKey: 'SECRET-KEY-VALUE',
+    at: '2026-08-03T00:00:00.000Z',
+  }
+
+  it('keeps the response verbatim', () => {
+    const r = buildRawResponse(base)
+    assert.equal(r.status, 500)
+    assert.equal(r.body, '<html>Server Error</html>')
+    assert.equal(r.truncated, false)
+    assert.equal(r.at, '2026-08-03T00:00:00.000Z')
+  })
+
+  it('lowercases header names so lookups are predictable', () => {
+    const r = buildRawResponse(base)
+    assert.equal(r.headers['content-type'], 'text/html')
+    assert.equal(r.headers['x-trace'], 'abc')
+  })
+
+  it('redacts the API key from the body', () => {
+    // The key travels in the query string, so an echoed URL would leak it into
+    // anything we persist or paste into a vendor email.
+    const r = buildRawResponse({
+      ...base,
+      body: 'error calling /createOrder?API=SECRET-KEY-VALUE at line 3',
+    })
+    assert.ok(!r.body.includes('SECRET-KEY-VALUE'), 'key must not survive')
+    assert.ok(r.body.includes('***'))
+  })
+
+  it('redacts the API key from headers too', () => {
+    const r = buildRawResponse({
+      ...base,
+      headers: { Location: 'https://x.test/retry?API=SECRET-KEY-VALUE' },
+    })
+    assert.ok(!r.headers['location'].includes('SECRET-KEY-VALUE'))
+  })
+
+  it('bounds an unbounded HTML error page', () => {
+    const r = buildRawResponse({ ...base, body: 'x'.repeat(MAX_RAW_BODY_CHARS + 500) })
+    assert.equal(r.truncated, true)
+    assert.equal(r.body.length, MAX_RAW_BODY_CHARS)
+  })
+
+  it('does not mark an exactly-at-limit body as truncated', () => {
+    const r = buildRawResponse({ ...base, body: 'x'.repeat(MAX_RAW_BODY_CHARS) })
+    assert.equal(r.truncated, false)
+  })
+
+  it('tolerates an empty api key without mangling the body', () => {
+    const r = buildRawResponse({ ...base, apiKey: '' })
+    assert.equal(r.body, base.body)
   })
 })

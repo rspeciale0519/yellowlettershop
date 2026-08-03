@@ -1,9 +1,11 @@
 import 'server-only'
 import {
   buildOrderPayload,
+  buildRawResponse,
   classifyRedstoneResponse,
   type RedstoneOrderInput,
   type RedstoneOutcome,
+  type RedstoneRawResponse,
 } from './redstone-core'
 
 /**
@@ -54,6 +56,13 @@ export interface RedstoneSubmission {
   /** The payload we sent, minus nothing — it contains no secrets. */
   payload: Record<string, unknown>
   attempts: number
+  /**
+   * The last response verbatim (status, headers, body), redacted and bounded.
+   * Kept because Redstone's deployed build answers failures with an opaque
+   * HTML page, and when they asked what their endpoint actually returned we
+   * had discarded it. null only when no response was received at all.
+   */
+  response: RedstoneRawResponse | null
 }
 
 /**
@@ -75,6 +84,7 @@ export async function submitRedstoneOrder(
 
   let outcome: RedstoneOutcome = { kind: 'retryable', message: 'not attempted' }
   let attempts = 0
+  let lastResponse: RedstoneRawResponse | null = null
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     attempts = attempt
@@ -86,6 +96,15 @@ export async function submitRedstoneOrder(
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       })
       const body = await response.text()
+      // Capture BEFORE classifying. Classification is lossy by design; the
+      // verbatim body is what a vendor asks for when their own logs are empty.
+      lastResponse = buildRawResponse({
+        status: response.status,
+        headers: Object.fromEntries(response.headers.entries()),
+        body,
+        apiKey: config.apiKey,
+        at: new Date().toISOString(),
+      })
       outcome = classifyRedstoneResponse(response.status, body)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'request failed'
@@ -103,5 +122,6 @@ export async function submitRedstoneOrder(
     outcome: { ...outcome, message: redactKey(outcome.message, config.apiKey) },
     payload,
     attempts,
+    response: lastResponse,
   }
 }

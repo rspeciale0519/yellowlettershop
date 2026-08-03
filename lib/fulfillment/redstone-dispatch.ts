@@ -1,6 +1,6 @@
 import 'server-only'
 import { createServiceClient } from '@/utils/supabase/service'
-import { deriveDueDate } from './redstone-core'
+import { deriveDueDate, type RedstoneRawResponse } from './redstone-core'
 import { submitRedstoneOrder } from './redstone-client'
 
 /**
@@ -29,11 +29,29 @@ export interface RedstoneHandoffInput {
 async function markDispatchFailed(
   supabase: ServiceClient,
   dispatchId: string,
-  reason: string
+  reason: string,
+  response?: RedstoneRawResponse | null
 ): Promise<void> {
+  // Merge rather than replace: csvPath/proofPath were written at insert and
+  // PostgREST overwrites a jsonb column wholesale.
+  const { data: existing } = await supabase
+    .from('order_dispatches')
+    .select('package')
+    .eq('id', dispatchId)
+    .maybeSingle()
+  const staged = ((existing as { package?: unknown } | null)?.package ?? {}) as Record<
+    string,
+    unknown
+  >
+
   await supabase
     .from('order_dispatches')
-    .update({ status: 'failed', error: reason, updated_at: new Date().toISOString() })
+    .update({
+      status: 'failed',
+      error: reason,
+      package: { ...staged, ...(response ? { lastResponse: response } : {}) },
+      updated_at: new Date().toISOString(),
+    })
     .eq('id', dispatchId)
 }
 
@@ -79,10 +97,19 @@ export async function handOffToRedstone(input: RedstoneHandoffInput): Promise<st
     throw new Error(`Redstone dispatch failed: ${reason}`)
   }
 
-  const { outcome, payload, attempts } = submission
+  const { outcome, payload, attempts, response } = submission
 
   if (outcome.kind !== 'accepted' && outcome.kind !== 'duplicate') {
-    await markDispatchFailed(supabase, dispatchId, outcome.message)
+    // Persist the verbatim response alongside the failure. Redstone's build
+    // answers rejections with an opaque HTML page and their own logs came back
+    // empty, so this is the only record of what actually came back.
+    await markDispatchFailed(supabase, dispatchId, outcome.message, response)
+    if (response) {
+      console.error(
+        `Redstone rejected order ${orderId} (HTTP ${response.status}):`,
+        response.body.slice(0, 2000)
+      )
+    }
     throw new Error(
       outcome.kind === 'retryable'
         ? `Redstone was unreachable after ${attempts} attempts: ${outcome.message}`
