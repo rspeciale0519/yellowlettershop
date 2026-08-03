@@ -250,6 +250,55 @@ export function buildOrderPayload(input: RedstoneOrderInput): Record<string, unk
   }
 }
 
+/**
+ * Redstone answers a rejected payload with a full HTML error page, so raw
+ * bodies are large and unbounded. Cap what we persist.
+ */
+export const MAX_RAW_BODY_CHARS = 8000
+
+export interface RedstoneRawResponse {
+  status: number
+  headers: Record<string, string>
+  body: string
+  truncated: boolean
+  at: string
+}
+
+/**
+ * Keep the verbatim response, redacted and bounded, so a vendor asking "what
+ * exactly did you get back?" can be answered.
+ *
+ * This exists because we could NOT answer that question on 2026-08-03: the
+ * client classified each failure and threw the body away, so when Redstone
+ * asked for the error id their endpoint mints, we had nothing. Against a
+ * brand-new third-party API the raw failure body is the artifact you will be
+ * asked for later.
+ */
+export function buildRawResponse(input: {
+  status: number
+  headers: Record<string, string>
+  body: string
+  apiKey: string
+  at: string
+}): RedstoneRawResponse {
+  const redact = (s: string) =>
+    input.apiKey ? s.split(input.apiKey).join('***') : s
+
+  const headers: Record<string, string> = {}
+  for (const [k, v] of Object.entries(input.headers)) {
+    headers[k.toLowerCase()] = redact(v)
+  }
+
+  const truncated = input.body.length > MAX_RAW_BODY_CHARS
+  return {
+    status: input.status,
+    headers,
+    body: redact(truncated ? input.body.slice(0, MAX_RAW_BODY_CHARS) : input.body),
+    truncated,
+    at: input.at,
+  }
+}
+
 export type RedstoneOutcome =
   /** Redstone accepted the job. */
   | { kind: 'accepted'; message: string }
