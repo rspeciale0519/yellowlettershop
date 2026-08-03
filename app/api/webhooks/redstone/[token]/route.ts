@@ -168,7 +168,18 @@ export async function POST(
   const orderId = (orderRow as { id?: string } | null)?.id ?? null
 
   if (!orderId) {
-    await record({ ...base, order_id: null, outcome: 'unmatched', detail: 'No such order' })
+    // dedupe_key MUST be null here. Only a record of successful processing may
+    // claim the key: if an unmatched attempt claimed it — say Redstone posts a
+    // status a moment before the order row is visible — then every legitimate
+    // retry of that status would collide with the unique index, be acked, and
+    // be silently dropped forever.
+    await record({
+      ...base,
+      order_id: null,
+      outcome: 'unmatched',
+      detail: 'No such order',
+      dedupe_key: null,
+    })
     // 200 on purpose: the payload was well-formed and the fault is not
     // Redstone's to retry. A 4xx here would have them redeliver forever.
     return NextResponse.json(redstoneError('Unknown order id'), { status: 200 })
