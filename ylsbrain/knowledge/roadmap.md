@@ -2,7 +2,7 @@
 kind: knowledge
 slug: roadmap
 status: current
-updated: 2026-07-31
+updated: 2026-08-02
 layer: roadmap
 sources:
   - dev-docs/implementation-status.md
@@ -13,8 +13,13 @@ sources:
 
 # Roadmap — reconciled unbuilt work
 
-Live deduped view (2026-07-31 audit). Delivered items removed — see
-[[knowledge/features]]. Killed strategy in `## Superseded / dropped`.
+Live deduped view (2026-07-31 audit, release delta 2026-08-02). Delivered items
+removed — see [[knowledge/features]]. Killed strategy in
+`## Superseded / dropped`.
+
+> **2026-08-02: the fulfillment work is in production** (`main` @ `1cbc0ee`,
+> migrations applied to the hosted project). The near-term list below is what
+> remains *after* that release.
 
 ## Near-term (correctness for launch)
 
@@ -35,13 +40,26 @@ Live deduped view (2026-07-31 audit). Delivered items removed — see
   `lib/fulfillment/`, `order_dispatches`, admin dispatch API + panel.
   Live-verified against the local DB (transitions, order advance, tracking,
   backwards-refusal). Remaining: inbound vendor replies are still manual.
+- ~~**PR #24 review fixes**~~ **DONE 2026-08-02** — 8 ultrareview findings + 1
+  self-found, all verified real before acting: cross-tenant PII IDOR on the
+  dispatch path, CWE-1236 CSV formula injection into the vendor spreadsheet,
+  cumulative-`amount_refunded` overwrite, partial refunds mislabelling
+  `payment_status` **and cancelling the order**, race 500→409, jsonb package
+  overwrite, and a 426→264-line split of `dispatch-service.ts`. None had
+  shipped, so nothing was ever customer-exposed. `implementation-status.md` §3b.
 - **Wire the DB-backed rate limiter** (built, zero callers) into login/sensitive
   routes; retire the in-memory Map.
-- **Middleware/auth hardening** — extend matcher beyond `/dashboard/*`; wrap
-  bare payment + mailing-list + `/api/teams/*` handlers; fix
-  `analytics/performance` IDOR; delete shipped test/debug endpoints.
+- **Middleware/auth hardening** — extend matcher beyond `/dashboard/*`; wrap the
+  remaining bare handlers (`payments/create-payment-intent`, `mailing-lists/*`,
+  `/api/teams/*`); fix `analytics/performance` IDOR; **delete the shipped
+  test/debug endpoints** (`api/test-db`, `api/test-db-verification`,
+  `api/test-auth-state`, `/test-types`) — these are now live in production,
+  which moves this up the list.
 - **Template gallery → DB-backed** (both galleries mock; `mail_templates`
   unmigrated).
+- **Post-release smoke against production** — the whole fulfillment path has
+  only ever been exercised against the local stack; it has never run against the
+  hosted DB with real Stripe.
 
 ## Mid-term
 
@@ -62,7 +80,11 @@ Live deduped view (2026-07-31 audit). Delivered items removed — see
 - D5 win-back emails (needs scheduler), D6 CallRail (needs owner OAuth creds —
   `memory:project_callrail_integration`), D8 checkout deliverability score.
 - Report builder / scheduled reports, NPS/feedback, admin impersonation,
-  mail-tracking add-on, Redstone (doc-only), onboarding, discount codes.
+  mail-tracking add-on, onboarding, discount codes.
+- **Redstone**: outbound `createOrder` is BUILT and opt-in; blocked on Redstone
+  confirming our endpoint is provisioned (outreach email sent 2026-08-02,
+  awaiting reply). Inbound status/tracking webhooks (Phase 3) cannot start until
+  they answer. `implementation-status.md` §8b.
 - Owner-provisioned env: `ACCUZIP_API_KEY`, `MELISSA_DATA_API_KEY`, prod email
   key, CallRail creds (`docs/temp/production-blockers.md`).
 - **New UI ("Masthead") rollout** — direction chosen 2026-07-10, exploratory

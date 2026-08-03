@@ -1,6 +1,6 @@
 # Yellow Letter Shop (YLS) — Developer Docs
 
-**Version:** v2.0 (reconciled 2026-07-31) · **Maintainer:** support@yellowlettershop.com
+**Version:** v2.1 (reconciled 2026-07-31; release delta 2026-08-02) · **Maintainer:** support@yellowlettershop.com
 
 Yellow Letter Shop (YLS) is a full-stack SaaS platform for real estate
 investors, marketers, and agencies to launch personalized direct-mail
@@ -35,12 +35,18 @@ Stripe manual-capture checkout, PDF proofing, and fulfillment.
   tests
 * **Auth/security:** email + Google OAuth, real TOTP 2FA, login history,
   session revocation, PII-hardened RLS
+* **Vendor fulfillment (LIVE in production 2026-08-02):** capture →
+  auto-dispatch to the active print vendor → vendor receives the approved proof
+  + recipient CSV as 7-day signed links (or the Redstone API, opt-in per vendor)
+  → admin advances accepted → in production → mailed (+tracking) → delivered →
+  order completes and the customer is emailed on ship
 * **Admin:** users/credits/notes, DB-driven pricing management (no deploys
-  needed), orders UI, analytics dashboard (revenue metrics pending a
-  `payment_transactions` migration), health checks
+  needed), orders UI + dispatch panel, analytics dashboard (revenue metrics now
+  work — they read the inline payment columns on `orders`; there is no
+  `payment_transactions` table and never was), health checks
 * **Platform:** transactional email (Resend/Mailgun adapter), durable job
   queue, outbound webhooks with retry + dead-letter, short-link engagement
-  tracking, vendors CRUD
+  tracking, vendors CRUD (admin-only)
 
 **Business model:** transactional only — **no subscriptions** (MLM is a
 separate app). Roles are `admin | super_admin` platform-wide plus per-team
