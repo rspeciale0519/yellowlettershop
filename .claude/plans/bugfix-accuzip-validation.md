@@ -237,17 +237,28 @@ These are separate defects found in the same smoke and must not be lost:
   for no reason.
 - `ACCUZIP_WEBHOOK_TOKEN` — new, for phase 4.
 
-## 7. Decisions needed from the owner
+## 7. Owner decisions — resolved as defaults (owner may veto before the run)
 
-1. **Orders under 3 recipients.** AccuZip cannot validate them. Block checkout,
-   or allow the order with validation skipped and disclosed? Pricing sells from
-   1 piece, so this is a live case, not hypothetical.
-2. **Which processing pipeline.** `CASS-PRESORT` is the minimum. NCOALink
-   requires a signed PAF per list owner (spec §6) — do we have one? Dedupe adds
-   `DUPS_01/02/03`. This affects both cost and what the vendor receives.
-3. **Credits.** Downloads consume them. Confirm the account has enough for
-   expected volume, and decide whether to use the free `prev.csv` for the
-   customer-facing preview and only pay for the full CSV at dispatch.
+These were open questions. They are now decided so the work cannot stall on
+them. Each is implemented as a **single named constant**, so reversing one is a
+one-line change, not a refactor.
+
+1. **Orders under 3 recipients → allow, skip validation, disclose.**
+   `UNDER_MINIMUM_POLICY = 'allow_with_disclosure'` in `accuzip-core.ts`.
+   Blocking would kill a product we actively sell ("1 - 249"). The wizard must
+   say plainly that lists under 3 addresses cannot be CASS-validated and will be
+   mailed as entered, and the order must record `validation_skipped: true` so it
+   is never later mistaken for a validated list. Flip the constant to `'block'`
+   to reverse. Padding with a fake record stays forbidden (§3.1).
+2. **Pipeline → `CASS-PRESORT` only.** No NCOALink (needs a signed PAF per list
+   owner, spec §6 — we do not have one; adding it without one is a compliance
+   problem, not a feature flag). No dedupe in this pass.
+   `ACCUZIP_PROCESS_PATH = 'CASS-PRESORT'`.
+3. **Credits → free preview, paid full file only at dispatch.** Customer-facing
+   preview uses `ftype=prev.csv` (free, 25 rows). The full `ftype=csv` download
+   happens only when an order is actually dispatched to the vendor, and every
+   download logs `{orderId, guid, ftype, at}`. Phase 1 records
+   `credits_remaining`; if it is under 100, that is a blocker, not a warning.
 
 ## 8. Risks
 
@@ -260,3 +271,113 @@ These are separate defects found in the same smoke and must not be lost:
 - **Credit burn during development.** Use test credentials (api@accuzip.com)
   and keep a log of test GUIDs, as the spec advises, to avoid billing
   confusion.
+
+---
+
+## 9. Exit criteria (each must be evidenced in the transcript)
+
+The judge sees only this conversation. Every criterion below is something a
+command prints or a file diff shows — never "looks right".
+
+**Phase 1 — spec verification**
+- `scripts/accuzip-probe.ts` exists; `grep -rn "accuzip-probe" app lib components`
+  returns nothing (dev-only, never imported).
+- The verbatim `INFO` JSON is printed in the transcript, **with the key
+  redacted**, showing `success`, `level`, `active`, `credits_remaining`.
+- A 3-record fixture upload returns a `guid`, printed.
+- `credits_remaining >= 100`.
+- A ylsbrain journal entry records the response and an explicit
+  proceed / blocked-on-vendor decision.
+- **Gate:** if `INFO` fails, the key is rejected, or credits < 100 → write
+  `docs/temp/accuzip-blocker.md` with the verbatim response and stop. Stopping
+  here is a successful outcome, not a failure.
+
+**Phase 2 — pure core**
+- `lib/api/accuzip/accuzip-core.ts` exists, ≤350 LOC, imports nothing that does
+  IO (no `fetch`, `fs`, `supabase`, `server-only`).
+- New tests pass in `npm test` output with 0 failures, covering: DQ arithmetic
+  (`y` vs `d+s+n+v`), the 3-row boundary (2 rejected / 3 accepted), CRLF line
+  endings, AccuZip-native header names, every `classifyAccuzipResponse` class,
+  and the formula-injection guard on a `=cmd` cell.
+- `npm run typecheck:full` exits 0.
+
+**Phase 3 — client + lifecycle**
+- `lib/api/accuzip/accuzip-client.ts` exists, ≤350 LOC.
+- `grep -rn "api.accuzip.com\|NEXT_PUBLIC_ACCUZIP_API_URL" app lib components`
+  returns nothing.
+- Migration file added and applied to the **local** Supabase stack; the column
+  list for `accuzip_validation_jobs` is printed showing `accuzip_guid`,
+  `raw_quote`, `last_error`.
+- A **live** job runs end to end against AccuZip with the three known-valid
+  addresses; the printed QUOTE shows **deliverable = 3, undeliverable = 0**.
+- typecheck 0, `npm test` 0 failures, `npm run build` 0.
+
+**Phase 4 — completion signal**
+- `app/api/webhooks/accuzip/[token]/route.ts` exists and mirrors the Redstone
+  token pattern (`timingSafeEqual`, fail closed, record every call).
+- Transcript shows three live local requests: unset token → 503, wrong token →
+  401, correct token → 200.
+- Polling fallback retained and time-boxed; a test asserts the timeout state.
+- typecheck 0, tests 0 failures, build 0.
+
+**Phase 5 — honesty fixes**
+- `grep -rn "cassCertified: true" app lib components` returns nothing.
+- A test asserts `service_unavailable` and `all_undeliverable` produce different
+  states and different customer copy.
+- The success message can no longer render alongside a 0% deliverable result —
+  shown by the diff plus a test.
+- The `deliverableRecords === 0` gate in `OrderProvider.tsx` still blocks a
+  genuinely bad list (test proves it).
+- typecheck 0, tests 0 failures, build 0.
+
+**Phase 6 — verification + docs**
+- `npm run typecheck:full` 0, `npm test` 0 failures, `npm run build` 0 — all
+  three outputs shown.
+- **Production customer smoke** via the chrome-devtools MCP browser: upload a
+  list → validate → a real non-zero deliverable count → "Continue to Design &
+  Content" enabled → design → review → **stop before submitting payment**.
+  Screenshot of the validation result and of the review step.
+- `dev-docs/implementation-status.md` and `ylsbrain/knowledge/features.md` no
+  longer claim AccuZip is BUILT-and-working; they state what is actually true.
+- Test data left in production is cleaned up: the earlier smoke's mailing list
+  and accuzip job `34a340fb-322d-443d-935e-fb11a7807c12`, plus anything this
+  run creates.
+- `/git-workflow-planning:finish` has opened a PR **targeting `develop`**.
+  Do not merge it.
+
+## 10. Hard constraints
+
+- **Never pad a list with a fabricated record** to clear the 3-row minimum.
+- **Never blank `ACCUZIP_API_KEY`** to route around a failure. That workaround
+  hid this bug for a day (§1).
+- **Never delete a user-authored file** — move it to `archive/` (Rule 1).
+- **Never merge to `main`.** The PR targets `develop` and stays open.
+- **Never print or commit a secret** — not the AccuZip key, not the Redstone
+  key, not a token value. Redact in every probe output and journal entry.
+- **Never edit or skip a test to make the suite pass.** If a test blocks the
+  change, fix the code or explain in the transcript why the test was wrong.
+- **Do not download `ftype=csv` during development.** Use the free
+  `prev.csv`. Log every GUID used.
+- Files ≤350 LOC, no `any`, Zod on new API input, dev server on port 3010 only.
+- **Rule 8 order:** `/git-workflow-planning:start bugfix accuzip-validation`
+  before any code; roadmap updated (Rule 7) then
+  `/git-workflow-planning:checkpoint <n> <desc>` after each phase; never begin
+  phase N+1 until phase N's checkpoint passed its gates.
+- If AccuZip returns something the spec does not document, **stop and report
+  it** rather than guessing at the shape.
+
+## 11. Definition of done
+
+All six phases checkpointed in order, every §9 criterion evidenced, all §10
+constraints held, and a PR open against `develop` containing a working AccuZip
+integration that returns a real non-zero deliverable count for real addresses in
+production. An honest **blocked-on-vendor** stop at Phase 1, documented in
+`docs/temp/accuzip-blocker.md`, is also done.
+
+## 12. Progress page
+
+Maintain `docs/temp/accuzip-run-progress.md` — update it at the end of every
+phase with: phase, status, what was proved, the command output that proved it,
+and what is next. It exists so the run can be checked from a phone without
+interrupting it. Keep it short; the transcript is the record of truth.
+
