@@ -1,5 +1,5 @@
 # yls brain — STATE
-Updated: 2026-08-02
+Updated: 2026-08-03
 
 ## Current focus
 **(2026-08-02, 23:20): PRODUCTION RELEASE — vendor fulfillment loop is LIVE.**
@@ -20,10 +20,19 @@ merged, history preserved via merge commits on both develop and main), dev
 server restarted clean (killed a stale process still holding a blanked
 ACCUZIP_API_KEY from an earlier smoke test).
 
-**Open:** confirm the app.yellowlettershop.com deployment for 1cbc0ee reaches
-READY; Redstone still blocked on their reply; consider a live smoke test of
-the real order flow now that fulfillment is genuinely in production. Detail:
-[[journal/2026-08-02]].
+**Docs reconciled 2026-08-03** (3fe922e): implementation-status.md gained §0
+(production release status) + §3b (the 9 ultrareview fixes); knowledge/
+{features,roadmap,orientation}, dev-docs/README v2.1 and CLAUDE.md all
+de-staled. Scale re-counted, not carried forward (37 migrations, 48 tables,
+269 tests). Caveat: only the release delta was reconciled — §4 PARTIAL and §5
+NOT BUILT are still the 2026-07-31 audit's and are un-reverified.
+
+**Open:** confirm the app.yellowlettershop.com deployment for 1cbc0ee reached
+READY; Redstone still blocked on their reply; live smoke of the order flow
+against production (only ever run against the local stack); delete the four
+shipped debug endpoints, which are now live; fresh audit of the PARTIAL /
+NOT BUILT inventories before the next release. Detail:
+[[journal/2026-08-02]], [[journal/2026-08-03]].
 
 ## (prior focus)
 ## (prior focus)
