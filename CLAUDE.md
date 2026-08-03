@@ -172,14 +172,23 @@ npx mocha tests/specific.test.tsx  # Run specific test
 
 ## Current Development State
 
-See **`dev-docs/implementation-status.md`** (code-verified audit, 2026-07-31)
-for what is built/partial/not-built, and `ylsbrain/` STATE + journals for the
-live session-to-session record. Highlights: customer money path works
-end-to-end (wizard → validate → design → authorize → proof → approve →
-capture → email → status); custom designer suite incl. postage areas + 3D
-preview; teams/access-control with RLS + SQL assertion tests; real TOTP 2FA.
-Biggest known gaps: `payment_transactions` migration missing (admin revenue
-metrics), vendor fulfillment dispatch, template galleries still mock.
+See **`dev-docs/implementation-status.md`** (code-verified audit 2026-07-31,
+release update 2026-08-02) for what is built/partial/not-built, and `ylsbrain/`
+STATE + journals for the live session-to-session record. Highlights: customer
+money path works end-to-end (wizard → validate → design → authorize → proof →
+approve → capture → email → status); **vendor fulfillment dispatch is built and
+LIVE in production** (auto-dispatch → vendor proof+CSV → admin advances →
+delivered), with an opt-in Redstone API path behind it; custom designer suite
+incl. postage areas + 3D preview; teams/access-control with RLS + SQL assertion
+tests; real TOTP 2FA.
+
+`payment_transactions` was **never** a real table — the inline-payment model
+(payment state on `orders`) replaced it; never reintroduce it.
+
+Biggest known gaps: template galleries still mock; DB-backed rate limiter has
+zero callers; shipped test/debug endpoints (`api/test-db*`, `api/test-auth-state`,
+`/test-types`) are live in production and should be deleted; proof annotation UI
+not built.
 
 ## Key Business Logic
 
@@ -192,7 +201,11 @@ metrics), vendor fulfillment dispatch, template galleries still mock.
 6. **Payment Authorization** - Stripe hold (not capture)
 7. **Proof Review** - generated PDF proof, approve/reject (annotation UI not built yet)
 8. **Payment Capture** - On approval, funds captured (reject cancels the hold)
-9. **Fulfillment** - Vendor routing and production (dispatch automation not built yet)
+9. **Fulfillment** - Auto-dispatch to the active print vendor on capture: vendor
+   receives the approved proof + recipient CSV as 7-day signed links (or the
+   Redstone API when that vendor opts in); admin advances accepted → in
+   production → mailed (+tracking) → delivered; order completes and the customer
+   is emailed on ship. Inbound vendor replies are still recorded manually.
 
 ### User Roles & Permissions
 - **Platform roles**: `admin` | `super_admin` (`lib/admin/require-admin.ts`)

