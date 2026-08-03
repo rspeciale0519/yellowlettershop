@@ -28,7 +28,15 @@ const TIMESTAMP_FOR: Partial<Record<DispatchTransition, string>> = {
 export async function updateDispatchStatus(opts: {
   orderId: string
   status: DispatchTransition
-  actorId: string
+  /**
+   * The admin who made the change, or null for a vendor callback. Null is not
+   * a shortcut: `admin_audit_log.actor_id` is `NOT NULL REFERENCES
+   * auth.users(id)`, so a synthetic id would fail the FK and be swallowed by
+   * logAdminAction's try/catch — losing the trail on the one path with no
+   * human behind it. Vendor-initiated changes are recorded in
+   * `vendor_status_callbacks` instead, which is built for exactly that.
+   */
+  actorId: string | null
   trackingNumber?: string
   trackingCarrier?: string
 }): Promise<{ orderStatus: string | null }> {
@@ -110,14 +118,16 @@ export async function updateDispatchStatus(opts: {
     }
   }
 
-  await logAdminAction({
-    actorId,
-    action: 'order_dispatch_status_changed',
-    targetType: 'order',
-    targetId: orderId,
-    oldValue: { status: dispatch.status },
-    newValue: { status, trackingNumber, trackingCarrier },
-  })
+  if (actorId) {
+    await logAdminAction({
+      actorId,
+      action: 'order_dispatch_status_changed',
+      targetType: 'order',
+      targetId: orderId,
+      oldValue: { status: dispatch.status },
+      newValue: { status, trackingNumber, trackingCarrier },
+    })
+  }
 
   return { orderStatus: transition.orderStatus }
 }
