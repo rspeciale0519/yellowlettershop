@@ -14,14 +14,18 @@ Branch `bugfix/accuzip-validation` · plan `.claude/plans/bugfix-accuzip-validat
 | Is our key valid? | Yes — `success:true`, `active:true` |
 | Auth encoding? | **form-encoded `apiKey=<guid>`**; raw body fails, `Bearer` was never right |
 | Account level | `4` — "…Limited 25-record Mailing Lists Test Environment" |
-| Credits remaining | `{"monthly":"","annual":"","total":""}` — **none** |
-| Credits used | `0` everywhere — account has never run a job |
+| Credits remaining | `{"monthly":"","annual":"","total":""}` — **blank** |
+| Credits used | numeric `0` everywhere — account has never run a job |
+| Account type | `Transaction` (spec's example shows `Subscription`) |
 
 **Why this stops the run:** credits are consumed on production-CSV download
-(spec §Credit Management). A deliverable-only CSV is the whole point of the
-integration. With zero credits it dead-ends at the final step, so building
-phases 2–6 now would be building on sand — the exact failure the Redstone
-episode taught us to gate against.
+(spec §Credit Management), and a deliverable-only CSV is the whole point of the
+integration. Blank-vs-numeric is ambiguous — it may mean we hold no balance, or
+that a Transaction account is billed per use rather than from a pool. **Either
+reading blocks equally:** we cannot price or guarantee the one operation
+checkout depends on. Building phases 2–6 against an unknown billing model for
+the only chargeable call is the same mistake the Redstone episode taught us to
+gate against.
 
 **Blocker detail + owner script:** `docs/temp/accuzip-blocker.md` (untracked —
 it is local-only by design). Owner must contact AccuZip (api@accuzip.com,
