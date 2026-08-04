@@ -29,7 +29,8 @@ gate against.
 
 **Blocker detail + owner script:** `docs/temp/accuzip-blocker.md` (untracked —
 it is local-only by design). Owner must contact AccuZip (api@accuzip.com,
-805.461.7300, account `7744004001`) about credits, level 4 vs 5, and test
+805.461.7300; our account number is in the local blocker doc, not in this
+repo) about the billing model, level 4 vs 5, and test
 credentials.
 
 **Artifact:** `scripts/accuzip-probe.ts` — dev-only, re-runnable, never prints
