@@ -85,7 +85,15 @@ From package.json:
 - `npm run dev` - Start development server (port **3010**)
 - `npm run build` - Build for production
 - `npm start` - Start production server
-- `npm run lint` - Run ESLint (~743 pre-existing errors — known backlog; delta-gate only)
+- `npm run lint` - Run ESLint. **Exits 1 with 7,222 errors / 95,482 warnings**
+  (measured 2026-08-04; the previous "~743" figure here was badly stale). This is
+  a known backlog with its own ticket — **delta-gate only**: lint just the files
+  your change touched (`npx eslint <paths>`), never the repo.
+  **Consequence:** `/git-workflow-planning:checkpoint` gates its commit on
+  repo-wide `npm run lint` and refuses to commit when it fails, so on this repo
+  it can never checkpoint. For planned work, gate phases on
+  `npm run typecheck:full` + `npm test` + delta eslint, then commit directly.
+  A full repo lint also takes 10+ minutes.
 - `npm test` - Run Mocha test suite
 - `npm run typecheck:ui` / `npm run typecheck:full` - TypeScript gates
 
@@ -275,7 +283,8 @@ The project includes comprehensive documentation:
 ## Troubleshooting
 
 ### Common Issues
-- **Build Errors**: Check TypeScript compilation with `npm run lint`
+- **Build Errors**: Check TypeScript compilation with `npm run typecheck:full`
+  (`npm run lint` does not typecheck, and fails on pre-existing debt regardless)
 - **Test Failures**: Verify JSDOM setup and component mocks
 - **Database Access**: Confirm RLS policies and user context
 - **External APIs**: Check environment variables and API keys
