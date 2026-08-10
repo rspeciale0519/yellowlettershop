@@ -54,17 +54,33 @@ what we have and what Phase 2+ must be built against; the plan's "orders under
 3 recipients skip validation" default is a hard constraint of that API's
 3-row minimum, not a choice.
 
-**Still open, still blocking:** level 4 vs 5 — does the 25-record cap apply to
+**Still open after 2 replies:** level 4 vs 5 — does the 25-record cap apply to
 CASS/DQ validation or only the Mailing Lists product. Test credentials also
 still unrequested/unanswered.
 
+## Vendor update 2026-08-08 (2nd reply) — webhook, egress, and file limits resolved
+
+AccuZip support (Vincent Murdoch) answered the rest of the follow-up: webhook
+support confirmed (pass `callback_url` on the upload call, no separate
+registration), egress is a US IP block (Vercel functions pinned to a US
+region should be fine), and the practical row ceiling is **1,000,000**
+records (spec's 2,000,001 max is technically true but AccuZip recommends
+against relying on it). Also clarified the download-ratio rule: abandoned
+jobs count against it, failed jobs usually don't, it's tracked monthly with
+advance notice, and re-downloading via the same job GUID doesn't count again.
+Full detail: `docs/temp/accuzip-blocker.md`.
+
+**Only remaining blocker:** level 4 vs 5 record cap. Test credentials also
+still open. Everything else needed to design Phase 2+ is now known.
+
 ## Phases 2–6 — not started
 
-Blocked pending the level 4/5 answer above — it's the one item left that could
-still invalidate the AccuZip approach outright.
+Blocked pending the level 4/5 answer — it's the one item left that could still
+invalidate the AccuZip approach outright.
 
 ## Unchanged
 
 Production is still hard-blocked at wizard step 2 — no order can be placed.
-The remaining blocker is narrower than 2026-08-03 (billing is now understood)
-but is still commercial, not just a code bug.
+The remaining blocker is narrower than 2026-08-03 (billing, webhooks, egress,
+and file limits are now understood) but is still commercial, not just a code
+bug.
