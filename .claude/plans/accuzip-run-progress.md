@@ -2,6 +2,11 @@
 
 Branch `bugfix/accuzip-validation` · plan `.claude/plans/bugfix-accuzip-validation.md`
 
+**Status as of 2026-08-10: UNBLOCKED.** The account-level cap that stopped
+this run is resolved (see the 2026-08-10 update below) — Phases 2–6 can start.
+One narrow row-count clarification is still open and should be settled before
+finalizing the small-order design, but does not block starting other work.
+
 ## Phase 1 — Verify the spec before building on it — **STOPPED, blocked on vendor**
 
 **Status:** complete. Gate fired. Phases 2–6 not started, by design.
@@ -73,14 +78,30 @@ Full detail: `docs/temp/accuzip-blocker.md`.
 **Only remaining blocker:** level 4 vs 5 record cap. Test credentials also
 still open. Everything else needed to design Phase 2+ is now known.
 
-## Phases 2–6 — not started
+## Vendor update 2026-08-10 (3rd reply) — level 4/5 RESOLVED, not a blocker
 
-Blocked pending the level 4/5 answer — it's the one item left that could still
-invalidate the AccuZip approach outright.
+AccuZip support (Eric Lambeth) confirmed the account is at its effective
+highest access level: *"The 25-record business just means you're eligible for
+the 25-record preview-only free download, which every access level gets."*
+No validation cap, no separate production tier to migrate to. **This was the
+one item that could have killed the AccuZip approach outright — it's closed.**
+
+**New open item, narrower in scope:** Eric's reply also contradicts the
+documented row minimum — policy text says 3 rows, Eric says "the minimum
+should be 100." Max is now confirmed at 1,000,000 (the 2,000,001 figure in
+AccuZip's own policy doc is stale). The minimum discrepancy affects only plan
+§7 decision #1 (orders under 3 recipients skip validation) — either get a
+one-line clarification from Eric, or design conservatively to 100 as the
+floor until clarified. Full detail: `docs/temp/accuzip-blocker.md`.
+
+## Phases 2–6 — ready to start
+
+The account-level blocker is resolved. Recommend settling or conservatively
+defaulting the row-minimum question above before finalizing §7 decision #1
+specifically; nothing else needs to wait on it.
 
 ## Unchanged
 
-Production is still hard-blocked at wizard step 2 — no order can be placed.
-The remaining blocker is narrower than 2026-08-03 (billing, webhooks, egress,
-and file limits are now understood) but is still commercial, not just a code
-bug.
+Production is still blocked at wizard step 2, but now only because Phases
+2–6 are unbuilt, not because of an open vendor question. No order can be
+placed until that implementation work happens.
