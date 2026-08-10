@@ -90,9 +90,9 @@ one item that could have killed the AccuZip approach outright — it's closed.**
 documented row minimum — policy text says 3 rows, Eric says "the minimum
 should be 100." Max is now confirmed at 1,000,000 (the 2,000,001 figure in
 AccuZip's own policy doc is stale). The minimum discrepancy affects only plan
-§7 decision #1 (orders under 3 recipients skip validation) — either get a
-one-line clarification from Eric, or design conservatively to 100 as the
-floor until clarified. Full detail: `docs/temp/accuzip-blocker.md`.
+§7 decision #1 (orders under 3 recipients skip validation). **Owner sent a
+narrow follow-up asking which number AccuZip's system actually enforces,
+2026-08-10 — awaiting reply.** Full detail: `docs/temp/accuzip-blocker.md`.
 
 ## Phases 2–6 — ready to start
 
