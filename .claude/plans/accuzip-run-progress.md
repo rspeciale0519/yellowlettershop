@@ -2,10 +2,9 @@
 
 Branch `bugfix/accuzip-validation` · plan `.claude/plans/bugfix-accuzip-validation.md`
 
-**Status as of 2026-08-10: UNBLOCKED.** The account-level cap that stopped
-this run is resolved (see the 2026-08-10 update below) — Phases 2–6 can start.
-One narrow row-count clarification is still open and should be settled before
-finalizing the small-order design, but does not block starting other work.
+**Status as of 2026-08-11: UNBLOCKED, no open vendor questions.** Every Phase
+1 blocker is resolved. The row minimum is confirmed at 3 records. Phases 2–6
+can start.
 
 ## Phase 1 — Verify the spec before building on it — **STOPPED, blocked on vendor**
 
@@ -94,11 +93,17 @@ AccuZip's own policy doc is stale). The minimum discrepancy affects only plan
 narrow follow-up asking which number AccuZip's system actually enforces,
 2026-08-10 — awaiting reply.** Full detail: `docs/temp/accuzip-blocker.md`.
 
-## Phases 2–6 — ready to start
+## Vendor update 2026-08-11 (4th reply) — row minimum confirmed at 3
 
-The account-level blocker is resolved. Recommend settling or conservatively
-defaulting the row-minimum question above before finalizing §7 decision #1
-specifically; nothing else needs to wait on it.
+Eric confirmed the 3-row minimum is correct: *"It looks like we removed the
+100-record minimum. You can go with the 3-record (including header record)
+minimum."* This closes the last open AccuZip question. Plan §7 decision #1
+(orders under 3 recipients skip validation) can go forward as designed.
+
+## Phases 2–6 — ready to start, no open vendor questions
+
+The account-level blocker is resolved. The row-minimum question is resolved.
+No vendor answer is pending. Nothing blocks Phase 2+ work.
 
 ## Unchanged
 
