@@ -1,7 +1,7 @@
 {
   "require": ["./tests/setup/register.js"],
-  "spec": ["tests/**/*.test.ts"],
-  "extension": ["ts"],
+  "spec": ["tests/**/*.test.ts", "tests/**/*.test.mjs"],
+  "extension": ["ts", "mjs"],
   "reporter": "spec",
   "timeout": 15000,
   "color": true
