@@ -12,6 +12,8 @@
 
 **Status:** Approved for implementation by the owner on 2026-10-17. White and yellow notepad templates must position text baselines on their horizontal rules in both the canvas and PDF.
 
+**Execution record (2026-10-17):** The feature is implemented and local verification passes: 453 unit tests, full typecheck, production build, 29 production-mode browser checks and 14 real local database checks. The definitive implemented contracts, test substitutions and remaining physical-stock/staging work are recorded in [the verification report](../reports/2026-10-17-designer-usability-verification.md). The original detailed checklists below remain the planned acceptance cases; they do not certify physical-stock calibration, OS-level IME or unconfigured external services. The owner's per-box Guided writing refinement supersedes any earlier separate-story editing proposal.
+
 ## Global Constraints
 
 - Support every offered mail piece format; continuous writing and free-positioned objects coexist.

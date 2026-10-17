@@ -2,12 +2,21 @@
 Updated: 2026-10-17
 
 ## Current focus
-**(2026-10-17): Tasks 1–2 implemented in isolated worker clone.**
-Responsive workspace and explicit gallery/template entry now pass 304 unit tests,
-11 browser checks, and full typecheck. Task 2 scoped ESLint is clean; Task 1 has
-one pre-existing header warning. Browser APIs are intercepted and writes blocked;
-production authentication, PDF rendering, persistence, and checkout remain
-unverified. Parent owns notepad/shared-text/page/pricing/save integration.
+**(2026-10-17): Designer usability implemented and locally verified.**
+Branch `feature/designer-flowing-content`, based on develop `8150e52`; isolated
+cloud checkout. Per-box Guided writing, embedded rich text, shared canvas/PDF
+fonts/layout, ruled paper, explicit printed sides and 10-cent per-side/per-piece
+letter pricing, authoritative server quotes, scoped recovery and guarded order
+handoff are connected. All six formats are supported. White/yellow paper changes
+retain the composition. Submitted artwork is protected from designer relinking.
+453 unit tests, full typecheck, production build, 29 production-mode browser
+checks, 14 real focused-DB checks pass. Independent GPT-6.1 review findings closed.
+Browser services are intercepted; real local DB evidence is separate. Full
+Supabase startup exceeded Docker storage; no real login/Storage/Stripe/vendor
+round trip is certified. Owner's preprinted-stock/production-artwork answer and
+physical profile calibration remain before live printing; 6x9/6x11 rates need
+configuration. Existing AccuZip launch blocker remains. Nothing pushed/deployed.
+Report: `docs/superpowers/reports/2026-10-17-designer-usability-verification.md`.
 Detail: [[journal/2026-10-17]].
 
 ## Prior focus
