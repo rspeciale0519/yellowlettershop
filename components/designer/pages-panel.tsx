@@ -9,7 +9,7 @@ interface PagesPanelProps {
   orientation?: DesignerOrientation
 }
 
-function PageThumbnail({ label, orientation = "portrait" }: { label: "Front" | "Back"; orientation?: DesignerOrientation, DesignerPage }) {
+function PageThumbnail({ label, orientation = "portrait" }: { label: "Front" | "Back"; orientation?: DesignerOrientation }) {
   const sizeClass = orientation === "portrait" ? "h-32 w-24" : "h-24 w-32"
 
   return (
