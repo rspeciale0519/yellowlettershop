@@ -1,85 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware'
+import { withAuth } from '@/lib/auth/middleware'
 import { createClient } from '@/utils/supabase/service'
-import { calculatePricing, MailingOptions } from '@/lib/orders/pricing'
 import { loadPricingConfig } from '@/lib/orders/pricing-config'
-import { toPricingBreakdown } from '@/lib/orders/pricing-breakdown'
+import { getQuoteReferences, loadOrderQuote, provisionalOrderQuote, QuoteError } from '@/lib/orders/server-quote'
 
-const MailingOptionsSchema = z.object({
-  serviceLevel: z.enum(['full_service', 'ship_processed', 'print_only']),
-  mailPieceFormat: z.string().optional(),
-  paperStock: z.string().optional(),
-  finish: z.string().optional(),
-  postageType: z.string().optional(),
-  includePostage: z.boolean().optional()
-})
-
-const ListDataSchema = z.object({
-  totalRecords: z.number().optional(),
-  manualRecords: z.array(z.unknown()).optional()
-}).optional()
-
-const ValidationSchema = z.object({ deliverableRecords: z.number() }).passthrough().optional()
-
-const PricingFromStateSchema = z.object({
-  orderState: z.object({
-    mailingOptions: MailingOptionsSchema.optional(),
-    campaignSettings: z.object({
-      mailingOptions: z.record(z.unknown()).optional()
-    }).optional(),
-    accuzipValidation: ValidationSchema,
-    addressValidation: ValidationSchema,
-    listData: ListDataSchema,
-    dataAndMapping: z.object({
-      listData: ListDataSchema
-    }).optional()
-  })
-})
-
-export const POST = withAuth(async (req: NextRequest, { userId: _userId }: AuthenticatedRequest) => {
+const schema = z.object({ orderState: z.record(z.unknown()) })
+export const POST = withAuth(async (req: NextRequest, { userId }) => {
   try {
-    const body = await req.json()
-    const { orderState } = PricingFromStateSchema.parse(body)
-
-    const rawMailingOptions = orderState.mailingOptions ?? orderState.campaignSettings?.mailingOptions
-
-    if (!rawMailingOptions || !('serviceLevel' in rawMailingOptions)) {
-      return NextResponse.json({ error: 'Mailing options not configured' }, { status: 400 })
-    }
-
-    const parsed = MailingOptionsSchema.safeParse(rawMailingOptions)
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: 'Invalid mailing options', details: parsed.error.errors },
-        { status: 400 }
-      )
-    }
-
-    const mailingOptions = parsed.data as MailingOptions
-
-    // Pieces to bill = deliverable records (post-validation). Uploaded lists
-    // carry the count there, not on listData.totalRecords/manualRecords.
-    const validatedCount =
-      orderState.accuzipValidation?.deliverableRecords ??
-      orderState.addressValidation?.deliverableRecords
-    const listData = orderState.dataAndMapping?.listData ?? orderState.listData
-    const recordCount = validatedCount
-      ?? listData?.totalRecords
-      ?? (listData?.manualRecords?.length ?? 0)
-
-    if (recordCount < 1) {
-      return NextResponse.json({ error: 'Record count must be at least 1' }, { status: 400 })
-    }
-
-    const config = await loadPricingConfig(createClient())
-    return NextResponse.json(toPricingBreakdown(calculatePricing(mailingOptions, recordCount, config)))
-
-  } catch (err) {
-    if (err instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Invalid request', details: err.errors }, { status: 400 })
-    }
-    console.error('Pricing error:', err)
-    return NextResponse.json({ error: 'Pricing calculation failed' }, { status: 500 })
+    const { orderState } = schema.parse(await req.json())
+    const db = createClient()
+    const config = await loadPricingConfig(db)
+    const refs = getQuoteReferences(orderState)
+    const quote = refs.designId && refs.jobId
+      ? await loadOrderQuote(db, userId, orderState, config)
+      : provisionalOrderQuote(orderState, config)
+    return NextResponse.json(quote.pricing)
+  } catch (error) {
+    if (error instanceof z.ZodError) return NextResponse.json({ error: 'Invalid quote inputs', details: error.errors }, { status: 400 })
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Pricing calculation failed' }, { status: error instanceof QuoteError ? error.status : 400 })
   }
 })

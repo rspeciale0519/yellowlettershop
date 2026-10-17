@@ -1,3 +1,5 @@
+import { getAdditionalSideChargeCents } from './additional-side-pricing'
+
 // Pricing. ALL rate values — these defaults and pricing_config.unit_amount —
 // are CENTS per piece (45 = $0.45 postcard print, 73 = $0.73 Forever stamp,
 // shipping base 1500 = $15.00). Divide by 100 exactly once, at the dollars
@@ -68,6 +70,9 @@ export type MailingOptions = {
 }
 
 export type PricingResult = {
+  additionalSideChargeCents: number
+  printedSideCount?: number
+  includedPrintedSides?: number
   printing: number
   postage: number | null
   shipping: number | null
@@ -92,8 +97,11 @@ const DISC = 100 // discount cents → dollars divisor
 export function calculatePricing(
   opts: MailingOptions,
   recordCount: number,
-  config: PricingConfig = DEFAULT_PRICING
+  config: PricingConfig = DEFAULT_PRICING,
+  sides?: { printedSideCount: number; includedPrintedSides: number }
 ): PricingResult {
+  if (!Number.isSafeInteger(recordCount) || recordCount < 1) throw new Error('Record count must be a positive safe integer')
+  const additionalSideChargeCents = sides ? getAdditionalSideChargeCents(sides.printedSideCount, sides.includedPrintedSides, recordCount) : 0
   let printingUnits = 0
   let postageUnits = 0
   let shippingUnits = 0
@@ -134,9 +142,13 @@ export function calculatePricing(
   const discountDollars = discountUnits > 0 ? discountUnits / DISC : null
 
   const totalDollars =
-    printingDollars + (postageDollars ?? 0) + (shippingDollars ?? 0) - (discountDollars ?? 0)
+    additionalSideChargeCents / UNIT + printingDollars + (postageDollars ?? 0) + (shippingDollars ?? 0) - (discountDollars ?? 0)
 
+  if (!Number.isFinite(totalDollars) || totalDollars <= 0 || !Number.isSafeInteger(Math.round(totalDollars * UNIT))) throw new Error('Invalid pricing configuration')
   return {
+    additionalSideChargeCents,
+    printedSideCount: sides?.printedSideCount,
+    includedPrintedSides: sides?.includedPrintedSides,
     printing: printingDollars,
     postage: postageDollars,
     shipping: shippingDollars,

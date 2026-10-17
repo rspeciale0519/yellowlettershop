@@ -124,6 +124,7 @@ export interface CampaignConfig {
 }
 
 export interface FPDDesignData {
+  designRevision?: string
   designId: string
   designJson: any // FPD design state
   previewUrl?: string
@@ -133,6 +134,14 @@ export interface FPDDesignData {
 }
 
 export interface PricingBreakdown {
+  quoteStatus?: 'provisional' | 'final'
+  quoteRevision?: string
+  designRevision?: string
+  printedSideCount?: number
+  includedPrintedSides?: number
+  additionalPrintedSides?: number
+  additionalSideChargeCents?: number
+  validatedQuantity?: number
   basePrice: number
   addOnServices: AddOnService[]
   postageCharges: number
@@ -162,6 +171,7 @@ export interface OrderApproval {
 }
 
 export interface PaymentData {
+  quoteRevision?: string
   paymentIntentId?: string
   paymentMethodId?: string
   status: 'pending' | 'authorized' | 'captured' | 'failed' | 'cancelled'

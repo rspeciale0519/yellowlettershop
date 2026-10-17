@@ -4,45 +4,35 @@ import { withAuth } from '@/lib/auth/middleware'
 import { createClient } from '@/utils/supabase/service'
 import { calculatePricing } from '@/lib/orders/pricing'
 import { loadPricingConfig } from '@/lib/orders/pricing-config'
+import { mailingOptionsSchema } from '@/lib/orders/quote-inputs'
+import { getQuoteReferences, loadOrderQuote, provisionalOrderQuote, QuoteError } from '@/lib/orders/server-quote'
 
-const PricingRequestSchema = z.object({
-  mailingOptions: z.object({
-    serviceLevel: z.enum(['full_service', 'ship_processed', 'print_only']),
-    mailPieceFormat: z.enum(['postcard_4x6', 'postcard_5x7', 'letter_8_5x11', 'letter_folded']).optional(),
-    paperStock: z.enum(['standard_14pt', 'premium_16pt', 'luxury_18pt']).optional(),
-    finish: z.enum(['matte', 'gloss', 'uv_coating']).optional(),
-    postageType: z.enum(['first_class_forever', 'first_class_discounted', 'standard']).optional(),
-    includePostage: z.boolean().optional()
-  }),
-  recordCount: z.number().min(1)
-})
+const PricingRequestSchema = z.union([
+  z.object({ orderState: z.record(z.unknown()) }),
+  z.object({ mailingOptions: mailingOptionsSchema, recordCount: z.number().int().positive().max(Number.MAX_SAFE_INTEGER) })
+])
 
-export const POST = withAuth(async (req: NextRequest, { userId: _userId }) => {
+export const POST = withAuth(async (req: NextRequest, { userId }) => {
   try {
-    const body = await req.json()
-    const { mailingOptions, recordCount } = PricingRequestSchema.parse(body)
-    const config = await loadPricingConfig(createClient())
-    const result = calculatePricing(mailingOptions, recordCount, config)
-    return NextResponse.json(result)
-  } catch (error) {
-    console.error('Pricing calculation error:', error)
-
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: 'Invalid request data', details: error.errors },
-        { status: 400 }
-      )
+    const input = PricingRequestSchema.parse(await req.json())
+    const orderState = 'orderState' in input ? input.orderState : { mailingOptions: input.mailingOptions, listData: { totalRecords: input.recordCount } }
+    const db = createClient()
+    const config = await loadPricingConfig(db)
+    const refs = getQuoteReferences(orderState)
+    if (refs.designId && refs.jobId) {
+      const quote = await loadOrderQuote(db, userId, orderState, config)
+      return NextResponse.json({ ...quote.result, ...quote.pricing })
     }
-
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Pricing calculation failed' },
-      { status: 500 }
-    )
+    const quote = provisionalOrderQuote(orderState, config)
+    return NextResponse.json({ ...quote.result, ...quote.pricing })
+  } catch (error) {
+    if (error instanceof z.ZodError) return NextResponse.json({ error: 'Invalid quote inputs', details: error.errors }, { status: 400 })
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Pricing calculation failed' }, { status: error instanceof QuoteError ? error.status : 400 })
   }
 })
 
 // Get pricing information and tiers (for display purposes)
-export const GET = withAuth(async (req: NextRequest, { userId: _userId }) => {
+export const GET = withAuth(async (req: NextRequest) => {
   try {
     const url = new URL(req.url)
     const recordCount = parseInt(url.searchParams.get('recordCount') || '100')

@@ -7,6 +7,8 @@ import { buildOrderInsert, extractTotal, extractRecordCount } from '@/lib/orders
 import { trySendEmail } from '@/lib/email'
 import { orderConfirmationEmail } from '@/lib/email/templates'
 import Stripe from 'stripe'
+import { loadPricingConfig } from '@/lib/orders/pricing-config'
+import { loadOrderQuote, assertQuotePayment, QuoteError } from '@/lib/orders/server-quote'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-08-27.basil' })
 
@@ -34,7 +36,8 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
     // SECURITY: verify the PaymentIntent server-side against Stripe (never trust
     // the client). Must be authorized (manual-capture → requires_capture), owned
     // by this user, and its amount must match the server-computed order total.
-    const serverTotal = extractTotal(orderState as Record<string, unknown>)
+    const supabase = createClient()
+    const quote = await loadOrderQuote(supabase, userId, orderState, await loadPricingConfig(supabase))
     let pi: Stripe.PaymentIntent
     try {
       pi = await stripe.paymentIntents.retrieve(paymentIntentId)
@@ -49,18 +52,19 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
     if (pi.metadata?.user_id !== userId) {
       return NextResponse.json({ error: 'Payment does not belong to this account.' }, { status: 403 })
     }
-    if (Math.abs(pi.amount - Math.round(serverTotal * 100)) > 1) {
-      return NextResponse.json({ error: 'Authorized amount does not match the order total.' }, { status: 402 })
+    assertQuotePayment(pi, quote, userId)
+    const verifiedState = {
+      ...quote.snapshot,
+      payment: { paymentIntentId, amount: pi.amount / 100, currency: pi.currency, status: 'authorized', quoteRevision: quote.pricing.quoteRevision },
     }
 
-    const supabase = createClient()
     const now = new Date().toISOString()
 
     // Normalized (DB1-model) insert: queryable columns + payment inline on the
     // order; full wizard state retained in metadata for proof/design rendering.
     // amountAuthorized comes from Stripe (verified), not the client.
     const insert = buildOrderInsert(
-      orderState as Record<string, unknown>,
+      verifiedState,
       userId,
       { paymentIntentId, amountAuthorized: pi.amount / 100 },
       now
@@ -81,8 +85,8 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
       orderConfirmationEmail({
         orderId: order.id,
         shortId: order.id.split('-')[0].toUpperCase(),
-        total: extractTotal(orderState as Record<string, unknown>),
-        recordCount: extractRecordCount(orderState as Record<string, unknown>),
+        total: extractTotal(verifiedState),
+        recordCount: extractRecordCount(verifiedState),
         appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
       })
     )
@@ -98,6 +102,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
       proofUrl: proof.proofUrl ?? null,
     })
   } catch (err) {
+    if (err instanceof QuoteError) return NextResponse.json({ error: err.message }, { status: err.status })
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid request', details: err.errors }, { status: 400 })
     }

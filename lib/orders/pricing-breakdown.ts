@@ -10,10 +10,23 @@ export function toPricingBreakdown(result: PricingResult): PricingBreakdown {
   const discount = result.discount ?? 0
   const tier = result.breakdown.volumeDiscount
 
+  const sideCharge = result.additionalSideChargeCents / 100
   return {
     basePrice: result.printing,
-    addOnServices:
-      discount > 0
+    additionalSideChargeCents: result.additionalSideChargeCents,
+    printedSideCount: result.printedSideCount,
+    includedPrintedSides: result.includedPrintedSides,
+    validatedQuantity: result.recordCount,
+    addOnServices: [
+      ...(sideCharge > 0 ? [{
+        id: 'additional_printed_sides',
+        name: 'Additional printed sides ($0.10 × extra sides × pieces)',
+        description: 'Undiscounted charge per additional printed side per piece',
+        unitPrice: 0.1,
+        quantity: ((result.printedSideCount ?? 0) - (result.includedPrintedSides ?? 0)) * result.recordCount,
+        totalPrice: sideCharge,
+      }] : []),
+      ...(discount > 0
         ? [
             {
               id: 'volume_discount',
@@ -26,7 +39,8 @@ export function toPricingBreakdown(result: PricingResult): PricingBreakdown {
               totalPrice: -discount,
             },
           ]
-        : [],
+        : []),
+    ],
     postageCharges: result.postage ?? 0,
     shippingCharges: result.shipping ?? 0,
     taxAmount: 0,
