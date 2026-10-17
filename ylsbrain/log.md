@@ -120,3 +120,7 @@ Append-only timeline. Entry format: `## [YYYY-MM-DD] <op> | <title>`.
 ## [2026-10-17] implement | Guided designer, authoritative side pricing and scoped handoff
 - Isolated feature implementation verified: 453 unit, full types/build, 29 production-browser and 14 focused real-DB checks pass; independent GPT-6.1 findings closed.
 - No push/deployment/production writes; paper manufacturing/calibration, configured large-postcard rates and real staging integrations remain before launch. Existing AccuZip blocker is unchanged. See journal/2026-10-17 and designer verification report.
+
+## [2026-10-17] verify | Minimal AccuZip probe prepared; credential unavailable
+- Current public vendor docs confirm INFO JSON and minimal multipart/CSV request shapes. Standalone probe request-shape and missing-key checks pass; no authenticated vendor request ran.
+- Owner uses a licensed key in vendor-controlled test mode, stored on the laptop and possibly GitHub. Cloud has no secret binding; Vercel/GitHub configuration reads return 403. App code and workflows unchanged. Current account status is unverified, separate from the historical app endpoint mismatch. See journal/2026-10-17 [03:40].

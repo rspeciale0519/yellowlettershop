@@ -15,7 +15,11 @@ Browser services are intercepted; real local DB evidence is separate. Full
 Supabase startup exceeded Docker storage; no real login/Storage/Stripe/vendor
 round trip is certified. Owner's preprinted-stock/production-artwork answer and
 physical profile calibration remain before live printing; 6x9/6x11 rates need
-configuration. Existing AccuZip launch blocker remains. Nothing pushed/deployed.
+configuration. AccuZip has a historical endpoint/workflow mismatch; the owner's
+current licensed key is in vendor-controlled test mode, and its authenticated
+connection is not yet verified. A minimal direct probe is prepared outside the
+repo, but the key is only in the laptop's .env.local; cloud secrets are empty and
+Vercel/GitHub configuration reads return 403. Nothing pushed/deployed.
 Report: `docs/superpowers/reports/2026-10-17-designer-usability-verification.md`.
 Detail: [[journal/2026-10-17]].
 
