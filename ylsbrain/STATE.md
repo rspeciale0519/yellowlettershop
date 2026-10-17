@@ -24,8 +24,11 @@ current licensed key is in vendor-controlled test mode, and its authenticated
 connection is not yet verified. A minimal direct probe is prepared outside the
 repo, but the key is only in the laptop's .env.local; cloud secrets are empty and
 Vercel/GitHub configuration reads return 403. Owner then requested publication:
-feature branch pushed, remote SHA d1110ed verified, automatic Vercel preview
-reported successful. Its mobile entry requires Vercel sign-in; see the report.
+feature branch pushed, with designer checkpoint d1110ed and pricing checkpoint
+e268fdf both verified on origin; their automatic Vercel previews reported success.
+Node 24.x is now explicit in package engines and both CI OS jobs after Node18
+lacked native global crypto and failed 33 tests on each OS. Local Node24 passes490.
+The mobile entry requires Vercel sign-in; see the report.
 No main/develop merge or production release occurred.
 Report: `docs/superpowers/reports/2026-10-17-designer-usability-verification.md`.
 Pricing follow-up: `docs/superpowers/reports/2026-10-17-published-pricing-import.md`.

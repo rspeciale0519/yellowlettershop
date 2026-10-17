@@ -19,6 +19,7 @@ Yellow Letter Shop is a comprehensive SaaS platform for direct mail automation, 
 
 ### Frontend
 - **Next.js 15** - React framework with App Router
+- **Node.js 24 LTS** - app runtime and Linux/Windows CI (package engines enforce 24.x)
 - **React 18** - Component-based UI with TypeScript
 - **Tailwind CSS 3** - Utility-first styling with custom themes
 - **ShadCN/UI** - Headless component library

@@ -132,3 +132,6 @@ Append-only timeline. Entry format: `## [YYYY-MM-DD] <op> | <title>`.
 ## [2026-10-17] pricing | Import published mailing tiers
 - Owner-requested live homepage import: 104 integer-cent rates shared by public tables and default full-service quotes. Postage and quantity pricing are included once; postcard FC minimum250, exact10-cent extra-side fee and distinct FCstamp/permit fulfillment preserved. Full tests490, types/build and four real local config-DB checks pass; browser/source review evidence is in the report.
 - Shipped-letter checkout mapping awaits freight and physical-print-only answers. No production pricing writes, charges or release. See journal/2026-10-17 [04:05] and published-pricing-import report.
+
+## [2026-10-17] ci | Publish pricing and align supported Node runtime
+- e268fdf pricing update pushed/remote-verified and Vercel preview succeeds. Old GitHub Node18 matrix failed the same33 crypto-related/cascading tests on both OS; native localNode24 passes490. Package/lock engines and both CI jobs now target24.x. No application code/test suppression changed. See journal/2026-10-17 [04:10].

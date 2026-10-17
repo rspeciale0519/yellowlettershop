@@ -90,3 +90,18 @@ production pricing release.
   snapshot, order insert, vendor mapping and quote invalidation (39 focused tests).
 
 Local evidence: `/workspace/scratch/published-pricing-{unit-final.log,typecheck-final.log,production-build-final.log,browser-verified.log,db-evidence.json}`.
+
+## Publication and supported runtime
+
+Application commit `e268fdf` is pushed to `feature/designer-flowing-content`.
+GitHub's Vercel status reports successful deployment for that pricing checkpoint.
+The protected phone preview remains:
+https://yellowlettershop-git-feature-desi-373c28-robs-projects-c72886ba.vercel.app/design/customize?templateId=white-notepad
+
+GitHub's older Node 18 unit-test matrix then exposed 33 failures on both Linux
+and Windows: global WebCrypto/randomUUID was unavailable, causing save/quote
+failures and cascading hook timeouts. Local verification uses Node 24.19.0.
+The app now declares Node 24.x in package engines and lockfile, and both CI jobs
+use Node 24. The real 490-test suite passes with native WebCrypto; no test shim
+or test suppression is used. The production-migration workflow is separate and
+unchanged. Remote CI results are available in the feature commit's checks.
