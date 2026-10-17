@@ -10,14 +10,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { PaymentService, PaymentServiceError } from '@/lib/payments/payment-service';
 import { z } from 'zod';
+import { createServiceClient } from '@/utils/supabase/service';
+import { loadPricingConfig } from '@/lib/orders/pricing-config';
+import { loadOrderQuote, QuoteError } from '@/lib/orders/server-quote';
 
 // Request validation schema
 const createPaymentIntentSchema = z.object({
-  amount: z.number().positive().min(50), // Minimum $0.50 in cents
-  currency: z.string().optional().default('usd'),
-  description: z.string().min(1).max(500),
-  campaignId: z.string().uuid().optional(),
-  metadata: z.record(z.string()).optional().default({}),
+  orderState: z.record(z.unknown()),
   automaticPaymentMethods: z.boolean().optional().default(true),
 });
 
@@ -38,19 +37,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if user has an active subscription for paid plans
-    const { data: profile } = await supabase
-      .from('user_profiles')
-      .select('subscription_plan, subscription_status')
-      .eq('user_id', user.id)
-      .single();
-
-    if (!profile) {
-      return NextResponse.json(
-        { error: 'User profile not found' },
-        { status: 404 }
-      );
-    }
+    const service = createServiceClient();
+    const quote = await loadOrderQuote(service, user.id, validatedData.orderState, await loadPricingConfig(service));
 
     // Initialize payment service
     const paymentService = new PaymentService();
@@ -58,14 +46,15 @@ export async function POST(request: NextRequest) {
     // Create payment intent
     const paymentIntent = await paymentService.createPaymentIntent({
       userId: user.id,
-      amount: validatedData.amount,
-      currency: validatedData.currency,
-      description: validatedData.description,
-      campaignId: validatedData.campaignId,
+      amount: quote.amountCents,
+      currency: 'usd',
+      description: `Direct Mail Order - ${quote.result.recordCount} records`,
       metadata: {
-        ...validatedData.metadata,
-        userPlan: profile.subscription_plan,
-        userEmail: user.email || '',
+        user_id: user.id,
+        order_type: 'direct_mail',
+        record_count: String(quote.result.recordCount),
+        quote_revision: quote.pricing.quoteRevision,
+        design_revision: quote.pricing.designRevision,
       },
       automaticPaymentMethods: validatedData.automaticPaymentMethods,
     });
@@ -75,6 +64,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
+      pricing: quote.pricing,
+      quoteRevision: quote.pricing.quoteRevision,
       paymentIntent: {
         id: paymentIntent.id,
         clientSecret: paymentIntent.clientSecret,
@@ -84,6 +75,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
+    if (error instanceof QuoteError) return NextResponse.json({ error: error.message }, { status: error.status });
     console.error('Create payment intent error:', error);
 
     if (error instanceof z.ZodError) {

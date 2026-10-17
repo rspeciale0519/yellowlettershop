@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/client'
 import type { Webhook, WebhookDelivery } from '@/types/supabase'
 import { backoffDelayMs, shouldRetry } from '@/lib/webhooks/retry'
+import { generateWebhookSignature } from '@/lib/webhooks/security'
 
 // Inline retry attempts are capped low so we don't hold the triggering
 // request open; exhausted deliveries land in webhook_dead_letters for replay.
@@ -210,20 +211,18 @@ async function sendWebhook(
     timestamp: new Date().toISOString()
   })
 
-  // Create signature if secret is provided
+  const timestamp = String(Math.floor(Date.now() / 1000))
+  // Bind the transport timestamp to the exact serialized body.
   let signature: string | undefined
   if (webhook.secret) {
-    const crypto = await import('crypto')
-    signature = 'sha256=' + crypto
-      .createHmac('sha256', webhook.secret)
-      .update(payload, 'utf8')
-      .digest('hex')
+    signature = generateWebhookSignature(payload, webhook.secret, timestamp)
   }
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'User-Agent': 'YLS-Webhooks/1.0',
     'X-YLS-Event-Type': eventType,
+    'X-YLS-Timestamp': timestamp,
     'X-YLS-Delivery': crypto.randomUUID()
   }
 

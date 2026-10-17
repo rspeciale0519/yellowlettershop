@@ -44,7 +44,17 @@ export function resetRuntime(design = artwork(true)) {
 export function loadRoute(path: string) {
   const mocks: Record<string, unknown> = {
     '../../lib/auth/middleware': { withAuth: (handler: unknown) => handler },
-    '../../utils/supabase/service': { createClient: () => runtime.db },
+    '../../utils/supabase/service': { createClient: () => runtime.db, createServiceClient: () => runtime.db },
+    '../../utils/supabase/server': { createClient: async () => ({ ...runtime.db, from: runtime.db.from.bind(runtime.db), auth: { getUser: async () => ({ data: { user: { id: 'owner' } }, error: null }) } }) },
+    '../../lib/payments/payment-service': {
+      PaymentServiceError: class extends Error {},
+      PaymentService: class {
+        async createPaymentIntent(input: Record<string, unknown>) {
+          runtime.created = input
+          return { id: 'pi_test', clientSecret: 'secret', amount: input.amount, status: 'pending' }
+        }
+      },
+    },
     '../../lib/orders/pricing-config': { loadPricingConfig: async () => runtime.config },
     '../../lib/orders/generate-proof': { generateProofForOrder: async () => ({ ok: true }), getUserEmail: async () => 'test@example.test' },
     '../../lib/email': { trySendEmail: async () => undefined },
