@@ -2,6 +2,20 @@
 Updated: 2026-10-17
 
 ## Current focus
+**(2026-10-17): Warden review of head `391f756` on draft PR #25.**
+PaymentIntent reuse is rejected (unique index + metadata.order_id + 409);
+team create/invite/add-member go through SECURITY DEFINER RPCs after
+authenticated writes were revoked; share tokens are hashed (30-day max)
+with revoke and private,no-store / DENY headers. Generic client errors,
+immutable `user_assets.id`, anon pricing display columns only, owner-only
+asset stats/signed-url, team-verified upload, `verifyYlsWebhook`, and
+in-repo official braces 3.0.3. Evidence: **432 tests**, typecheck:full 0,
+placeholder-env build 0, lint 38 (same files as main),
+`npm audit --omit=dev` 0 high/critical (3 moderate). All migrations
+applied on disposable local Postgres 16. No merge/deploy/hosted SQL.
+Detail: [[journal/2026-10-17]].
+
+## (prior focus)
 **(2026-10-17): Owner-approved security consolidation into existing PR #25.**
 PR #25's `ce4d55e` is the base; selected protections from `fix/security-release`
 at `9928a56` extend its existing modules. Checkout uses canonical validated

@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServiceClient } from '@/utils/supabase/service'
-import {
-  requireWebhookTimestamp,
-  verifyHmacSha256Hex,
-  webhookSignedPayload,
-} from '@/lib/security/webhook-crypto'
+import { verifyYlsWebhook } from '@/lib/security/webhook-crypto'
 
 // Use Node.js runtime for crypto operations
 export const runtime = 'nodejs';
@@ -23,15 +19,6 @@ interface WebhookEvent {
 // =================================================================================
 // Webhook Signature Verification
 // =================================================================================
-
-function verifyWebhookSignature(
-  payload: string,
-  signature: string,
-  secret: string,
-  timestamp: string
-): boolean {
-  return verifyHmacSha256Hex(secret, webhookSignedPayload(timestamp, payload), signature)
-}
 
 // =================================================================================
 // Webhook Handlers
@@ -159,16 +146,14 @@ export async function POST(request: NextRequest) {
     }
 
     const timestamp = headersList.get('x-yls-timestamp')
-    const freshness = requireWebhookTimestamp(timestamp)
-    if (!freshness.ok) {
-      return NextResponse.json({ error: freshness.error }, { status: freshness.status })
-    }
-    if (!verifyWebhookSignature(payload, signature, webhookSecret, timestamp as string)) {
-      console.error('Invalid webhook signature')
-      return NextResponse.json(
-        { error: 'Invalid signature' },
-        { status: 401 }
-      )
+    const verified = verifyYlsWebhook({
+      timestamp,
+      body: payload,
+      signature,
+      secret: webhookSecret,
+    })
+    if (!verified.ok) {
+      return NextResponse.json({ error: verified.error }, { status: verified.status })
     }
 
     const event = JSON.parse(payload)
@@ -223,10 +208,7 @@ export async function POST(request: NextRequest) {
     console.error('Webhook processing error:', error)
     
     return NextResponse.json(
-      { 
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: 'Webhook processing failed' },
       { status: 500 }
     )
   }

@@ -60,6 +60,15 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
     const mismatch = checkoutPaymentError(pi, priced, userId)
     if (mismatch) return NextResponse.json({ error: mismatch.error }, { status: mismatch.status })
 
+    const { data: existingOrder } = await supabase
+      .from('orders')
+      .select('id')
+      .eq('stripe_payment_intent_id', paymentIntentId)
+      .maybeSingle()
+    if (existingOrder?.id) {
+      return NextResponse.json({ error: 'This payment has already been used' }, { status: 409 })
+    }
+
     const now = new Date().toISOString()
     const insert = buildOrderInsert(
       { ...priced.snapshot, payment: { paymentIntentId, amount: pi.amount / 100, currency: pi.currency, status: 'authorized', quoteRevision: priced.quoteRevision } },
@@ -83,7 +92,12 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
       .select('id')
       .single()
 
-    if (orderError) throw orderError
+    if (orderError) {
+      if (orderError.code === '23505') {
+        return NextResponse.json({ error: 'This payment has already been used' }, { status: 409 })
+      }
+      throw orderError
+    }
 
     await stripe.paymentIntents.update(paymentIntentId, {
       metadata: stripeCheckoutMetadata(userId, priced.pricingInputs, order.id),

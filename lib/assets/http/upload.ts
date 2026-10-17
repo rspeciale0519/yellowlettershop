@@ -3,6 +3,7 @@ import { createServerClient } from '@/utils/supabase/server'
 import { v4 as uuidv4 } from 'uuid'
 import { createServiceClient } from '@/utils/supabase/service'
 import { isMissingUserAssetsTable, listStorageImageAssets, storageAssetId, withSignedAssetUrl } from '@/lib/assets/storage-fallback'
+import { allowPublicAssetUpload, resolveVerifiedTeamId } from '@/lib/assets/upload-policy'
 
 export async function POST(request: NextRequest) {
   try {
@@ -169,11 +170,25 @@ export async function POST(request: NextRequest) {
       return 'other'
     }
 
+    const requestedTeamId = String(formData.get('teamId') || '').trim() || null
+    let teamId: string | null = null
+    try {
+      teamId = await resolveVerifiedTeamId(supabase, user.id, requestedTeamId)
+    } catch {
+      return NextResponse.json({ error: 'Not a member of the requested team' }, { status: 403 })
+    }
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('user_id', user.id)
+      .maybeSingle()
+    const isPublic = allowPublicAssetUpload(profile?.role) && formData.get('isPublic') === 'true'
+
     // Create database record
     const assetData = {
       id: fileId,
       user_id: user.id,
-      team_id: formData.get('teamId') as string || null,
+      team_id: teamId,
       uploaded_by: user.id,
       filename: fileName,
       original_filename: file.name || fileName,
@@ -182,7 +197,7 @@ export async function POST(request: NextRequest) {
       file_size: file.size || 0,
       file_path: filePath,
       file_url: publicUrl,
-      is_public: formData.get('isPublic') === 'true',
+      is_public: isPublic,
       metadata: {
         tags: formData.get('tags') ? (formData.get('tags') as string).split(',') : [],
         category: formData.get('category') as string || undefined,

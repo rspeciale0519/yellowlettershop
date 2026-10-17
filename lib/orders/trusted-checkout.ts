@@ -10,7 +10,7 @@ import {
   type JobQueryClient,
   type ValidationJobRow,
 } from './validation-job'
-import type { CheckoutPricingInputs } from '../payments/intent-metadata'
+import { assertCheckoutMetadata, type CheckoutPricingInputs } from '../payments/intent-metadata'
 
 export interface TrustedCheckoutOk {
   ok: true
@@ -119,9 +119,16 @@ export function amountsMatchCents(piAmountCents: number, serverTotalDollars: num
   return piAmountCents === Math.round(serverTotalDollars * 100)
 }
 
-export function checkoutPaymentError(payment: { amount: number; currency: string; capture_method: string; metadata: Record<string, string> }, quote: TrustedCheckoutOk, userId: string): TrustedCheckoutErr | null {
-  if (payment.metadata.user_id !== userId) return { ok: false, status: 403, error: 'Payment does not belong to this account' }
+export function checkoutPaymentError(payment: { amount: number; currency: string; capture_method: string; metadata?: Record<string, string> | null }, quote: TrustedCheckoutOk, userId: string): TrustedCheckoutErr | null {
+  const metadata = payment.metadata ?? {}
+  try {
+    assertCheckoutMetadata(metadata)
+  } catch {
+    return { ok: false, status: 400, error: 'Payment metadata is invalid' }
+  }
+  if (metadata.user_id !== userId) return { ok: false, status: 403, error: 'Payment does not belong to this account' }
+  if (metadata.order_id) return { ok: false, status: 409, error: 'This payment has already been used' }
   if (payment.currency !== 'usd' || payment.capture_method !== 'manual' || payment.amount !== quote.amountCents) return { ok: false, status: 402, error: 'Authorized amount does not match the server quote' }
-  if (payment.metadata.quote_revision !== quote.quoteRevision) return { ok: false, status: 409, error: 'Artwork, recipients or options changed. Restart payment.' }
+  if (metadata.quote_revision !== quote.quoteRevision) return { ok: false, status: 409, error: 'Artwork, recipients or options changed. Restart payment.' }
   return null
 }

@@ -19,6 +19,7 @@ for (const path of ['../../app/api/payments/intent/route']) {
       assert.equal(metadata.user_id, 'owner')
       assert.equal(metadata.record_count, '1')
       assert.match(metadata.quote_revision, /^[a-f0-9]{64}$/)
+      assert.equal(runtime.idempotencyKey, `checkout:owner:${metadata.quote_revision}`)
     })
     it('rejects amount-only requests without contacting Stripe', async () => {
       const response = await post(route, { amount: 50, description: 'Forged', recordCount: 1 })

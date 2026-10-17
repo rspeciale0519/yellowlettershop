@@ -10,6 +10,8 @@ export const runtime = {
   intent: { id: 'pi_test', amount: 1, status: 'requires_capture', currency: 'usd', capture_method: 'manual', metadata: { user_id: 'owner' } as Record<string, string>, customer: 'cus_test', client_secret: 'secret' },
   rendered: {} as Record<string, unknown>,
   created: {} as Record<string, unknown>, confirmed: 0, attached: 0, inserted: {} as Record<string, unknown>,
+  ordersByPi: {} as Record<string, { id: string }>,
+  idempotencyKey: undefined as string | undefined,
 }
 class FakeStripe {
   static errors = Stripe.errors
@@ -17,8 +19,15 @@ class FakeStripe {
   paymentMethods = { attach: async () => { runtime.attached++; return {} } }
   paymentIntents = {
     retrieve: async () => runtime.intent,
-    update: async () => runtime.intent,
-    create: async (input: Record<string, unknown>) => { runtime.created = input; return { ...runtime.intent, ...input } },
+    create: async (input: Record<string, unknown>, options?: { idempotencyKey?: string }) => {
+      runtime.created = input
+      runtime.idempotencyKey = options?.idempotencyKey
+      return { ...runtime.intent, ...input }
+    },
+    update: async (_id: string, input?: { metadata?: Record<string, string> }) => {
+      if (input?.metadata) runtime.intent.metadata = { ...runtime.intent.metadata, ...input.metadata }
+      return runtime.intent
+    },
     confirm: async () => { runtime.confirmed++; return runtime.intent },
   }
 }
@@ -27,6 +36,7 @@ export function resetRuntime(design = artwork(true)) {
   runtime.db = quoteDatabase(design).db
   runtime.state = quoteState
   runtime.rendered = {}; runtime.created = {}; runtime.confirmed = 0; runtime.attached = 0; runtime.inserted = {}
+  runtime.ordersByPi = {}; runtime.idempotencyKey = undefined
   runtime.intent = { ...runtime.intent, amount: 1, status: 'requires_capture', metadata: { user_id: 'owner' } }
   Object.assign(runtime.db, { storage: { from: () => ({ upload: async () => ({ error: null }) }) } })
   const originalFrom = runtime.db.from.bind(runtime.db)
@@ -36,7 +46,31 @@ export function resetRuntime(design = artwork(true)) {
       return query
     }
     if (table === 'orders') {
-      const query = { insert: (input: Record<string, unknown>) => { runtime.inserted = input; return query }, select: () => query, single: async () => ({ data: { id: 'order-test' }, error: null }) }
+      const query: {
+        _eq?: { col: string; val: string }
+        insert: (input: Record<string, unknown>) => unknown
+        select: () => unknown
+        eq: (col: string, val: string) => unknown
+        maybeSingle: () => Promise<{ data: { id: string } | null; error: null }>
+        single: () => Promise<{ data: { id: string } | null; error: { code: string; message: string } | null }>
+      } = {
+        insert: (input: Record<string, unknown>) => {
+          const pi = String(input.stripe_payment_intent_id || '')
+          if (pi && runtime.ordersByPi[pi]) {
+            return { select: () => ({ single: async () => ({ data: null, error: { code: '23505', message: 'duplicate key value violates unique constraint' } }) }) }
+          }
+          runtime.inserted = input
+          if (pi) runtime.ordersByPi[pi] = { id: 'order-test' }
+          return query
+        },
+        select: () => query,
+        eq: (col: string, val: string) => { query._eq = { col, val }; return query },
+        maybeSingle: async () => {
+          const pi = query._eq?.col === 'stripe_payment_intent_id' ? query._eq.val : ''
+          return { data: pi ? runtime.ordersByPi[pi] ?? null : null, error: null }
+        },
+        single: async () => ({ data: { id: 'order-test' }, error: null }),
+      }
       return query
     }
     return originalFrom(table)

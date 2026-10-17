@@ -5,6 +5,10 @@ import { resolve } from 'path'
 export const ownerId = '00000000-0000-4000-8000-000000000001'
 export const otherId = '00000000-0000-4000-8000-000000000002'
 export const migrationSql = () => readFileSync(resolve(__dirname, '../../supabase/migrations/20261017010000_harden_financial_and_asset_access.sql'), 'utf8')
+export const laterSecurityMigrations = () => [
+  '20261017120000_orders_payment_intent_unique.sql',
+  '20261017120200_share_tokens_identity_pricing.sql',
+].map((name) => readFileSync(resolve(__dirname, '../../supabase/migrations', name), 'utf8'))
 export async function securityDatabase() {
   const db = new PGlite()
   await db.exec(`
@@ -53,10 +57,12 @@ export async function securityDatabase() {
     alter table teams enable row level security;
     create policy owner_team_read on teams for select to authenticated using(owner_id=auth.uid());
     insert into accuzip_validation_jobs(user_id,deliverable_count,validated_records) values ('${ownerId}',1,'[]');
+    alter table user_profiles add column if not exists email text, add column if not exists org text;
+    alter table orders add column if not exists stripe_payment_intent_id text;
   `)
   return db
 }
-export async function asRole<T>(db: PGlite, role: 'anon' | 'authenticated' | 'service_role', action: () => Promise<T>) {
-  await db.exec(`set role ${role}; set request.jwt.claim.sub = '${ownerId}'`)
+export async function asRole<T>(db: PGlite, role: 'anon' | 'authenticated' | 'service_role', action: () => Promise<T>, userId = ownerId) {
+  await db.exec(`set role ${role}; set request.jwt.claim.sub = '${userId}'`)
   try { return await action() } finally { await db.exec('reset role') }
 }

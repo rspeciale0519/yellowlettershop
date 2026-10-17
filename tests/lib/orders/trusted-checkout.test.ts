@@ -1,7 +1,7 @@
 import { describe, it } from 'mocha'
 import { strict as assert } from 'assert'
 import { calculatePricing, DEFAULT_PRICING } from '../../../lib/orders/pricing'
-import { evaluateTrustedCheckout } from '../../../lib/orders/trusted-checkout'
+import { checkoutPaymentError, evaluateTrustedCheckout } from '../../../lib/orders/trusted-checkout'
 import { evaluateOwnedFinishedJob } from '../../../lib/orders/validation-job'
 import { parseMailingOptions } from '../../../lib/orders/mailing-options'
 import { stripeCheckoutMetadata } from '../../../lib/payments/intent-metadata'
@@ -133,5 +133,20 @@ describe('Stripe checkout metadata', () => {
     assert.equal(meta.record_count, '1000')
     assert.equal(meta.order_id, 'ord-1')
     assert.equal('email' in meta, false)
+  })
+
+  it('rejects a PaymentIntent that already has an order_id or unexpected keys', () => {
+    const result = evaluateTrustedCheckout(finishedJob, owner, state(1000))
+    assert.equal(result.ok, true)
+    if (!result.ok) return
+    const payment = {
+      amount: result.amountCents,
+      currency: 'usd',
+      capture_method: 'manual',
+      metadata: stripeCheckoutMetadata(owner, result.pricingInputs),
+    }
+    assert.equal(checkoutPaymentError(payment, result, owner), null)
+    assert.equal(checkoutPaymentError({ ...payment, metadata: { ...payment.metadata, order_id: 'already' } }, result, owner)?.status, 409)
+    assert.equal(checkoutPaymentError({ ...payment, metadata: { ...payment.metadata, extra: 'nope' } }, result, owner)?.status, 400)
   })
 })

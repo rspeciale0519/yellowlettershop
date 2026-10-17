@@ -1,5 +1,6 @@
 import { createServiceClient } from '@/utils/supabase/service'
 import { isOwnedAssetPath } from './ownership'
+import { hashShareToken } from './share-token'
 
 export interface ShareLinkData {
   id: string
@@ -52,7 +53,7 @@ export class ShareService {
             created_at
           )
         `)
-        .eq('share_token', token)
+        .eq('share_token', hashShareToken(token))
         .eq('is_active', true)
         .single()
 

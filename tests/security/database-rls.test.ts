@@ -1,17 +1,22 @@
 import { strict as assert } from 'assert'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
-import { securityDatabase, migrationSql, asRole, ownerId, otherId } from '../helpers/security-database'
+import { securityDatabase, migrationSql, laterSecurityMigrations, asRole, ownerId, otherId } from '../helpers/security-database'
 
 describe('local PostgreSQL financial and administrative RLS migration', function () {
   this.timeout(30000)
   let db: Awaited<ReturnType<typeof securityDatabase>>
-  before(async () => { db = await securityDatabase(); await db.exec(migrationSql()) })
+  before(async () => {
+    db = await securityDatabase()
+    await db.exec(migrationSql())
+    for (const sql of laterSecurityMigrations()) await db.exec(sql)
+  })
   after(async () => { await db?.close() })
   it('enables RLS on every public table and is repeatable', async () => {
     const result = await db.query<{ relname: string }>(`select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind in ('r','p') and not c.relrowsecurity`)
     assert.deepEqual(result.rows, [])
     await db.exec(migrationSql())
+    for (const sql of laterSecurityMigrations()) await db.exec(sql)
   })
   it('hardens a database whose original PR #25 migration was already applied', async () => {
     const prior = await securityDatabase()
@@ -40,7 +45,15 @@ describe('local PostgreSQL financial and administrative RLS migration', function
     })
   })
   it('allows public price reads but rejects price and admin writes', async () => {
-    await asRole(db, 'anon', async () => assert.equal((await db.query('select * from pricing_config')).rows.length, 1))
+    await asRole(db, 'anon', async () => {
+      assert.equal((await db.query('select display_name, unit_amount from pricing_config')).rows.length, 1)
+      const granted = await db.query<{ column_name: string }>(`
+        select column_name from information_schema.column_privileges
+        where grantee='anon' and table_schema='public' and table_name='pricing_config' and privilege_type='SELECT'
+      `)
+      assert.equal(granted.rows.some((row) => row.column_name === 'metadata' || row.column_name === 'created_by'), false)
+      await assert.rejects(db.query('select metadata, created_by from pricing_config'), /permission denied/)
+    })
     await asRole(db, 'authenticated', async () => {
       for (const sql of ["update pricing_config set unit_amount=1", "delete from pricing_config", "insert into pricing_config(category,key,display_name) values ('mail_piece','forged','Forged')", 'delete from admin_audit_log', 'delete from user_notes', 'delete from pricing_change_log', 'delete from vendors']) {
         await assert.rejects(db.exec(sql), /permission denied|row-level security/)
@@ -57,7 +70,13 @@ describe('local PostgreSQL financial and administrative RLS migration', function
   it('preserves safe self-profile edits but blocks self-elevation and other users’ updates', async () => {
     await asRole(db, 'authenticated', async () => {
       await db.exec(`update user_profiles set first_name='Safe edit' where user_id='${ownerId}'`)
-      for (const sql of ["update user_profiles set role='super_admin'", "update user_profiles set stripe_customer_id='cus_forged'", `update user_profiles set team_id='${otherId}'`]) await assert.rejects(db.exec(sql), /permission denied|row-level security/)
+      for (const sql of [
+        "update user_profiles set role='super_admin'",
+        "update user_profiles set stripe_customer_id='cus_forged'",
+        `update user_profiles set team_id='${otherId}'`,
+        "update user_profiles set email='forged@example.test'",
+        "update user_profiles set org='forged-org'",
+      ]) await assert.rejects(db.exec(sql), /permission denied|row-level security/)
       await db.exec(`update user_profiles set first_name='Attacker edit' where user_id='${otherId}'`)
       assert.equal((await db.query('select * from user_profiles')).rows.length, 1)
     })
@@ -85,6 +104,18 @@ describe('local PostgreSQL financial and administrative RLS migration', function
       assert.equal((await db.query('select * from storage.objects')).rows.length, 2)
     })
   })
+  it('fails loudly instead of deleting duplicate payment intents before the unique index', async () => {
+    const prior = await securityDatabase()
+    try {
+      await prior.exec(`insert into orders(created_by,stripe_payment_intent_id) values ('${ownerId}','pi_dup'), ('${otherId}','pi_dup')`)
+      await assert.rejects(
+        prior.exec(readFileSync(resolve(__dirname, '../../supabase/migrations/20261017120000_orders_payment_intent_unique.sql'), 'utf8')),
+        /duplicate payment intent/
+      )
+      try { await prior.exec('rollback') } catch { /* already idle */ }
+      assert.equal((await prior.query<{ n: number }>(`select count(*)::int as n from orders where stripe_payment_intent_id='pi_dup'`)).rows[0].n, 2)
+    } finally { await prior.close() }
+  })
   it('blocks foreign-path asset metadata, traversal and identity reassignment before share creation', async () => {
     await asRole(db, 'authenticated', async () => {
       for (const path of [`${otherId}/private.pdf`, `${ownerId}/../${otherId}/private.pdf`, `${ownerId}/%2e%2e/private.pdf`]) {
@@ -92,6 +123,7 @@ describe('local PostgreSQL financial and administrative RLS migration', function
         await assert.rejects(db.exec(`update user_assets set file_path='${path}' where user_id='${ownerId}'`), /row-level security/)
       }
       await assert.rejects(db.exec(`update user_assets set user_id='${otherId}',file_path='${otherId}/private.pdf'`), /identity|ownership|permission|row-level security/)
+      await assert.rejects(db.exec(`update user_assets set id=gen_random_uuid() where user_id='${ownerId}'`), /identity|ownership|permission|row-level security/)
       await db.exec(`insert into asset_share_links(asset_id, share_token,created_by) select id,'valid-sample','${ownerId}' from user_assets where user_id='${ownerId}'`)
       assert.equal((await db.query('select * from asset_share_links')).rows.length, 1)
     })

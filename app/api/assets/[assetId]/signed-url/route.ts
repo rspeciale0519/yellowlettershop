@@ -35,8 +35,7 @@ export async function GET(
       )
     }
 
-    // Check if user has access to this asset
-    if (asset.user_id !== user.id && !asset.is_public) {
+    if (asset.user_id !== user.id) {
       return NextResponse.json(
         { error: 'Access denied' },
         { status: 403 }

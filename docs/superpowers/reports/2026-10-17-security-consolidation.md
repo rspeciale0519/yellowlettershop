@@ -57,7 +57,7 @@ The old standalone branches are retained for history, not a second merge.
 ## Validation
 
 - `npm ci --no-audit --no-fund`: passed with lockfile integrity and TLS checks.
-- `npm test`: **419 passing**, including checkout and cross-customer negative
+- `npm test`: **432 passing**, including checkout and cross-customer negative
   tests, real PDF image embedding, alternate asset endpoints, shares and CSP/HMAC.
 - Twelve local PostgreSQL/PGlite tests cover financial/admin RLS, old column
   grants, fake validation/payment rows, self-elevation, safe profile/team edits,
@@ -68,11 +68,9 @@ The old standalone branches are retained for history, not a second merge.
 - Fourteen local production HTTP checks passed: homepage/CSP, anonymous image,
   payment, asset and preview/proof access denied, a fresh signed sample webhook
   accepted, and stale/timestamp-tampered/body-only/event-header attacks rejected.
-- Full `npm audit`: **0 critical, 0 high, 26 moderate, 2 low**. Lower severity
-  findings remain. The braces override uses
-  `@dieub/braces-depth-guard@3.0.3-pn.3`; its parser depth guard is tested through
-  the real transitive dependency. Replacing this third-party fork with an
-  upstream fix is a follow-up dependency-maintenance task.
+- `npm audit --omit=dev`: **0 critical, 0 high, 3 moderate**. Lower severity
+  findings remain. The braces override now uses an in-repo copy of official
+  braces 3.0.3 with a local depth bound (`vendor/braces`).
 - Independent review found and resolved the share MIME issue and a pricing
   display minimum regression; final re-review passed 28 focused tests and
   direct route probes with no remaining blockers in that review.

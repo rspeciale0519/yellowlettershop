@@ -65,10 +65,8 @@ export async function GET(
     
     // Security headers
     response.headers.set('X-Content-Type-Options', 'nosniff')
-    response.headers.set('X-Frame-Options', 'SAMEORIGIN')
-    
-    // Cache headers (24 hours for shared files)
-    response.headers.set('Cache-Control', 'public, max-age=86400')
+    response.headers.set('X-Frame-Options', 'DENY')
+    response.headers.set('Cache-Control', 'private, no-store')
     response.headers.set('ETag', `"${token}-${shareData.access_count}"`)
 
     return response

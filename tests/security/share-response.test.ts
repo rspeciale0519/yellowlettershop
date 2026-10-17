@@ -21,6 +21,8 @@ describe('share responses treat owner-editable MIME and filenames as untrusted',
       assert.match(response.headers.get('content-disposition')!, /^attachment;/, value)
       assert.equal(response.headers.get('content-type'), 'application/octet-stream', value)
       assert.equal(response.headers.get('x-content-type-options'), 'nosniff')
+      assert.equal(response.headers.get('cache-control'), 'private, no-store')
+      assert.equal(response.headers.get('x-frame-options'), 'DENY')
     }
   })
   it('preserves inline raster images, PDF and plain text with normalized MIME', async () => {

@@ -67,6 +67,8 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
       payment_method_types: ['card'],
       metadata: stripeCheckoutMetadata(userId, priced.pricingInputs),
       description: `Direct Mail Order - ${priced.mailingOptions.serviceLevel.replace('_', ' ')} service`
+    }, {
+      idempotencyKey: `checkout:${userId}:${priced.quoteRevision}`.slice(0, 255),
     })
 
     return NextResponse.json({
@@ -88,13 +90,13 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
 
     if (error instanceof Stripe.errors.StripeError) {
       return NextResponse.json(
-        { error: `Stripe error: ${error.message}` },
+        { error: 'Payment intent creation failed' },
         { status: 400 }
       )
     }
 
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Payment intent creation failed' },
+      { error: 'Payment intent creation failed' },
       { status: 500 }
     )
   }

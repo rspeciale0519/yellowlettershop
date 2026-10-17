@@ -14,13 +14,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const { searchParams } = new URL(request.url)
-    const targetUserId = searchParams.get('userId') || user.id
-
     const { data, error } = await supabase
       .from('user_assets')
       .select('*')
-      .eq('user_id', targetUserId)
+      .eq('user_id', user.id)
 
     if (error) throw error
     const assets = data?.filter(asset => isOwnedAssetPath(asset.file_path, asset.user_id))

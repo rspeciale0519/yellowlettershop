@@ -3,6 +3,7 @@ import { createServerClient } from '@/utils/supabase/server'
 import { createServiceClient } from '@/utils/supabase/service'
 import { isMissingUserAssetsTable, listStorageImageAssets } from '@/lib/assets/storage-fallback'
 import { isOwnedAssetPath } from '@/lib/assets/ownership'
+import { escapePostgrestSearch } from '@/lib/assets/upload-policy'
 
 export async function GET(request: NextRequest) {
   try {
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
       query = query.eq('uploaded_by', createdBy)
     }
 
-    const searchQuery = searchParams.get('search')
+    const searchQuery = escapePostgrestSearch(searchParams.get('search') || '')
     if (searchQuery) {
       query = query.or(`filename.ilike.%${searchQuery}%,original_filename.ilike.%${searchQuery}%`)
     }
