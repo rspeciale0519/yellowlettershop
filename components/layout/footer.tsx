@@ -10,7 +10,7 @@ export function Footer() {
   const isAdmin = pathname?.startsWith('/dashboard/admin')
 
   // Hide footer entirely in admin panel
-  if (isAdmin) return null
+  if (isAdmin || pathname === "/design/customize") return null
 
   return (
     <footer className={`border-t bg-gray-100 dark:bg-gray-900 ${isDashboard ? 'lg:ml-64 lg:w-[calc(100%-16rem)]' : 'w-full'}`}>

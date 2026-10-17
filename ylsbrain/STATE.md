@@ -1,7 +1,14 @@
 # yls brain — STATE
-Updated: 2026-10-16
+Updated: 2026-10-17
 
 ## Current focus
+**(2026-10-17): Task 1 responsive designer workspace implemented in isolated worker clone.**
+Phone and desktop workspace regressions, 295 unit tests, full typecheck, and
+scoped ESLint (one existing warning) verify this UI repair. Browser APIs are
+intercepted and writes blocked; production saves/PDF/checkout are not certified.
+Template entry follows as a separate task. Detail: [[journal/2026-10-17]].
+
+## Prior focus
 **(2026-10-16): Proposed designer usability design and implementation plan prepared.**
 Owner chose to continue the existing full app. Working branch:
 `feature/designer-flowing-content`, based on `develop` at `8150e52`.

@@ -56,8 +56,8 @@ const panelOptions: { id: WorkspacePanel; label: string; icon: typeof PackagePlu
 
 export function DesignerWorkspaceSidebar(props: DesignerWorkspaceSidebarProps) {
   return (
-    <aside className="flex h-full">
-      <div className={cn("flex w-20 flex-col items-center gap-2 border-r px-2 py-4", designerBorder.rail, designerSurface.rail)}>
+    <aside className="flex h-full min-h-0 min-w-0 flex-col">
+      <div className={cn("grid shrink-0 grid-cols-5 gap-1 border-b p-2", designerBorder.rail, designerSurface.rail)}>
         {panelOptions.map((panel) => {
           const Icon = panel.icon
           const isActive = props.activePanel === panel.id
@@ -65,7 +65,7 @@ export function DesignerWorkspaceSidebar(props: DesignerWorkspaceSidebarProps) {
             <Button
               key={panel.id}
               variant="ghost"
-              className={`relative h-16 w-16 flex-col gap-1 rounded-lg border text-[11px] transition ${
+              className={`relative h-14 w-full min-w-0 flex-col gap-1 rounded-lg border text-[11px] transition ${
                 isActive
                   ? "border-yellow-400 bg-yellow-400 text-slate-950 shadow-[0_0_0_3px_rgba(250,204,21,0.16)] hover:bg-yellow-400"
                   : "border-transparent text-slate-500 hover:border-slate-300 hover:bg-slate-200/70 hover:text-slate-900 dark:text-slate-300 dark:hover:border-slate-700 dark:hover:bg-slate-800 dark:hover:text-yellow-200"
@@ -79,7 +79,7 @@ export function DesignerWorkspaceSidebar(props: DesignerWorkspaceSidebarProps) {
           )
         })}
       </div>
-      <div className={cn("w-80 overflow-y-auto border-r", designerBorder.base, designerSurface.panel)}>
+      <div className={cn("min-h-0 min-w-0 flex-1 overflow-y-auto border-r", designerBorder.base, designerSurface.panel)}>
         {props.activePanel === "modules" && (
           <ModulesPanel
             activeTool={props.activeTool}

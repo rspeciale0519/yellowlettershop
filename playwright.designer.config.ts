@@ -1,0 +1,23 @@
+import { defineConfig } from '@playwright/test'
+
+export default defineConfig({
+  testDir: './tests/browser/designer',
+  fullyParallel: false,
+  workers: 1,
+  timeout: 60_000,
+  outputDir: '/tmp/yls-designer-browser-results',
+  use: {
+    baseURL: 'http://127.0.0.1:3021',
+    browserName: 'chromium',
+    launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || '/usr/bin/chromium', args: ['--no-sandbox'] },
+    screenshot: 'only-on-failure',
+    trace: 'retain-on-failure',
+  },
+  webServer: {
+    command: 'npx next dev --hostname 127.0.0.1 -p 3021',
+    url: 'http://127.0.0.1:3021',
+    reuseExistingServer: !process.env.CI,
+    timeout: 120_000,
+    env: { NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:54321', NEXT_PUBLIC_SUPABASE_ANON_KEY: 'designer-browser-test-only' },
+  },
+})

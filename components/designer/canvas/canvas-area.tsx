@@ -1,10 +1,11 @@
 "use client"
 
-import { useRef, useState } from "react"
-import { Copy, Hand, Lock, Maximize2, MousePointer2, RotateCcw, Trash2, Unlock, ZoomIn, ZoomOut } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { Copy, Lock, Trash2, Unlock } from "lucide-react"
 import { Rnd } from "react-rnd"
 import { Button } from "@/components/ui/button"
-import { ToolbarButton } from "@/components/designer/ui/toolbar-button"
+import { CanvasControls } from "./canvas-controls"
+import { fitCanvas } from "@/components/designer/workspace/fit-canvas"
 import type { DesignerFont } from "@/components/designer/designer-fonts"
 import { RenderElement } from "@/components/designer/canvas/render-element"
 import { computeSnap, snapPosition, type SnapGuide } from "@/components/designer/canvas/snap"
@@ -42,7 +43,7 @@ export interface CanvasAreaProps {
 }
 
 function clampZoom(nextZoom: number) {
-  return Math.min(220, Math.max(25, Math.round(nextZoom)))
+  return Math.min(220, Math.max(1, Math.round(nextZoom)))
 }
 
 export function CanvasArea({
@@ -77,9 +78,28 @@ export function CanvasArea({
   const currentPan = pan ?? { x: 0, y: 0 }
 
   const changeZoom = (nextZoom: number) => onZoomChange(clampZoom(nextZoom))
+  const fitActions = useRef({ onZoomChange, onPanChange })
+  fitActions.current = { onZoomChange, onPanChange }
+  const fitToViewport = () => {
+    const viewport = viewportRef.current
+    if (!viewport || !viewport.clientWidth || !viewport.clientHeight) return
+    fitActions.current.onPanChange({ x: 0, y: 0 })
+    fitActions.current.onZoomChange(fitCanvas({ width: viewport.clientWidth, height: viewport.clientHeight - (showControls ? 80 : 0) }, canvasSize, 24))
+  }
+  const fitRef = useRef(fitToViewport)
+  fitRef.current = fitToViewport
+  useEffect(() => {
+    if (!showControls || !viewportRef.current) return
+    const observer = new ResizeObserver(() => fitRef.current())
+    observer.observe(viewportRef.current)
+    fitRef.current()
+    return () => observer.disconnect()
+  }, [canvasSize.width, canvasSize.height, showControls])
+
 
   return (
     <div
+      data-testid="canvas-viewport"
       ref={viewportRef}
       className={`relative h-full w-full overflow-hidden bg-gray-200 dark:bg-gray-950 ${
         mode === "pan" ? "cursor-grab" : "cursor-default"
@@ -119,11 +139,13 @@ export function CanvasArea({
         else onDropAsset(payload.asset, position)
       }}
     >
+      <div className="absolute inset-0" style={{ bottom: showControls ? 80 : 0 }}>
       <div
         className="absolute left-1/2 top-1/2"
         style={{ transform: `translate(calc(-50% + ${currentPan.x}px), calc(-50% + ${currentPan.y}px)) scale(${canvasScale})` }}
       >
         <div
+          data-testid="canvas-artboard"
           className="relative bg-white text-gray-950 shadow-lg"
           style={{ width: canvasSize.width, height: canvasSize.height }}
           onClick={() => {
@@ -256,59 +278,9 @@ export function CanvasArea({
         </div>
       </div>
 
-      {showControls && (
-        <div
-          role="toolbar"
-          aria-label="Canvas controls"
-          className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1 rounded-full border border-border bg-card p-1.5 shadow-lg shadow-slate-900/10 dark:shadow-black/40"
-        >
-          <ToolbarButton active={mode === "select"} aria-label="Select tool" aria-pressed={mode === "select"} onClick={() => onModeChange("select")}>
-            <MousePointer2 />
-          </ToolbarButton>
-          <ToolbarButton active={mode === "pan"} aria-label="Pan canvas" aria-pressed={mode === "pan"} onClick={() => onModeChange("pan")}>
-            <Hand />
-          </ToolbarButton>
-          <div className="mx-1 h-5 w-px bg-border" />
-          <ToolbarButton aria-label="Zoom out" onClick={() => changeZoom(zoom - 10)}>
-            <ZoomOut />
-          </ToolbarButton>
-          <input
-            type="range"
-            min={25}
-            max={220}
-            step={1}
-            value={zoom}
-            aria-label="Zoom level"
-            onChange={(event) => changeZoom(Number(event.target.value))}
-            className="h-1 w-24 cursor-pointer accent-yellow-400"
-          />
-          <ToolbarButton aria-label="Zoom in" onClick={() => changeZoom(zoom + 10)}>
-            <ZoomIn />
-          </ToolbarButton>
-          <span className="w-12 text-center text-xs font-semibold tabular-nums text-foreground" aria-live="polite" aria-label={`Zoom ${zoom} percent`}>
-            {zoom}%
-          </span>
-          <div className="mx-1 h-5 w-px bg-border" />
-          <ToolbarButton
-            aria-label="Fit to screen"
-            onClick={() => {
-              onPanChange({ x: 0, y: 0 })
-              changeZoom(70)
-            }}
-          >
-            <Maximize2 />
-          </ToolbarButton>
-          <ToolbarButton
-            aria-label="Actual size"
-            onClick={() => {
-              onPanChange({ x: 0, y: 0 })
-              changeZoom(100)
-            }}
-          >
-            <RotateCcw />
-          </ToolbarButton>
-        </div>
-      )}
+      </div>
+      {showControls && <CanvasControls mode={mode} zoom={zoom} onModeChange={onModeChange} changeZoom={changeZoom} onPanChange={onPanChange} onFit={fitToViewport} />}
+
     </div>
   )
 }

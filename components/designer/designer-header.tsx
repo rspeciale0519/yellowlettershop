@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Eye, Redo, RectangleHorizontal, RectangleVertical, Save, Undo } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -42,14 +44,25 @@ export function DesignerHeader({
   templates,
   savedLabel,
 }: DesignerHeaderProps) {
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const isPortrait = orientation === "portrait"
   return (
     <TooltipProvider delayDuration={300}>
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-4">
-        {/* Left: what you're editing — template, size, orientation, history */}
-        <div className="flex items-center gap-3">
+      <header className="shrink-0 border-b border-border bg-card px-3 py-2">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+          <Link href="/templates" className="text-sm font-semibold">My design</Link>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={onPreview}><Eye className="mr-1 h-4 w-4" />Preview</Button>
+            <Button size="sm" variant="brand" onClick={onNext}>Continue to Order</Button>
+          </div>
+        </div>
+        <div className="mt-2 flex items-center justify-between gap-2 lg:hidden">
+          <Button variant="ghost" size="sm" aria-expanded={settingsOpen} onClick={() => setSettingsOpen(!settingsOpen)}>Design settings</Button>
+          <span className="truncate text-xs text-muted-foreground" aria-live="polite">{savedLabel}</span>
+        </div>
+        <div className={`${settingsOpen ? "flex" : "hidden"} mt-2 flex-wrap items-center gap-2 lg:flex`}>
           <Select value={templateId} onValueChange={onTemplateChange}>
-            <SelectTrigger aria-label="Design template" className="h-9 w-[190px] text-sm font-medium">
+            <SelectTrigger aria-label="Design template" className="h-9 w-[180px] text-sm font-medium">
               <SelectValue placeholder="Template" />
             </SelectTrigger>
             <SelectContent>
@@ -61,7 +74,7 @@ export function DesignerHeader({
             </SelectContent>
           </Select>
           <Select value={formatId} onValueChange={(value) => onFormatChange(value as MailFormatId)}>
-            <SelectTrigger aria-label="Mail piece size" className="h-9 w-[150px] text-sm font-medium">
+            <SelectTrigger aria-label="Mail piece size" className="h-9 w-[145px] text-sm font-medium">
               <SelectValue placeholder="Size" />
             </SelectTrigger>
             <SelectContent>
@@ -114,22 +127,7 @@ export function DesignerHeader({
               <TooltipContent>{isPortrait ? "Portrait — switch to landscape" : "Landscape — switch to portrait"}</TooltipContent>
             </Tooltip>
           </div>
-        </div>
-
-        {/* Right: save status, then where you're going — proof, then order */}
-        <div className="flex items-center gap-2">
-          {savedLabel ? (
-            <span className="mr-1 hidden text-xs font-medium text-muted-foreground sm:inline" aria-live="polite">
-              {savedLabel}
-            </span>
-          ) : null}
-          <Button variant="outline" size="sm" onClick={onPreview}>
-            <Eye className="mr-2 h-4 w-4" />
-            Preview
-          </Button>
-          <Button size="sm" variant="brand" onClick={onNext}>
-            Next
-          </Button>
+          <span className="ml-auto hidden text-xs text-muted-foreground lg:inline" aria-live="polite">{savedLabel}</span>
         </div>
       </header>
     </TooltipProvider>

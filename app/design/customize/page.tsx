@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react"
 import { CanvasArea } from "@/components/designer/canvas-area"
 import { DesignerHeader } from "@/components/designer/designer-header"
 import { DesignerWorkspaceSidebar } from "@/components/designer/designer-workspace-sidebar"
+import { EditorShell } from "@/components/designer/workspace/editor-shell"
 import { HelpButton } from "@/components/designer/help-button"
 import { PagesPanel } from "@/components/designer/pages-panel"
 import { PreviewModal } from "@/components/designer/preview-modal"
@@ -209,7 +210,8 @@ export default function DesignCustomizerPage() {
   if (!user) return null
 
   return (
-    <div className={`flex h-screen flex-col overflow-hidden bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-50 ${designerRootClass}`}>
+    <div className={`relative ${designerRootClass}`}>
+      <EditorShell header={
       <DesignerHeader
         onUndo={doc.handleUndo}
         onRedo={doc.handleRedo}
@@ -227,7 +229,7 @@ export default function DesignCustomizerPage() {
         templates={templateOptions}
         savedLabel={autosave.label}
       />
-      <main className="flex flex-1 overflow-hidden">
+      } content={
         <DesignerWorkspaceSidebar
           activePanel={activePanel}
           activeTool={activeTool}
@@ -260,6 +262,7 @@ export default function DesignCustomizerPage() {
           onBackgroundChange={handleBackgroundChange}
           specRects={specRects}
         />
+      } canvas={
         <CanvasArea
           elements={activeElements}
           fonts={fonts}
@@ -285,10 +288,9 @@ export default function DesignCustomizerPage() {
           background={activeBackground}
           onReplaceImageRequest={handleReplaceImageRequest}
         />
-        <div className="w-48 border-l border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800">
+      } pages={
           <PagesPanel activePage={activePage} onPageChange={setActivePage} orientation={documentState.orientation} />
-        </div>
-      </main>
+      } />
       {isPreviewOpen && <PreviewModal documentState={documentState} canvasSize={canvasSize} onClose={() => setIsPreviewOpen(false)} />}
       <ConfirmDialog
         open={pendingDelete !== null}
@@ -302,7 +304,7 @@ export default function DesignCustomizerPage() {
         }}
         onCancel={() => setPendingDelete(null)}
       />
-      <HelpButton />
+      <div className="[&>div]:bottom-20 lg:[&>div]:bottom-4"><HelpButton /></div>
     </div>
   )
 }
