@@ -1,393 +1,80 @@
-"use client"
-
-import React, { useState, useEffect } from 'react'
-import { OrderStepProps, PricingBreakdown, PaymentData } from '@/types/orders'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Badge } from '@/components/ui/badge'
-import { AlertCircle, Lock, RefreshCw, Receipt } from 'lucide-react'
-import { useOrderWorkflow } from '../OrderProvider'
-import { useToast } from '@/components/ui/use-toast'
+'use client'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import type { OrderStepProps } from '../../../types/orders'
+import { Button } from '../../ui/button'
+import { Alert, AlertDescription } from '../../ui/alert'
+import { useToast } from '../../ui/use-toast'
+import { useOrderWorkflow } from '../OrderProvider'
 import { PaymentSecurityInfo } from './payment/PaymentSecurityInfo'
-import { PaymentMethodList, type PaymentMethod } from './payment/PaymentMethodList'
+import { PaymentMethodList } from './payment/PaymentMethodList'
 import { AddPaymentMethodDialog } from './payment/AddPaymentMethodDialog'
 import { ConfirmActionDialog } from '../confirm-action-dialog'
+import { useOrderQuote } from '../quotes/use-order-quote'
+import { useQuotedIntent } from '../quotes/use-quoted-intent'
+import { usePaymentMethods } from '../quotes/use-payment-methods'
+import { OrderQuoteSummary } from '../quotes/order-quote-summary'
+import { authorizeQuotedOrder, type AuthorizationResult } from '../quotes/authorize-quoted-order'
+import { requestJson } from '../quotes/request-json'
+import { approvalMatchesQuote, isPaymentForQuote } from '../../../lib/orders/quote-state'
 
+async function completeCardAction(clientSecret: string): Promise<boolean> {
+  const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+  if (!publishableKey) throw new Error('Card authentication is unavailable. Please contact support.')
+  const { loadStripe } = await import('@stripe/stripe-js')
+  const stripe = await loadStripe(publishableKey)
+  if (!stripe) throw new Error('Unable to load card authentication. Please try again.')
+  const result = await stripe.handleNextAction({ clientSecret })
+  if (result.error) throw new Error(result.error.message ?? 'Card authentication failed')
+  return result.paymentIntent?.status === 'requires_capture'
+}
 export function PaymentStep({ orderState }: OrderStepProps) {
-  const { updateOrderState, submitOrder } = useOrderWorkflow()
-  const { toast } = useToast()
+  const { updateOrderState, submitOrder, goToStep } = useOrderWorkflow()
   const router = useRouter()
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null)
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false)
-  const [paymentIntent, setPaymentIntent] = useState<string | null>(null)
-  const [isLoadingPaymentMethods, setIsLoadingPaymentMethods] = useState(true)
-  const [pricingData, setPricingData] = useState<PricingBreakdown | null>(null)
-  const [isCalculatingPrice, setIsCalculatingPrice] = useState(false)
-  const [isAddCardOpen, setIsAddCardOpen] = useState(false)
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
-
-  const calculateFinalPricing = async () => {
-    setIsCalculatingPrice(true)
+  const { toast } = useToast()
+  const quote = useOrderQuote(orderState, updateOrderState)
+  const intent = useQuotedIntent(orderState, quote.pricing, updateOrderState, quote.acceptPricing)
+  const cards = usePaymentMethods()
+  const [isProcessing, setProcessing] = useState(false)
+  const [addCardOpen, setAddCardOpen] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const approved = approvalMatchesQuote(orderState.approval, quote.pricing) && orderState.proofQuoteRevision === quote.pricing?.quoteRevision && !orderState.proofPending
+  const ready = Boolean(cards.selectedId && !quote.isLoading && !intent.isLoading && approved && isPaymentForQuote(intent.payment, quote.pricing))
+  const latest = useRef({ key: quote.key, revision: quote.pricing?.quoteRevision, ready })
+  latest.current = { key: quote.key, revision: quote.pricing?.quoteRevision, ready }
+  const authorize = async () => {
+    if (!ready || !intent.payment || !cards.selectedId || !quote.pricing || isProcessing) return
+    const key = quote.key; const revision = quote.pricing.quoteRevision
+    setProcessing(true); setError(null); setConfirmOpen(false)
     try {
-      const response = await fetch('/api/orders/pricing', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderState })
+      const result = await authorizeQuotedOrder({
+        state: { ...orderState, pricing: quote.pricing }, payment: intent.payment, methodId: cards.selectedId,
+        isCurrent: () => latest.current.key === key && latest.current.revision === revision && latest.current.ready,
+        authorize: body => requestJson<AuthorizationResult>('/api/payments/authorize', body),
+        completeAction: completeCardAction, update: updateOrderState, submit: submitOrder,
       })
-      if (!response.ok) {
-        throw new Error('Failed to calculate final pricing')
-      }
-      const data: PricingBreakdown = await response.json()
-      setPricingData(data)
-      updateOrderState({ pricing: data })
-    } catch (error) {
-      console.error('Failed to calculate final pricing:', error)
-      toast({
-        title: "Pricing calculation failed",
-        description: "Unable to calculate your order total. Please go back and try again.",
-        variant: "destructive"
-      })
-    } finally {
-      setIsCalculatingPrice(false)
-    }
+      toast({ title: 'Order submitted', description: 'Your card is authorized. Review the official proof before it is charged.' })
+      router.push(`/orders/${result.orderId}/success`)
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : 'Unable to authorize payment.')
+      quote.refresh()
+    } finally { setProcessing(false) }
   }
-
-  useEffect(() => {
-    loadPaymentMethods()
-    calculateFinalPricing()
-  }, [])
-
-  useEffect(() => {
-    if (pricingData) {
-      createPaymentIntent()
-    }
-  }, [pricingData])
-
-  const loadPaymentMethods = async () => {
-    try {
-      const response = await fetch('/api/payments/methods')
-      if (!response.ok) {
-        throw new Error('Failed to load payment methods')
-      }
-      
-      const methods = await response.json()
-      setPaymentMethods(methods)
-      
-      // Auto-select default payment method if available
-      const defaultMethod = methods.find((method: PaymentMethod) => method.isDefault)
-      if (defaultMethod) {
-        setSelectedPaymentMethod(defaultMethod.id)
-      }
-    } catch (error) {
-      console.error('Failed to load payment methods:', error)
-      toast({
-        title: "Payment methods load failed",
-        description: "Unable to load your saved payment methods.",
-        variant: "destructive"
-      })
-    } finally {
-      setIsLoadingPaymentMethods(false)
-    }
-  }
-
-  const createPaymentIntent = async () => {
-    try {
-      const response = await fetch('/api/payments/intent', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          orderState,
-          amount: pricingData?.totalPrice ?? orderState.pricing?.totalPrice
-        })
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to create payment intent')
-      }
-
-      const result = await response.json()
-      setPaymentIntent(result.clientSecret)
-      
-      updateOrderState({
-        payment: {
-          paymentIntentId: result.paymentIntentId,
-          status: 'pending',
-          amount: pricingData?.totalPrice ?? 0,
-          currency: 'usd'
-        }
-      })
-
-    } catch (error) {
-      console.error('Failed to create payment intent:', error)
-      toast({
-        title: "Payment setup failed",
-        description: "Unable to prepare payment processing.",
-        variant: "destructive"
-      })
-    }
-  }
-
-  const handlePaymentMethodSelect = (methodId: string) => {
-    setSelectedPaymentMethod(methodId)
-  }
-
-  const authorizePayment = async () => {
-    if (!selectedPaymentMethod || !paymentIntent) {
-      toast({
-        title: "Payment method required",
-        description: "Please select a payment method.",
-        variant: "destructive"
-      })
-      return
-    }
-
-    setIsProcessingPayment(true)
-
-    try {
-      // Authorize payment with Stripe
-      const response = await fetch('/api/payments/authorize', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          paymentIntentId: orderState.payment?.paymentIntentId,
-          paymentMethodId: selectedPaymentMethod,
-          orderState
-        })
-      })
-
-      if (!response.ok) {
-        throw new Error('Payment authorization failed')
-      }
-
-      const result = await response.json()
-      
-      if (result.status === 'requires_action') {
-        // Handle 3D Secure or other authentication
-        toast({
-          title: "Additional authentication required",
-          description: "Please complete the additional authentication step.",
-          variant: "destructive"
-        })
-        return
-      }
-
-      if (result.status === 'succeeded') {
-        // Payment authorized successfully
-        const basePayment: PaymentData = orderState.payment ?? {
-          status: 'authorized',
-          amount: pricingData?.totalPrice ?? orderState.pricing?.totalPrice ?? 0,
-          currency: 'usd',
-        }
-        const authorizedPayment: PaymentData = {
-          ...basePayment,
-          status: 'authorized',
-          paymentMethodId: selectedPaymentMethod,
-          authorizedAt: new Date()
-        }
-        updateOrderState({ payment: authorizedPayment })
-
-        // Submit the complete order. Pass the authorized payment explicitly so
-        // submitOrder validates fresh state, not the pre-update React snapshot.
-        const submitResult = await submitOrder({ payment: authorizedPayment })
-        
-        if (submitResult.success) {
-          toast({
-            title: "Order submitted successfully!",
-            description: "Your order has been placed and will be processed within 24 hours."
-          })
-          
-          // Redirect to success page
-          router.push(`/orders/${submitResult.orderId}/success`)
-        } else {
-          throw new Error(submitResult.error || 'Order submission failed')
-        }
-      } else {
-        throw new Error('Payment authorization failed')
-      }
-
-    } catch (error) {
-      console.error('Payment authorization error:', error)
-      toast({
-        title: "Payment failed",
-        description: error instanceof Error ? error.message : "Please try again or contact support.",
-        variant: "destructive"
-      })
-    } finally {
-      setIsProcessingPayment(false)
-    }
-  }
-
-  const addNewPaymentMethod = () => {
-    setIsAddCardOpen(true)
-  }
-
-  /** A card was just saved via SetupIntent — reload the list and select it. */
-  const handlePaymentMethodAdded = async (paymentMethodId: string) => {
-    await loadPaymentMethods()
-    setSelectedPaymentMethod(paymentMethodId)
-    toast({
-      title: 'Card saved',
-      description: 'Your card is ready — it will be authorized when you submit this order.'
-    })
-  }
-
-  const canProceed = () => {
-    return selectedPaymentMethod && paymentIntent && pricingData && !isCalculatingPrice
-  }
-
-  const authorizeAmount = pricingData?.totalPrice ?? orderState.pricing?.totalPrice ?? 0
-  const formatAuthorizeAmount = authorizeAmount.toLocaleString('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  })
-  const selectedCard = paymentMethods.find((m) => m.id === selectedPaymentMethod)
-  const selectedCardLabel = selectedCard
-    ? `${selectedCard.brand.toUpperCase()} ····${selectedCard.last4}`
-    : 'your card'
-
-  return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="text-center">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Secure Payment</h2>
-        <p className="text-gray-600">
-          Complete your order with secure payment processing
-        </p>
-      </div>
-
-      {/* Order Total Summary */}
-      {orderState.pricing && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2 text-blue-800">
-              <Receipt className="h-5 w-5" />
-              <span>Order Total</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex justify-between items-center">
-              <div>
-                <div className="text-3xl font-bold text-blue-900">
-                  ${orderState.pricing.totalPrice.toFixed(2)}
-                </div>
-                <div className="text-sm text-blue-700">
-                  {orderState.accuzipValidation?.deliverableRecords || 0} mail pieces • 
-                  {orderState.mailingOptions?.serviceLevel?.replace('_', ' ')}
-                </div>
-              </div>
-              
-              <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                Ready to Pay
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Payment Methods */}
-      <PaymentMethodList
-        methods={paymentMethods}
-        selectedId={selectedPaymentMethod}
-        isLoading={isLoadingPaymentMethods}
-        onSelect={handlePaymentMethodSelect}
-        onAddNew={addNewPaymentMethod}
-      />
-
-      <AddPaymentMethodDialog
-        open={isAddCardOpen}
-        onOpenChange={setIsAddCardOpen}
-        onAdded={handlePaymentMethodAdded}
-      />
-
-      {/* A hold, not a charge — this dialog exists to set that expectation, so
-          the pending amount on the customer's statement isn't a surprise. */}
-      <ConfirmActionDialog
-        open={isConfirmOpen}
-        onOpenChange={setIsConfirmOpen}
-        title="Place a hold and submit your order?"
-        amount={authorizeAmount}
-        amountCaption={`Held on ${selectedCardLabel} — not charged yet`}
-        description="We reserve this amount on your card now and prepare your proof. You are only charged after you review and approve that proof."
-        consequences={[
-          'Your card is authorized, not charged.',
-          'We generate your proof and email you when it is ready.',
-          'Nothing is printed or mailed until you approve it.',
-        ]}
-        confirmLabel={`Authorize ${formatAuthorizeAmount} hold`}
-        isPending={isProcessingPayment}
-        onConfirm={() => {
-          setIsConfirmOpen(false)
-          authorizePayment()
-        }}
-      />
-
-      {/* Security information + authorization explainer */}
-      <PaymentSecurityInfo />
-
-      {/* Error States */}
-      {!paymentIntent && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Unable to prepare payment processing. Please refresh the page or contact support.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {paymentMethods.length === 0 && !isLoadingPaymentMethods && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Please add a payment method before proceeding with your order.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Final Payment Button */}
-      <Card className="bg-gray-50">
-        <CardContent className="text-center py-8">
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Ready to Complete Order</h3>
-              <p className="text-gray-600">
-                Click below to authorize payment and submit your order for processing
-              </p>
-            </div>
-            
-            <Button
-              size="lg"
-              onClick={() => setIsConfirmOpen(true)}
-              disabled={!canProceed() || isProcessingPayment}
-              className="flex items-center space-x-2"
-            >
-              {isProcessingPayment ? (
-                <>
-                  <RefreshCw className="h-5 w-5 animate-spin" />
-                  <span>Processing...</span>
-                </>
-              ) : (
-                <>
-                  <Lock className="h-5 w-5" />
-                  <span>Authorize Payment & Submit Order</span>
-                </>
-              )}
-            </Button>
-            
-            {orderState.pricing && (
-              <p className="text-sm text-gray-500">
-                Authorizing ${orderState.pricing.totalPrice.toFixed(2)} • 
-                Card will not be charged until proof approval
-              </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  )
+  const amount = quote.pricing?.totalPrice ?? 0
+  const formattedAmount = amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
+  const selectedCard = cards.methods.find(card => card.id === cards.selectedId)
+  return <div className="max-w-4xl mx-auto space-y-6">
+    <div className="text-center"><h2 className="text-3xl font-bold">Secure Payment</h2><p>Authorize your final quoted amount and submit your order.</p></div>
+    <OrderQuoteSummary pricing={quote.pricing} isLoading={quote.isLoading} error={quote.error} onRetry={quote.refresh} />
+    {!approved && <Alert><AlertDescription>Review and approve the current final quote and proof before payment. <Button variant="link" onClick={() => goToStep(5)}>Return to review</Button></AlertDescription></Alert>}
+    <PaymentMethodList methods={cards.methods} selectedId={cards.selectedId} isLoading={cards.isLoading} onSelect={cards.setSelectedId} onAddNew={() => setAddCardOpen(true)} />
+    <AddPaymentMethodDialog open={addCardOpen} onOpenChange={setAddCardOpen} onAdded={async id => { await cards.reload(); cards.setSelectedId(id) }} />
+    <PaymentSecurityInfo />
+    {(error || intent.error || cards.error) && <Alert variant="destructive"><AlertDescription>{error ?? intent.error ?? cards.error}</AlertDescription></Alert>}
+    {intent.isLoading && <p role="status">Preparing payment for the current quote…</p>}
+    <Button size="lg" disabled={!ready || isProcessing} onClick={() => setConfirmOpen(true)}>{isProcessing ? 'Processing…' : 'Authorize Payment & Submit Order'}</Button>
+    {ready && <p className="text-sm text-gray-600">Authorizing {formattedAmount}. Your card is charged only after proof approval.</p>}
+    <ConfirmActionDialog open={confirmOpen && ready} onOpenChange={setConfirmOpen} title="Place a hold and submit your order?" amount={amount} amountCaption={`Held on ${selectedCard ? `${selectedCard.brand.toUpperCase()} ····${selectedCard.last4}` : 'your card'} — not charged yet`} description="We reserve this amount on your card and prepare your official proof. You are charged after you approve that proof." consequences={['Your card is authorized, not charged.', 'We generate your proof and email you when it is ready.', 'Nothing is printed or mailed until you approve it.']} confirmLabel={`Authorize ${formattedAmount} hold`} isPending={isProcessing} onConfirm={() => { void authorize() }} />
+  </div>
 }

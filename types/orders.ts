@@ -164,6 +164,7 @@ export interface AddOnService {
 // designLocked covers the artwork, termsAccepted bundles terms + privacy +
 // the non-refundable notice (the checkbox label spells all three out).
 export interface OrderApproval {
+  quoteRevision?: string
   designLocked: boolean
   termsAccepted: boolean
   approvedAt?: Date
@@ -220,6 +221,9 @@ export interface OrderState {
   
   // Pricing and validation
   pricing?: PricingBreakdown
+  quotePending?: boolean
+  proofQuoteRevision?: string
+  proofPending?: boolean
   validationErrors: Record<string, string[]>
   
   // Final approval and payment
@@ -260,7 +264,7 @@ export interface StepValidation {
 
 export interface OrderWorkflowContextType {
   orderState: OrderState
-  updateOrderState: (updates: Partial<OrderState>) => void
+  updateOrderState: (updates: Partial<OrderState>, expectedQuoteKey?: string) => void
   goToStep: (step: number) => void
   nextStep: () => void
   previousStep: () => void

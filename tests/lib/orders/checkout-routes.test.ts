@@ -9,6 +9,7 @@ const intentRoute = loadRoute('../../app/api/payments/intent/route')
 const authorizeRoute = loadRoute('../../app/api/payments/authorize/route')
 const submitRoute = loadRoute('../../app/api/orders/submit/route')
 const pricingRoute = loadRoute('../../app/api/orders/pricing/route')
+const proofRoute = loadRoute('../../app/api/orders/proof/route')
 const calculateRoute = loadRoute('../../app/api/orders/calculate-pricing/route')
 
 describe('checkout server quote integration', () => {
@@ -98,6 +99,18 @@ describe('checkout server quote integration', () => {
     const response = await post(submitRoute, { orderState: { ...runtime.state, payment: { paymentIntentId: 'pi_test' } } })
     assert.equal(response.status, 409)
     assert.deepEqual(runtime.inserted, {})
+  })
+
+  it('renders review proof from the verified snapshot and binds its quote revision', async () => {
+    const quote = await loadOrderQuote(runtime.db, 'owner', runtime.state, DEFAULT_PRICING)
+    const response = await post(proofRoute, { orderState: runtime.state, quoteRevision: quote.pricing.quoteRevision })
+    assert.equal(response.status, 200)
+    assert.equal((await response.json()).quoteRevision, quote.pricing.quoteRevision)
+    const list = runtime.rendered.listData as { manualRecords: Array<{ first_name: string }> }
+    assert.equal(list.manualRecords.length, 1)
+    assert.equal(list.manualRecords[0].first_name, 'Actual')
+    const stale = await post(proofRoute, { orderState: runtime.state, quoteRevision: 'stale' })
+    assert.equal(stale.status, 409)
   })
 
 })

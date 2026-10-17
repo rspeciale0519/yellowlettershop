@@ -8,6 +8,7 @@ import { artwork, quoteDatabase, quoteState } from './quote-fixtures'
 export const runtime = {
   db: quoteDatabase().db, state: quoteState,
   intent: { id: 'pi_test', amount: 1, status: 'requires_capture', currency: 'usd', capture_method: 'manual', metadata: { user_id: 'owner' } as Record<string, string>, customer: 'cus_test', client_secret: 'secret' },
+  rendered: {} as Record<string, unknown>,
   created: {} as Record<string, unknown>, confirmed: 0, attached: 0, inserted: {} as Record<string, unknown>,
 }
 class FakeStripe {
@@ -23,8 +24,9 @@ class FakeStripe {
 export function resetRuntime() {
   runtime.db = quoteDatabase(artwork(true)).db
   runtime.state = quoteState
-  runtime.created = {}; runtime.confirmed = 0; runtime.attached = 0; runtime.inserted = {}
+  runtime.rendered = {}; runtime.created = {}; runtime.confirmed = 0; runtime.attached = 0; runtime.inserted = {}
   runtime.intent = { ...runtime.intent, amount: 1, status: 'requires_capture', metadata: { user_id: 'owner' } }
+  Object.assign(runtime.db, { storage: { from: () => ({ upload: async () => ({ error: null }) }) } })
   const originalFrom = runtime.db.from.bind(runtime.db)
   runtime.db.from = ((table: string) => {
     if (table === 'user_profiles') {
@@ -45,6 +47,8 @@ export function loadRoute(path: string) {
     '../../lib/orders/pricing-config': { loadPricingConfig: async () => DEFAULT_PRICING },
     '../../lib/orders/generate-proof': { generateProofForOrder: async () => ({ ok: true }), getUserEmail: async () => 'test@example.test' },
     '../../lib/email': { trySendEmail: async () => undefined },
+    '../../lib/orders/render-proof': { renderOrderStatePdf: async (state: Record<string, unknown>) => { runtime.rendered = state; return { bytes: new Uint8Array([37,80,68,70]), formatId: 'letter_8_5x11' } } },
+    '../../lib/orders/proof-storage': { PROOF_BUCKET: 'test-proofs', signProofUrl: async () => '/proof.pdf' },
     stripe: FakeStripe,
   }
   const previous = new Map<string, NodeModule | undefined>()

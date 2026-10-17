@@ -1,8 +1,9 @@
 "use client"
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { OrderState, OrderWorkflowContextType, StepValidation, ORDER_STEPS, isStepRequired } from '@/types/orders'
+import { applyOrderUpdate, approvalMatchesQuote, isPaymentForQuote } from '@/lib/orders/quote-state'
+import { validateOrderStep } from '@/lib/orders/step-validation'
 import { useToast } from '@/components/ui/use-toast'
 
 const OrderWorkflowContext = createContext<OrderWorkflowContextType | undefined>(undefined)
@@ -13,7 +14,6 @@ interface OrderProviderProps {
 }
 
 export function OrderProvider({ children, initialState }: OrderProviderProps) {
-  const router = useRouter()
   const { toast } = useToast()
   
   // Initialize order state with defaults
@@ -40,27 +40,14 @@ export function OrderProvider({ children, initialState }: OrderProviderProps) {
     updatedAt: new Date(),
     
     // Override with any initial state
-    ...initialState
+    ...initialState,
+    pricing: undefined, payment: undefined, approval: undefined, quotePending: false, proofQuoteRevision: undefined, proofPending: false,
   }))
 
-  // Auto-save functionality
-  useEffect(() => {
-    const autoSaveInterval = setInterval(() => {
-      if (orderState.isDraft && orderState.orderId) {
-        saveDraft()
-      }
-    }, 30000) // Auto-save every 30 seconds
-
-    return () => clearInterval(autoSaveInterval)
-  }, [orderState.isDraft, orderState.orderId])
-
-  // Update order state function
-  const updateOrderState = useCallback((updates: Partial<OrderState>) => {
-    setOrderState(prev => ({
-      ...prev,
-      ...updates,
-      updatedAt: new Date()
-    }))
+  const latestState = useRef(orderState)
+  latestState.current = orderState
+  const updateOrderState = useCallback((updates: Partial<OrderState>, expectedQuoteKey?: string) => {
+    setOrderState(prev => applyOrderUpdate(prev, updates, expectedQuoteKey))
   }, [])
 
   // Navigation functions
@@ -71,7 +58,7 @@ export function OrderProvider({ children, initialState }: OrderProviderProps) {
   }, [updateOrderState])
 
   const nextStep = useCallback(() => {
-    const currentStepValidation = validateCurrentStep()
+    const currentStepValidation = validateOrderStep(orderState)
     
     if (!currentStepValidation.canProceed) {
       toast({
@@ -111,143 +98,12 @@ export function OrderProvider({ children, initialState }: OrderProviderProps) {
     if (prevStepNumber >= 1) {
       goToStep(prevStepNumber)
     }
-  }, [orderState.step, orderState, goToStep])
+  }, [orderState, goToStep])
 
   // Validation function
   const validateCurrentStep = useCallback((stateOverride?: OrderState): StepValidation => {
     const state = stateOverride ?? orderState
-    const currentStepConfig = ORDER_STEPS.find(s => s.id === state.step)
-    if (!currentStepConfig) {
-      return {
-        isValid: false,
-        errors: ['Invalid step'],
-        warnings: [],
-        canProceed: false,
-        requiredFields: [],
-        completedFields: []
-      }
-    }
-
-    const errors: string[] = []
-    const warnings: string[] = []
-    const requiredFields: string[] = []
-    const completedFields: string[] = []
-
-    switch (currentStepConfig.key) {
-      case 'data_and_mapping':
-        // Validate data source selection
-        const listData = state.dataAndMapping?.listData || state.listData
-        const hasListData = Boolean(
-          listData?.uploadedFile ||
-          listData?.selectedListId ||
-          listData?.manualRecords?.length ||
-          listData?.melissaDataCriteria
-        )
-
-        if (!hasListData) {
-          errors.push('Please select a data source')
-        } else {
-          completedFields.push('dataSource')
-        }
-
-        // Validate column mapping
-        const columnMapping = state.dataAndMapping?.columnMapping || state.columnMapping
-        if (!columnMapping || !columnMapping.mappedFields) {
-          errors.push('Please map your columns to YLS fields')
-        } else {
-          const requiredMappings = ['first_name', 'last_name', 'address_line_1', 'city', 'state', 'zip_code']
-          const mappedFieldKeys = Object.keys(columnMapping.mappedFields || {})
-          const hasAllRequired = requiredMappings.every(field => mappedFieldKeys.includes(field))
-
-          if (!hasAllRequired) {
-            errors.push('Please map all required fields: First Name, Last Name, Address, City, State, and ZIP Code')
-          } else {
-            completedFields.push('columnMapping')
-          }
-        }
-        break
-
-      case 'address_validation':
-        if (!state.accuzipValidation) {
-          errors.push('Address validation is required')
-        } else if (state.accuzipValidation.deliverableRecords === 0) {
-          errors.push('No deliverable records found')
-        } else {
-          completedFields.push('accuzipValidation')
-        }
-        break
-
-      case 'design_and_content':
-        // Validate contact card selection
-        const contactCard = state.designAndContent?.contactCard || state.contactCard
-        if (!contactCard) {
-          errors.push('Please select a contact card')
-        } else {
-          completedFields.push('contactCard')
-        }
-
-        // Validate design selection
-        const design = state.designAndContent?.design || state.design
-        if (!design) {
-          errors.push('Please create or select a design')
-        } else {
-          completedFields.push('design')
-        }
-        break
-
-      case 'campaign_settings':
-        // Validate mailing options
-        const mailingOptions = state.campaignSettings?.mailingOptions || state.mailingOptions
-        if (!mailingOptions) {
-          errors.push('Please select mailing options')
-        } else if (!mailingOptions.serviceLevel) {
-          errors.push('Please select a service level')
-        } else {
-          completedFields.push('mailingOptions')
-        }
-
-        // Validate campaign setup (if required)
-        if (mailingOptions?.serviceLevel === 'full_service') {
-          const campaignOptions = state.campaignSettings?.campaignOptions || state.campaignOptions
-          if (!campaignOptions) {
-            errors.push('Please configure campaign options')
-          } else {
-            completedFields.push('campaignOptions')
-          }
-        }
-        break
-
-      case 'review':
-        requiredFields.push('approval')
-        if (!state.approval) {
-          errors.push('Please review and approve the order')
-        } else if (!state.approval.designLocked || !state.approval.termsAccepted) {
-          errors.push('Please confirm design lock and accept terms')
-        } else {
-          completedFields.push('approval')
-        }
-        break
-
-      case 'payment':
-        requiredFields.push('payment')
-        if (!state.payment) {
-          errors.push('Payment authorization required')
-        } else if (state.payment.status !== 'authorized') {
-          errors.push('Payment must be authorized to complete order')
-        } else {
-          completedFields.push('payment')
-        }
-        break
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-      warnings,
-      canProceed: errors.length === 0,
-      requiredFields,
-      completedFields
-    }
+    return validateOrderStep(state)
   }, [orderState])
 
   // Save draft function
@@ -292,6 +148,12 @@ export function OrderProvider({ children, initialState }: OrderProviderProps) {
     }
   }, [orderState, updateOrderState, toast])
 
+  useEffect(() => {
+    if (!orderState.isDraft || !orderState.orderId) return
+    const timer = setInterval(() => { void saveDraft() }, 30000)
+    return () => clearInterval(timer)
+  }, [orderState.isDraft, orderState.orderId, saveDraft])
+
   // Load draft function
   const loadDraft = useCallback(async (draftId: string): Promise<void> => {
     try {
@@ -302,7 +164,7 @@ export function OrderProvider({ children, initialState }: OrderProviderProps) {
       }
 
       const draftData = await response.json()
-      setOrderState(draftData.orderState)
+      setOrderState({ ...draftData.orderState, pricing: undefined, payment: undefined, approval: undefined, quotePending: false, proofQuoteRevision: undefined, proofPending: false, currentStepValid: false })
 
       toast({
         title: "Draft loaded",
@@ -324,7 +186,8 @@ export function OrderProvider({ children, initialState }: OrderProviderProps) {
       // Merge caller-provided overrides (e.g. the just-authorized payment) so
       // validation and submission run against the authoritative state, not a
       // stale React snapshot captured before the last updateOrderState().
-      const effectiveState: OrderState = { ...orderState, ...overrides }
+      const effectiveState: OrderState = { ...latestState.current, ...overrides }
+      if (!approvalMatchesQuote(effectiveState.approval, effectiveState.pricing) || !isPaymentForQuote(effectiveState.payment, effectiveState.pricing)) return { success: false, error: 'The quote or artwork changed. Review the order before submitting.' }
 
       // Final validation
       const finalValidation = validateCurrentStep(effectiveState)
@@ -376,7 +239,7 @@ export function OrderProvider({ children, initialState }: OrderProviderProps) {
         error: error instanceof Error ? error.message : 'Unknown error occurred'
       }
     }
-  }, [orderState, updateOrderState, validateCurrentStep, toast])
+  }, [updateOrderState, validateCurrentStep, toast])
 
   // Context value
   const contextValue: OrderWorkflowContextType = {
