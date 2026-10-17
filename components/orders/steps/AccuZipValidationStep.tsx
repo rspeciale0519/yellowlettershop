@@ -123,7 +123,7 @@ export function AccuZipValidationStep({ orderState }: OrderStepProps) {
           const validationResults = await resultsResponse.json()
 
           updateOrderState({
-            accuzipValidation: validationResults
+            accuzipValidation: { ...validationResults, jobId: uploadResult.jobId }
           })
 
           setValidationProgress({

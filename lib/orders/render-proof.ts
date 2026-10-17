@@ -25,13 +25,17 @@ function normalizeDoc(designState: unknown): DesignerDocument {
  * Shared by the wizard's pre-submit proof and the post-submit order proof.
  */
 export async function renderOrderStatePdf(
-  orderState: Record<string, unknown>
+  orderState: Record<string, unknown>,
+  ownerUserId?: string
 ): Promise<{ bytes: Uint8Array; formatId: MailFormatId }> {
   const inputs = resolveProofInputs(orderState)
   const doc = normalizeDoc(inputs.designState)
   const formatId: MailFormatId = isMailFormatId(inputs.formatId) ? inputs.formatId : 'letter_8_5x11'
   const orientation = doc.orientation ?? 'portrait'
   const ctx = buildTokenContext(inputs.recipient, inputs.sender)
-  const bytes = await renderDesignToPdf(doc, ctx, formatId, orientation, { addCropMarks: true })
+  const bytes = await renderDesignToPdf(doc, ctx, formatId, orientation, {
+    addCropMarks: true,
+    ownerUserId,
+  })
   return { bytes, formatId }
 }

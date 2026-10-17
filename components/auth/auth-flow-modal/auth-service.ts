@@ -1,5 +1,6 @@
 import { createClient } from '@/utils/supabase/client';
 import type { AuthState, LoginState, SignupState, ForgotState, ResetState } from './types';
+import { getSafeInternalPath } from '@/lib/security/safe-redirect';
 
 export class AuthService {
   private supabase = createClient();
@@ -23,7 +24,7 @@ export class AuthService {
       }
 
       onStateChange?.({ isLoading: false });
-      return { success: true, redirectTo: redirectedFrom || '/dashboard' };
+      return { success: true, redirectTo: getSafeInternalPath(redirectedFrom) };
     } catch (error) {
       const errorMsg = 'An unexpected error occurred';
       onStateChange?.({ error: errorMsg, isLoading: false });
@@ -41,7 +42,7 @@ export class AuthService {
       const { error } = await this.supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?redirectTo=${redirectedFrom || '/dashboard'}`,
+          redirectTo: `${window.location.origin}/auth/callback?redirectTo=${encodeURIComponent(getSafeInternalPath(redirectedFrom))}`,
         },
       });
 

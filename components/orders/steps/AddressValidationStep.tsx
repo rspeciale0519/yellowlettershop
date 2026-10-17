@@ -169,7 +169,8 @@ export function AddressValidationStep({ orderState, onUpdateState }: OrderStepPr
                 totalRecords: results.totalRecords,
                 validatedAt: new Date(results.validatedAt),
                 validationReport: [],
-                orderId: results.orderId ?? newJobId
+                orderId: results.orderId ?? newJobId,
+                jobId: newJobId,
               },
               addressValidation: {
                 deliverableRecords: results.deliverableRecords,
@@ -177,7 +178,8 @@ export function AddressValidationStep({ orderState, onUpdateState }: OrderStepPr
                 totalRecords: results.totalRecords,
                 validatedAt: new Date(results.validatedAt),
                 validationReport: [],
-                orderId: results.orderId ?? newJobId
+                orderId: results.orderId ?? newJobId,
+                jobId: newJobId,
               }
             })
             setIsValidating(false)

@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { TeamService, InviteTeamMemberRequest } from '@/lib/team/team-service'
+import { v4 as uuidv4 } from 'uuid'
+import { InviteTeamMemberRequest } from '@/lib/team/team-service'
 import { withAuth, authorizeTeamAccess } from '@/lib/auth/middleware'
 import { createClient } from '@/utils/supabase/service'
+import { createServerClient } from '@/utils/supabase/server'
 import { trySendEmail } from '@/lib/email'
 import { teamInviteEmail } from '@/lib/email/templates'
+import { rpcInviteMember, type TeamWriteClient } from '@/lib/team/team-write-rpc'
 
 export const POST = withAuth(async (request: NextRequest, { userId }) => {
   try {
@@ -24,15 +27,32 @@ export const POST = withAuth(async (request: NextRequest, { userId }) => {
       )
     }
 
-    const teamService = new TeamService()
-    const invitation = await teamService.inviteTeamMember(teamId, inviteData)
+    const session = await createServerClient()
+    const result = await rpcInviteMember(
+      session as unknown as TeamWriteClient,
+      teamId,
+      inviteData.email,
+      inviteData.role,
+      uuidv4()
+    )
+    const { data: stored } = await session
+      .from('team_invitations')
+      .select('*')
+      .eq('team_id', teamId)
+      .eq('email', inviteData.email)
+      .maybeSingle()
+    const invitation = stored ?? {
+      id: result.token,
+      team_id: teamId,
+      email: inviteData.email,
+      role: inviteData.role,
+      status: result.mode === 'added' ? 'accepted' : 'pending',
+    }
 
-    // The actual invitation email — team-service's client-side stub cannot
-    // send; this server route owns delivery. Loud-on-failure, non-fatal.
     const supabase = createClient()
     const { data: team } = await supabase.from('teams').select('name').eq('id', teamId).single()
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    const emailSent = await trySendEmail(
+    const emailSent = result.mode === 'invited' && await trySendEmail(
       inviteData.email,
       teamInviteEmail({
         teamName: team?.name ?? 'your team',
@@ -42,11 +62,10 @@ export const POST = withAuth(async (request: NextRequest, { userId }) => {
     )
 
     return NextResponse.json({ ...invitation, emailSent })
-
   } catch (error) {
     console.error('Team invitation error:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to invite team member' },
+      { error: 'Failed to invite team member' },
       { status: 500 }
     )
   }

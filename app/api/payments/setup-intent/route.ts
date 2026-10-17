@@ -40,11 +40,12 @@ export const POST = withAuth(async (_req: NextRequest, { userId }) => {
     console.error('Setup intent creation error:', error)
 
     if (error instanceof Stripe.errors.StripeError) {
-      return NextResponse.json({ error: `Stripe error: ${error.message}` }, { status: 400 })
+      console.error('Setup intent Stripe error:', error)
+      return NextResponse.json({ error: 'Could not start card setup' }, { status: 400 })
     }
 
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Could not start card setup' },
+      { error: 'Could not start card setup' },
       { status: 500 }
     )
   }

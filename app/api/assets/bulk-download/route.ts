@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/utils/supabase/server'
 import JSZip from 'jszip'
+import { isOwnedAssetPath } from '@/lib/assets/ownership'
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get assets from database
-    const { data: assets, error: dbError } = await supabase
+    const { data, error: dbError } = await supabase
       .from('user_assets')
       .select('*')
       .in('id', fileIds)
@@ -38,6 +39,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    const assets = data?.filter(asset => isOwnedAssetPath(asset.file_path, asset.user_id))
     if (!assets || assets.length === 0) {
       return NextResponse.json(
         { error: 'No accessible assets found' },

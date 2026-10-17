@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { EngagementTracker } from '@/lib/analytics/engagement-tracker'
+import { withProtectedRoute } from '@/lib/auth/with-protected-route'
 
-export async function GET(request: NextRequest) {
+export const GET = withProtectedRoute(async (_request: NextRequest, { userId }) => {
   try {
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get('userId')
-
     const tracker = new EngagementTracker()
-    const metrics = await tracker.getUserPerformanceMetrics(userId || undefined)
+    const metrics = await tracker.getUserPerformanceMetrics(userId)
 
     return NextResponse.json(metrics)
 
@@ -18,4 +16,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

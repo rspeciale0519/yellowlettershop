@@ -1,5 +1,24 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import type { NextConfig } from 'next'
+import { buildContentSecurityPolicy } from './lib/security/content-security-policy'
+
+const nextConfig: NextConfig = {
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+          {
+            key: 'Content-Security-Policy',
+            value: buildContentSecurityPolicy(),
+          },
+        ],
+      },
+    ]
+  },
   eslint: {
     ignoreDuringBuilds: true,
   },
@@ -16,12 +35,10 @@ const nextConfig = {
   },
   serverExternalPackages: ['@supabase/realtime-js'],
   webpack: (config, { isServer, webpack }) => {
-    // Fix Windows file system caching issues
     config.cache = {
       type: 'memory',
-    };
+    }
 
-    // Fix Edge Runtime compatibility issues with Supabase realtime-js
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -29,18 +46,17 @@ const nextConfig = {
         net: false,
         tls: false,
         crypto: false,
-      };
+      }
     }
 
-    // Polyfill process for Edge Runtime compatibility
     config.plugins.push(
       new webpack.DefinePlugin({
         'process.version': JSON.stringify(process.version),
         'process.versions': JSON.stringify({}),
       })
-    );
-    
-    return config;
+    )
+
+    return config
   },
 }
 

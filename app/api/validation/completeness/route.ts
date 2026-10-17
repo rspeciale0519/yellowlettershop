@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { calculateCompletenessScore, batchCalculateCompleteness, getCompletenessStats } from '@/lib/validation/data-completeness'
+import { withProtectedRoute } from '@/lib/auth/with-protected-route'
 
-export async function POST(request: NextRequest) {
+export const POST = withProtectedRoute(async (request: NextRequest) => {
   try {
     const body = await request.json()
     const { record, records, options = {} } = body
@@ -43,4 +44,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, { rateLimit: { scope: 'validation-completeness', max: 30, windowSeconds: 60 } })

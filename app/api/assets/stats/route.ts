@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/utils/supabase/server'
+import { isOwnedAssetPath } from '@/lib/assets/ownership'
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,15 +14,13 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const { searchParams } = new URL(request.url)
-    const targetUserId = searchParams.get('userId') || user.id
-
-    const { data: assets, error } = await supabase
+    const { data, error } = await supabase
       .from('user_assets')
       .select('*')
-      .eq('user_id', targetUserId)
+      .eq('user_id', user.id)
 
     if (error) throw error
+    const assets = data?.filter(asset => isOwnedAssetPath(asset.file_path, asset.user_id))
 
     const totalAssets = assets?.length || 0
     const storageUsed = assets?.reduce((sum, asset) => sum + asset.file_size, 0) || 0
@@ -71,7 +70,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Get asset stats error:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to get asset statistics' },
+      { error: 'Failed to get asset statistics' },
       { status: 500 }
     )
   }

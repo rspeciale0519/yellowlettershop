@@ -31,10 +31,6 @@ export class PaymentService {
     return this.customers.ensureCustomer(userId, userEmail);
   }
 
-  async createPaymentIntent(params: any): Promise<any> {
-    return this.paymentIntents.createPaymentIntent(params);
-  }
-
   async capturePayment(params: any): Promise<any> {
     return this.paymentIntents.capturePayment(params);
   }

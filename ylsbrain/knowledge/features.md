@@ -2,7 +2,7 @@
 kind: knowledge
 slug: features
 status: current
-updated: 2026-08-02
+updated: 2026-10-17
 layer: reference
 sources:
   - dev-docs/implementation-status.md
@@ -117,17 +117,17 @@ longer PARTIAL rows). Login-history and 2FA rows moved to BUILT.
 D3 BUILT (split scheduling) · D1/D4/D7/D8/D9 PARTIAL · D2/D5/D6/D10 NOT BUILT.
 Detail: `dev-docs/implementation-status.md` §6.
 
-## Risk / hygiene flags (re-verified 2026-08-02)
+## Risk / hygiene flags (re-verified 2026-10-17)
 
-Middleware matcher covers only `/dashboard/*` (other areas rely on per-route
-`withAuth` + client guards); `analytics/performance` trusts `userId` param
-(IDOR); bare handlers remain at `payments/create-payment-intent`,
-`mailing-lists/*`, `/api/teams/*` (bare `capture-payment`/`refund-payment` were
-archived to `archive/api-payments-2026-08/`); shipped debug endpoints
-`api/test-db*`, `api/test-auth-state`, `/test-types` — **all four still present
-and now live in production**, so their priority is higher than it was; duplicate
-stacks (`/api/team` vs `/api/teams`, `payment-service` vs `payment-service-new`,
-tags vs tag-management, signup vs register); `@playwright/mcp` in prod deps.
+See `SECURITY_SCAN_2026-10-17.md`. Still true: middleware matcher is only
+`/dashboard/*` (APIs use `withAuth` / `withProtectedRoute`; expanding would
+401 Stripe/the print vendor/share). Closed in that scan: checkout price tamper,
+`/assets/images` IDOR, AccuZip/validation/list-builder/parse auth+rate-limit,
+`analytics/performance` userId override, AccuZip count fail-closed, SVG share
+as attachment, baseline security headers. Debug endpoints remain archived
+(`archive/debug-endpoints-2026-08/`). Duplicate stacks and `@playwright/mcp`
+in prod deps are unchanged. Owner still must apply the RLS lock migration
+and upgrade Next.js (npm audit).
 
 **New tripwire:** the dispatch ownership gate needs `mailing_lists.created_by`
 to match the order owner OR a shared non-NULL `team_id` — a team-shared list

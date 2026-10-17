@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { AuthMode } from './types';
+import { getSafeInternalPath } from '@/lib/security/safe-redirect';
 
 export const useAuthModalContent = (mode: AuthMode) => {
   const title = useMemo(() => {
@@ -41,9 +42,4 @@ export const useAuthModalContent = (mode: AuthMode) => {
 
 export const getDestinationAfterAuth = (
   redirectedFrom?: string | null
-): string => {
-  const path = redirectedFrom?.trim();
-  if (!path || !path.startsWith('/') || path.startsWith('//'))
-    return '/dashboard';
-  return path;
-};
+): string => getSafeInternalPath(redirectedFrom);

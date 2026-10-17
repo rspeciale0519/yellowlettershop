@@ -47,7 +47,7 @@ export const GET = withAuth(async (req: NextRequest, { userId }) => {
     
     if (error instanceof Stripe.errors.StripeError) {
       return NextResponse.json(
-        { error: `Stripe error: ${error.message}` },
+        { error: 'Payment method request failed' },
         { status: 400 }
       )
     }
@@ -127,7 +127,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
     
     if (error instanceof Stripe.errors.StripeError) {
       return NextResponse.json(
-        { error: `Stripe error: ${error.message}` },
+        { error: 'Payment method request failed' },
         { status: 400 }
       )
     }
@@ -188,7 +188,7 @@ export const DELETE = withAuth(async (req: NextRequest, { userId }) => {
     
     if (error instanceof Stripe.errors.StripeError) {
       return NextResponse.json(
-        { error: `Stripe error: ${error.message}` },
+        { error: 'Payment method request failed' },
         { status: 400 }
       )
     }

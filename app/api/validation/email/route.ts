@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateEmail, validateEmailBatch, getValidationStats } from '@/lib/validation/email-validation'
+import { withProtectedRoute } from '@/lib/auth/with-protected-route'
 
-export async function POST(request: NextRequest) {
+export const POST = withProtectedRoute(async (request: NextRequest) => {
   try {
     const body = await request.json()
     const { email, emails, options = {} } = body
@@ -43,9 +44,9 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, { rateLimit: { scope: 'validation-email', max: 30, windowSeconds: 60 } })
 
-export async function GET(request: NextRequest) {
+export const GET = withProtectedRoute(async (request: NextRequest) => {
   const { searchParams } = new URL(request.url)
   const email = searchParams.get('email')
 
@@ -66,4 +67,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, { rateLimit: { scope: 'validation-email', max: 30, windowSeconds: 60 } })

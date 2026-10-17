@@ -21,7 +21,7 @@ export const POST = withAuth(async (request: NextRequest) => {
   } catch (error) {
     console.error('Accept invitation error:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to accept invitation' },
+      { error: 'Failed to accept invitation' },
       { status: 500 }
     )
   }

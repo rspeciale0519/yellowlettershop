@@ -13,6 +13,9 @@ export async function PATCH(req: NextRequest) {
   const { name } = Body.parse(await req.json())
   const supabase = await createClient()
   const { error } = await supabase.from("teams").update({ name }).eq("id", team.teamId)
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  if (error) {
+    console.error('Team settings update failed:', error)
+    return NextResponse.json({ error: 'Failed to update team settings' }, { status: 400 })
+  }
   return NextResponse.json({ ok: true })
 }

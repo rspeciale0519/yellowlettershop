@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { shareService } from '@/lib/assets/share-service'
+import { hashShareToken } from '@/lib/assets/share-token'
+
+const INLINE_MIME_TYPES = new Set([
+  'image/avif', 'image/bmp', 'image/gif', 'image/jpeg', 'image/png',
+  'image/webp', 'application/pdf', 'text/plain',
+])
 
 /**
  * Secure file streaming endpoint for share links
@@ -30,7 +36,7 @@ export async function GET(
     }
 
     // Stream file from storage
-    const fileResult = await shareService.streamFile(shareData.asset.file_path)
+    const fileResult = await shareService.streamFile(shareData.asset.file_path, shareData.asset.user_id)
 
     if (!fileResult) {
       return NextResponse.json(
@@ -48,17 +54,21 @@ export async function GET(
     const response = new NextResponse(Uint8Array.from(fileResult.fileBuffer))
     
     // Set proper headers for file streaming
-    response.headers.set('Content-Type', shareData.asset.mime_type || fileResult.mimeType)
+    const mime = (shareData.asset.mime_type || fileResult.mimeType || '')
+      .split(';', 1)[0].trim().toLowerCase()
+    const inline = INLINE_MIME_TYPES.has(mime)
+    response.headers.set('Content-Type', inline ? mime : 'application/octet-stream')
     response.headers.set('Content-Length', fileResult.fileSize.toString())
-    response.headers.set('Content-Disposition', `inline; filename="${shareData.asset.filename}"`)
+    const filename = (shareData.asset.filename || 'download').replace(/[\r\n"\\]/g, '_')
+    const fallback = filename.replace(/[^\x20-\x7e]/g, '_')
+    const disposition = inline ? 'inline' : 'attachment'
+    response.headers.set('Content-Disposition', `${disposition}; filename="${fallback}"; filename*=UTF-8''${encodeURIComponent(filename)}`)
     
     // Security headers
     response.headers.set('X-Content-Type-Options', 'nosniff')
-    response.headers.set('X-Frame-Options', 'SAMEORIGIN')
-    
-    // Cache headers (24 hours for shared files)
-    response.headers.set('Cache-Control', 'public, max-age=86400')
-    response.headers.set('ETag', `"${token}-${shareData.access_count}"`)
+    response.headers.set('X-Frame-Options', 'DENY')
+    response.headers.set('Cache-Control', 'private, no-store')
+    response.headers.set('ETag', `"${hashShareToken(token)}-${shareData.access_count}"`)
 
     return response
 

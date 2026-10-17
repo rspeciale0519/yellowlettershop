@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/utils/supabase/server'
+import { isOwnedAssetPath } from '@/lib/assets/ownership'
 
 export async function GET(
   request: NextRequest,
@@ -34,13 +35,14 @@ export async function GET(
       )
     }
 
-    // Check if user has access to this asset
-    if (asset.user_id !== user.id && !asset.is_public) {
+    if (asset.user_id !== user.id) {
       return NextResponse.json(
         { error: 'Access denied' },
         { status: 403 }
       )
     }
+
+    if (!isOwnedAssetPath(asset.file_path, asset.user_id)) return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
 
     // Generate signed URL for the file
     const { data: signedUrlData, error: signedUrlError } = await supabase.storage
@@ -60,7 +62,7 @@ export async function GET(
   } catch (error) {
     console.error('Get signed URL error:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to get signed URL' },
+      { error: 'Failed to get signed URL' },
       { status: 500 }
     )
   }
