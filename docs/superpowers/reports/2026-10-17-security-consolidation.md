@@ -1,5 +1,11 @@
 # PR #25 security consolidation — October 17, 2026
 
+**Latest verification and rollout blockers:**
+[Release preflight](2026-10-17-release-preflight.md) follows the newer review
+commits through `42c8e79` and the subsequent release-gate corrections. It records
+441 local tests, full audit, native migration replay and the unresolved legacy
+share-token/expiry conversion. Earlier evidence below remains historical.
+
 The approved code reconciliation extends existing PR #25. It does not authorize
 merge, deployment, hosted SQL/storage changes, credential rotation or vendor
 orders. Designer feature work remains separate.

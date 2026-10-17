@@ -12,7 +12,7 @@ describe('owned asset sharing before privileged storage access', () => {
     '../../utils/supabase/service': { createServiceClient: () => client },
   })
   const service = new ShareService()
-  beforeEach(() => { signed = []; row = { id: 'share-a', created_by: 'owner', expires_at: new Date(Date.now() + 86400000).toISOString(), asset: { user_id: 'owner', file_path: 'owner/file.pdf' } } })
+  beforeEach(() => { signed = []; row = { id: 'share-a', created_by: 'owner', created_at: new Date(Date.now() - 1000).toISOString(), expires_at: new Date(Date.now() + 86400000).toISOString(), asset: { user_id: 'owner', file_path: 'owner/file.pdf' } } })
   it('rejects forged owned metadata pointing to a foreign storage path', async () => {
     row.asset.file_path = 'other/private.pdf'
     assert.equal(await service.validateShareToken('sample-token'), null)
@@ -21,6 +21,20 @@ describe('owned asset sharing before privileged storage access', () => {
   it('rejects a share creator who does not own the referenced asset', async () => {
     row.created_by = 'other'
     assert.equal(await service.validateShareToken('sample-token'), null)
+  })
+  it('rejects missing, malformed, expired and over-30-day expiry before streaming', async () => {
+    for (const expiry of [null, 'invalid', new Date(Date.now()-1).toISOString(), new Date(Date.now()+31*86400000).toISOString()]) {
+      row.expires_at = expiry
+      assert.equal(await service.validateShareToken('sample-token'), null)
+    }
+    assert.deepEqual(signed, [])
+  })
+  it('bounds total lifetime from creation and rejects missing or future creation dates', async () => {
+    for (const created of [null, 'invalid', new Date(Date.now()+86400000).toISOString(), new Date(Date.now()-365*86400000).toISOString()]) {
+      row.created_at = created
+      assert.equal(await service.validateShareToken('sample-token'), null)
+    }
+    assert.deepEqual(signed, [])
   })
   it('rejects traversal before signing even if streaming is called directly', async () => {
     const previous = globalThis.fetch

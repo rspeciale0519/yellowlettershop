@@ -1,7 +1,8 @@
 import { spawnSync } from 'child_process'
-import { existsSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'fs'
+import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
-import { dirname, join, resolve } from 'path'
+import { join, resolve } from 'path'
+import { postgresBinaries } from './postgres-binaries'
 
 const INITDB = process.platform === 'win32' ? 'initdb.exe' : 'initdb'
 const PG_CTL = process.platform === 'win32' ? 'pg_ctl.exe' : 'pg_ctl'
@@ -15,15 +16,7 @@ export type DisposablePgOptions = {
 }
 
 export function resolvePgBin(): string | null {
-  const envDir = process.env.PG_BIN
-  if (envDir && existsSync(join(envDir, INITDB)) && existsSync(join(envDir, PG_CTL))) return envDir
-  const finder = process.platform === 'win32' ? 'where' : 'which'
-  const found = spawnSync(finder, ['initdb'], { encoding: 'utf8', shell: process.platform === 'win32' })
-  const first = (found.stdout || '').trim().split(/\r?\n/).find(Boolean)
-  if (found.status === 0 && first && existsSync(first)) return dirname(first)
-  const fallback = '/usr/lib/postgresql/16/bin'
-  if (existsSync(join(fallback, INITDB))) return fallback
-  return null
+  try { return postgresBinaries() } catch { return null }
 }
 
 export function canRunDisposablePostgres(): boolean {
@@ -34,7 +27,7 @@ export function applyMigrationsOnDisposablePostgres(options: DisposablePgOptions
   const pgBin = resolvePgBin()
   if (!pgBin) {
     throw new Error(
-      `SKIP: initdb/pg_ctl not found on PATH or PG_BIN (platform=${process.platform}). Disposable Postgres tests require a local PostgreSQL client.`
+      `Native PostgreSQL is required. Set PG_BIN to its bin directory (platform=${process.platform}).`
     )
   }
   const dataDir = mkdtempSync(join(tmpdir(), 'yls-pg-'))
@@ -45,15 +38,16 @@ export function applyMigrationsOnDisposablePostgres(options: DisposablePgOptions
       env: { ...process.env, PGHOST: '127.0.0.1', PGPORT: port, PGUSER: process.env.USER || 'postgres' },
     })
     if (result.status !== 0) {
-      throw new Error(`${bin} ${args.join(' ')}\n${result.stdout}\n${result.stderr}`)
+      throw new Error(`${bin}: ${result.error?.message || result.stderr || result.stdout}`)
     }
     return result.stdout
   }
   const sql: DisposablePgSql = (query) =>
-    run(PSQL, ['-v', 'ON_ERROR_STOP=1', '-d', 'postgres', '-c', query])
+    run(PSQL, ['-v', 'ON_ERROR_STOP=1', '-qAt', '-d', 'postgres', '-c', query])
 
-  run(INITDB, ['-D', dataDir, '--no-sync', '--auth=trust', '-U', process.env.USER || 'postgres'])
-  run(PG_CTL, ['-D', dataDir, '-o', `-p ${port} -k ${dataDir}`, '-l', join(dataDir, 'pg.log'), '-w', 'start'])
+  run(INITDB, ['-D', dataDir, '--no-sync', '--auth=trust', '--encoding=UTF8', '--locale=C', '-U', process.env.USER || 'postgres'])
+  const serverOptions = `-p ${port} -h 127.0.0.1${process.platform === 'win32' ? '' : ` -k \"${dataDir}\"`}`
+  run(PG_CTL, ['-D', dataDir, '-o', serverOptions, '-l', join(dataDir, 'pg.log'), '-w', 'start'])
   try {
     sql(bootstrapSql(options.pgcryptoSchema ?? 'public'))
     const dir = resolve(__dirname, '../../supabase/migrations')

@@ -14,7 +14,7 @@ const TEAM_FNS = [
 describe('disposable Postgres applies every migration in order', function () {
   this.timeout(180000)
   before(function () {
-    if (!canRunDisposablePostgres()) this.skip()
+    assert.ok(canRunDisposablePostgres(), 'Native PostgreSQL is required: install it or set PG_BIN before running the full suite')
   })
 
   it('replays the full supabase/migrations chain', () => {

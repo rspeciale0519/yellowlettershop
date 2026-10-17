@@ -2,6 +2,27 @@
 Updated: 2026-10-17
 
 ## Current focus
+**(2026-10-17): Release preflight of PR #25 through head `42c8e79`.**
+GitHub access works; an earlier revision had a failed Windows test and
+40 full-audit highs. Prepared corrections: portable native PostgreSQL discovery, explicit
+private identity for the locally guarded braces fork, and forward migration
+`20261017120300_secure_share_tokens.sql` preserving the built-in UUID CSPRNG
+from `17414f3` for earlier recorded histories, plus service-only share writes. Share expiry is bounded to
+30 days from valid creation. No existing migration was rewritten.
+Evidence: **441 tests**, all **44 migrations** on disposable PG17, full
+typecheck/build and **14 HTTP checks** pass; full audit **0 high/critical**,
+26 moderate + 2 low. Independent re-review passed. Current Windows CI still
+needs a run on the corrected revision. Owner explicitly approved the PR push
+and its automatic Vercel preview only; production remains blocked.
+**Hold production rollout:** hosted access/evidence and legacy share-token raw/
+hash provenance + expiry conversion are unresolved; old share URLs otherwise
+break. Public assets stay public. Report and read-only SQL:
+`docs/superpowers/reports/2026-10-17-release-preflight.md`.
+Cloud install/start draft now includes native PostgreSQL; not published.
+No merge, deployment command, hosted SQL/storage change, live transaction or
+credential rotation. Designer `585c304` stays separate.
+
+## (prior focus)
 **(2026-10-17): Warden review of head `391f756` on draft PR #25.**
 PaymentIntent reuse is rejected (unique index + metadata.order_id + 409);
 team create/invite/add-member go through SECURITY DEFINER RPCs after

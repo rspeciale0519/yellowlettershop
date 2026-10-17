@@ -1,7 +1,8 @@
 {
-  "name": "braces",
+  "name": "@yls/braces-depth-guard",
   "description": "Official braces 3.0.3 with an in-repo AST/input depth bound",
-  "version": "3.0.3",
+  "version": "3.0.3-yls.1",
+  "private": true,
   "homepage": "https://github.com/micromatch/braces",
   "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
   "contributors": [

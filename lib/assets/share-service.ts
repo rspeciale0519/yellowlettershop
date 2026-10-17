@@ -1,12 +1,13 @@
 import { createServiceClient } from '@/utils/supabase/service'
 import { isOwnedAssetPath } from './ownership'
-import { hashShareToken, shareLinkIsExpired } from './share-token'
+import { hashShareToken, SHARE_LINK_MAX_DAYS, shareLinkIsExpired } from './share-token'
 
 export interface ShareLinkData {
   id: string
   asset_id: string
   share_token: string
   expires_at: string | null
+  created_at: string
   access_count: number
   asset: {
     user_id: string
@@ -63,7 +64,10 @@ export class ShareService {
 
       if (!data.asset || data.created_by !== data.asset.user_id || !isOwnedAssetPath(data.asset.file_path, data.asset.user_id)) return null
 
-      if (shareLinkIsExpired(data.expires_at)) {
+      const expiry = data.expires_at ? new Date(data.expires_at).getTime() : NaN
+      const created = data.created_at ? new Date(data.created_at).getTime() : NaN
+      const now = Date.now()
+      if (!Number.isFinite(created) || created > now || shareLinkIsExpired(data.expires_at) || expiry > created + SHARE_LINK_MAX_DAYS * 86400000) {
         return null
       }
 

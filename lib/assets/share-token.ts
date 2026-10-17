@@ -8,8 +8,8 @@ export function hashShareToken(token: string): string {
 }
 
 export function shareLinkIsExpired(expiresAt: string | null | undefined, now = new Date()): boolean {
-  if (!expiresAt) return true
-  return new Date(expiresAt) < now
+  const expiry = expiresAt ? new Date(expiresAt).getTime() : NaN
+  return !Number.isFinite(expiry) || expiry <= now.getTime()
 }
 
 export function parseShareExpiryDays(value: unknown): { ok: true; days: number } | { ok: false; error: string } {
