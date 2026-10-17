@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { OrderProvider } from '@/components/orders/OrderProvider'
 import { OrderStepper } from '@/components/orders/OrderStepper'
@@ -12,7 +12,9 @@ import { CampaignSettingsStep } from '@/components/orders/steps/CampaignSettings
 import { ReviewApprovalStep } from '@/components/orders/steps/ReviewApprovalStep'
 import { PaymentStep } from '@/components/orders/steps/PaymentStep'
 import { ORDER_STEPS, OrderEntryPoint, OrderState } from '@/types/orders'
-import type { DesignerDocument, DesignElement } from '@/types/designer'
+import { createClient } from '@/utils/supabase/client'
+import { readOrderDraft, readOrderDesign } from '@/lib/designer/draft-context'
+import { loadSavedDesign, verifySavedDesignReference } from '@/lib/designer/verified-handoff'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import { useOrderWorkflow } from '@/components/orders/OrderProvider'
@@ -77,30 +79,9 @@ function NewOrderPageInner() {
 
     // Customize based on entry point
     switch (entryPoint) {
-      case 'design_tool_save': {
-        const pendingDesign = typeof window !== 'undefined'
-          ? window.localStorage.getItem('yls.pendingOrderDesign')
-          : null
-        let designJson: DesignerDocument | null = null
-
-        try {
-          designJson = pendingDesign ? (JSON.parse(pendingDesign) as DesignerDocument) : null
-        } catch {
-          designJson = null
-        }
-
-        if (designJson) {
-          const design = {
-            designId: 'local-design-draft',
-            designJson,
-            variablesUsed: extractVariablesFromDesign(designJson),
-            isCustomDesign: true
-          }
-          baseState.designAndContent = { design }
-          baseState.design = design
-        }
+      case 'design_tool_save':
+        // Handoff is loaded and verified asynchronously before mounting the provider.
         break
-      }
 
       case 'template_gallery':
         if (templateId) {
@@ -184,25 +165,52 @@ function NewOrderPageInner() {
     return baseState
   }
 
-  const extractVariablesFromDesign = (designJson: DesignerDocument): string[] => {
-    const variables = new Set<string>()
-    const pages = designJson.pages || {}
-
-    Object.values(pages).forEach((elements: DesignElement[]) => {
-      if (!Array.isArray(elements)) return
-      elements.forEach((element) => {
-        if (element.type !== 'text' || typeof element.content !== 'string') return
-        const matches = element.content.match(/\{\{([a-zA-Z_][a-zA-Z0-9_]*)\}\}/g)
-        matches?.forEach((match) => variables.add(match.replace(/[{}]/g, '')))
-      })
-    })
-
-    return Array.from(variables).sort()
-  }
+  const database = useMemo(() => createClient(), [])
+  const [initialState, setInitialState] = useState<Partial<OrderState> | null>(null)
+  const [loadError, setLoadError] = useState('')
+  const orderId = searchParams.get('orderId') ?? undefined
+  const designId = searchParams.get('designId')
+  const expectedRevision = searchParams.get('revision')
+  useEffect(() => {
+    let active = true
+    const load = async () => {
+      let state = initializeOrderState()
+      const { data: { user } } = await database.auth.getUser()
+      if (orderId) {
+        const response = await fetch(`/api/orders/drafts/${encodeURIComponent(orderId)}`)
+        if (!response.ok) throw new Error('Your existing order could not be restored. Reopen it from your orders before continuing.')
+        const saved = await response.json()
+        state = { ...state, ...saved.orderState, orderId }
+      }
+      if (searchParams.get('source') === 'design_tool') {
+        if (!user) throw new Error('Sign in to restore your saved design.')
+        let reference = null
+        let localDraft = null
+        try {
+          reference = await readOrderDesign(window.localStorage, user.id, orderId)
+          localDraft = readOrderDraft(window.localStorage, user.id, orderId)
+        } catch { /* Direct server verification also works when device storage is disabled. */ }
+        if (reference && ((designId && reference.designId !== designId) || (expectedRevision && reference.revision !== expectedRevision))) throw new Error('The current saved design could not be confirmed. Return to the designer and save again.')
+        if (!reference && localDraft) throw new Error('Newer local edits need to be saved in the designer before continuing.')
+        const design = reference ? await verifySavedDesignReference(database, user.id, reference, orderId)
+          : designId && expectedRevision ? await loadSavedDesign(database, user.id, designId, expectedRevision) : null
+        if (orderId && design && state.design?.designId !== design.designId) throw new Error('This design has not been linked to your existing order. Return to the designer and retry saving.')
+        if (!design) throw new Error('The design is not saved online at this revision. Return to the designer and retry saving.')
+        state = { ...state, design, designAndContent: { ...state.designAndContent, design } }
+      }
+      if (active) setInitialState(state)
+    }
+    void load().catch(error => { if (active) setLoadError(error instanceof Error ? error.message : 'Unable to load this order.') })
+    return () => { active = false }
+    // Initialization runs before the provider mounts and preserves every restored step.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [database, orderId, designId, expectedRevision])
+  if (loadError) return <div role="alert" className="p-8">{loadError}</div>
+  if (!initialState) return <div role="status" className="p-8">Loading your order…</div>
 
 
   return (
-    <OrderProvider initialState={initializeOrderState()}>
+    <OrderProvider key={orderId ?? 'new'} initialState={initialState}>
       {(orderState) => (
         <OrderContent orderState={orderState} router={router} />
       )}
