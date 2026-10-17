@@ -50,7 +50,9 @@ export async function GET(
     // Set proper headers for file streaming
     response.headers.set('Content-Type', shareData.asset.mime_type || fileResult.mimeType)
     response.headers.set('Content-Length', fileResult.fileSize.toString())
-    response.headers.set('Content-Disposition', `inline; filename="${shareData.asset.filename}"`)
+    const mime = shareData.asset.mime_type || fileResult.mimeType
+    const disposition = mime === 'image/svg+xml' ? 'attachment' : 'inline'
+    response.headers.set('Content-Disposition', `${disposition}; filename="${shareData.asset.filename}"`)
     
     // Security headers
     response.headers.set('X-Content-Type-Options', 'nosniff')

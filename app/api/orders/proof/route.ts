@@ -19,7 +19,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
     const body = await req.json()
     const { orderState } = ProofRequestSchema.parse(body)
 
-    const { bytes, formatId } = await renderOrderStatePdf(orderState)
+    const { bytes, formatId } = await renderOrderStatePdf(orderState, userId)
 
     const proofId = crypto.randomUUID()
     const path = `${userId}/proofs/${proofId}.pdf`

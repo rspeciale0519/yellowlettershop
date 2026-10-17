@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { EnhancedCampaignService } from '@/lib/campaigns/enhanced-campaign-service'
+import { withProtectedRoute } from '@/lib/auth/with-protected-route'
 
-export async function POST(
+type RouteParams = { params: { campaignId: string } }
+
+export const POST = withProtectedRoute<RouteParams>(async (
   request: NextRequest,
-  { params }: { params: { campaignId: string } }
-) {
+  _ctx,
+  { params }
+) => {
   try {
     const campaignId = params.campaignId
     const { executionId } = await request.json()
@@ -21,4 +25,4 @@ export async function POST(
       { status: 500 }
     )
   }
-}
+})

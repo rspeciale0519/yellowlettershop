@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { withAuth } from '@/lib/auth/middleware'
 import { createClient } from '@/utils/supabase/service'
+import { loadPricingConfig } from '@/lib/orders/pricing-config'
+import { computeServerOrderTotal } from '@/lib/orders/server-total'
+import { rateLimitResponse } from '@/lib/rate-limit/request-guard'
 import Stripe from 'stripe'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -22,45 +25,28 @@ const PaymentIntentSchema = z.object({
       includePostage: z.boolean().optional()
     }).optional()
   }),
+  // Accepted for backwards compatibility with the wizard, then ignored.
+  // The charged amount is always recomputed server-side.
   amount: z.number().optional()
 })
 
 export const POST = withAuth(async (req: NextRequest, { userId }) => {
   try {
+    const limited = await rateLimitResponse('payments-intent', req, 20, 60)
+    if (limited) return limited
+
     const body = await req.json()
-    const { orderState, amount } = PaymentIntentSchema.parse(body)
+    const { orderState } = PaymentIntentSchema.parse(body)
     
     const supabase = createClient()
-    
-    // Calculate total amount if not provided
-    let totalAmount = amount
-    
-    if (!totalAmount && orderState.mailingOptions && orderState.accuzipValidation) {
-      // Call pricing calculation
-      const pricingResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/orders/calculate-pricing`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': req.headers.get('Authorization') || ''
-        },
-        body: JSON.stringify({
-          mailingOptions: orderState.mailingOptions,
-          recordCount: orderState.accuzipValidation.deliverableRecords
-        })
-      })
-      
-      if (pricingResponse.ok) {
-        const pricing = await pricingResponse.json()
-        totalAmount = pricing.total
-      }
+    const priced = computeServerOrderTotal(
+      orderState as Record<string, unknown>,
+      await loadPricingConfig(supabase)
+    )
+    if (!priced.ok) {
+      return NextResponse.json({ error: priced.error }, { status: 400 })
     }
-    
-    if (!totalAmount || totalAmount <= 0) {
-      return NextResponse.json(
-        { error: 'Invalid order amount' },
-        { status: 400 }
-      )
-    }
+    const totalAmount = priced.total
     
     // Get or create Stripe customer
     const { data: userProfile } = await supabase
@@ -99,7 +85,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
         user_id: userId,
         order_type: 'direct_mail',
         service_level: orderState.mailingOptions?.serviceLevel || 'unknown',
-        record_count: orderState.accuzipValidation?.deliverableRecords?.toString() || '0'
+        record_count: priced.recordCount.toString()
       },
       description: `Direct Mail Order - ${orderState.mailingOptions?.serviceLevel?.replace('_', ' ')} service`
     })

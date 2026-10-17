@@ -48,7 +48,7 @@ export async function generateProofForOrder(
 
   try {
     const orderState = (order.metadata as { order_state?: Record<string, unknown> })?.order_state ?? {}
-    const { bytes } = await renderOrderStatePdf(orderState)
+    const { bytes } = await renderOrderStatePdf(orderState, userId)
 
     const path = `${userId}/proofs/order-${orderId}.pdf`
     const { error: uploadError } = await supabase.storage

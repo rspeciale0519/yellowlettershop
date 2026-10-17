@@ -1,7 +1,19 @@
 # yls brain — STATE
-Updated: 2026-08-03
+Updated: 2026-10-17
 
 ## Current focus
+**(2026-10-17): Owner-approved security scan + C/H/M fixes on
+`cursor/security-scan-2026-10-17-1cd0`.** Report: `SECURITY_SCAN_2026-10-17.md`.
+Critical: checkout trusted client price (now `computeServerOrderTotal`);
+`/assets/images` service-role IDOR (now session + `{userId}/{file}`). High:
+wrapped AccuZip/validation/list-builder/parse; open-redirect sanitizer; SSRF
+URL allowlist; Mailgun timestamp window; RLS lock **migration file only**;
+rate limiter wired to those APIs (login still owner/Supabase). AccuZip count
+fail-closed. Evidence: 307 tests. No prod DBs/cards/emails touched. Owner:
+apply migration, Auth rate limits, Next.js upgrade. Detail:
+[[journal/2026-10-17]].
+
+## (prior focus)
 **(2026-08-02, 23:20): PRODUCTION RELEASE — vendor fulfillment loop is LIVE.**
 `develop` merged to `main` (1cbc0ee, --no-ff) and pushed; the three pending
 migrations (orders_refund_columns, order_dispatches,

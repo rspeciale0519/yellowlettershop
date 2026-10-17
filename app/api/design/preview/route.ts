@@ -62,6 +62,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
 
     const bytes = await renderDesignToPdf(doc, ctx, formatId, orientation, {
       addCropMarks: data.addCropMarks !== false,
+      ownerUserId: userId,
     })
 
     const previewId = crypto.randomUUID()

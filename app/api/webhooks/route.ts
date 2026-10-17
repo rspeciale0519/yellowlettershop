@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
-import crypto from 'crypto'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { isWebhookTimestampFresh, verifyHmacSha256Hex } from '@/lib/security/webhook-crypto'
 
 // Use Node.js runtime for crypto operations
 export const runtime = 'nodejs';
@@ -22,17 +22,7 @@ interface WebhookEvent {
 // =================================================================================
 
 function verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
-  const expectedSignature = crypto
-    .createHmac('sha256', secret)
-    .update(payload, 'utf8')
-    .digest('hex')
-  
-  const providedSignature = signature.replace('sha256=', '')
-  
-  return crypto.timingSafeEqual(
-    Buffer.from(expectedSignature, 'hex'),
-    Buffer.from(providedSignature, 'hex')
-  )
+  return verifyHmacSha256Hex(secret, payload, signature)
 }
 
 // =================================================================================
@@ -167,6 +157,10 @@ export async function POST(request: NextRequest) {
         { error: 'Invalid signature' },
         { status: 401 }
       )
+    }
+    const timestamp = headersList.get('x-yls-timestamp')
+    if (timestamp && !isWebhookTimestampFresh(timestamp)) {
+      return NextResponse.json({ error: 'Webhook timestamp too old' }, { status: 401 })
     }
 
     const data = JSON.parse(payload)

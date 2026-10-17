@@ -42,8 +42,7 @@ export async function PATCH(
     }
 
     // Check permissions - only allow editing if user owns the tag or it's their team tag
-    const canEdit = existingTag.user_id === user.id || 
-      (existingTag.team_id && existingTag.visibility === 'public')
+    const canEdit = existingTag.user_id === user.id
 
     if (!canEdit) {
       return NextResponse.json({ error: 'Permission denied' }, { status: 403 })

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ListBuilderService } from '@/lib/list-builder/list-builder-service'
 import { ListBuilderCriteria } from '@/types/supabase'
+import { withProtectedRoute } from '@/lib/auth/with-protected-route'
 
-export async function POST(request: NextRequest) {
+export const POST = withProtectedRoute(async (request: NextRequest) => {
   try {
     const { criteria }: { criteria: ListBuilderCriteria } = await request.json()
 
@@ -25,4 +26,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, { rateLimit: { scope: 'list-builder-estimate', max: 20, windowSeconds: 60 } })

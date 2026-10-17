@@ -34,11 +34,11 @@ export async function PATCH(
         review_notes
       )
     } else if (action === 'deny') {
-      await timeBasedPermissions.denyAccessRequest(
-        requestId,
-        user.id,
-        review_notes
-      )
+      const { error } = await supabase.rpc('deny_access_request', {
+        request_id: requestId,
+        review_notes_text: review_notes,
+      })
+      if (error) throw error
     } else if (action === 'withdraw') {
       // User withdrawing their own request
       const { error } = await supabase

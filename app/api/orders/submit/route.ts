@@ -3,7 +3,9 @@ import { z } from 'zod'
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware'
 import { createClient } from '@/utils/supabase/service'
 import { generateProofForOrder, getUserEmail } from '@/lib/orders/generate-proof'
-import { buildOrderInsert, extractTotal, extractRecordCount } from '@/lib/orders/order-insert'
+import { buildOrderInsert, extractRecordCount } from '@/lib/orders/order-insert'
+import { loadPricingConfig } from '@/lib/orders/pricing-config'
+import { amountsMatchCents, computeServerOrderTotal } from '@/lib/orders/server-total'
 import { trySendEmail } from '@/lib/email'
 import { orderConfirmationEmail } from '@/lib/email/templates'
 import Stripe from 'stripe'
@@ -33,8 +35,14 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
 
     // SECURITY: verify the PaymentIntent server-side against Stripe (never trust
     // the client). Must be authorized (manual-capture → requires_capture), owned
-    // by this user, and its amount must match the server-computed order total.
-    const serverTotal = extractTotal(orderState as Record<string, unknown>)
+    // by this user, and its amount must match the server-computed order total
+    // (mailing options + deliverable count + pricing_config) — not client pricing.
+    const supabase = createClient()
+    const priced = computeServerOrderTotal(orderState, await loadPricingConfig(supabase))
+    if (!priced.ok) {
+      return NextResponse.json({ error: priced.error }, { status: 400 })
+    }
+    const serverTotal = priced.total
     let pi: Stripe.PaymentIntent
     try {
       pi = await stripe.paymentIntents.retrieve(paymentIntentId)
@@ -49,11 +57,10 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
     if (pi.metadata?.user_id !== userId) {
       return NextResponse.json({ error: 'Payment does not belong to this account.' }, { status: 403 })
     }
-    if (Math.abs(pi.amount - Math.round(serverTotal * 100)) > 1) {
+    if (!amountsMatchCents(pi.amount, serverTotal)) {
       return NextResponse.json({ error: 'Authorized amount does not match the order total.' }, { status: 402 })
     }
 
-    const supabase = createClient()
     const now = new Date().toISOString()
 
     // Normalized (DB1-model) insert: queryable columns + payment inline on the
@@ -65,6 +72,9 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
       { paymentIntentId, amountAuthorized: pi.amount / 100 },
       now
     )
+    insert.total_cost = serverTotal
+    insert.cost_per_piece =
+      priced.recordCount > 0 ? Number((serverTotal / priced.recordCount).toFixed(4)) : null
 
     const { data: order, error: orderError } = await supabase
       .from('orders')
@@ -81,7 +91,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
       orderConfirmationEmail({
         orderId: order.id,
         shortId: order.id.split('-')[0].toUpperCase(),
-        total: extractTotal(orderState as Record<string, unknown>),
+        total: serverTotal,
         recordCount: extractRecordCount(orderState as Record<string, unknown>),
         appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
       })
