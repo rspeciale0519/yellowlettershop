@@ -3,6 +3,8 @@ import { renderDesignToPdf } from '@/app/api/design/preview/_render/pdf-renderer
 import { buildTokenContext } from '@/components/designer/tokens/recipient-map'
 import { isMailFormatId, type MailFormatId } from '@/components/designer/mail-spec'
 import { resolveProofInputs } from '@/lib/orders/proof-inputs'
+import { getServerFontMetrics } from '@/lib/designer/text/server-fonts'
+import { preflightRecipients } from '@/lib/designer/preflight-recipients'
 import { normalizeDesignerDocument } from '@/lib/designer/document/normalize'
 
 /**
@@ -18,6 +20,9 @@ export async function renderOrderStatePdf(
   const formatId: MailFormatId = isMailFormatId(inputs.formatId) ? inputs.formatId : 'letter_8_5x11'
   const orientation = doc.orientation ?? 'portrait'
   const ctx = buildTokenContext(inputs.recipient, inputs.sender)
+  const issues = await preflightRecipients(doc, inputs.recipients.map((recipient, index) => ({ id: recipient.id || String(index + 1), values: buildTokenContext(recipient, inputs.sender).values })), await getServerFontMetrics())
+  const blocking = issues.find(issue => issue.severity === 'error')
+  if (blocking) throw new Error(`Print check failed${blocking.recipientId ? ` for recipient ${blocking.recipientId}` : ''}: ${blocking.message}`)
   const bytes = await renderDesignToPdf(doc, ctx, formatId, orientation, { addCropMarks: true })
   return { bytes, formatId }
 }

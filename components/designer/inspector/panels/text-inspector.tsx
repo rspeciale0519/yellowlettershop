@@ -1,7 +1,7 @@
 "use client"
 
 import { AlignCenter, AlignLeft, AlignRight, Type } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import { MessageEditor } from "@/components/designer/writing/message-editor"
 import { Label } from "@/components/ui/label"
 import { InspectorSection } from "@/components/designer/inspector/inspector-section"
 import { FontSizeField } from "@/components/designer/inspector/fields/font-size-field"
@@ -9,7 +9,6 @@ import { SelectField } from "@/components/designer/inspector/fields/select-field
 import { ColorField } from "@/components/designer/inspector/fields/color-field"
 import { ToggleGroupField } from "@/components/designer/inspector/fields/toggle-group-field"
 import { SliderField } from "@/components/designer/inspector/fields/slider-field"
-import { MergeFieldsSection } from "@/components/designer/inspector/sections/merge-fields-section"
 import { labelClass } from "@/components/designer/inspector/inspector-styles"
 import type { DesignerFont } from "@/components/designer/designer-fonts"
 import type { TextDesignElement } from "@/types/designer"
@@ -29,11 +28,11 @@ export function TextInspector({
       <InspectorSection title="Typography" icon={Type}>
         <div className="space-y-1">
           <Label className={labelClass}>Text</Label>
-          <Input
-            className="h-10 border-input bg-background text-foreground placeholder:text-muted-foreground focus-visible:ring-yellow-400"
-            value={element.content}
-            onChange={(event) => onUpdate({ content: event.target.value })}
-          />
+          <MessageEditor element={element} onUpdate={onUpdate} />
+          <label className="flex items-start gap-2 pt-2 text-sm">
+            <input type="checkbox" aria-label="Guided writing" checked={element.writingMode === "guided"} disabled={element.locked || Boolean(element.continuesFrom)} onChange={event => onUpdate({writingMode:event.target.checked ? "guided" : "free"})}/>
+            <span>Guided writing<span className="block text-xs text-muted-foreground">Wrap within the template and align to paper lines.</span></span>
+          </label>
         </div>
         <SelectField
           label="Font"
@@ -109,11 +108,7 @@ export function TextInspector({
           onChange={(letterSpacing) => onUpdate({ letterSpacing })}
         />
       </InspectorSection>
-      <MergeFieldsSection
-        onInsert={(token) =>
-          onUpdate({ content: element.content ? `${element.content} ${token}` : token })
-        }
-      />
+
     </>
   )
 }

@@ -1,9 +1,11 @@
+import { mapRowToRecipientDTO } from '@/components/designer/preview/recipient-dto'
 import type { RecipientDTO } from '@/components/designer/preview/recipient-dto'
 import type { SenderInput } from '@/components/designer/tokens/recipient-map'
 
 export interface ProofInputs {
   designState: Record<string, unknown>
   recipient: RecipientDTO
+  recipients: RecipientDTO[]
   sender: SenderInput
   formatId: string
 }
@@ -97,5 +99,6 @@ export function resolveProofInputs(orderState: OrderStateLike): ProofInputs {
   const formatId =
     str((designState as Record<string, unknown>).formatId) || 'letter_8_5x11'
 
-  return { designState: designState as Record<string, unknown>, recipient, sender, formatId }
+  const recipients = (listData?.manualRecords ?? []).filter((value): value is Record<string, unknown> => Boolean(value) && typeof value === 'object' && !Array.isArray(value)).map(mapRowToRecipientDTO)
+  return { recipients, designState: designState as Record<string, unknown>, recipient, sender, formatId }
 }

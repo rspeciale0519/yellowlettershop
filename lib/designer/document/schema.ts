@@ -9,6 +9,9 @@ const element = z.object({
   for (const key of required[value.type] ?? []) {
     if (typeof value[key] !== 'string') ctx.addIssue({ code: 'custom', message: `Missing ${value.type} ${key}` })
   }
+  if (value.type === 'text' && value.richText !== undefined && !storySchema.safeParse(value.richText).success) ctx.addIssue({ code: 'custom', message: 'Invalid formatted text' })
+  if (value.writingMode !== undefined && value.writingMode !== 'free' && value.writingMode !== 'guided') ctx.addIssue({ code: 'custom', message: 'Invalid text writing mode' })
+  if (value.continuesFrom !== undefined && typeof value.continuesFrom !== 'string') ctx.addIssue({ code: 'custom', message: 'Invalid text continuation' })
   if (value.type === 'text' && (typeof value.fontSize !== 'number' || !Number.isFinite(value.fontSize) || value.fontSize <= 0)) ctx.addIssue({ code: 'custom', message: 'Invalid font size' })
   if (value.type === 'table' && (!Array.isArray(value.cells) || value.cells.some(row => !Array.isArray(row) || row.some(cell => typeof cell !== 'string')))) ctx.addIssue({ code: 'custom', message: 'Invalid table cells' })
 })

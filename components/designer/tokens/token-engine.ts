@@ -34,7 +34,7 @@ export function substitute(
 
 function substituteElement(element: DesignElement, ctx: TokenContext, opts?: { keepUnknown?: boolean }): DesignElement {
   if (element.type === "text") {
-    return { ...element, content: substitute(element.content, ctx, opts) }
+    return { ...element, content: substitute(element.content, ctx, opts), richText: element.richText ? { ...element.richText, paragraphs: element.richText.paragraphs.map(paragraph => ({ ...paragraph, runs: paragraph.runs.map(run => ({ ...run, text: run.field ? substitute(`{{${run.field}}}`, ctx, opts) : substitute(run.text, ctx, opts), field: undefined })) })) } : undefined }
   }
   if (element.type === "qr") {
     return { ...element, value: substitute(element.value, ctx, opts) }

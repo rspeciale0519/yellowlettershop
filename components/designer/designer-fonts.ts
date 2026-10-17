@@ -6,11 +6,11 @@ export type DesignerFont = {
 }
 
 export const DESIGNER_FONTS: DesignerFont[] = [
-  { id: "arial", label: "Arial", cssFamily: "Arial, sans-serif", enabled: true },
-  { id: "georgia", label: "Georgia", cssFamily: "Georgia, serif", enabled: true },
-  { id: "times", label: "Times New Roman", cssFamily: "'Times New Roman', serif", enabled: true },
-  { id: "courier", label: "Courier New", cssFamily: "'Courier New', monospace", enabled: true },
-  { id: "handwriting", label: "Handwritten", cssFamily: "'Comic Sans MS', 'Bradley Hand', cursive", enabled: true },
+  { id: "arial", label: "Print Sans", cssFamily: "'YLS Sans', sans-serif", enabled: true },
+  { id: "georgia", label: "Georgia", cssFamily: "'YLS Serif', serif", enabled: true },
+  { id: "times", label: "Times New Roman", cssFamily: "'YLS Serif', serif", enabled: true },
+  { id: "courier", label: "Courier New", cssFamily: "'YLS Mono', monospace", enabled: true },
+  { id: "handwriting", label: "Handwritten", cssFamily: "'YLS Handwriting', cursive", enabled: true },
 ]
 
 export function getFontFamily(fontId?: string, fonts = DESIGNER_FONTS) {

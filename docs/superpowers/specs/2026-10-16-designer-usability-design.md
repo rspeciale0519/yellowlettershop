@@ -6,7 +6,7 @@ Sources: the owner's discussion, `2026-10-16-designer-flowing-content-brief.md`,
 
 ## Goal
 
-A customer chooses an actual product/template, edits their message and details, sees an accurate mail piece, resolves print problems, and continues into the existing order process with their work intact. Continuous writing and free-positioned objects coexist in the same document.
+A customer chooses an actual product/template, edits their message and details, sees an accurate mail piece, resolves print problems, and continues into the existing order process with their work intact. One text-box system supports both behaviors: every text box has a Guided writing toggle. Enabled boxes follow template writing bounds and paper baselines; disabled boxes stay freely positioned. This owner refinement on 2026-10-17 supersedes a separate document-story editing mode.
 
 ## Scope and constraints
 
@@ -22,7 +22,7 @@ A customer chooses an actual product/template, edits their message and details, 
 
 ## Customer experience
 
-Desktop: a compact editor header, a content panel, a large canvas, and collapsible real page thumbnails. Primary tasks are Write, Personalize, Images, and Print checks. Precision controls remain under Advanced. Selecting a canvas object still exposes its relevant controls.
+Desktop: a compact editor header, a selected-box content panel, a large canvas, and collapsible real page thumbnails. Existing text boxes expose a formatted multiline editor and Guided writing toggle. Selecting another canvas object exposes its relevant controls.
 
 Phone: a content form and an easily accessible full-screen preview, with tools in a drawer and Continue to Order always reachable. No basic task requires dragging, hovering, or double-clicking. Fit to screen computes available width and height after panels and header are accounted for.
 
@@ -30,7 +30,7 @@ Product selection opens the selected template with its intended format and orien
 
 ## Document model and compatibility
 
-Introduce a versioned canonical document with stable page identifiers, ordered page sides, template-defined writing regions, and structured text stories. Each page side records whether it is included for printing. A story can flow through explicitly linked regions; a postcard's message must not flow into its address/postage area.
+Introduce a versioned canonical document with stable page identifiers, ordered page sides, template-defined writing regions, and structured rich text stored on the existing text elements. Each page side records whether it is included for printing. A guided text box can continue through explicitly linked text boxes on added sides; a postcard's message must not flow into its address/postage area.
 
 Use `normalizeDesignerDocument(input: unknown): DesignerDocumentV2` at load/save/preview/order boundaries. Support existing front/back documents and the legacy elements shape currently accepted by order proof rendering. Preserve page content, backgrounds, transforms, locked/hidden objects, and personalization values. Preserve an original recovery snapshot before saving an upgraded document. Unsupported or malformed versions produce a recoverable error instead of a reset to a blank template.
 
@@ -42,7 +42,7 @@ Use a proven rich-text editor behind a small adapter; the proposed engine is Tip
 
 Define `layoutDesignerDocument(document, values, metrics): DocumentLayout` as a shared pure layout function. It returns positioned lines/runs, baselines, page/region references, and overflow issues. `values` contains the resolved sender/recipient strings; `metrics` measures the exact printable fonts. The canvas and PDF draw those positions rather than wrapping text independently. Use the existing 100-design-units-per-inch geometry and convert to PDF points in the renderer.
 
-Each template defines its writing rectangles, safe margins, first baseline, and optional ruled-line spacing. Calibrate those against actual artwork. Layout preserves paragraphs and intentional line breaks. Pasted content is sanitized to supported text and marks; unsupported glyphs or unavailable fonts produce clear feedback. Continuous content flows only through allocated regions/pages and reports overflow when capacity is exhausted. Existing floating text boxes also use shared measurement for overflow and print consistency.
+Each template defines its writing rectangles, safe margins, first baseline, and optional ruled-line spacing. Calibrate those against actual artwork. Layout preserves paragraphs and intentional line breaks. Pasted content is sanitized to supported text and marks; unsupported glyphs or unavailable fonts produce clear feedback. Guided text-box content flows only through its linked continuation boxes and reports overflow when capacity is exhausted. Existing floating text boxes also use shared measurement for overflow and print consistency.
 
 ## Pages and billing
 

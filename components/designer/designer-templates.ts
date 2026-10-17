@@ -1,3 +1,4 @@
+import { normalizeDesignerDocument } from "@/lib/designer/document/normalize"
 import type { CanvasSize, DesignElement, DesignerDocument, DesignerOrientation } from "@/types/designer"
 import {
   canvasSizePx,
@@ -59,6 +60,8 @@ export const DESIGN_TEMPLATES = [
       ],
     },
   },
+  { id: "white-notepad", name: "White Notepad Letter", pages: { front: [], back: [] } },
+  { id: "yellow-notepad", name: "Yellow Notepad Letter", pages: { front: [], back: [] } },
 ] as const
 
 // Built-in templates were authored in the legacy 862×1112 space. Each maps to
@@ -74,6 +77,11 @@ export function templateFormatId(templateId: string): MailFormatId {
 }
 
 export function createDesignerDocument(templateId: string = DESIGN_TEMPLATES[0].id): DesignerDocument {
+  if (templateId === "white-notepad" || templateId === "yellow-notepad") return normalizeDesignerDocument({
+    templateId, templateName: templateId === "white-notepad" ? "White Notepad Letter" : "Yellow Notepad Letter", orientation: "portrait", formatId: "letter_8_5x11",
+    pages: { front: [{ id: "notepad-message", name: "Your message", type: "text", content: "Dear {{first_name}},\n\nI am interested in your property. Please get in touch so we can talk.\n\nThank you,\n{{sender_first}} {{sender_last}}", x: 100, y: 85, width: 695, height: 955, zIndex: 1, fontSize: 22, fontWeight: "normal", fontFamily: "handwriting", writingMode: "guided" }], back: [] },
+    pageSettings: { front: { printIncluded: true, sheetIndex: 0, side: "front", paper: templateId, regions: [] }, back: { printIncluded: false, sheetIndex: 0, side: "back", paper: templateId, regions: [] } }, updatedAt: new Date().toISOString(),
+  })
   const template = DESIGN_TEMPLATES.find((item) => item.id === templateId) ?? DESIGN_TEMPLATES[0]
   const formatId = templateFormatId(template.id)
   const target = canvasSizePx(formatId, "portrait")

@@ -1,6 +1,7 @@
 "use client"
 
-import { getFontFamily, type DesignerFont } from "@/components/designer/designer-fonts"
+import { PositionedText } from "@/components/designer/writing/positioned-text"
+import { type DesignerFont } from "@/components/designer/designer-fonts"
 import { QrRenderer } from "@/components/designer/qr-renderer"
 import { POSTAGE_DEFAULTS } from "@/components/designer/postage"
 import type { DesignElement } from "@/types/designer"
@@ -21,30 +22,7 @@ export function RenderElement({
   onUpdate: (updates: Partial<DesignElement>) => void
 }) {
   if (element.type === "text") {
-    const justifyContent = element.textAlign === "right" ? "flex-end" : element.textAlign === "center" ? "center" : "flex-start"
-    return (
-      <div
-        contentEditable={editing && !element.locked}
-        suppressContentEditableWarning
-        onDoubleClick={onEdit}
-        onBlur={(event) => onUpdate({ content: event.currentTarget.textContent || "" })}
-        style={{
-          fontSize: element.fontSize,
-          fontWeight: element.fontWeight,
-          fontStyle: element.fontStyle ?? "normal",
-          textDecoration: element.textDecoration ?? "none",
-          lineHeight: element.lineHeight ?? 1.2,
-          letterSpacing: element.letterSpacing != null ? `${element.letterSpacing}px` : undefined,
-          fontFamily: getFontFamily(element.fontFamily, fonts),
-          color: element.color ?? "#111827",
-          textAlign: element.textAlign ?? "left",
-          justifyContent,
-        }}
-        className="flex h-full w-full items-center p-1 outline-none"
-      >
-        {element.content}
-      </div>
-    )
+    return <PositionedText element={element} onEdit={onEdit} />
   }
 
   if (element.type === "image") {

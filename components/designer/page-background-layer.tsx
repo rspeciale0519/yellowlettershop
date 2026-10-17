@@ -1,3 +1,6 @@
+"use client"
+
+import { RuledPaperLayer } from "@/components/designer/writing/ruled-paper-layer"
 import type { PageBackground } from "@/types/designer"
 
 // Sits beneath all elements (and beneath the non-printing print overlay).
@@ -5,11 +8,10 @@ import type { PageBackground } from "@/types/designer"
 // artboard already extends into bleed in Phase 3). Returns null when unset —
 // identical to pre-overhaul behavior (plain white paper).
 export function PageBackgroundLayer({ background }: { background?: PageBackground }) {
-  if (!background || (!background.color && !background.image)) return null
-  const image = background.image
+  const image = background?.image
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-      {background.color ? (
+      {background?.color ? (
         <div className="absolute inset-0" style={{ backgroundColor: background.color }} />
       ) : null}
       {image && !image.src.startsWith("placeholder:") ? (
@@ -23,6 +25,7 @@ export function PageBackgroundLayer({ background }: { background?: PageBackgroun
           style={{ opacity: image.opacity ?? 1 }}
         />
       ) : null}
+      <RuledPaperLayer />
     </div>
   )
 }

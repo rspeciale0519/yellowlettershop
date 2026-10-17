@@ -113,15 +113,17 @@ Exact new filenames and the interfaces they own are pinned in the tasks below. B
 - [ ] Run the new text tests and existing PDF tests, full typecheck, and delta ESLint. Compare browser/PDF output for a ruled letter and postcard at matching scale, including non-default formatting. A merely valid PDF is not sufficient evidence of visual consistency.
 - [ ] Commit with `feat(designer): share text layout with print rendering`.
 
-### Task 5: Add continuous writing alongside movable text boxes
+### Task 5: Add guided writing to the existing text boxes
 
-**Files:** Create `components/designer/writing/{message-editor,formatting-toolbar,writing-panel}.tsx` and `rich-text-adapter.ts`; create `lib/designer/text/rich-text-schema.ts`. Modify the designer document hook/sidebar, text inspector, and template definitions. Tests: `tests/designer/rich-text-schema.test.ts` and `tests/browser/designer/writing.spec.ts`. Add only the compatible pinned Tiptap packages needed by the minimal schema in this task.
+**Owner refinement (2026-10-17):** Use one text-box system. Add a Guided writing toggle to each box; retain free positioning when disabled. Rich text lives on the existing text element, with linked continuation boxes on added sides. Do not introduce a separate story-writing workspace.
 
-**Interfaces:** Produce `MessageEditor({ value: RichTextStory, onChange, onInsertField })` and adapter functions `fromEditorDocument(input: unknown): RichTextStory` / `toEditorDocument(story: RichTextStory): unknown`. Renderer/layout code must not import browser editor modules. The story schema validates supported paragraphs, hard breaks, style marks, and atomic field references.
+**Files:** Create `components/designer/writing/message-editor.tsx`; create `lib/designer/text/rich-text-schema.ts`. Modify the designer document hook/sidebar, text inspector, and template definitions. Tests: `tests/designer/rich-text-schema.test.ts` and `tests/browser/designer/writing.spec.ts`. Add only the compatible pinned Tiptap packages needed by the minimal schema in this task.
+
+**Interfaces:** Produce `MessageEditor({ element: TextDesignElement, onUpdate })` and adapter functions `fromEditorDocument(input: unknown): RichTextStory` / `toEditorDocument(story: RichTextStory): unknown`. Renderer/layout code must not import browser editor modules. The story schema validates supported paragraphs, hard breaks, style marks, and atomic field references.
 
 - [ ] Write failing browser stories: paste a multi-paragraph letter; apply bold to selected words; insert a field at the caret; type with composition/IME; undo a typing group; edit a floating text box in the same design. Test paste sanitization and invalid markup as pure schema tests.
 - [ ] Run these tests to establish the absent continuous-writing behavior as the failure.
-- [ ] Validate Tiptap's peer support for the current React 18 before pinning dependencies. Implement the minimal adapter and content panel. Calibrate template writing rectangles/ruled baselines against actual paper artwork, with fixture profiles for tests. Link story regions explicitly and reserve address/postage areas. Use Task 4 layout for live preview and overflow; no auto-added pages.
+- [ ] Validate Tiptap's peer support for the current React 18 before pinning dependencies. Implement the minimal adapter in the existing text inspector and its per-box Guided writing toggle. Calibrate template writing rectangles/ruled baselines against actual paper artwork, with fixture profiles for tests. Link story regions explicitly and reserve address/postage areas. Use Task 4 layout for both guided and freely positioned text boxes, live preview and overflow; no auto-added pages.
 - [ ] Run schema tests and `writing.spec.ts`, full typecheck, and delta ESLint. Review one finished yellow-letter example with typing/formatting before extending/calibrating every offered template. All formats remain required for completion.
 - [ ] Commit with `feat(designer): add continuous formatted writing`.
 

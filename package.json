@@ -89,7 +89,12 @@
     "uuid": "^11.1.0",
     "vara": "^1.4.1",
     "vaul": "^0.9.6",
-    "zod": "^3.24.1"
+    "zod": "^3.24.1",
+    "@tiptap/core": "3.32.0",
+    "@tiptap/extension-text-align": "3.32.0",
+    "@tiptap/pm": "3.32.0",
+    "@tiptap/react": "3.32.0",
+    "@tiptap/starter-kit": "3.32.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.1",

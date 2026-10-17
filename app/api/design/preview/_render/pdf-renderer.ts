@@ -1,7 +1,13 @@
-import { PDFDocument, StandardFonts, degrees, rgb, type PDFDocument as PDFDoc, type PDFFont, type PDFPage } from "pdf-lib"
+import { PDFDocument, degrees, rgb, type PDFDocument as PDFDoc, type PDFFont, type PDFPage } from "pdf-lib"
 import fontkit from "@pdf-lib/fontkit"
 import QRCode from "qrcode"
 import { MAIL_FORMATS, canvasSizePx, DESIGN_PPI, type MailFormatId, type MailOrientation } from "@/components/designer/mail-spec"
+import { getPrintFontBinaries } from "@/lib/designer/text/server-fonts"
+import { createFontMetrics } from "@/lib/designer/text/font-metrics"
+import { printFontKey } from "@/lib/designer/text/font-manifest"
+import { layoutDesignerDocument } from "@/lib/designer/text/layout"
+import { paperGeometry } from "@/lib/designer/text/paper"
+import type { BoxLayout, FontMetrics } from "@/lib/designer/text/types"
 import { getPrintedPages } from "@/lib/designer/document/pages"
 import { substitute } from "@/components/designer/tokens/token-engine"
 import type { TokenContext } from "@/components/designer/tokens/recipient-map"
@@ -17,21 +23,7 @@ function col(hex: string) {
   return rgb(c.r, c.g, c.b)
 }
 
-interface FontSet {
-  sans: PDFFont
-  sansBold: PDFFont
-  sansItalic: PDFFont
-  serif: PDFFont
-  mono: PDFFont
-}
-
-function pickFont(fonts: FontSet, family: string | undefined, bold: boolean, italic: boolean): PDFFont {
-  const f = (family ?? "").toLowerCase()
-  if (f.includes("times") || f.includes("georgia") || f.includes("serif")) return fonts.serif
-  if (f.includes("courier") || f.includes("mono")) return fonts.mono
-  if (f.includes("hand") || italic) return fonts.sansItalic
-  return bold ? fonts.sansBold : fonts.sans
-}
+type FontSet = Record<string, PDFFont>
 
 async function fetchImageBytes(src: string): Promise<{ bytes: Uint8Array; kind: "png" | "jpg" } | null> {
   try {
@@ -68,6 +60,8 @@ async function drawElement(
   ctx: TokenContext,
   geom: { bleedPt: number; mediaH: number },
   fonts: FontSet,
+  textLayout?: BoxLayout,
+  metrics?: FontMetrics,
 ) {
   const x = geom.bleedPt + element.x * PX_TO_PT
   const w = element.width * PX_TO_PT
@@ -109,22 +103,23 @@ async function drawElement(
   }
 
   if (element.type === "text") {
-    const text = substitute(element.content, ctx)
-    if (!text) return
-    const size = element.fontSize * PX_TO_PT
-    const bold = element.fontWeight === "bold" || (typeof element.fontWeight === "number" && element.fontWeight >= 600)
-    const p = anchor(x + 2, geom.mediaH - geom.bleedPt - element.y * PX_TO_PT - size)
-    page.drawText(text, {
-      x: p.x,
-      y: p.y,
-      size,
-      font: pickFont(fonts, element.fontFamily, bold, element.fontStyle === "italic"),
-      color: col(element.color ?? "#111827"),
-      maxWidth: w,
-      lineHeight: size * (element.lineHeight ?? 1.2),
-      opacity,
-      ...rot,
-    })
+    for (const run of textLayout?.runs ?? []) {
+      const font = fonts[printFontKey(run.style)]
+      const draw = (text: string, offset: number) => {
+        const p = anchor(geom.bleedPt + (run.x + offset) * PX_TO_PT, geom.mediaH - geom.bleedPt - run.baseline * PX_TO_PT)
+        page.drawText(text, { x: p.x, y: p.y, size: run.style.fontSize * PX_TO_PT, font, color: col(run.style.color ?? "#111827"), opacity, ...rot })
+      }
+      if (run.style.letterSpacing && metrics) {
+        const graphemes = Array.from(new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(run.text), part => part.segment)
+        let prefix = ""
+        for (const char of graphemes) { draw(char, metrics.measure(prefix, run.style) + (prefix ? run.style.letterSpacing : 0)); prefix += char }
+      } else draw(run.text, 0)
+      if (run.style.underline) {
+        const start = anchor(geom.bleedPt + run.x * PX_TO_PT, geom.mediaH - geom.bleedPt - (run.baseline + 2) * PX_TO_PT)
+        const end = anchor(geom.bleedPt + (run.x + run.width) * PX_TO_PT, start.y)
+        page.drawLine({ start, end, thickness: .6, color: col(run.style.color ?? "#111827"), opacity })
+      }
+    }
     return
   }
 
@@ -217,21 +212,29 @@ export async function renderDesignToPdf(
 
   const pdf = await PDFDocument.create()
   pdf.registerFontkit(fontkit)
-  const fonts: FontSet = {
-    sans: await pdf.embedFont(StandardFonts.Helvetica),
-    sansBold: await pdf.embedFont(StandardFonts.HelveticaBold),
-    sansItalic: await pdf.embedFont(StandardFonts.HelveticaOblique),
-    serif: await pdf.embedFont(StandardFonts.TimesRoman),
-    mono: await pdf.embedFont(StandardFonts.Courier),
-  }
+  const binaries = await getPrintFontBinaries()
+  const metrics = createFontMetrics(binaries)
+  const fonts: FontSet = Object.fromEntries(await Promise.all(Object.entries(binaries).map(async ([key, bytes]) => [key, await pdf.embedFont(bytes, { subset: true })])))
+  const layout = layoutDesignerDocument({ ...doc, formatId, orientation }, ctx.values, metrics)
+  const fontIssue = layout.issues.find(issue => issue.rule === "font")
+  if (fontIssue) throw new Error(fontIssue.message)
 
   for (const designPage of getPrintedPages(doc)) {
     const pageName = designPage.id
     const page = pdf.addPage([mediaW, mediaH])
     await drawBackground(pdf, page, doc.backgrounds?.[pageName], mediaW, mediaH)
+    const paper = paperGeometry(designPage.paper, trim)
+    if (paper) {
+      page.drawRectangle({ x: bleedPt, y: bleedPt, width: trim.width * PX_TO_PT, height: trim.height * PX_TO_PT, color: col(paper.color) })
+      for (let baseline = paper.firstBaseline; baseline <= paper.bottom; baseline += paper.lineSpacing) {
+        const y = mediaH - bleedPt - baseline * PX_TO_PT
+        page.drawLine({ start: { x: bleedPt + 25 * PX_TO_PT, y }, end: { x: bleedPt + (trim.width - 25) * PX_TO_PT, y }, thickness: .4, color: col(paper.lineColor) })
+      }
+      page.drawLine({ start: { x: bleedPt + 85 * PX_TO_PT, y: bleedPt }, end: { x: bleedPt + 85 * PX_TO_PT, y: mediaH - bleedPt }, thickness: .5, color: col("#dda9a9") })
+    }
     const elements = [...doc.pages[pageName]].filter((el) => !el.hidden).sort((a, b) => a.zIndex - b.zIndex)
     for (const element of elements) {
-      await drawElement(pdf, page, element, ctx, { bleedPt, mediaH }, fonts)
+      await drawElement(pdf, page, element, ctx, { bleedPt, mediaH }, fonts, layout.boxes[`${pageName}:${element.id}`], metrics)
     }
     if (opts?.addCropMarks !== false) drawCropMarks(page, mediaW, mediaH, bleedPt)
   }
