@@ -1,7 +1,26 @@
 # yls brain — STATE
-Updated: 2026-08-03
+Updated: 2026-10-16
 
 ## Current focus
+**(2026-10-16): Proposed designer usability design and implementation plan prepared.**
+Owner chose to continue the existing full app. Working branch:
+`feature/designer-flowing-content`, based on `develop` at `8150e52`.
+Baseline: 290 tests pass; typecheck:full exits 0. Agreed scope and code entry
+points: `docs/superpowers/specs/2026-10-16-designer-flowing-content-brief.md`.
+Continuous formatted editing and draggable text boxes must coexist across all
+formats. The owner clarified that each printed side after the first, including
+the back of the first sheet, costs 10 cents per piece. Add Page applies immediately
+and updates the total. Proposed design:
+`docs/superpowers/specs/2026-10-16-designer-usability-design.md`; nine-task plan:
+`docs/superpowers/plans/2026-10-16-designer-usability-plan.md`.
+Customer UX review used an unmodified local app with intercepted test data/writes;
+it does not certify runtime integrations. Application code is unchanged, and the
+owner has not requested implementation yet. Review the proposed workspace first,
+then shared text/PDF layout, pricing, and reliable save/order handoff. Read the later
+2026-08-03/2026-08-11 journal findings before relying on older production-ready
+claims about AccuZip. Detail: [[journal/2026-10-16]].
+
+## Prior focus
 **(2026-08-02, 23:20): PRODUCTION RELEASE — vendor fulfillment loop is LIVE.**
 `develop` merged to `main` (1cbc0ee, --no-ff) and pushed; the three pending
 migrations (orders_refund_columns, order_dispatches,
