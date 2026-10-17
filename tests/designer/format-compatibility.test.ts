@@ -56,10 +56,10 @@ describe('checkout format compatibility', () => {
       assert.deepEqual(layout.issues, [])
     }
   })
-  it('retains the commercial 65c postcard and 95c folded-letter printing rates', () => {
+  it('keeps legacy printing rates separate from published postage-inclusive mailing', () => {
     assert.equal(DEFAULT_PRICING.printing.postcard_5x7, 65)
     assert.equal(DEFAULT_PRICING.printing.letter_folded, 95)
-    assert.equal(calculatePricing({ serviceLevel: 'full_service', mailPieceFormat: 'postcard_5x7' }, 10).printing, 6.5)
-    assert.equal(calculatePricing({ serviceLevel: 'full_service', mailPieceFormat: 'letter_folded' }, 10).printing, 9.5)
+    assert.equal(calculatePricing({ serviceLevel: 'ship_processed', mailPieceFormat: 'postcard_5x7' }, 10).printing, 6.5)
+    assert.equal(calculatePricing({ serviceLevel: 'ship_processed', mailPieceFormat: 'letter_folded' }, 10).printing, 9.5)
   })
 })

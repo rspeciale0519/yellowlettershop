@@ -28,7 +28,7 @@ describe('toPricingBreakdown', () => {
     assert.equal(b.shippingCharges, 0)
   })
 
-  it('carries postage and shipping dollars through when present', () => {
+  it('identifies included postage and carries a separate parcel-shipping charge', () => {
     const withPostage = toPricingBreakdown(
       calculatePricing(
         {
@@ -40,7 +40,8 @@ describe('toPricingBreakdown', () => {
         100
       )
     )
-    assert.ok(withPostage.postageCharges > 0)
+    assert.equal(withPostage.postageCharges, 0)
+    assert.match(withPostage.basePriceLabel ?? '', /postage included/)
 
     const shipped = toPricingBreakdown(
       calculatePricing(
@@ -53,7 +54,7 @@ describe('toPricingBreakdown', () => {
 
   it('surfaces a volume discount as a negative add-on line item', () => {
     const result = calculatePricing(
-      { serviceLevel: 'full_service', mailPieceFormat: 'postcard_4x6' },
+      { serviceLevel: 'ship_processed', mailPieceFormat: 'postcard_4x6' },
       1000
     )
     assert.ok(result.discount && result.discount > 0)

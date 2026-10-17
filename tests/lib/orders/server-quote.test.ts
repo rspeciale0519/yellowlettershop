@@ -7,7 +7,7 @@ describe('authoritative server quote', () => {
   it('ignores tampered totals/rates/counts and freezes actual deliverable recipients', async () => {
     const { db, calls } = database()
     const quote = await loadOrderQuote(db, 'owner', state, DEFAULT_PRICING)
-    assert.equal(quote.amountCents, 85)
+    assert.equal(quote.amountCents, 180) // Published FC letter $1.70 + extra printed side $0.10.
     assert.equal(quote.pricing.validatedQuantity, 1)
     assert.equal(quote.pricing.quoteStatus, 'final')
     assert.equal(quote.pricing.additionalSideChargeCents, 10)
@@ -50,7 +50,7 @@ describe('authoritative server quote', () => {
     const estimate = provisionalOrderQuote({ mailingOptions: state.mailingOptions, listData: { totalRecords: 250 }, design: { designJson: artwork(true) } }, DEFAULT_PRICING)
     assert.equal(estimate.pricing.quoteStatus, 'provisional')
     assert.equal(estimate.pricing.additionalSideChargeCents, 2500)
-    assert.equal(estimate.pricing.totalPrice, 212.5)
+    assert.equal(estimate.pricing.totalPrice, 437.5) // 250 × ($1.65 + $0.10).
   })
   it('rejects unsaved client artwork or stale save receipt against the stored revision', async () => {
     const changed = artwork(true); changed.templateName = 'Unsaved changes'

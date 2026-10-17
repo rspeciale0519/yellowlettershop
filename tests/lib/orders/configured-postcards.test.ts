@@ -20,19 +20,17 @@ describe('configured larger postcards', () => {
     assert.equal(config.printing.postcard_6x11, 109)
     assert.equal(DEFAULT_PRICING.printing.postcard_6x9, undefined)
   })
-  it('fails with an actionable error if the selected format has no configured rate', async () => {
+  it('requires separate printing rates for non-mailing large postcards', () => {
     for (const format of ['postcard_6x9', 'postcard_6x11'] as const) {
-      const doc = artwork(true); doc.formatId = format
-      await assert.rejects(loadOrderQuote(quoteDatabase(doc).db, 'owner', { ...quoteState, mailingOptions: { ...quoteState.mailingOptions, mailPieceFormat: format } }, DEFAULT_PRICING), new RegExp(`Pricing not configured for ${format}`))
-      assert.throws(() => calculatePricing({ serviceLevel: 'full_service', mailPieceFormat: format }, 100), new RegExp(`Pricing not configured for ${format}`))
+      assert.throws(() => calculatePricing({ serviceLevel: 'ship_processed', mailPieceFormat: format }, 100), new RegExp(`Pricing not configured for ${format}`))
     }
   })
-  it('quotes actual saved 6x9 and 6x11 artwork at configured base rates and no extra-side fee', async () => {
-    for (const [format, rate] of [['postcard_6x9', 89], ['postcard_6x11', 109]] as const) {
+  it('quotes published 6x9 and 6x11 mailing prices independently of legacy print overrides', async () => {
+    for (const [format, legacyPrint, mailingCents] of [['postcard_6x9', 89, 128], ['postcard_6x11', 109, 131]] as const) {
       const doc = artwork(true); doc.formatId = format
-      const config = buildPricingConfig([row(format, rate)])
+      const config = buildPricingConfig([row(format, legacyPrint)])
       const quote = await loadOrderQuote(quoteDatabase(doc).db, 'owner', { ...quoteState, mailingOptions: { ...quoteState.mailingOptions, mailPieceFormat: format } }, config)
-      assert.equal(quote.amountCents, rate)
+      assert.equal(quote.amountCents, mailingCents)
       assert.equal(quote.pricing.printedSideCount, 2)
       assert.equal(quote.pricing.additionalSideChargeCents, 0)
       assert.equal(quote.pricing.quoteStatus, 'final')

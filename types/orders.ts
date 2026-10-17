@@ -135,6 +135,8 @@ export interface FPDDesignData {
 }
 
 export interface PricingBreakdown {
+  basePriceLabel?: string
+  postageIncluded?: boolean
   quoteStatus?: 'provisional' | 'final'
   quoteRevision?: string
   designRevision?: string

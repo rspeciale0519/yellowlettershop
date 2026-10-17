@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card'
 import { Button } from '../../ui/button'
 import { Label } from '../../ui/label'
 import { RadioGroup, RadioGroupItem } from '../../ui/radio-group'
-import { Checkbox } from '../../ui/checkbox'
 import { Alert, AlertDescription } from '../../ui/alert'
 import { useOrderWorkflow } from '../OrderProvider'
 import { useOrderQuote } from '../quotes/use-order-quote'
@@ -13,10 +12,11 @@ import { OrderQuoteSummary } from '../quotes/order-quote-summary'
 import { MailingFormatOptions } from './mailing/mailing-format-options'
 import { MailingServiceNotices } from './mailing/mailing-service-notices'
 import { MailingShippingAddress } from './mailing/mailing-shipping-address'
+import { normalizeFullServiceOptions } from '../../../lib/orders/published-mailing'
 
 const emptyAddress = { address_line_1: '', address_line_2: '', city: '', state: '', zip_code: '' }
 const services = [['full_service', 'Full Service Mailing', 'We handle printing, postage, and mailing.'], ['ship_processed', 'Ship Processed', 'We print and ship your mail pieces to you for local mailing.'], ['print_only', 'Print-Ready Files Only', 'Receive digital files for your own printing and mailing.']] as const
-const postage = [['first_class_forever', 'First-Class Forever Stamps'], ['first_class_discounted', 'First-Class Discounted (200+ pieces)'], ['standard', 'Standard / Marketing Mail']] as const
+const postage = [['first_class_forever', 'First Class (stamps)'], ['first_class_discounted', 'First Class (permit)'], ['standard', 'Standard / Marketing Mail']] as const
 export function MailingOptionsStep({ orderState }: OrderStepProps) {
   const { updateOrderState, nextStep, previousStep } = useOrderWorkflow()
   const options = orderState.mailingOptions ?? orderState.campaignSettings?.mailingOptions
@@ -29,7 +29,13 @@ export function MailingOptionsStep({ orderState }: OrderStepProps) {
   }, [options, contact, designFormat, updateOrderState])
   const quote = useOrderQuote(orderState, updateOrderState)
   const base: MailingOptionsConfig = options ?? { serviceLevel: 'full_service', includePostage: true }
-  const update = (patch: Partial<MailingOptionsConfig>) => updateOrderState({ mailingOptions: { ...base, ...patch } })
+  const quantity = orderState.addressValidation?.deliverableRecords ?? orderState.accuzipValidation?.deliverableRecords ?? quote.pricing?.validatedQuantity ?? 0
+  const update = (patch: Partial<MailingOptionsConfig>) => updateOrderState({ mailingOptions: normalizeFullServiceOptions({ ...base, ...patch }, quantity) })
+  useEffect(() => {
+    if (!options || options.serviceLevel !== 'full_service') return
+    const normalized = normalizeFullServiceOptions(options, quantity)
+    if (normalized.includePostage !== options.includePostage || normalized.postageType !== options.postageType) updateOrderState({ mailingOptions: normalized })
+  }, [options, quantity, updateOrderState])
   const shipping = base.shippingAddress ?? contact?.contactCardData.address ?? emptyAddress
   const physical = base.serviceLevel !== 'print_only'
   const canProceed = Boolean(options && (!physical || (base.mailPieceFormat && base.paperStock && base.finish && shipping.address_line_1 && shipping.city && shipping.state && shipping.zip_code && (base.serviceLevel !== 'full_service' || base.includePostage))))
@@ -40,8 +46,9 @@ export function MailingOptionsStep({ orderState }: OrderStepProps) {
     </RadioGroup></CardContent></Card>
     {physical && <MailingFormatOptions options={base} onChange={update} />}
     {base.serviceLevel === 'full_service' && <Card><CardHeader><CardTitle>Postage</CardTitle></CardHeader><CardContent className="space-y-4">
-      <div className="flex items-center gap-2"><Checkbox id="include-postage" checked={base.includePostage} onCheckedChange={checked => update({ includePostage: checked === true, postageType: checked === true ? 'first_class_forever' : undefined })} /><Label htmlFor="include-postage">Include postage (required for full service)</Label></div>
-      {base.includePostage && <RadioGroup value={base.postageType} onValueChange={value => update({ postageType: value as MailingOptionsConfig['postageType'] })}>{postage.map(([value, label]) => <div key={value} className="flex items-center gap-2"><RadioGroupItem id={value} value={value} /><Label htmlFor={value}>{label}</Label></div>)}</RadioGroup>}
+      <p className="text-sm text-gray-600">Published mailing prices include printing and postage. Quantity pricing is already included.</p>
+      <RadioGroup value={base.postageType} onValueChange={value => update({ postageType: value as MailingOptionsConfig['postageType'] })}>{postage.map(([value, label]) => <div key={value} className="flex items-center gap-2"><RadioGroupItem id={value} value={value} disabled={value === 'standard' && Boolean(base.mailPieceFormat?.startsWith('postcard_')) && quantity > 0 && quantity < 250} /><Label htmlFor={value}>{label}</Label></div>)}</RadioGroup>
+      {base.mailPieceFormat?.startsWith('postcard_') && <p className="text-sm text-gray-600">Postcard quantities below 250 use First Class postage.</p>}
     </CardContent></Card>}
     <OrderQuoteSummary pricing={quote.pricing} isLoading={quote.isLoading} error={quote.error} onRetry={quote.refresh} />
     {physical && <MailingShippingAddress address={shipping} contactAddress={contact?.contactCardData.address} onChange={address => update({ shippingAddress: address })} />}

@@ -1,6 +1,6 @@
 import 'server-only'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { DEFAULT_PRICING, type PricingConfig } from './pricing'
+import { DEFAULT_PRICING, PricingNotConfiguredError, type PricingConfig } from './pricing'
 import { buildPricingConfig, type PricingRow } from './pricing-config-data'
 
 /**
@@ -12,11 +12,13 @@ export async function loadPricingConfig(supabase: SupabaseClient): Promise<Prici
   try {
     const { data, error } = await supabase
       .from('pricing_config')
-      .select('category, key, unit_amount, tier_config, metadata, is_active')
+      .select('category, key, pricing_model, unit_amount, tier_config, metadata, is_active')
       .eq('is_active', true)
     if (error || !data?.length) return DEFAULT_PRICING
     return buildPricingConfig(data as PricingRow[])
-  } catch {
+  } catch (error) {
+    // An explicitly configured but malformed mailing table must not charge a fallback.
+    if (error instanceof PricingNotConfiguredError) throw error
     return DEFAULT_PRICING
   }
 }

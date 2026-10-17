@@ -1,16 +1,19 @@
 import { MAIL_PIECE_FORMATS } from './mail-formats'
 import {
   DEFAULT_PRICING,
+  PricingNotConfiguredError,
   type PricingConfig,
   type MailPieceFormat,
   type PaperStock,
   type Finish,
   type PostageType,
 } from './pricing'
+import { clonePublishedMailingRates, parsePublishedRateTiers, type PublishedMailingKey } from './published-mailing'
 
 export interface PricingRow {
   category: string
   key: string
+  pricing_model?: string
   unit_amount: number | null
   tier_config: unknown
   metadata: Record<string, unknown> | null
@@ -20,6 +23,7 @@ export interface PricingRow {
 /** Deep clone so per-key DB overrides never mutate the shared default. */
 function cloneDefault(): PricingConfig {
   return {
+    publishedMailing: clonePublishedMailingRates(DEFAULT_PRICING.publishedMailing),
     printing: { ...DEFAULT_PRICING.printing },
     paperStock: { ...DEFAULT_PRICING.paperStock },
     finish: { ...DEFAULT_PRICING.finish },
@@ -36,6 +40,12 @@ function applyRow(cfg: PricingConfig, row: PricingRow): void {
   const amt = row.unit_amount
   switch (row.category) {
     case 'mail_piece':
+      if (Object.prototype.hasOwnProperty.call(cfg.publishedMailing, row.key)) {
+        if (row.pricing_model !== 'tiered') throw new PricingNotConfiguredError(`Published mailing override ${row.key} must use the tiered model`)
+        try { cfg.publishedMailing[row.key as PublishedMailingKey] = parsePublishedRateTiers(row.tier_config) }
+        catch (error) { throw new PricingNotConfiguredError(`Invalid published mailing override ${row.key}: ${error instanceof Error ? error.message : 'invalid quantity table'}`) }
+        break
+      }
       if (MAIL_PIECE_FORMATS.includes(row.key as MailPieceFormat) && typeof amt === 'number' && Number.isSafeInteger(amt) && amt >= 0) cfg.printing[row.key as MailPieceFormat] = amt
       break
     case 'paper_stock':

@@ -128,3 +128,7 @@ Append-only timeline. Entry format: `## [YYYY-MM-DD] <op> | <title>`.
 ## [2026-10-17] publish | Designer feature branch and mobile preview
 - Owner-authorized feature push succeeded; remote d1110ed matches local. Vercel automatically built the preview and GitHub reports deployment success. The actual mobile designer link is in the verification report; anonymous access redirects to Vercel sign-in.
 - No main/develop merge or production release. App code is unchanged from the verified 6694c4c checkpoint; AccuZip test remains deferred until the cloud key is supplied. See journal/2026-10-17 [03:45].
+
+## [2026-10-17] pricing | Import published mailing tiers
+- Owner-requested live homepage import: 104 integer-cent rates shared by public tables and default full-service quotes. Postage and quantity pricing are included once; postcard FC minimum250, exact10-cent extra-side fee and distinct FCstamp/permit fulfillment preserved. Full tests490, types/build and four real local config-DB checks pass; browser/source review evidence is in the report.
+- Shipped-letter checkout mapping awaits freight and physical-print-only answers. No production pricing writes, charges or release. See journal/2026-10-17 [04:05] and published-pricing-import report.

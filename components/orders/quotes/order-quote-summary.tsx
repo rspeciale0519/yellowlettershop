@@ -14,7 +14,7 @@ export function OrderQuoteSummary({ pricing, isLoading, error, onRetry }: { pric
         <p>{pricing.validatedQuantity ?? 0} {isFinalOrderQuote(pricing) ? 'validated pieces' : 'estimated pieces'}{pricing.printedSideCount !== undefined ? ` · ${pricing.printedSideCount} printed sides per piece` : ''}</p>
         {!isFinalOrderQuote(pricing) && <p className="text-sm text-amber-800">Save your design and complete address validation for a final quote before payment.</p>}
         <dl className="space-y-2">
-          <div className="flex justify-between gap-4"><dt>Base printing</dt><dd>{money(pricing.basePrice)}</dd></div>
+          <div className="flex justify-between gap-4"><dt>{pricing.basePriceLabel ?? 'Base printing'}</dt><dd>{money(pricing.basePrice)}</dd></div>
           {pricing.addOnServices.map(line => <div key={line.id} className="flex justify-between gap-4"><dt>{line.name}</dt><dd>{money(line.totalPrice)}</dd></div>)}
           {pricing.postageCharges > 0 && <div className="flex justify-between"><dt>Postage</dt><dd>{money(pricing.postageCharges)}</dd></div>}
           {pricing.shippingCharges > 0 && <div className="flex justify-between"><dt>Shipping</dt><dd>{money(pricing.shippingCharges)}</dd></div>}

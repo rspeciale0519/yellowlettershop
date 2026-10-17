@@ -8,7 +8,7 @@ export default defineConfig({
   expect: { timeout: 15_000 },
   outputDir: '/tmp/yls-designer-browser-results',
   use: {
-    baseURL: 'http://127.0.0.1:3020',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:3020',
     browserName: 'chromium',
     launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE || '/usr/bin/chromium', args: ['--no-sandbox','--enable-unsafe-swiftshader'] },
     screenshot: 'only-on-failure',

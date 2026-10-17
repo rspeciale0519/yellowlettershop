@@ -17,7 +17,7 @@ describe('checkout server quote integration', () => {
   it('creates a manually captured intent using server total and quote fingerprint', async () => {
     const response = await post(intentRoute, { orderState: runtime.state, amount: 0.01 })
     assert.equal(response.status, 200)
-    assert.equal(runtime.created.amount, 85)
+    assert.equal(runtime.created.amount, 180)
     assert.equal(runtime.created.capture_method, 'manual')
     assert.ok((runtime.created.metadata as Record<string, string>).quote_revision)
   })
@@ -44,14 +44,14 @@ describe('checkout server quote integration', () => {
     runtime.intent.metadata.quote_revision = quote.pricing.quoteRevision
     const response = await post(submitRoute, { orderState: { ...runtime.state, payment: { paymentIntentId: 'pi_test' } } })
     assert.equal(response.status, 200)
-    assert.equal(runtime.inserted.total_cost, 0.85)
+    assert.equal(runtime.inserted.total_cost, 1.80)
     assert.equal(runtime.inserted.record_count, 1)
     const stored = runtime.inserted.metadata as { order_state: typeof quote.snapshot }
     assert.equal(stored.order_state.listData.manualRecords[0].first_name, 'Actual')
     assert.equal(stored.order_state.design.designJson.pageSettings.back.printIncluded, true)
     assert.equal(stored.order_state.pricing.quoteRevision, quote.pricing.quoteRevision)
     const payment = (stored.order_state as Record<string, unknown>).payment as { amount: number; quoteRevision: string }
-    assert.equal(payment.amount, 0.85)
+    assert.equal(payment.amount, 1.80)
     assert.equal(payment.quoteRevision, quote.pricing.quoteRevision)
   })
   it('returns one authoritative quote through both pricing routes', async () => {
@@ -60,10 +60,10 @@ describe('checkout server quote integration', () => {
     assert.equal(first.status, 200)
     assert.equal(second.status, 200)
     const a = await first.json(); const b = await second.json()
-    assert.equal(a.totalPrice, 0.85)
+    assert.equal(a.totalPrice, 1.80)
     assert.equal(a.quoteRevision, b.quoteRevision)
     assert.equal(b.quoteStatus, 'final')
-    assert.equal(b.total, 0.85)
+    assert.equal(b.total, 1.80)
   })
   it('labels early estimates provisional and fails closed at payment', async () => {
     const state = { mailingOptions: runtime.state.mailingOptions, listData: { totalRecords: 250 } }
@@ -113,14 +113,14 @@ describe('checkout server quote integration', () => {
     assert.equal(stale.status, 409)
   })
 
-  it('rejects payment when larger postcard pricing has not been configured', async () => {
+  it('creates an intent at the published large-postcard mailing price', async () => {
     const doc = artwork(true); doc.formatId = 'postcard_6x9'
-    runtime.db = quoteDatabase(doc).db
+    resetRuntime(doc)
     const state = { ...runtime.state, mailingOptions: { ...runtime.state.mailingOptions, mailPieceFormat: 'postcard_6x9' } }
     const response = await post(intentRoute, { orderState: state })
-    assert.equal(response.status, 422)
-    assert.match((await response.json()).error, /Pricing not configured for postcard_6x9/)
-    assert.deepEqual(runtime.created, {})
+    assert.equal(response.status, 200)
+    assert.equal(runtime.created.amount, 128)
+    assert.equal(runtime.created.capture_method, 'manual')
   })
 
 })

@@ -9,13 +9,17 @@ fonts/layout, ruled paper, explicit printed sides and 10-cent per-side/per-piece
 letter pricing, authoritative server quotes, scoped recovery and guarded order
 handoff are connected. All six formats are supported. White/yellow paper changes
 retain the composition. Submitted artwork is protected from designer relinking.
-453 unit tests, full typecheck, production build, 29 production-mode browser
-checks, 14 real focused-DB checks pass. Independent GPT-6.1 review findings closed.
+Original designer verification passed 453 unit tests, full types/build, 29 browser
+checks and 14 real focused-DB checks. Independent GPT-6.1 findings closed. The
+subsequent live-site pricing import passes 490 unit tests, full types/build and
+four new real local pricing-DB checks and 33 production browser checks.
 Browser services are intercepted; real local DB evidence is separate. Full
 Supabase startup exceeded Docker storage; no real login/Storage/Stripe/vendor
 round trip is certified. Owner's preprinted-stock/production-artwork answer and
-physical profile calibration remain before live printing; 6x9/6x11 rates need
-configuration. AccuZip has a historical endpoint/workflow mismatch; the owner's
+physical profile calibration remain before live printing. Live homepage mailing
+tiers now supply all six formats, including 6x9/6x11, without double postage or
+discounts; physical shipped-letter mapping awaits freight/digital-service answers.
+AccuZip has a historical endpoint/workflow mismatch; the owner's
 current licensed key is in vendor-controlled test mode, and its authenticated
 connection is not yet verified. A minimal direct probe is prepared outside the
 repo, but the key is only in the laptop's .env.local; cloud secrets are empty and
@@ -24,6 +28,7 @@ feature branch pushed, remote SHA d1110ed verified, automatic Vercel preview
 reported successful. Its mobile entry requires Vercel sign-in; see the report.
 No main/develop merge or production release occurred.
 Report: `docs/superpowers/reports/2026-10-17-designer-usability-verification.md`.
+Pricing follow-up: `docs/superpowers/reports/2026-10-17-published-pricing-import.md`.
 Detail: [[journal/2026-10-17]].
 
 ## Prior focus

@@ -1,4 +1,6 @@
 import { test, expect } from './fixture'
+import { calculatePricing } from '../../../lib/orders/pricing'
+import { toPricingBreakdown } from '../../../lib/orders/pricing-breakdown'
 
 // Uses the parent's existing isolated browser fixture; every wizard write below is intercepted.
 const design = { version: 2, templateId: 'test', templateName: 'Quote test', formatId: 'letter_8_5x11', orientation: 'portrait', updatedAt: '2026-10-17', pages: { front: [], back: [] }, pageOrder: ['front', 'back'], pageSettings: { front: { printIncluded: true, sheetIndex: 0, side: 'front', paper: 'plain', regions: [] }, back: { printIncluded: true, sheetIndex: 0, side: 'back', paper: 'plain', regions: [] } } }
@@ -10,7 +12,35 @@ const state = {
   mailingOptions: { serviceLevel: 'full_service', includePostage: true, postageType: 'first_class_forever', mailPieceFormat: 'letter_8_5x11', paperStock: 'standard_14pt', finish: 'matte', shippingAddress: { address_line_1: '1 Test St', city: 'Austin', state: 'TX', zip_code: '78701' } },
   campaignOptions: { isSplitCampaign: false, isRepeating: false },
 }
-const quote = { quoteStatus: 'final', quoteRevision: 'quote-test', designRevision: 'sha256:test', printedSideCount: 2, includedPrintedSides: 1, additionalPrintedSides: 1, additionalSideChargeCents: 2500, validatedQuantity: 250, basePrice: 187.5, postageCharges: 182.5, shippingCharges: 0, taxAmount: 0, totalPrice: 395, pricePerPiece: 1.58, addOnServices: [{ id: 'additional_printed_sides', name: 'Additional printed sides ($0.10 × extra sides × pieces)', description: 'Per extra side', unitPrice: 0.1, quantity: 250, totalPrice: 25 }] }
+const quote = { quoteStatus: 'final', quoteRevision: 'quote-test', designRevision: 'sha256:test', printedSideCount: 2, includedPrintedSides: 1, additionalPrintedSides: 1, additionalSideChargeCents: 2500, validatedQuantity: 250, basePrice: 412.5, basePriceLabel: 'Printing and mailing (postage included)', postageIncluded: true, postageCharges: 0, shippingCharges: 0, taxAmount: 0, totalPrice: 437.5, pricePerPiece: 1.75, addOnServices: [{ id: 'additional_printed_sides', name: 'Additional printed sides ($0.10 × extra sides × pieces)', description: 'Per extra side', unitPrice: 0.1, quantity: 250, totalPrice: 25 }] }
+
+for (const quantity of [249, 250]) {
+  test(`mailing choices and the actual pricing engine agree at ${quantity} postcards`, async ({ page }) => {
+    const options = { ...state.mailingOptions, mailPieceFormat: 'postcard_6x9' as const, postageType: 'standard' as const, includePostage: quantity === 250 }
+    const order = { ...state, step: 4, addressValidation: { ...state.addressValidation, deliverableRecords: quantity, totalRecords: quantity }, design: { ...state.design, designJson: { ...design, formatId: 'postcard_6x9' } }, mailingOptions: options }
+    let sent: Record<string, unknown> = {}
+    await page.route('**/api/orders/drafts/published-test', route => route.fulfill({ json: { orderState: order } }))
+    await page.route('**/api/orders/pricing', route => {
+      sent = route.request().postDataJSON().orderState.mailingOptions
+      const result = calculatePricing(sent as typeof options, quantity, undefined, { printedSideCount: 2, includedPrintedSides: 2 })
+      return route.fulfill({ json: { ...toPricingBreakdown(result), quoteStatus: 'final', quoteRevision: `published-${quantity}`, designRevision: 'sha256:test' } })
+    })
+    await page.goto('/orders/new?orderId=published-test')
+    await expect(page.getByText('Printing and mailing (postage included)', { exact: true })).toBeVisible()
+    await expect(page.getByText(quantity === 249 ? '$318.72' : '$237.50', { exact: true }).first()).toBeVisible()
+    const standard = page.getByRole('radio', { name: 'Standard / Marketing Mail', exact: true })
+    if (quantity === 249) {
+      await expect(standard).toBeDisabled()
+      await expect(page.getByRole('radio', { name: 'First Class (stamps)', exact: true })).toBeChecked()
+      await expect.poll(() => sent.includePostage).toBe(true)
+      await expect.poll(() => sent.postageType).toBe('first_class_forever')
+    } else {
+      await expect(standard).toBeEnabled()
+      await expect(standard).toBeChecked()
+    }
+    await expect(page.getByRole('checkbox', { name: /Include postage/ })).toHaveCount(0)
+  })
+}
 
 test('review waits for matching proof and shows the authoritative side fee and quantity', async ({ page }) => {
   await page.route('**/api/orders/drafts/quote-test', route => route.fulfill({ json: { orderState: state } }))

@@ -21,9 +21,9 @@ class FakeStripe {
     confirm: async () => { runtime.confirmed++; return runtime.intent },
   }
 }
-export function resetRuntime() {
+export function resetRuntime(design = artwork(true)) {
   runtime.config = DEFAULT_PRICING
-  runtime.db = quoteDatabase(artwork(true)).db
+  runtime.db = quoteDatabase(design).db
   runtime.state = quoteState
   runtime.rendered = {}; runtime.created = {}; runtime.confirmed = 0; runtime.attached = 0; runtime.inserted = {}
   runtime.intent = { ...runtime.intent, amount: 1, status: 'requires_capture', metadata: { user_id: 'owner' } }

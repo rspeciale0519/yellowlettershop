@@ -12,6 +12,8 @@ export function toPricingBreakdown(result: PricingResult): PricingBreakdown {
 
   const sideCharge = result.additionalSideChargeCents / 100
   return {
+    basePriceLabel: result.postageIncluded ? 'Printing and mailing (postage included)' : 'Base printing',
+    postageIncluded: result.postageIncluded ?? false,
     basePrice: result.printing,
     additionalSideChargeCents: result.additionalSideChargeCents,
     printedSideCount: result.printedSideCount,

@@ -3,6 +3,7 @@ import { MAIL_PIECE_FORMATS } from './mail-formats'
 import type { DesignerDocumentV2 } from '../../types/designer-document'
 import { getPrintedPages } from '../designer/document/pages'
 import { getAdditionalSideChargeCents, type ProductPrintPolicy } from './additional-side-pricing'
+import { normalizeFullServiceOptions } from './published-mailing'
 
 export const mailingOptionsSchema = z.object({
   serviceLevel: z.enum(['full_service', 'ship_processed', 'print_only']),
@@ -28,7 +29,7 @@ export function resolveOrderQuoteInputs(state: Record<string, unknown>, design: 
   const printedSideCount = getPrintedPages(design).length
   if (!policy.allowAdditionalPages && (printedSideCount !== policy.includedPrintedSides || design.pageOrder.length !== policy.includedPrintedSides)) throw new Error('Postcards require exactly two sides')
   return {
-    mailingOptions: { ...mailingOptions, mailPieceFormat: mailingOptionsSchema.shape.mailPieceFormat.parse(design.formatId) },
+    mailingOptions: normalizeFullServiceOptions({ ...mailingOptions, mailPieceFormat: mailingOptionsSchema.shape.mailPieceFormat.parse(design.formatId) }, quantity),
     quantity, printedSideCount, includedPrintedSides: policy.includedPrintedSides,
     additionalPrintedSides: Math.max(0, printedSideCount - policy.includedPrintedSides),
     additionalSideChargeCents: getAdditionalSideChargeCents(printedSideCount, policy.includedPrintedSides, quantity),

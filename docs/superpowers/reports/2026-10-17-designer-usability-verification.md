@@ -39,7 +39,7 @@ Local raw evidence is under `/workspace/scratch`: `production-build.log`, `produ
 ## Remaining before live printing or a wider launch
 
 1. Confirm whether notepad stock is preprinted or whether the production PDF prints the rules/color. The customer proof currently includes declared vector paper appearance. The owner was asked this manufacturing question; production file treatment must follow the answer. Baseline 110 and spacing 30 in the 100-units-per-inch paper profile are explicit fixture geometry, not a measurement of physical stock. Calibrate the intended production stock/template before mailing.
-2. Configure the actual 6×9 and 6×11 postcard rates. Those sizes fail clearly until configured; no commercial rate was invented. Existing 5×7 and folded-letter rates are retained.
+2. The subsequent [published pricing import](2026-10-17-published-pricing-import.md) resolves mailed 6×9 and 6×11 rates from the live homepage, with the same source for all mailed sizes. Non-mailing large-postcard printing remains separately configured; shipped-letter freight/physical-print-only mapping awaits the owner's answers.
 3. Run an authorized staging journey through real authentication, file storage, all-recipient proof generation and Stripe test authorization/approval/capture. Large mailing-list performance and OS-level IME interaction also need that manual review.
 4. Verify and resolve the separately recorded AccuZip endpoint/workflow mismatch. The historical investigation is in `ylsbrain/journal/2026-08-03.md`, with vendor follow-up in `2026-08-11.md`. The owner clarified that the licensed API key is in vendor-controlled test mode; this is not evidence of a bad key or a current vendor outage. A direct account/upload/quote probe is prepared outside the app, using the current public Postman documentation. Its authenticated run is pending access to the key: the cloud has no binding, the key is in the owner's laptop .env.local, and connected Vercel/GitHub configuration reads return 403. Designer tests do not bypass validation or certify that integration.
 
@@ -48,7 +48,7 @@ This completes the implemented designer and available local verification. Owner 
 ## Feature-branch publication and mobile preview
 
 At the owner's request, pushed `feature/designer-flowing-content` to origin and
-verified remote commit `d1110ed725b9fb89db0d3463cb0fe321916862fa`. Only documentation
+verified remote commit `d1110ed725b9fb89db0d3463cb0fe321916862fa`. At that checkpoint only documentation
 changed after tested application checkpoint `6694c4c`; the application code is identical.
 The Git integration automatically created a Vercel preview. GitHub's Vercel status
 reported `success` / `Deployment has completed` for that commit at 03:45 UTC.
@@ -62,3 +62,7 @@ alias. Anonymous requests redirect to Vercel sign-in. The owner can sign in with
 the authorized Vercel account; this cloud connection cannot perform that preview
 browser session because direct Vercel project/deployment reads return HTTP 403.
 Deployment success does not certify a real authenticated customer ordering journey.
+
+After that publication, the owner authorized the live-site pricing import linked
+above. That follow-up changes pricing code and adds verification; this report's
+original designer checkpoint remains the historical evidence for `6694c4c`.

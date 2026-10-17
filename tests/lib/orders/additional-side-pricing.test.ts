@@ -19,11 +19,11 @@ describe('additional printed sides', () => {
     assert.equal(getProductPrintPolicy('postcard_4x6').includedPrintedSides, 2)
     assert.equal(getProductPrintPolicy('postcard_4x6').allowAdditionalPages, false)
   })
-  it('adds the fee after volume discount and itemizes it', () => {
+  it('adds the undiscounted fee to the already tiered mailing price and itemizes it', () => {
     const result = calculatePricing({ serviceLevel: 'full_service', mailPieceFormat: 'letter_8_5x11' }, 1000, DEFAULT_PRICING, { printedSideCount: 3, includedPrintedSides: 1 })
-    assert.equal(result.discount, 37.5)
+    assert.equal(result.discount, null)
     assert.equal(result.additionalSideChargeCents, 20000)
-    assert.equal(result.total, 912.5)
+    assert.equal(result.total, 1430)
     const b = toPricingBreakdown(result)
     assert.equal(b.addOnServices.find(line => line.id === 'additional_printed_sides')?.totalPrice, 200)
   })

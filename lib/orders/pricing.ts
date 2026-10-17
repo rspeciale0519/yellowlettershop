@@ -1,8 +1,11 @@
 import type { MailPieceFormat } from './mail-formats'
 export type { MailPieceFormat } from './mail-formats'
 import { getAdditionalSideChargeCents } from './additional-side-pricing'
+import { calculatePublishedMailing, createPublishedMailingRates, type PublishedMailingRates } from './published-mailing'
 
-// Pricing. ALL rate values — these defaults and pricing_config.unit_amount —
+// Full-service rates come from the shared published mailing catalog, inclusive
+// of postage and quantity pricing. The component defaults below apply to the
+// existing non-mailing services. ALL component rate values and unit_amount are
 // are CENTS per piece (45 = $0.45 postcard print, 73 = $0.73 Forever stamp,
 // shipping base 1500 = $15.00). Divide by 100 exactly once, at the dollars
 // conversion below. The previous divisor (1000, "each unit = $0.001") priced
@@ -16,6 +19,7 @@ export type Finish = 'matte' | 'gloss' | 'uv_coating'
 export type PostageType = 'first_class_forever' | 'first_class_discounted' | 'standard'
 
 export interface PricingConfig {
+  publishedMailing: PublishedMailingRates
   printing: Record<Exclude<MailPieceFormat, 'postcard_6x9' | 'postcard_6x11'>, number> & Partial<Record<MailPieceFormat, number>>
   paperStock: Record<PaperStock, number>
   finish: Record<Finish, number>
@@ -28,6 +32,7 @@ export interface PricingConfig {
 }
 
 export const DEFAULT_PRICING: PricingConfig = {
+  publishedMailing: createPublishedMailingRates(),
   printing: {
     postcard_4x6: 45,
     postcard_5x7: 65,
@@ -71,6 +76,7 @@ export type MailingOptions = {
 }
 
 export type PricingResult = {
+  postageIncluded?: boolean
   additionalSideChargeCents: number
   printedSideCount?: number
   includedPrintedSides?: number
@@ -104,12 +110,13 @@ export function calculatePricing(
   sides?: { printedSideCount: number; includedPrintedSides: number }
 ): PricingResult {
   if (!Number.isSafeInteger(recordCount) || recordCount < 1) throw new Error('Record count must be a positive safe integer')
+  if (opts.serviceLevel === 'full_service') return calculatePublishedMailing(opts, recordCount, config, sides)
   const format = opts.mailPieceFormat ?? 'postcard_4x6'
   const formatCost = config.printing[format]
   if (typeof formatCost !== 'number' || !Number.isSafeInteger(formatCost) || formatCost < 0) throw new PricingNotConfiguredError(`Pricing not configured for ${format}. Ask an administrator to configure its mail-piece rate in cents before checkout.`)
   const additionalSideChargeCents = sides ? getAdditionalSideChargeCents(sides.printedSideCount, sides.includedPrintedSides, recordCount) : 0
   let printingUnits = 0
-  let postageUnits = 0
+  const postageUnits = 0
   let shippingUnits = 0
   let discountUnits = 0
 
@@ -119,14 +126,6 @@ export function calculatePricing(
     printingUnits = (formatCost + paperCost + finishCost) * recordCount
   } else {
     printingUnits = 2500
-  }
-
-  if (opts.serviceLevel === 'full_service' && opts.includePostage && opts.postageType) {
-    let rate = config.postage[opts.postageType]
-    if ((opts.postageType === 'first_class_discounted' || opts.postageType === 'standard') && recordCount < 200) {
-      rate = config.postage.first_class_forever
-    }
-    postageUnits = rate * recordCount
   }
 
   if (opts.serviceLevel === 'ship_processed') {
