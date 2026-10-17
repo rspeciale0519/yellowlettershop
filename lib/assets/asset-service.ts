@@ -1,7 +1,9 @@
+import { assetStats, signedAssetUrl } from './service-access'
 import { createClient } from '@/utils/supabase/client'
 import { UserAsset, Json } from '@/types/supabase'
 import { recordChange } from '@/lib/version-history/change-tracker'
 import { v4 as uuidv4 } from 'uuid'
+import { isOwnedAssetPath } from './ownership'
 
 export interface UploadAssetRequest {
   file: File
@@ -39,7 +41,6 @@ export interface AssetUsageStats {
  */
 export class AssetService {
   private supabase = createClient()
-
   /**
    * Uploads a file asset to storage and creates database record
    */
@@ -112,7 +113,6 @@ export class AssetService {
       throw error
     }
   }
-
   /**
    * Gets assets with optional filtering
    */
@@ -152,7 +152,6 @@ export class AssetService {
     if (error) throw error
     return assets || []
   }
-
   /**
    * Gets a single asset by ID
    */
@@ -170,7 +169,6 @@ export class AssetService {
     if (error) return null
     return asset
   }
-
   /**
    * Updates an asset's metadata
    */
@@ -239,7 +237,6 @@ export class AssetService {
 
     return asset
   }
-
   /**
    * Deletes an asset and its file
    */
@@ -258,6 +255,8 @@ export class AssetService {
     if (!asset) {
       throw new Error('Asset not found or access denied')
     }
+
+    if (!isOwnedAssetPath(asset.file_path, user.id)) throw new Error('Invalid asset storage ownership')
 
     // Delete file from storage
     const { error: storageError } = await this.supabase.storage
@@ -284,45 +283,12 @@ export class AssetService {
       description: `Deleted asset "${asset.filename}"`
     })
   }
-
   /**
    * Gets asset usage statistics for the user
    */
   async getAssetStats(userId?: string): Promise<AssetUsageStats> {
-    const { data: { user } } = await this.supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    const targetUserId = userId || user.id
-
-    const { data: assets, error } = await this.supabase
-      .from('user_assets')
-      .select('*')
-      .eq('user_id', targetUserId)
-
-    if (error) throw error
-
-    const totalAssets = assets?.length || 0
-    const storageUsed = assets?.reduce((sum, asset) => sum + asset.file_size, 0) || 0
-    
-    // Mock storage limit - will be replaced with actual quota system
-    const storageLimit = 100 * 1024 * 1024 // 100MB default
-    
-    const assetsByCategory: Record<string, number> = {}
-    assets?.forEach(asset => {
-      const category = asset.file_type || 'other'
-      assetsByCategory[category] = (assetsByCategory[category] || 0) + 1
-    })
-
-    return {
-      totalAssets,
-      storageUsed,
-      storageLimit,
-      assetsByCategory,
-      recentUploads: assets?.slice(-5) || [],
-      mostUsedAssets: [] // Will be populated when usage tracking is implemented
-    }
+    return assetStats(this.supabase, userId)
   }
-
   /**
    * Determines file category from MIME type
    */
@@ -335,43 +301,12 @@ export class AssetService {
     if (mimeType.includes('font')) return 'font'
     return 'other'
   }
-
   /**
    * Gets a signed URL for accessing a private asset
    */
-  async getSignedUrl(assetId: string, expiresIn: number = 3600): Promise<string> {
-    const { data: { user } } = await this.supabase.auth.getUser()
-    if (!user) throw new Error('User not authenticated')
-
-    // Get the asset to verify access and get file path
-    const { data: asset, error } = await this.supabase
-      .from('user_assets')
-      .select('file_path, user_id, is_public')
-      .eq('id', assetId)
-      .single()
-
-    if (error || !asset) {
-      throw new Error('Asset not found')
-    }
-
-    // Check if user has access to this asset
-    if (asset.user_id !== user.id && !asset.is_public) {
-      throw new Error('Access denied')
-    }
-
-    // Generate signed URL for the file
-    const { data: signedUrlData, error: signedUrlError } = await this.supabase.storage
-      .from('assets')
-      .createSignedUrl(asset.file_path, expiresIn)
-
-    if (signedUrlError || !signedUrlData?.signedUrl) {
-      console.error('Signed URL generation error:', signedUrlError)
-      throw new Error('Failed to generate signed URL')
-    }
-
-    return signedUrlData.signedUrl
+  async getSignedUrl(assetId: string, expiresIn = 3600): Promise<string> {
+    return signedAssetUrl(this.supabase, assetId, expiresIn)
   }
-
   /**
    * Records a usage event for an asset by bumping its metadata usage counter.
    * Uses the existing user_assets.metadata jsonb (no separate usage table).

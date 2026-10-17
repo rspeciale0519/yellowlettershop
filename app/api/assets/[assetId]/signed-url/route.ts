@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/utils/supabase/server'
+import { isOwnedAssetPath } from '@/lib/assets/ownership'
 
 export async function GET(
   request: NextRequest,
@@ -41,6 +42,8 @@ export async function GET(
         { status: 403 }
       )
     }
+
+    if (!isOwnedAssetPath(asset.file_path, asset.user_id)) return NextResponse.json({ error: 'Asset not found' }, { status: 404 })
 
     // Generate signed URL for the file
     const { data: signedUrlData, error: signedUrlError } = await supabase.storage

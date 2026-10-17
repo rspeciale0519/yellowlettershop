@@ -8,28 +8,21 @@ export type SupabaseConnectOrigins = {
   wss: string
 }
 
-const UNSAFE_CSP_ORIGIN = /[;\s,'"]/
-
-function isSafeCspOrigin(origin: string): boolean {
-  if (!origin || origin === 'null') return false
-  return !UNSAFE_CSP_ORIGIN.test(origin)
-}
-
 export function supabaseConnectOrigins(
-  supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL,
+  development = process.env.NODE_ENV === 'development',
 ): SupabaseConnectOrigins | null {
-  if (!supabaseUrl) return null
+  if (supabaseUrl === undefined) return null
   try {
+    if (!supabaseUrl || /[\s;,'"<>\\]/.test(supabaseUrl)) throw new Error()
     const url = new URL(supabaseUrl)
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null
-    if (!isSafeCspOrigin(url.origin)) return null
-    const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wss = `${wsProtocol}//${url.host}`
-    if (!isSafeCspOrigin(wss)) return null
-    return { https: url.origin, wss }
-  } catch {
-    return null
-  }
+    const local = ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)
+    const dnsHost = url.hostname.length <= 253 && url.hostname.split('.').every(label => label.length <= 63 && /^[a-z\d](?:[a-z\d-]*[a-z\d])?$/i.test(label))
+    if (!dnsHost && url.hostname !== '[::1]') throw new Error()
+    if (url.protocol !== 'https:' && !(development && local && url.protocol === 'http:')) throw new Error()
+    if (!url.hostname || url.username || url.password || url.search || url.hash || url.pathname !== '/') throw new Error()
+    return { https: url.origin, wss: url.origin.replace(/^https:/, 'wss:').replace(/^http:/, 'ws:') }
+  } catch { throw new Error('Invalid Supabase URL for Content-Security-Policy') }
 }
 
 /**
@@ -39,9 +32,10 @@ export function supabaseConnectOrigins(
  * and data fonts.
  */
 export function buildContentSecurityPolicy(
-  supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL,
+  development = process.env.NODE_ENV === 'development',
 ): string {
-  const origins = supabaseConnectOrigins(supabaseUrl)
+  const origins = supabaseConnectOrigins(supabaseUrl, development)
   const connectSrc = ["'self'", 'https://api.stripe.com']
   if (origins) {
     connectSrc.push(origins.https, origins.wss)
@@ -50,13 +44,13 @@ export function buildContentSecurityPolicy(
   return [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' https://js.stripe.com",
-    "style-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     // img-src keeps https: for remote designer images (user assets, stock, proofs).
     "img-src 'self' data: blob: https:",
-    "font-src 'self' data:",
+    "font-src 'self' data: https://fonts.gstatic.com",
     `connect-src ${connectSrc.join(' ')}`,
-    'worker-src blob:',
-    'frame-src https://js.stripe.com https://hooks.stripe.com',
+    "worker-src 'self' blob:",
+    `frame-src 'self' https://js.stripe.com https://hooks.stripe.com${origins ? ' ' + origins.https : ''}`,
     "frame-ancestors 'none'",
     "object-src 'none'",
     "base-uri 'self'",

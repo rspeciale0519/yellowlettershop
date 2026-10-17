@@ -17,7 +17,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
     const { orderState } = PricingFromStateSchema.parse(body)
     const supabase = createClient()
     const config = await loadPricingConfig(supabase)
-    const priced = await loadTrustedCheckout(supabase, userId, orderState, config)
+    const priced = await loadTrustedCheckout(supabase, userId, orderState, config, { requireDesign: false })
     if (!priced.ok) {
       return NextResponse.json({ error: priced.error }, { status: priced.status })
     }

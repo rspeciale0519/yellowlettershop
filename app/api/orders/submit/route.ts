@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/service'
 import { generateProofForOrder, getUserEmail } from '@/lib/orders/generate-proof'
 import { buildOrderInsert } from '@/lib/orders/order-insert'
 import { loadPricingConfig } from '@/lib/orders/pricing-config'
-import { amountsMatchCents, loadTrustedCheckout } from '@/lib/orders/trusted-checkout'
+import { checkoutPaymentError, loadTrustedCheckout } from '@/lib/orders/trusted-checkout'
 import { stripeCheckoutMetadata } from '@/lib/payments/intent-metadata'
 import { trySendEmail } from '@/lib/email'
 import { orderConfirmationEmail } from '@/lib/email/templates'
@@ -57,13 +57,12 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
     if (pi.metadata?.user_id !== userId) {
       return NextResponse.json({ error: 'Payment does not belong to this account.' }, { status: 403 })
     }
-    if (!amountsMatchCents(pi.amount, serverTotal)) {
-      return NextResponse.json({ error: 'Authorized amount does not match the order total.' }, { status: 402 })
-    }
+    const mismatch = checkoutPaymentError(pi, priced, userId)
+    if (mismatch) return NextResponse.json({ error: mismatch.error }, { status: mismatch.status })
 
     const now = new Date().toISOString()
     const insert = buildOrderInsert(
-      orderState as Record<string, unknown>,
+      { ...priced.snapshot, payment: { paymentIntentId, amount: pi.amount / 100, currency: pi.currency, status: 'authorized', quoteRevision: priced.quoteRevision } },
       userId,
       { paymentIntentId, amountAuthorized: pi.amount / 100 },
       now

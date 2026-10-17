@@ -8,6 +8,7 @@ export interface CheckoutPricingInputs {
   postageType: string
   postageIncluded: boolean
   serverTotal: string
+  quoteRevision?: string
 }
 
 const META_KEYS = [
@@ -22,6 +23,7 @@ const META_KEYS = [
   'postage_included',
   'server_total',
   'order_id',
+  'quote_revision',
 ] as const
 
 export function stripeCheckoutMetadata(
@@ -42,6 +44,7 @@ export function stripeCheckoutMetadata(
     server_total: inputs.serverTotal,
   }
   if (orderId) metadata.order_id = orderId
+  if (inputs.quoteRevision) metadata.quote_revision = inputs.quoteRevision
   return metadata
 }
 

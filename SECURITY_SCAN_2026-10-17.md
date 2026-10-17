@@ -1,5 +1,11 @@
 # Security scan — 17 October 2026
 
+**Current reconciliation:** See [PR #25 consolidation and rollout review](docs/superpowers/reports/2026-10-17-security-consolidation.md).
+It supersedes the historical implementation/test/audit status below: 419 tests,
+full typecheck and build pass; audit has 0 high/critical findings. The original
+SQL is retained with a new forward hardening migration. Hosted migration,
+deployment and public-bucket changes remain unapproved and unperformed.
+
 Owner-approved local scan of Yellow Letter Shop (`main` @ scan start). Method: broad sweep, then an independent disproof pass on every candidate (re-trace the path, look for middleware / RLS / RPC / service-role guards, keep only what survived). Attack cases are encoded as Mocha tests. **No production systems, cards, emails, SMS, or hosted databases were touched.**
 
 Live A/B/admin browser attacks were not run: this environment has no local Supabase stack or test accounts. The money-path and IDOR cases below are proven in unit tests that replay the same inputs an attacker would send.

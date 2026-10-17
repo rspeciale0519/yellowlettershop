@@ -4,6 +4,7 @@ export const WEBHOOK_MAX_AGE_SECONDS = 300
 
 export function timingSafeEqualHex(left: string, right: string): boolean {
   try {
+    if (!/^[a-f0-9]{64}$/i.test(left) || !/^[a-f0-9]{64}$/i.test(right)) return false
     const a = Buffer.from(left, 'hex')
     const b = Buffer.from(right, 'hex')
     if (a.length === 0 || a.length !== b.length) return false
@@ -19,10 +20,11 @@ export function isWebhookTimestampFresh(
   maxAgeSeconds = WEBHOOK_MAX_AGE_SECONDS,
   nowSeconds = Date.now() / 1000
 ): boolean {
-  if (!timestamp) return false
+  if (!timestamp || !/^\d+$/.test(timestamp)) return false
   const ts = Number(timestamp)
-  if (!Number.isFinite(ts) || ts <= 0) return false
-  return Math.abs(nowSeconds - ts) <= maxAgeSeconds
+  const maxAge = Math.min(maxAgeSeconds, WEBHOOK_MAX_AGE_SECONDS)
+  const now = Math.floor(nowSeconds)
+  return Number.isSafeInteger(ts) && ts > 0 && ts <= now && Number.isFinite(maxAge) && maxAge >= 0 && now - ts <= maxAge
 }
 
 export type WebhookTimestampCheck =
@@ -78,10 +80,11 @@ export function verifyYlsWebhook(input: {
   signature: string | undefined
   secret: string
   nowSeconds?: number
+  maxAgeSeconds?: number
 }): YlsWebhookCheck {
   const freshness = requireWebhookTimestamp(
     input.timestamp,
-    WEBHOOK_MAX_AGE_SECONDS,
+    input.maxAgeSeconds ?? WEBHOOK_MAX_AGE_SECONDS,
     input.nowSeconds ?? Date.now() / 1000
   )
   if (!freshness.ok) return freshness

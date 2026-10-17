@@ -1,4 +1,5 @@
 import { createServiceClient } from '@/utils/supabase/service'
+import { isOwnedAssetPath } from './ownership'
 
 export interface ShareLinkData {
   id: string
@@ -7,6 +8,7 @@ export interface ShareLinkData {
   expires_at: string | null
   access_count: number
   asset: {
+    user_id: string
     filename: string
     file_size: number
     file_type: string
@@ -41,6 +43,7 @@ export class ShareService {
         .select(`
           *,
           asset:user_assets (
+            user_id,
             filename,
             file_size,
             file_type,
@@ -56,6 +59,8 @@ export class ShareService {
       if (error || !data) {
         return null
       }
+
+      if (!data.asset || data.created_by !== data.asset.user_id || !isOwnedAssetPath(data.asset.file_path, data.asset.user_id)) return null
 
       // Check if expired
       if (data.expires_at && new Date(data.expires_at) < new Date()) {
@@ -87,7 +92,8 @@ export class ShareService {
   /**
    * Streams file data from storage without exposing signed URL
    */
-  async streamFile(filePath: string): Promise<StreamFileResult | null> {
+  async streamFile(filePath: string, ownerId: string): Promise<StreamFileResult | null> {
+    if (!isOwnedAssetPath(filePath, ownerId)) return null
     try {
       // Get signed URL from storage
       const { data: signedUrlData, error: urlError } = await this.supabase.storage

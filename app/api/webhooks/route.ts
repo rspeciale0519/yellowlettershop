@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { headers } from 'next/headers'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/utils/supabase/service'
 import {
   requireWebhookTimestamp,
   verifyHmacSha256Hex,
@@ -137,7 +136,7 @@ async function handleRecordsImported(data: any, supabase: any) {
 
 export async function POST(request: NextRequest) {
   try {
-    const headersList = await headers()
+    const headersList = request.headers
     const signature = headersList.get('x-yls-signature')
     const eventType = headersList.get('x-yls-event-type')
     
@@ -172,8 +171,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const data = JSON.parse(payload)
-    const supabase = createSupabaseServerClient()
+    const event = JSON.parse(payload)
+    if (!event || event.type !== eventType) return NextResponse.json({ error: 'Event type mismatch' }, { status: 400 })
+    const data = event.data
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return NextResponse.json({ error: 'Invalid event data' }, { status: 400 })
+    const supabase = createServiceClient()
 
     let result: { success: boolean; message: string }
 

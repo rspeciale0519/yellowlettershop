@@ -2,6 +2,24 @@
 Updated: 2026-10-17
 
 ## Current focus
+**(2026-10-17): Owner-approved security consolidation into existing PR #25.**
+PR #25's `ce4d55e` is the base; selected protections from `fix/security-release`
+at `9928a56` extend its existing modules. Checkout uses canonical validated
+recipients/server prices and checks owner/amount/quote before card actions;
+all asset entry points reject foreign paths; owner-aware PDF rendering stays.
+Share HTML/SVG downloads are hardened. Next 15.5.28, strict CSP and timestamp
+HMAC remain; original RLS migration is unchanged and a unique forward migration
+`20261017010000` adds financial/admin/validation/asset guards (FILE ONLY).
+Evidence: **419 tests**, full typecheck, production build and **14 local HTTP
+checks** pass; full audit **0 high/critical**, 26 moderate + 2 low remain.
+Independent review findings resolved. See
+`docs/superpowers/reports/2026-10-17-security-consolidation.md` for exact SQL
+checksums, rollout/rollback and approvals. **Public assets remain public;
+hosted schema/URL and external custom-webhook inventory still need evidence.**
+No merge/deploy/hosted SQL/storage changes, live transactions or key rotations.
+Designer branch `585c304` and standalone security branch `9928a56` stay separate.
+
+## (prior focus)
 **(2026-10-17): Owner-review round 4 on draft PR #25**
 (`cursor/security-scan-2026-10-17-1cd0`). `/api/webhooks` HMAC is now
 `${timestamp}.${body}` after a required 300s timestamp; CSP skips `;` /

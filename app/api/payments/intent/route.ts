@@ -60,7 +60,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
     }
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(priced.total * 100),
+      amount: priced.amountCents,
       currency: 'usd',
       customer: customerId,
       capture_method: 'manual',
@@ -73,6 +73,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
       paymentIntentId: paymentIntent.id,
       clientSecret: paymentIntent.client_secret,
       amount: priced.total,
+      pricing: priced.pricing,
       customerId
     })
   } catch (error) {

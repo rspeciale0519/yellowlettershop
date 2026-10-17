@@ -1,13 +1,11 @@
 import { filePathFromStorageAssetId } from './storage-fallback'
+import { isOwnedAssetPath } from './ownership'
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export function isOwnedStoragePath(userId: string, filePath: string): boolean {
-  if (!userId || !filePath) return false
-  if (filePath.includes('..') || filePath.includes('\\') || filePath.startsWith('/')) return false
-  const parts = filePath.split('/')
-  return parts.length === 2 && parts[0] === userId && parts[1].length > 0
+  return isOwnedAssetPath(filePath, userId)
 }
 
 export function ownedPathFromAssetId(userId: string, assetId: string): string | null {
@@ -44,6 +42,7 @@ export function evaluateAssetAccess(
   userId: string | null,
   asset: AssetAccessRecord | null
 ): AssetAccessDecision {
+  if (!userId) return { ok: false, status: 401, error: 'Authentication required' }
   if (!asset?.file_path) {
     return { ok: false, status: 404, error: 'Image not found' }
   }
@@ -53,13 +52,11 @@ export function evaluateAssetAccess(
 
   const ownerId = asset.user_id || asset.uploaded_by || null
   const isOwner = Boolean(userId && ownerId && userId === ownerId)
-  const isPublic = Boolean(asset.is_public)
-
-  if (isOwner || isPublic) {
+  if (isOwner && isOwnedStoragePath(userId, asset.file_path) && /\.(avif|gif|jpe?g|png|svg|webp)$/i.test(asset.file_path)) {
     return { ok: true, filePath: asset.file_path }
   }
   if (!userId) {
     return { ok: false, status: 401, error: 'Authentication required' }
   }
-  return { ok: false, status: 403, error: 'Access denied' }
+  return { ok: false, status: 404, error: 'Image not found' }
 }

@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { shareService } from '@/lib/assets/share-service'
 
+const INLINE_MIME_TYPES = new Set([
+  'image/avif', 'image/bmp', 'image/gif', 'image/jpeg', 'image/png',
+  'image/webp', 'application/pdf', 'text/plain',
+])
+
 /**
  * Secure file streaming endpoint for share links
  * Streams file content directly without exposing signed URLs
@@ -30,7 +35,7 @@ export async function GET(
     }
 
     // Stream file from storage
-    const fileResult = await shareService.streamFile(shareData.asset.file_path)
+    const fileResult = await shareService.streamFile(shareData.asset.file_path, shareData.asset.user_id)
 
     if (!fileResult) {
       return NextResponse.json(
@@ -48,11 +53,15 @@ export async function GET(
     const response = new NextResponse(Uint8Array.from(fileResult.fileBuffer))
     
     // Set proper headers for file streaming
-    response.headers.set('Content-Type', shareData.asset.mime_type || fileResult.mimeType)
+    const mime = (shareData.asset.mime_type || fileResult.mimeType || '')
+      .split(';', 1)[0].trim().toLowerCase()
+    const inline = INLINE_MIME_TYPES.has(mime)
+    response.headers.set('Content-Type', inline ? mime : 'application/octet-stream')
     response.headers.set('Content-Length', fileResult.fileSize.toString())
-    const mime = shareData.asset.mime_type || fileResult.mimeType
-    const disposition = mime === 'image/svg+xml' ? 'attachment' : 'inline'
-    response.headers.set('Content-Disposition', `${disposition}; filename="${shareData.asset.filename}"`)
+    const filename = (shareData.asset.filename || 'download').replace(/[\r\n"\\]/g, '_')
+    const fallback = filename.replace(/[^\x20-\x7e]/g, '_')
+    const disposition = inline ? 'inline' : 'attachment'
+    response.headers.set('Content-Disposition', `${disposition}; filename="${fallback}"; filename*=UTF-8''${encodeURIComponent(filename)}`)
     
     // Security headers
     response.headers.set('X-Content-Type-Options', 'nosniff')

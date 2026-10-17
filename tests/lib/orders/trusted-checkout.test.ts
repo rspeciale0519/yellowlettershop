@@ -20,6 +20,7 @@ const mailingOptions = {
 function state(count: number, extras: Record<string, unknown> = {}) {
   return {
     pricing: { totalPrice: 0.01 },
+    design: { designJson: { formatId: 'postcard_4x6', pages: { front: [], back: [] } } },
     accuzipValidation: { deliverableRecords: count, jobId, orderId: jobId },
     mailingOptions,
     ...extras,
@@ -31,9 +32,18 @@ const finishedJob = {
   user_id: owner,
   status: 'completed',
   deliverable_count: 1000,
+  validated_records: Array.from({ length: 1000 }, (_, i) => ({ id: String(i), is_deliverable: true, standardized_address: { address_line_1: `${i + 1} Main`, city: 'Austin', state: 'TX', zip: '78701' } })),
 }
 
 describe('trusted checkout record count', () => {
+  it('displays a positive quote below the Stripe minimum while refusing payment creation', () => {
+    const job = { ...finishedJob, deliverable_count: 1, validated_records: finishedJob.validated_records.slice(0, 1) }
+    const request = state(999, { mailingOptions: { serviceLevel: 'full_service', mailPieceFormat: 'postcard_4x6', includePostage: false } })
+    const display = evaluateTrustedCheckout(job, owner, request, DEFAULT_PRICING, { requireDesign: false })
+    assert.equal(display.ok, true)
+    if (display.ok) assert.equal(display.total, 0.45)
+    assert.equal(evaluateTrustedCheckout(job, owner, request).ok, false)
+  })
   it('uses the owned finished job count when the client count is honest', () => {
     const expected = calculatePricing(mailingOptions as never, 1000, DEFAULT_PRICING)
     const result = evaluateTrustedCheckout(finishedJob, owner, state(1000))
@@ -113,6 +123,7 @@ describe('Stripe checkout metadata', () => {
       'paper_stock',
       'postage_included',
       'postage_type',
+      'quote_revision',
       'record_count',
       'server_total',
       'service_level',

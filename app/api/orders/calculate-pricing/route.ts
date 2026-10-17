@@ -31,7 +31,8 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
       supabase,
       userId,
       { mailingOptions, accuzipValidation: { jobId: validationJobId } },
-      config
+      config,
+      { requireDesign: false },
     )
     if (!priced.ok) {
       return NextResponse.json({ error: priced.error }, { status: priced.status })

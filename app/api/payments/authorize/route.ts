@@ -2,13 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { withAuth } from '@/lib/auth/middleware'
 import Stripe from 'stripe'
+import { createClient } from '@/utils/supabase/service'
+import { loadPricingConfig } from '@/lib/orders/pricing-config'
+import { loadTrustedCheckout, checkoutPaymentError } from '@/lib/orders/trusted-checkout'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-08-27.basil' })
 
 const AuthorizePaymentSchema = z.object({
   paymentIntentId: z.string(),
   paymentMethodId: z.string(),
-  orderState: z.any(),
+  orderState: z.record(z.unknown()),
 })
 
 /**
@@ -20,7 +23,7 @@ const AuthorizePaymentSchema = z.object({
  */
 export const POST = withAuth(async (req: NextRequest, { userId }) => {
   try {
-    const { paymentIntentId, paymentMethodId } = AuthorizePaymentSchema.parse(await req.json())
+    const { paymentIntentId, paymentMethodId, orderState } = AuthorizePaymentSchema.parse(await req.json())
 
     // Verify the PI belongs to this user (metadata set at creation).
     let intent: Stripe.PaymentIntent
@@ -34,6 +37,12 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
     if (intent.metadata?.user_id !== userId) {
       return NextResponse.json({ error: 'Payment does not belong to this account' }, { status: 403 })
     }
+
+    const db = createClient()
+    const quote = await loadTrustedCheckout(db, userId, orderState, await loadPricingConfig(db))
+    if (!quote.ok) return NextResponse.json({ error: quote.error }, { status: quote.status })
+    const mismatch = checkoutPaymentError(intent, quote, userId)
+    if (mismatch) return NextResponse.json({ error: mismatch.error }, { status: mismatch.status })
 
     // Attach the payment method to the PI's customer (idempotent).
     if (intent.customer && typeof intent.customer === 'string') {

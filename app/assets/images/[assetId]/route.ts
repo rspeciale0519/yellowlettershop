@@ -14,6 +14,7 @@ async function signedRedirect(filePath: string) {
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ assetId: string }> }) {
   const user = await getAuthenticatedUser(request)
+  if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
   const { assetId } = await params
   const supabase = createServiceClient()
   const access = await resolveImageAccess(supabase, assetId, user?.id ?? null)

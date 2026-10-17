@@ -42,15 +42,15 @@ describe('asset image access', () => {
     if (decision.ok) assert.equal(decision.filePath, privateAsset.file_path)
   })
 
-  it('allows a public asset for another user or anon', () => {
-    assert.equal(evaluateAssetAccess(owner, publicAsset).ok, true)
-    assert.equal(evaluateAssetAccess(null, publicAsset).ok, true)
+  it('keeps the image signer owner-only even when metadata is public', () => {
+    assert.equal(evaluateAssetAccess(owner, publicAsset).ok, false)
+    assert.equal(evaluateAssetAccess(null, publicAsset).ok, false)
   })
 
-  it('returns 403 when another user asks for a private asset', () => {
+  it('returns 404 when another user asks for a private asset', () => {
     const decision = evaluateAssetAccess(other, privateAsset)
     assert.equal(decision.ok, false)
-    if (!decision.ok) assert.equal(decision.status, 403)
+    if (!decision.ok) assert.equal(decision.status, 404)
   })
 
   it('returns 401 when anon asks for a private asset', () => {

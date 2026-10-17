@@ -73,14 +73,15 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
       .upload(path, Buffer.from(bytes), { contentType: 'application/pdf', upsert: true })
     if (uploadError) throw new Error(uploadError.message)
 
-    const { data: pub } = supabase.storage.from('design-previews').getPublicUrl(path)
+    const { data: signed, error: signError } = await supabase.storage.from('design-previews').createSignedUrl(path, 3600)
+    if (signError || !signed?.signedUrl) throw new Error('Failed to sign private preview')
 
     const trim = canvasSizePx(formatId, orientation)
     const bleedIn = MAIL_FORMATS[formatId].bleedIn
 
     return NextResponse.json({
       previewId,
-      pdfUrl: pub.publicUrl,
+      pdfUrl: signed.signedUrl,
       pageCount: 2,
       widthIn: trim.width / DESIGN_PPI + 2 * bleedIn,
       heightIn: trim.height / DESIGN_PPI + 2 * bleedIn,

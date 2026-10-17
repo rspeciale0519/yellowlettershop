@@ -25,19 +25,13 @@ export async function resolveImageAccess(
   assetId: string,
   userId: string | null
 ): Promise<AssetAccessDecision> {
+  if (!userId) return { ok: false, status: 401, error: 'Authentication required' }
   const storagePath = filePathFromStorageAssetId(assetId)
-  if (storagePath) {
-    if (userId && isOwnedStoragePath(userId, storagePath)) {
+  if (assetId.startsWith('storage--')) {
+    if (storagePath && isOwnedStoragePath(userId, storagePath) && /\.(avif|gif|jpe?g|png|svg|webp)$/i.test(storagePath)) {
       return { ok: true, filePath: storagePath }
     }
-    const byPath = await loadAssetBy(supabase, 'file_path', storagePath)
-    if (byPath) return evaluateAssetAccess(userId, byPath)
-    return evaluateAssetAccess(userId, {
-      file_path: storagePath,
-      file_type: 'image',
-      user_id: storagePath.split('/')[0] ?? null,
-      is_public: false,
-    })
+    return { ok: false, status: 404, error: 'Image not found' }
   }
 
   const byId = await loadAssetBy(supabase, 'id', assetId)
