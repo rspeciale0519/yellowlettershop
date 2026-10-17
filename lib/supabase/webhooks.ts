@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/client'
 import type { Webhook, WebhookDelivery } from '@/types/supabase'
 import { backoffDelayMs, shouldRetry } from '@/lib/webhooks/retry'
 import { isSafeOutboundUrl } from '@/lib/security/safe-fetch-url'
+import { safeFetch } from '@/lib/security/safe-fetch'
 
 // Inline retry attempts are capped low so we don't hold the triggering
 // request open; exhausted deliveries land in webhook_dead_letters for replay.
@@ -244,7 +245,7 @@ async function sendWebhook(
     if (!isSafeOutboundUrl(webhook.url)) {
       throw new Error('Webhook URL is not allowed')
     }
-    const response = await fetch(webhook.url, {
+    const response = await safeFetch(webhook.url, {
       method: 'POST',
       headers,
       body: payload

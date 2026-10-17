@@ -20,7 +20,8 @@ export function withProtectedRoute<TRoute = unknown>(
         options.rateLimit.scope,
         request,
         options.rateLimit.max,
-        options.rateLimit.windowSeconds
+        options.rateLimit.windowSeconds,
+        { userId: context.userId }
       )
       if (limited) return limited
     }

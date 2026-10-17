@@ -52,6 +52,7 @@ export interface ValidationResults {
   undeliverableRecords: number
   validationReport: ValidationRecord[]
   orderId: string
+  jobId?: string
   validatedAt: Date
 }
 

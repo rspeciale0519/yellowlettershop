@@ -135,7 +135,7 @@ Service already throws if `getUser()` is null (browser client on the server), so
 
 | ID | Summary | Why it did not become a High fix |
 |---|---|---|
-| L1 | Middleware matcher is only `/dashboard/:path*` | APIs must keep using `withAuth`. Expanding the matcher would 401 Stripe/Redstone/share. Left as owner product choice. |
+| L1 | Middleware matcher is only `/dashboard/:path*` | APIs must keep using `withAuth`. Expanding the matcher would 401 Stripe/the print vendor/share. Left as owner product choice. |
 | L2 | Access-request approve looked like BOLA | **Disproved.** RPC `approve_access_request` uses `auth.uid()`, `is_team_admin`, and blocks self-approve (`supabase/migrations/20260616000200_rekey_access_control.sql:7-12`). Deny path now calls `deny_access_request`. |
 | L3 | Template apply looked like privilege escalation | **Disproved.** RPC requires `is_team_admin(template.team_id)`. |
 | L4 | Campaign execute as anonymous send | **Disproved as a working exploit.** Service fail-closed. Route still wrapped (M7). |

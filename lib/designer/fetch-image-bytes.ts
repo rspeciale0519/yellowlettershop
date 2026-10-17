@@ -1,6 +1,6 @@
-import { extractAssetImageId, isOwnedStoragePath, ownedPathFromAssetId } from '@/lib/assets/image-access'
-import { filePathFromStorageAssetId } from '@/lib/assets/storage-fallback'
-import { isSafeOutboundUrl } from '@/lib/security/safe-fetch-url'
+import { extractAssetImageId } from '@/lib/assets/image-access'
+import { resolveImageAccess } from '@/lib/assets/resolve-image-access'
+import { safeFetch } from '@/lib/security/safe-fetch'
 import { createServiceClient } from '@/utils/supabase/service'
 
 export type ImageBytes = { bytes: Uint8Array; kind: 'png' | 'jpg' }
@@ -10,24 +10,21 @@ function asImageBytes(buf: Uint8Array): ImageBytes {
   return { bytes: buf, kind: isJpg ? 'jpg' : 'png' }
 }
 
-async function downloadOwnedAsset(userId: string, assetId: string): Promise<ImageBytes | null> {
+async function bytesFromBlob(data: Blob): Promise<Uint8Array> {
+  const ab = await new Response(data).arrayBuffer()
+  return new Uint8Array(ab)
+}
+
+async function downloadAccessibleAsset(
+  assetId: string,
+  userId: string | null
+): Promise<ImageBytes | null> {
   const supabase = createServiceClient()
-  const storagePath = filePathFromStorageAssetId(assetId)
-  let filePath = storagePath && isOwnedStoragePath(userId, storagePath) ? storagePath : null
-  if (!filePath) {
-    if (!ownedPathFromAssetId(userId, assetId) || storagePath) return null
-    const { data: asset } = await supabase
-      .from('user_assets')
-      .select('file_path, file_type, user_id, uploaded_by')
-      .eq('id', assetId)
-      .single()
-    const ownerId = asset?.user_id || asset?.uploaded_by
-    if (!asset?.file_path || ownerId !== userId) return null
-    filePath = asset.file_path
-  }
-  const { data, error } = await supabase.storage.from('assets').download(filePath)
+  const access = await resolveImageAccess(supabase, assetId, userId)
+  if (!access.ok) return null
+  const { data, error } = await supabase.storage.from('assets').download(access.filePath)
   if (error || !data) return null
-  return asImageBytes(new Uint8Array(await data.arrayBuffer()))
+  return asImageBytes(await bytesFromBlob(data))
 }
 
 export async function fetchImageBytes(
@@ -42,11 +39,10 @@ export async function fetchImageBytes(
       return { bytes, kind: meta.includes('jpeg') || meta.includes('jpg') ? 'jpg' : 'png' }
     }
     const assetId = extractAssetImageId(src)
-    if (assetId && ownerUserId) {
-      return downloadOwnedAsset(ownerUserId, assetId)
+    if (assetId) {
+      return downloadAccessibleAsset(assetId, ownerUserId ?? null)
     }
-    if (!isSafeOutboundUrl(src)) return null
-    const res = await fetch(src)
+    const res = await safeFetch(src)
     if (!res.ok) return null
     return asImageBytes(new Uint8Array(await res.arrayBuffer()))
   } catch {

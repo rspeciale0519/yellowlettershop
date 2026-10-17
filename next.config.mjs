@@ -1,6 +1,17 @@
+function supabaseConnectOrigin() {
+  const raw = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (!raw) return ''
+  try {
+    return new URL(raw).origin
+  } catch {
+    return ''
+  }
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async headers() {
+    const supabaseOrigin = supabaseConnectOrigin()
     return [
       {
         source: '/:path*',
@@ -17,7 +28,8 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
-              "connect-src 'self' https: wss:",
+              ["connect-src 'self' https: wss:", supabaseOrigin].filter(Boolean).join(' '),
+              "worker-src blob:",
               "frame-src https:",
               "object-src 'none'",
               "base-uri 'self'",

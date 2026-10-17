@@ -121,7 +121,7 @@ Detail: `dev-docs/implementation-status.md` §6.
 
 See `SECURITY_SCAN_2026-10-17.md`. Still true: middleware matcher is only
 `/dashboard/*` (APIs use `withAuth` / `withProtectedRoute`; expanding would
-401 Stripe/Redstone/share). Closed in that scan: checkout price tamper,
+401 Stripe/the print vendor/share). Closed in that scan: checkout price tamper,
 `/assets/images` IDOR, AccuZip/validation/list-builder/parse auth+rate-limit,
 `analytics/performance` userId override, AccuZip count fail-closed, SVG share
 as attachment, baseline security headers. Debug endpoints remain archived

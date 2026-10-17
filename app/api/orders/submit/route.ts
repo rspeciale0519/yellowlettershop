@@ -3,9 +3,10 @@ import { z } from 'zod'
 import { withAuth, AuthenticatedRequest } from '@/lib/auth/middleware'
 import { createClient } from '@/utils/supabase/service'
 import { generateProofForOrder, getUserEmail } from '@/lib/orders/generate-proof'
-import { buildOrderInsert, extractRecordCount } from '@/lib/orders/order-insert'
+import { buildOrderInsert } from '@/lib/orders/order-insert'
 import { loadPricingConfig } from '@/lib/orders/pricing-config'
-import { amountsMatchCents, computeServerOrderTotal } from '@/lib/orders/server-total'
+import { amountsMatchCents, loadTrustedCheckout } from '@/lib/orders/trusted-checkout'
+import { stripeCheckoutMetadata } from '@/lib/payments/intent-metadata'
 import { trySendEmail } from '@/lib/email'
 import { orderConfirmationEmail } from '@/lib/email/templates'
 import Stripe from 'stripe'
@@ -33,14 +34,15 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
       )
     }
 
-    // SECURITY: verify the PaymentIntent server-side against Stripe (never trust
-    // the client). Must be authorized (manual-capture → requires_capture), owned
-    // by this user, and its amount must match the server-computed order total
-    // (mailing options + deliverable count + pricing_config) — not client pricing.
     const supabase = createClient()
-    const priced = computeServerOrderTotal(orderState, await loadPricingConfig(supabase))
+    const priced = await loadTrustedCheckout(
+      supabase,
+      userId,
+      orderState as Record<string, unknown>,
+      await loadPricingConfig(supabase)
+    )
     if (!priced.ok) {
-      return NextResponse.json({ error: priced.error }, { status: 400 })
+      return NextResponse.json({ error: priced.error }, { status: priced.status })
     }
     const serverTotal = priced.total
     let pi: Stripe.PaymentIntent
@@ -52,8 +54,6 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
     if (pi.status !== 'requires_capture') {
       return NextResponse.json({ error: `Payment is not authorized (status: ${pi.status}).` }, { status: 402 })
     }
-    // Fail closed: a PI without our user_id metadata is not a PI we issued for
-    // this account — reject rather than accept an unverifiable owner.
     if (pi.metadata?.user_id !== userId) {
       return NextResponse.json({ error: 'Payment does not belong to this account.' }, { status: 403 })
     }
@@ -62,19 +62,21 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
     }
 
     const now = new Date().toISOString()
-
-    // Normalized (DB1-model) insert: queryable columns + payment inline on the
-    // order; full wizard state retained in metadata for proof/design rendering.
-    // amountAuthorized comes from Stripe (verified), not the client.
     const insert = buildOrderInsert(
       orderState as Record<string, unknown>,
       userId,
       { paymentIntentId, amountAuthorized: pi.amount / 100 },
       now
     )
+    insert.record_count = priced.recordCount
     insert.total_cost = serverTotal
     insert.cost_per_piece =
       priced.recordCount > 0 ? Number((serverTotal / priced.recordCount).toFixed(4)) : null
+    insert.metadata = {
+      ...insert.metadata,
+      pricing_inputs: priced.pricingInputs,
+      validation_job_id: priced.jobId,
+    }
 
     const { data: order, error: orderError } = await supabase
       .from('orders')
@@ -84,7 +86,10 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
 
     if (orderError) throw orderError
 
-    // Confirmation email + official proof — loud-on-failure but non-fatal.
+    await stripe.paymentIntents.update(paymentIntentId, {
+      metadata: stripeCheckoutMetadata(userId, priced.pricingInputs, order.id),
+    })
+
     const email = await getUserEmail(userId)
     await trySendEmail(
       email,
@@ -92,7 +97,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }: AuthenticatedR
         orderId: order.id,
         shortId: order.id.split('-')[0].toUpperCase(),
         total: serverTotal,
-        recordCount: extractRecordCount(orderState as Record<string, unknown>),
+        recordCount: priced.recordCount,
         appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
       })
     )

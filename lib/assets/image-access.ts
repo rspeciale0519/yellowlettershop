@@ -27,3 +27,39 @@ export function extractAssetImageId(src: string): string | null {
     return null
   }
 }
+
+export type AssetAccessOk = { ok: true; filePath: string }
+export type AssetAccessErr = { ok: false; status: 401 | 403 | 404; error: string }
+export type AssetAccessDecision = AssetAccessOk | AssetAccessErr
+
+export interface AssetAccessRecord {
+  file_path: string | null
+  file_type?: string | null
+  user_id?: string | null
+  uploaded_by?: string | null
+  is_public?: boolean | null
+}
+
+export function evaluateAssetAccess(
+  userId: string | null,
+  asset: AssetAccessRecord | null
+): AssetAccessDecision {
+  if (!asset?.file_path) {
+    return { ok: false, status: 404, error: 'Image not found' }
+  }
+  if (asset.file_type && asset.file_type !== 'image') {
+    return { ok: false, status: 404, error: 'Image not found' }
+  }
+
+  const ownerId = asset.user_id || asset.uploaded_by || null
+  const isOwner = Boolean(userId && ownerId && userId === ownerId)
+  const isPublic = Boolean(asset.is_public)
+
+  if (isOwner || isPublic) {
+    return { ok: true, filePath: asset.file_path }
+  }
+  if (!userId) {
+    return { ok: false, status: 401, error: 'Authentication required' }
+  }
+  return { ok: false, status: 403, error: 'Access denied' }
+}

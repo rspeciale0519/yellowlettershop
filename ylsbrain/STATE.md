@@ -2,6 +2,16 @@
 Updated: 2026-10-17
 
 ## Current focus
+**(2026-10-17): Owner-review fixes on draft PR #25**
+(`cursor/security-scan-2026-10-17-1cd0`). Typecheck Blob conversion; DNS-pinned
+SSRF (no redirects; private/CGNAT/mapped IPv6 blocked); public assets allowed;
+validation-job deliverable count for display/intent/submit; Stripe metadata =
+user + server pricing inputs; per-user rate limits (checkout fail-open; Stripe
+webhook unlimited); CSP Supabase origin + `worker-src blob:`. Evidence: 343
+tests, typecheck:full 0, build 0, lint 38 (no new). Detail:
+[[journal/2026-10-17]].
+
+## (prior focus)
 **(2026-10-17): Owner-approved security scan + C/H/M fixes on
 `cursor/security-scan-2026-10-17-1cd0`.** Report: `SECURITY_SCAN_2026-10-17.md`.
 Critical: checkout trusted client price (now `computeServerOrderTotal`);
