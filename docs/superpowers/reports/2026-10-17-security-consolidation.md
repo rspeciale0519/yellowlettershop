@@ -152,7 +152,7 @@ Their repository integrations are outbound request/response APIs, not custom
 `/api/webhooks` senders/receivers. No vendor account setting was inspected.
 
 Stripe uses its SDK signature protocol, Mailgun uses its timestamp/token
-protocol, and Redstone uses its separate callback token. None requires YLS
+protocol, and the print vendor uses its separate callback token. None requires YLS
 custom headers. Their deployed settings were not inspected.
 
 The YLS custom sender and receiver pass local raw-body/signature compatibility
