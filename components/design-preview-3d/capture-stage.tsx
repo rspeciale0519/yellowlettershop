@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useRef } from "react"
 import { createPortal } from "react-dom"
-import { substituteDocument } from "@/components/designer/tokens/token-engine"
-import { buildTokenContext } from "@/components/designer/tokens/recipient-map"
+import { getDesignSpread } from "@/lib/designer/document/pages"
+import { DesignerTextProvider } from "@/components/designer/writing/text-layout-context"
+import { usePrintFonts } from "@/hooks/use-print-fonts"
+import type { ResolvedValues } from "@/lib/designer/text/types"
 import { withFormatId } from "@/components/designer/mail-spec"
 import type { DesignerFont } from "@/components/designer/designer-fonts"
 import type { RecipientDTO } from "@/components/designer/preview/recipient-dto"
-import type { DesignerDocument } from "@/types/designer"
+import type { DesignerDocument, DesignerPage } from "@/types/designer"
 import { StaticPageRender } from "./static-page-render"
 import { capturePageCanvas, waitForPaintable, withCaptureSafeImageSrcs } from "./capture-page"
 import type { DesignArt } from "./core/art-textures"
@@ -15,6 +17,8 @@ import type { DesignArt } from "./core/art-textures"
 export interface CaptureStageProps {
   documentState: DesignerDocument
   recipient: RecipientDTO | null
+  selectedPage?: DesignerPage
+  values?: ResolvedValues
   fonts: DesignerFont[]
   onCaptured: (art: DesignArt) => void
   onError: (message: string) => void
@@ -36,7 +40,8 @@ export interface CaptureStageProps {
  */
 export function CaptureStage({
   documentState,
-  recipient,
+  selectedPage = "front",
+  values,
   fonts,
   onCaptured,
   onError,
@@ -44,26 +49,16 @@ export function CaptureStage({
   const frontRef = useRef<HTMLDivElement>(null)
   const backRef = useRef<HTMLDivElement>(null)
 
-  const prepared = useMemo(() => {
-    const substituted = recipient
-      ? substituteDocument(documentState, buildTokenContext(recipient, {}))
-      : documentState
-    const withFormat = withFormatId(substituted)
-    return {
-      ...withFormat,
-      pages: {
-        front: withCaptureSafeImageSrcs(withFormat.pages.front),
-        back: withCaptureSafeImageSrcs(withFormat.pages.back),
-      },
-    }
-  }, [documentState, recipient])
+  const { metrics } = usePrintFonts()
+  const prepared = useMemo(() => ({ ...withFormatId(documentState), pages: Object.fromEntries(Object.entries(documentState.pages).map(([id, elements]) => [id, withCaptureSafeImageSrcs(elements)])) as DesignerDocument["pages"] }), [documentState])
+  const spread = useMemo(() => getDesignSpread(prepared, selectedPage), [prepared, selectedPage])
 
   useEffect(() => {
     let cancelled = false
     const run = async () => {
       const frontNode = frontRef.current
       const backNode = backRef.current
-      if (!frontNode || !backNode) return
+      if (!frontNode || !backNode || !metrics) return
       try {
         await Promise.all([waitForPaintable(frontNode), waitForPaintable(backNode)])
         if (cancelled) return
@@ -81,7 +76,7 @@ export function CaptureStage({
     return () => {
       cancelled = true
     }
-  }, [prepared, fonts, onCaptured, onError])
+  }, [prepared, spread, values, metrics, fonts, onCaptured, onError])
 
   if (typeof document === "undefined") return null
 
@@ -91,22 +86,22 @@ export function CaptureStage({
       style={{ position: "fixed", left: -99999, top: 0, pointerEvents: "none", colorScheme: "light" }}
     >
       <div ref={frontRef}>
-        <StaticPageRender
-          elements={prepared.pages.front}
-          background={prepared.backgrounds?.front}
+        <DesignerTextProvider document={prepared} pageId={spread.front?.id ?? "front"} values={values}><StaticPageRender
+          elements={spread.front?.elements ?? []}
+          background={spread.front?.background}
           formatId={prepared.formatId}
           orientation={prepared.orientation}
           fonts={fonts}
-        />
+        /></DesignerTextProvider>
       </div>
       <div ref={backRef}>
-        <StaticPageRender
-          elements={prepared.pages.back}
-          background={prepared.backgrounds?.back}
+        <DesignerTextProvider document={prepared} pageId={spread.back?.id ?? "back"} values={values}><StaticPageRender
+          elements={spread.back?.elements ?? []}
+          background={spread.back?.background}
           formatId={prepared.formatId}
           orientation={prepared.orientation}
           fonts={fonts}
-        />
+        /></DesignerTextProvider>
       </div>
     </div>,
     document.body,

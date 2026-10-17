@@ -11,7 +11,7 @@ describe('wizard quote summary', () => {
     assert.match(html, /Additional printed sides/)
     assert.match(html, /\$10\.00/)
     assert.match(html, /\$85\.00/)
-    assert.match(html, /Final server quote/)
+    assert.match(html, /Final quote/)
   })
   it('labels provisional pricing as an estimate requiring save and validation', () => {
     const html = renderToStaticMarkup(createElement(OrderQuoteSummary, { pricing: { ...finalPricing, quoteStatus: 'provisional' }, isLoading: false }))

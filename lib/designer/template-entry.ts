@@ -69,6 +69,8 @@ export function normalizeElements(elements: DesignElement[]): DesignElement[] {
 export function designerAuthenticationUrl(context: string): string {
   const params = new URLSearchParams(context)
   const requestedId = params.get('templateId')
-  const destination = requestedId === null ? templateContextUrl('/design/customize', context) : templateEntryUrl(requestedId, context)
-  return `/?auth=login&redirectedFrom=${encodeURIComponent(destination)}`
+  const destination = new URL(requestedId === null ? templateContextUrl('/design/customize', context) : templateEntryUrl(requestedId, context), 'https://designer.invalid')
+  const designId = params.get('designId')
+  if (designId && /^[a-zA-Z0-9-]+$/.test(designId)) destination.searchParams.set('designId', designId)
+  return `/?auth=login&redirectedFrom=${encodeURIComponent(destination.pathname + destination.search)}`
 }

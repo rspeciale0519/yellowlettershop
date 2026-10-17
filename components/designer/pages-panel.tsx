@@ -1,57 +1,40 @@
 "use client"
-
-import { Button } from "@/components/ui/button"
-import type { DesignerOrientation, DesignerPage } from "@/types/designer"
-
-interface PagesPanelProps {
-  activePage: DesignerPage
-  onPageChange: (page: DesignerPage) => void
-  orientation?: DesignerOrientation
-}
-
-function PageThumbnail({ label, orientation = "portrait" }: { label: "Front" | "Back"; orientation?: DesignerOrientation }) {
-  const sizeClass = orientation === "portrait" ? "h-32 w-24" : "h-24 w-32"
-
-  return (
-    <div className={`relative overflow-hidden rounded-md bg-white shadow-sm ring-1 ring-gray-300 ${sizeClass}`}>
-      <div className="absolute left-0 top-0 h-full w-1.5 bg-yellow-400" />
-      <div className="absolute inset-3 border border-dashed border-gray-200" />
-      <div className="absolute left-4 top-5 h-2 w-12 rounded bg-gray-800" />
-      <div className="absolute left-4 top-10 h-1.5 w-16 rounded bg-gray-300" />
-      <div className="absolute left-4 top-14 h-1.5 w-10 rounded bg-gray-300" />
-      <div className="absolute bottom-4 left-4 right-4 border-t border-gray-200 pt-2 text-[10px] font-semibold text-gray-500">
-        {label}
-      </div>
-    </div>
-  )
-}
-
-export function PagesPanel({ activePage, onPageChange, orientation }: PagesPanelProps) {
-  return (
-    <div className="space-y-4">
-      <h3 className="text-sm font-semibold text-center">Pages</h3>
-      <div className="space-y-2">
-        <Button
-          variant="ghost"
-          className={`w-full h-auto p-2 flex flex-col items-center gap-2 border-2 ${
-            activePage === "front" ? "border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20" : "border-transparent"
-          }`}
-          onClick={() => onPageChange("front")}
-        >
-          <PageThumbnail label="Front" orientation={orientation} />
-          <span className="text-xs">Front</span>
-        </Button>
-        <Button
-          variant="ghost"
-          className={`w-full h-auto p-2 flex flex-col items-center gap-2 border-2 ${
-            activePage === "back" ? "border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20" : "border-transparent"
-          }`}
-          onClick={() => onPageChange("back")}
-        >
-          <PageThumbnail label="Back" orientation={orientation} />
-          <span className="text-xs">Back</span>
-        </Button>
-      </div>
-    </div>
-  )
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { StaticPageRender } from '@/components/design-preview-3d/static-page-render'
+import { DesignerTextProvider, useDesignerTextLayout } from '@/components/designer/writing/text-layout-context'
+import { canvasSizePx } from '@/components/designer/mail-spec'
+import { normalizeDesignerDocument } from '@/lib/designer/document/normalize'
+import { addPrintedSide, removePrintedSide, setGuidedWriting } from '@/lib/designer/document/actions'
+import type { DesignerDocument, DesignerOrientation, DesignerPage } from '@/types/designer'
+import type { PaperType } from '@/types/designer-document'
+interface PagesPanelProps { activePage:DesignerPage; onPageChange:(page:DesignerPage)=>void; orientation?:DesignerOrientation; documentState?:DesignerDocument; onDocumentChange?:(doc:DesignerDocument)=>void }
+export function PagesPanel({activePage,onPageChange,documentState,onDocumentChange}:PagesPanelProps){
+ const [error,setError]=useState<string|null>(null)
+ const values=useDesignerTextLayout()?.values
+ const doc=documentState?normalizeDesignerDocument(documentState):null
+ const order=doc?.pageOrder ?? ['front','back'] as DesignerPage[]
+ const size=canvasSizePx(doc?.formatId ?? 'letter_8_5x11',doc?.orientation ?? 'portrait')
+ const scale=110/size.width
+ const run=(action:()=>void)=>{try{action();setError(null)}catch(cause){setError(cause instanceof Error?cause.message:'Page change failed')}}
+ return <div className="space-y-3">
+  <h3 className="text-center text-sm font-semibold">Printed sides</h3>
+  {doc && <label className="block text-xs">Paper
+   <select aria-label="Paper type" className="mt-1 w-full rounded border bg-background p-2" value={doc.pageSettings[activePage]?.paper ?? 'plain'} onChange={event=>run(()=>{
+    const paper=event.target.value as PaperType
+    let next={...doc,pageSettings:{...doc.pageSettings,[activePage]:{...doc.pageSettings[activePage],paper}}}
+    for(const element of next.pages[activePage]) if(element.type==='text' && element.writingMode==='guided') next=setGuidedWriting(next,activePage,element.id,true)
+    onDocumentChange?.(next)
+   })}><option value="plain">Plain</option><option value="white-notepad">White notepad</option><option value="yellow-notepad">Yellow notepad</option></select>
+  </label>}
+  {order.map((id,index)=><div key={id} className="space-y-1">
+   <Button type="button" variant="ghost" aria-label={`${id==='front'?'Front':id==='back'?'Back':`Side ${index+1}`} ${doc?.pageSettings[id].printIncluded===false?'not printed':'printed'}`} className={`h-auto w-full flex-col gap-2 border-2 p-2 [&_svg]:!h-full [&_svg]:!w-full ${activePage===id?'border-yellow-500':'border-transparent'}`} onClick={()=>onPageChange(id)}>
+    {doc?<div className="relative overflow-hidden bg-white shadow-sm" style={{width:110,height:size.height*scale}}><div className="absolute left-0 top-0 origin-top-left" style={{transform:`scale(${scale})`,width:size.width,height:size.height}}><DesignerTextProvider document={doc} pageId={id} values={values}><StaticPageRender elements={doc.pages[id]} background={doc.backgrounds?.[id]} formatId={doc.formatId ?? 'letter_8_5x11'} orientation={doc.orientation} fonts={[]}/></DesignerTextProvider></div></div>:<span>{id}</span>}
+    <span className="text-xs">{id==='front'?'Front':id==='back'?'Back':`Side ${index+1}`}{doc?.pageSettings[id].printIncluded===false?' · not printed':''}</span>
+   </Button>
+   {doc && id!=='front' && doc.pageSettings[id].printIncluded && !doc.formatId?.startsWith('postcard_') && <Button type="button" variant="ghost" size="sm" className="w-full text-xs" aria-label={`Remove side ${index+1}`} onClick={()=>run(()=>{onDocumentChange?.(removePrintedSide(doc,id));onPageChange('front')})}>Remove side</Button>}
+  </div>)}
+  {doc && !doc.formatId?.startsWith('postcard_') && <Button type="button" variant="outline" className="w-full" onClick={()=>run(()=>{const result=addPrintedSide(doc,activePage);onDocumentChange?.(result.document);onPageChange(result.pageId)})}>Add Page</Button>}
+  {error && <p role="alert" className="text-xs text-red-600">{error}</p>}
+ </div>
 }

@@ -5,6 +5,22 @@ import { doc, context, memoryStorage } from './draft-context.test'
 import { readPendingDesign } from '../../lib/designer/draft-context'
 
 describe('dependable designer save results', () => {
+  it('does not certify a save after its editor context stops being active', async () => {
+    const storage=memoryStorage()
+    let active=true
+    let start!:()=>void, release!:()=>void
+    const ready=new Promise<void>(resolve=>{start=resolve})
+    const controller=createDesignerSaveController({getCurrent:()=>({document:doc,context,active}),storage,persist:async(_snapshot,_id,revision)=>{
+      start();await new Promise<void>(resolve=>{release=resolve})
+      return {ok:true,designId:'old-context',revision}
+    }})
+    const saving=controller.save()
+    await ready
+    active=false
+    release()
+    assert.equal((await saving).ok,false)
+    assert.equal(await readPendingDesign(storage,context),null)
+  })
   it('uses canonical content revisions across key order and server metadata', async () => {
     const first = await documentRevision(doc)
     assert.match(first, /^sha256:[a-f0-9]{64}$/)
@@ -65,7 +81,7 @@ describe('dependable designer save results', () => {
     assert.equal((await readPendingDesign(storage, context))?.document.templateName, 'Latest')
   })
   it('makes the revision sensitive to per-textbox guided content and extra sides', async () => {
-    const textbox = { id: 'text', name: 'Text', type: 'text', x: 0, y: 0, width: 100, height: 100, zIndex: 0, content: 'Hi', fontSize: 12, writingMode: 'guided', richText: { paragraphs: [{ runs: [{ text: 'Hi', style: { bold: true } }] }] } }
+    const textbox = { id: 'text', name: 'Text', type: 'text', x: 0, y: 0, width: 100, height: 100, zIndex: 0, content: 'Hi', fontSize: 12, writingMode: 'guided', richText: { id: 'text', style: { fontSize: 12 }, paragraphs: [{ runs: [{ text: 'Hi', style: { bold: true } }] }] } }
     const guided = { ...doc, pages: { ...doc.pages, front: [textbox], 'page-extra': [] } }
     const first = await documentRevision(guided)
     assert.notEqual(first, await documentRevision(doc))

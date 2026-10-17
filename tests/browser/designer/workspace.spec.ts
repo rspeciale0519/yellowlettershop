@@ -29,7 +29,7 @@ test('phone can edit content and open the complete front/back proof', async ({ p
   await page.getByRole('button', { name: 'Edit content', exact: true }).click()
   await page.getByRole('button', { name: 'Layers', exact: true }).click()
   await page.getByRole('button', { name: /Body Text text/ }).click()
-  await page.locator('input[value="Your Text Here"]').fill('A message from my phone')
+  await page.getByRole('textbox',{name:'Message text'}).fill('A message from my phone')
   const previewRequest = page.waitForRequest('**/api/design/preview')
   await page.getByRole('button', { name: 'Preview', exact: true }).click()
   const request = await previewRequest

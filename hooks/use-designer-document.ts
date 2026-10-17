@@ -1,12 +1,13 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useCallback, useMemo, useRef, useState } from "react"
+import { normalizeDesignerDocument } from "@/lib/designer/document/normalize"
+import { setGuidedWriting } from "@/lib/designer/document/actions"
 import { createModuleElement } from "@/components/designer/module-definitions"
 import { createDesignerDocument } from "@/components/designer/designer-templates"
 import {
   canvasSizePx,
   LEGACY_FALLBACK_FORMAT,
-  remapElements,
   type MailFormatId,
 } from "@/components/designer/mail-spec"
 import type {
@@ -18,6 +19,8 @@ import type {
   Tool,
   WorkspacePanel,
 } from "@/types/designer"
+import { convertDesignerFormat } from "@/lib/designer/document/convert-format"
+import { switchDesignerTemplate } from "@/lib/designer/template-switch"
 
 // Owns document + undo/redo history + every element operation. Extracted
 // verbatim from page.tsx (Phase 2 — behavior-preserving) so page.tsx is ≤350
@@ -52,22 +55,28 @@ export function useDesignerDocument(args: UseDesignerDocumentArgs) {
   const [documentState, setDocumentState] = useState<DesignerDocument>(() => createDesignerDocument())
   const [history, setHistory] = useState<DesignerDocument[]>([])
   const [historyIndex, setHistoryIndex] = useState(0)
+  const lastCommit = useRef<{key?:string;at:number}>({at:0})
 
   const formatId: MailFormatId = documentState.formatId ?? LEGACY_FALLBACK_FORMAT
   const canvasSize = canvasSizePx(formatId, documentState.orientation)
-  const activeElements = documentState.pages[activePage] ?? []
+  const activeElements = useMemo(()=>documentState.pages[activePage] ?? [],[documentState.pages,activePage])
 
   const hydrate = useCallback((nextDocument: DesignerDocument) => {
-    setDocumentState(nextDocument)
-    setHistory([nextDocument])
+    const normalized=normalizeDesignerDocument(nextDocument)
+    setDocumentState(normalized)
+    setHistory([normalized])
     setHistoryIndex(0)
   }, [])
 
-  const commitDocument = useCallback((nextDocument: DesignerDocument) => {
+  const commitDocument = useCallback((nextDocument: DesignerDocument, groupKey?:string) => {
+    const previous=lastCommit.current
+    const now=Date.now()
+    lastCommit.current={key:groupKey,at:now}
     setDocumentState(nextDocument)
     setHistory((currentHistory) => {
       const nextHistory = currentHistory.slice(0, historyIndex + 1)
-      nextHistory.push(nextDocument)
+      if(groupKey && previous.key===groupKey && now-previous.at<700 && historyIndex>0) nextHistory[nextHistory.length-1]=nextDocument
+      else nextHistory.push(nextDocument)
       setHistoryIndex(nextHistory.length - 1)
       return nextHistory
     })
@@ -75,12 +84,16 @@ export function useDesignerDocument(args: UseDesignerDocumentArgs) {
   }, [historyIndex, markDirty])
 
   const updateElement = useCallback((id: string, updates: Partial<DesignElement>) => {
+    if('writingMode' in updates && updates.writingMode){
+      commitDocument(setGuidedWriting(documentState,activePage,id,updates.writingMode==='guided'))
+      return
+    }
     const nextElements = activeElements.map((element) => (element.id === id ? ({ ...element, ...updates } as DesignElement) : element))
     commitDocument({
       ...documentState,
       pages: { ...documentState.pages, [activePage]: nextElements },
       updatedAt: new Date().toISOString(),
-    })
+    }, 'content' in updates || 'richText' in updates ? `${activePage}:${id}:typing` : undefined)
   }, [activeElements, activePage, commitDocument, documentState])
 
   const addElement = useCallback((moduleId: string, position?: { x: number; y: number }) => {
@@ -205,23 +218,22 @@ export function useDesignerDocument(args: UseDesignerDocumentArgs) {
   }, [history, historyIndex, markDirty])
 
   const handleTemplateChange = useCallback((templateId: string) => {
-    const nextDocument = { ...createDesignerDocument(templateId), orientation: documentState.orientation }
+    const nextDocument = switchDesignerTemplate(documentState,templateId)
     commitDocument(nextDocument)
     setActivePage("front")
-    setSelectedElement(null)
-  }, [commitDocument, documentState.orientation, setActivePage, setSelectedElement])
+    setSelectedElement(nextDocument.pages.front.find(element=>element.type === "text")?.id ?? null)
+    setActivePanel("inspector")
+    return nextDocument
+  }, [documentState, commitDocument, setActivePage, setSelectedElement, setActivePanel])
 
   const setFormat = useCallback((nextFormatId: MailFormatId) => {
     if (nextFormatId === formatId) return
-    const from = canvasSizePx(formatId, documentState.orientation)
-    const to = canvasSizePx(nextFormatId, documentState.orientation)
-    commitDocument({
-      ...documentState,
-      formatId: nextFormatId,
-      pages: Object.fromEntries(Object.entries(documentState.pages).map(([id, elements]) => [id, remapElements(elements, from, to)])) as DesignerDocument["pages"],
-      updatedAt: new Date().toISOString(),
-    })
-  }, [commitDocument, documentState, formatId])
+    const result=convertDesignerFormat(documentState,nextFormatId)
+    if(!result.ok) return result
+    commitDocument({...result.document,updatedAt:new Date().toISOString()})
+    if(!result.document.pageOrder.includes(activePage)) setActivePage('front')
+    return result
+  }, [commitDocument, documentState, formatId, activePage, setActivePage])
 
   return {
     documentState,

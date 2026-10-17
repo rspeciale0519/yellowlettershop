@@ -1,11 +1,27 @@
 import { canvasSizePx } from '../../../components/designer/mail-spec'
 import type { DesignerDocument, DesignerPage, TextDesignElement } from '../../../types/designer'
 import { guidedBox } from '../text/paper'
+import { rectsOverlap } from '../../../components/designer/postage'
 import { normalizeDesignerDocument } from './normalize'
 export function setGuidedWriting(input: DesignerDocument,page: DesignerPage,id: string,enabled: boolean) {
   const doc=normalizeDesignerDocument(input)
   const size=canvasSizePx(doc.formatId ?? 'letter_8_5x11',doc.orientation)
-  return {...doc,pages:{...doc.pages,[page]:doc.pages[page].map(element=>element.id===id && element.type==='text' ? enabled ? guidedBox(element,doc.pageSettings[page].paper,size) : {...element,writingMode:'free' as const} : element)},updatedAt:new Date().toISOString()}
+  const reserveAddress = Boolean(doc.formatId?.startsWith('postcard_') && doc.pageSettings[page].side === 'back')
+  const enable = (element: TextDesignElement) => {
+    let next = guidedBox(element,doc.pageSettings[page].paper,size,reserveAddress)
+    for (const postage of doc.pages[page].filter(item=>item.type==='postage' && !item.hidden)) {
+      if (!rectsOverlap(next,postage)) continue
+      const width = postage.x - next.x - 8
+      if (width >= 80) next = {...next,width}
+      else {
+        const bottom = next.y + next.height
+        const y = postage.y + postage.height + 8
+        next = bottom - y >= 30 ? {...next,y,height:bottom-y} : {...element,writingMode:'guided',rotation:0}
+      }
+    }
+    return next
+  }
+  return {...doc,pages:{...doc.pages,[page]:doc.pages[page].map(element=>element.id===id && element.type==='text' ? enabled ? enable(element) : {...element,writingMode:'free' as const} : element)},updatedAt:new Date().toISOString()}
 }
 export function addPrintedSide(input: DesignerDocument,source: DesignerPage,newId: DesignerPage=`page-${crypto.randomUUID()}`) {
   const doc=normalizeDesignerDocument(input)

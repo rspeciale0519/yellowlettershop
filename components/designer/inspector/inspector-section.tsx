@@ -42,7 +42,7 @@ export function InspectorHeader({ subtitle, badge }: { subtitle: string; badge: 
     <div className="rounded-lg border border-border bg-muted/50 p-3">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold text-foreground">Inspector</h2>
+          <h2 className="text-lg font-semibold text-foreground">{badge === "text" ? "Edit message" : "Edit object"}</h2>
           <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
         </div>
         <span className="rounded-md bg-yellow-400 px-2 py-1 text-[11px] font-bold uppercase text-slate-950">

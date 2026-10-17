@@ -1,6 +1,7 @@
 import type { RectPx, SpecRects } from "@/components/designer/mail-spec"
 import { TOKEN_RE, resolveFieldKey } from "@/components/designer/tokens/token-engine"
 import type { DesignElement } from "@/types/designer"
+import { violatesKeepClear } from "@/components/designer/postage"
 
 export type PreflightSeverity = "error" | "warning"
 
@@ -49,6 +50,10 @@ export function runPreflight(elements: DesignElement[], ctx: PreflightContext): 
     const label = el.name || el.type
     const add = (severity: PreflightSeverity, rule: string, message: string) =>
       issues.push({ elementId: el.id, label, message, severity, rule })
+
+    if (el.type !== 'postage' && violatesKeepClear(el, el, elements.filter(item => !item.hidden))) {
+      add('error', 'postage-overlap', `${label} overlaps a postage area. Move or resize it to leave postage clear.`)
+    }
 
     if (el.type === "image" && el.src.startsWith("placeholder:")) {
       add("warning", "placeholder", `${label} still uses a placeholder image.`)

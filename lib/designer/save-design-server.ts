@@ -23,17 +23,19 @@ export async function saveDesignForUser(database: Database, userId: string, inpu
   const designId = 'designId' in data ? data.designId as string : undefined
   try {
     // Wizard order ids are order_drafts ids. Submitted orders use created_by.
-    let draft: { id: string; order_state: Record<string, unknown>; updated_at?: string } | null = null
-    let order: { id: string; metadata: Record<string, unknown> | null } | null = null
+    let draft: { id: string; order_state: Record<string, unknown>; updated_at?: string; status: string } | null = null
+    let order: { id: string; metadata: Record<string, unknown> | null; status: string } | null = null
     if (data.orderId) {
-      const draftResult = await database.from('order_drafts').select('id, order_state, updated_at').eq('id', data.orderId).eq('user_id', userId).maybeSingle()
+      const draftResult = await database.from('order_drafts').select('id, order_state, updated_at, status').eq('id', data.orderId).eq('user_id', userId).maybeSingle()
       if (draftResult.error) return failed(500, 'Unable to verify the order draft. Retry saving.')
       draft = draftResult.data
+      if (draft && draft.status !== 'active') return failed(409, 'This order has already been submitted. Create a new order to change its artwork.')
       if (!draft) {
-        const orderResult = await database.from('orders').select('id, metadata').eq('id', data.orderId).eq('created_by', userId).maybeSingle()
+        const orderResult = await database.from('orders').select('id, metadata, status').eq('id', data.orderId).eq('created_by', userId).maybeSingle()
         if (orderResult.error) return failed(500, 'Unable to verify the order. Retry saving.')
         order = orderResult.data
         if (!order) return failed(404, 'Order not found or you do not have access to it.')
+        if (order.status !== 'draft') return failed(409, 'This order has already been submitted. Create a new order to change its artwork.')
       }
     }
     const designData = { design_data: data.designState, name: data.name ?? data.designState.templateName, description: data.description ?? null, updated_at: new Date().toISOString() }
@@ -50,7 +52,7 @@ export async function saveDesignForUser(database: Database, userId: string, inpu
     if (draft && data.orderId) {
       const prior = draft.order_state ?? {}
       const designAndContent = typeof prior.designAndContent === 'object' && prior.designAndContent !== null ? prior.designAndContent : {}
-      let link = database.from('order_drafts').update({ order_state: { ...prior, orderId: data.orderId, design, designAndContent: { ...designAndContent, design } }, updated_at: new Date().toISOString() }).eq('id', data.orderId).eq('user_id', userId)
+      let link = database.from('order_drafts').update({ order_state: { ...prior, orderId: data.orderId, design, designAndContent: { ...designAndContent, design } }, updated_at: new Date().toISOString() }).eq('id', data.orderId).eq('user_id', userId).eq('status', 'active')
       if (draft.updated_at) link = link.eq('updated_at', draft.updated_at)
       const linked = await link.select('id').maybeSingle()
       if (linked.error || !linked.data) return failed(409, 'Design saved, but the order changed or could not be linked. Retry before continuing.')
@@ -60,7 +62,7 @@ export async function saveDesignForUser(database: Database, userId: string, inpu
       const priorState = order.metadata?.order_state && typeof order.metadata.order_state === 'object' ? order.metadata.order_state as Record<string, unknown> : {}
       const priorDesignAndContent = priorState.designAndContent && typeof priorState.designAndContent === 'object' ? priorState.designAndContent : {}
       const metadata = { ...order.metadata, design, order_state: { ...priorState, design, designAndContent: { ...priorDesignAndContent, design } } }
-      let link = database.from('orders').update({ metadata }).eq('id', data.orderId).eq('created_by', userId)
+      let link = database.from('orders').update({ metadata }).eq('id', data.orderId).eq('created_by', userId).eq('status', 'draft')
       link = order.metadata === null ? link.is('metadata', null) : link.eq('metadata', JSON.stringify(order.metadata))
       const linked = await link.select('id').maybeSingle()
       if (linked.error || !linked.data) return failed(409, 'Design saved, but the order changed or could not be linked. Retry before continuing.')

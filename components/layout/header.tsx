@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { DesktopNavigation, MobileNavigation, headerNavLinks } from './header-navigation';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { User } from '@supabase/supabase-js';
@@ -40,7 +40,7 @@ function SiteHeader() {
   const [isAtTop, setIsAtTop] = useState(true);
   const [isHydrated, setIsHydrated] = useState(false);
   const [avatarTimestamp, setAvatarTimestamp] = useState(Date.now());
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
 
   // Ensure hydration is complete before showing auth-dependent UI
@@ -122,7 +122,7 @@ function SiteHeader() {
     return () => {
       if (subscription) subscription.unsubscribe();
     };
-  }, [router]);
+  }, [router, supabase.auth]);
 
 
   // Open global auth modal with desired mode

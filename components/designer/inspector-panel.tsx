@@ -44,8 +44,8 @@ export function InspectorPanel({
 
   return (
     <div className="space-y-4 bg-card p-4 text-foreground">
-      <InspectorHeader subtitle="Edit the selected module" badge={element.type} />
-      <InspectorSection title="Module" icon={Move}>
+      <InspectorHeader subtitle={element.type === "text" ? "Type and format your message below" : "Adjust the selected object"} badge={element.type} />
+      <InspectorSection title="Object name" icon={Move} defaultOpen={false}>
         <div className="space-y-1">
           <Label className={labelClass}>Name</Label>
           <Input

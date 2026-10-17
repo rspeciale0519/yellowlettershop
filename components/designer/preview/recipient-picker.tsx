@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useId, useMemo, useState } from "react"
 import { Loader2, Search } from "lucide-react"
 import { createClient } from "@/utils/supabase/client"
 import type { RecipientDTO } from "@/components/designer/preview/recipient-dto"
@@ -24,12 +24,14 @@ export function RecipientPicker({
   const [search, setSearch] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const listControlId=useId()
 
   const authedFetch = useCallback(
-    async (qs: string) => {
+    async (qs: string, signal: AbortSignal) => {
       const { data } = await supabase.auth.getSession()
       const token = data.session?.access_token
       const res = await fetch(`/api/designer/recipients?${qs}`, {
+        signal,
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
       if (!res.ok) throw new Error((await res.json())?.error ?? "Request failed")
@@ -39,35 +41,44 @@ export function RecipientPicker({
   )
 
   useEffect(() => {
-    authedFetch("kind=lists")
+    const controller=new AbortController()
+    authedFetch("kind=lists",controller.signal)
       .then((d: { lists: ListItem[] }) => {
+        if(controller.signal.aborted) return
         setLists(d.lists)
         if (d.lists[0]) setListId(d.lists[0].id)
       })
-      .catch((e) => setError(e instanceof Error ? e.message : "Failed to load lists"))
+      .catch((e) => {if(!controller.signal.aborted) setError(e instanceof Error ? e.message : "Failed to load lists")})
+    return()=>controller.abort()
   }, [authedFetch])
 
   useEffect(() => {
     if (!listId) return
+    const controller=new AbortController()
     setLoading(true)
     setError(null)
-    authedFetch(`kind=records&listId=${encodeURIComponent(listId)}&search=${encodeURIComponent(search)}&limit=25`)
+    setRecords([])
+    onSelect(null)
+    authedFetch(`kind=records&listId=${encodeURIComponent(listId)}&search=${encodeURIComponent(search)}&limit=25`,controller.signal)
       .then((d: { records: RecipientDTO[] }) => {
+        if(controller.signal.aborted) return
         setRecords(d.records)
         onSelect(d.records[0] ?? null)
       })
-      .catch((e) => setError(e instanceof Error ? e.message : "Failed to load records"))
-      .finally(() => setLoading(false))
+      .catch((e) => {if(!controller.signal.aborted) setError(e instanceof Error ? e.message : "Failed to load records")})
+      .finally(() => {if(!controller.signal.aborted) setLoading(false)})
+    return()=>controller.abort()
   }, [authedFetch, listId, search, onSelect])
 
   return (
     <div className="space-y-3">
       <div>
-        <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Mailing list</label>
+        <label htmlFor={listControlId} className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Mailing list</label>
         {lists.length === 0 ? (
           <p className="mt-1 text-sm text-muted-foreground">No saved lists yet.</p>
         ) : (
           <select
+            id={listControlId}
             className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground"
             value={listId}
             onChange={(e) => setListId(e.target.value)}
@@ -83,13 +94,14 @@ export function RecipientPicker({
       <div className="relative">
         <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
+          aria-label="Search recipients"
           className="h-9 w-full rounded-md border border-input bg-background pl-8 pr-2 text-sm text-foreground placeholder:text-muted-foreground"
           placeholder="Search recipients"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
-      {error && <p className="text-xs text-red-300">{error}</p>}
+      {error && <p className="text-xs text-destructive">{error}</p>}
       <div className="max-h-64 space-y-1 overflow-y-auto">
         {loading && (
           <div className="flex items-center gap-2 p-2 text-sm text-muted-foreground">

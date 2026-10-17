@@ -1,60 +1,19 @@
 "use client"
-
-import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react"
-import { runPreflight } from "@/components/designer/preflight/preflight-rules"
-import { useImageNaturalSizes } from "@/components/designer/preflight/use-image-natural-sizes"
-import type { SpecRects } from "@/components/designer/mail-spec"
-import type { CanvasSize, DesignElement } from "@/types/designer"
-
-interface PreflightPanelProps {
-  elements: DesignElement[]
-  canvasSize?: CanvasSize
-  specRects?: SpecRects
-  onSelectElement?: (id: string) => void
-}
-
-export function PreflightPanel({ elements, specRects, onSelectElement }: PreflightPanelProps) {
-  const naturalSizes = useImageNaturalSizes(elements)
-  const issues = runPreflight(elements, { specRects, naturalSizes })
-  const errors = issues.filter((i) => i.severity === "error")
-  const warnings = issues.filter((i) => i.severity === "warning")
-
-  return (
-    <div className="space-y-4 bg-card p-4 text-foreground">
-      <div className="rounded-lg border border-border bg-card p-3">
-        <h2 className="text-lg font-semibold text-foreground">Preflight</h2>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Print &amp; personalization checks for this page.
-        </p>
-      </div>
-
-      {issues.length === 0 ? (
-        <div className="flex items-center gap-2 rounded-md border border-emerald-600/40 bg-emerald-500/10 p-3 text-sm text-emerald-300">
-          <CheckCircle2 className="h-4 w-4" /> No issues found on this page.
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {[...errors, ...warnings].map((issue, index) => (
-            <button
-              key={`${issue.rule}-${issue.elementId ?? index}`}
-              type="button"
-              onClick={() => issue.elementId && onSelectElement?.(issue.elementId)}
-              className={`flex w-full gap-2 rounded-md border p-3 text-left text-sm ${
-                issue.severity === "error"
-                  ? "border-red-500/40 bg-red-500/10 text-red-200"
-                  : "border-amber-500/40 bg-amber-500/10 text-amber-200"
-              }`}
-            >
-              {issue.severity === "error" ? (
-                <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              ) : (
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              )}
-              <span>{issue.message}</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  )
+import { runPreflight } from '@/components/designer/preflight/preflight-rules'
+import { useImageNaturalSizes } from '@/components/designer/preflight/use-image-natural-sizes'
+import { useDesignerTextLayout } from '@/components/designer/writing/text-layout-context'
+import { collectDocumentIssues } from '@/lib/designer/document-issues'
+import type { SpecRects } from '@/components/designer/mail-spec'
+import type { CanvasSize, DesignElement, DesignerPage } from '@/types/designer'
+interface PreflightPanelProps { elements:DesignElement[];canvasSize?:CanvasSize;specRects?:SpecRects;onSelectElement?:(id:string)=>void }
+export function PreflightPanel({elements,specRects,onSelectElement}:PreflightPanelProps){
+ const context=useDesignerTextLayout()
+ const all=context?Object.values(context.document.pages).flat():elements
+ const naturalSizes=useImageNaturalSizes(all)
+ const issues=context?.layout?collectDocumentIssues(context.document,context.layout,naturalSizes,{mode:context.mode,values:context.values}):runPreflight(elements,{specRects,naturalSizes})
+ return <div className="space-y-4 p-4">
+  <h2 className="text-lg font-semibold">Print checks</h2><p className="text-xs text-muted-foreground">Checks all included printed sides and the selected preview details.</p>
+  {context?.error && <p role="alert" className="text-red-600">{context.error}</p>}
+  {context && !context.layout && !context.error?<p role="status">Preparing printable text…</p>:issues.length===0?<p role="status" className="rounded border border-green-500 p-3 text-sm">No issues found on included sides.</p>:issues.map((issue,index)=><button type="button" className={`block w-full rounded border p-3 text-left text-sm ${issue.severity==='error'?'border-red-500 text-red-600':'border-amber-500 text-amber-700'}`} key={index} onClick={()=>{if('pageId' in issue) context?.onFocusIssue?.(issue.pageId as DesignerPage,issue.elementId);else if(issue.elementId) onSelectElement?.(issue.elementId)}}>{'pageId' in issue?<span className="block text-xs">{String(issue.pageId)}</span>:null}{issue.message}</button>)}
+ </div>
 }

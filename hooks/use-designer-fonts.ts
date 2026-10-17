@@ -11,7 +11,7 @@ export function useDesignerFonts() {
     fetch("/api/designer/fonts")
       .then((response) => response.json())
       .then((data: { fonts?: DesignerFont[] }) => {
-        if (active && data.fonts?.length) setFonts(data.fonts)
+        if (active && data.fonts?.length) setFonts([...DESIGNER_FONTS, ...data.fonts.filter(font=>!DESIGNER_FONTS.some(builtIn=>builtIn.id===font.id))])
       })
       .catch(() => undefined)
     return () => {

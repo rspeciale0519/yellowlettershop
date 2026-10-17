@@ -40,7 +40,7 @@ export function TransformSection({
   onUpdate: (updates: Partial<DesignElement>) => void
 }) {
   return (
-    <InspectorSection title="Transform" icon={Maximize2}>
+    <InspectorSection defaultOpen={false} title="Transform" icon={Maximize2}>
       <div className="space-y-1.5">
         <Label className={labelClass}>Align to page</Label>
         <div className="flex gap-1">

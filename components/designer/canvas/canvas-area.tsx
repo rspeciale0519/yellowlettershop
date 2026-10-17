@@ -198,8 +198,8 @@ export function CanvasArea({
                   zIndex: element.zIndex,
                   opacity: element.opacity ?? 1,
                 }}
-                className={`border-2 ${
-                  selectedElement === element.id ? "border-yellow-500" : "border-transparent hover:border-yellow-500/50"
+                className={`outline outline-2 ${
+                  selectedElement === element.id ? "outline-yellow-500" : "outline-transparent hover:outline-yellow-500/50"
                 } ${element.locked ? "cursor-not-allowed" : ""}`}
               >
                 {selectedElement === element.id && (

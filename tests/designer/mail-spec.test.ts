@@ -23,10 +23,10 @@ describe('mail-spec constants', () => {
     assert.deepEqual(LEGACY_CANVAS, { width: 862, height: 1112 })
   })
 
-  it('defines exactly the four approved formats with the legacy fallback = letter', () => {
+  it('defines all six checkout formats with the legacy fallback = letter', () => {
     assert.deepEqual(
       Object.keys(MAIL_FORMATS).sort(),
-      ['letter_8_5x11', 'postcard_4x6', 'postcard_6x11', 'postcard_6x9'].sort(),
+      ['letter_8_5x11', 'letter_folded', 'postcard_4x6', 'postcard_5x7', 'postcard_6x11', 'postcard_6x9'].sort(),
     )
     assert.ok(MAIL_FORMATS[DEFAULT_MAIL_FORMAT])
     assert.equal(LEGACY_FALLBACK_FORMAT, 'letter_8_5x11')

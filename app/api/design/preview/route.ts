@@ -24,7 +24,7 @@ const PreviewRequestSchema = z.object({
   recipient: RecipientSchema.optional(),
   sender: z.record(z.string()).optional(),
   // legacy checkout shape
-  contactCard: z.any().optional(),
+  contactCard: z.unknown().optional(),
   sampleData: z.record(z.unknown()).optional(),
   addCropMarks: z.boolean().optional(),
 })

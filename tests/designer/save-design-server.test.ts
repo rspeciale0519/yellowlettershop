@@ -35,6 +35,17 @@ function mockDatabase(rows: Record<string, Row[]>, failLink = false) {
   return { database: database as unknown as Parameters<typeof saveDesignForUser>[0], writes }
 }
 describe('design persistence ownership and linkage', () => {
+  it('does not change submitted artwork or reopen an inactive wizard draft', async () => {
+    for (const rows of [
+      { orders: [{ id: orderId, created_by: 'alice', status: 'submitted', metadata: null }] },
+      { order_drafts: [{ id: orderId, user_id: 'alice', status: 'submitted', order_state: {} }] },
+    ]) {
+      const { database, writes } = mockDatabase(rows)
+      const result = await saveDesignForUser(database, 'alice', { designState: doc, orderId })
+      assert.equal(result.status, 409)
+      assert.equal(writes.length, 0)
+    }
+  })
   it('rejects a foreign or nonexistent order before persisting a design', async () => {
     const { database, writes } = mockDatabase({ orders: [{ id: orderId, created_by: 'bob' }] })
     const result = await saveDesignForUser(database, 'alice', { designState: doc, orderId })
@@ -43,7 +54,7 @@ describe('design persistence ownership and linkage', () => {
     assert.equal(writes.length, 0)
   })
   it('retains all completed draft steps while linking the actual id and canonical revision', async () => {
-    const rows = { order_drafts: [{ id: orderId, user_id: 'alice', updated_at: 'prior', order_state: { step: 4, accuzipValidation: { deliverableRecords: 100 }, designAndContent: { contactCard: { id: 'card' } } } }] }
+    const rows = { order_drafts: [{ id: orderId, user_id: 'alice', status: 'active', updated_at: 'prior', order_state: { step: 4, accuzipValidation: { deliverableRecords: 100 }, designAndContent: { contactCard: { id: 'card' } } } }] }
     const { database } = mockDatabase(rows)
     const result = await saveDesignForUser(database, 'alice', { designState: doc, orderId })
     assert.equal(result.body.ok, true)
@@ -56,15 +67,15 @@ describe('design persistence ownership and linkage', () => {
     assert.deepEqual((state.designAndContent as Row).contactCard, { id: 'card' })
     assert.equal((state.design as Row).designId, designId)
   })
-  it('uses created_by and metadata for submitted orders without phantom columns', async () => {
-    const { database, writes } = mockDatabase({ orders: [{ id: orderId, created_by: 'alice', metadata: null }] })
+  it('uses created_by and metadata for editable draft orders without phantom columns', async () => {
+    const { database, writes } = mockDatabase({ orders: [{ id: orderId, created_by: 'alice', status: 'draft', metadata: null }] })
     const result = await saveDesignForUser(database, 'alice', { designState: doc, orderId })
     assert.equal(result.body.ok, true)
     const link = writes.find(write => write.table === 'orders')!
     assert.deepEqual(Object.keys(link.values), ['metadata'])
   })
   it('reports linkage failure even when the design row persisted', async () => {
-    const { database } = mockDatabase({ orders: [{ id: orderId, created_by: 'alice', metadata: null }] }, true)
+    const { database } = mockDatabase({ orders: [{ id: orderId, created_by: 'alice', status: 'draft', metadata: null }] }, true)
     const result = await saveDesignForUser(database, 'alice', { designState: doc, orderId })
     assert.equal(result.status, 409)
     assert.equal(result.body.ok, false)

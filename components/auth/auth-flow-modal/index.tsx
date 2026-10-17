@@ -1,5 +1,6 @@
 'use client';
 
+import { shouldRedirectAfterAuthEvent } from "@/lib/auth/sign-in-navigation";
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -31,11 +32,9 @@ import type {
 import { AuthService } from './auth-service';
 
 const AUTH_MODES: AuthMode[] = ['login', 'signup', 'forgot', 'reset', 'verify', 'change'];
-const isAuthMode = (value: any): value is AuthMode => AUTH_MODES.includes(value);
+const isAuthMode = (value: unknown): value is AuthMode => AUTH_MODES.some(mode => mode === value);
 
-interface AuthFlowModalControllerProps {}
-
-export function AuthFlowModalController({}: AuthFlowModalControllerProps) {
+export function AuthFlowModalController() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -192,31 +191,23 @@ export function AuthFlowModalController({}: AuthFlowModalControllerProps) {
 
   // Auth state change handler
   useEffect(() => {
-    let isInitialLoad = true;
 
     const { data: { subscription } } = authService.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        // Only redirect on actual sign-ins, not token refreshes
-        // Check if auth modal is open or if this is a fresh sign-in
-        if (isOpen || isInitialLoad) {
+      if (shouldRedirectAfterAuthEvent({event,hasSession:Boolean(session),modalOpen:isOpen})) {
+        // Redirect only for an explicit open login; restoration keeps the current order.
           setIsOpen(false);
           // Always redirect to dashboard unless user was redirected from a specific page
           const targetUrl = redirectedFrom || '/dashboard';
           // Use window.location for more reliable redirect during auth state changes
           window.location.href = targetUrl;
-        }
       } else if (event === 'SIGNED_OUT' && pathname.startsWith('/dashboard')) {
         router.push('/');
       }
 
-      // After first auth state change, mark as no longer initial load
-      if (isInitialLoad) {
-        isInitialLoad = false;
-      }
     });
 
     return () => subscription.unsubscribe();
-  }, [router, pathname, redirectedFrom, isOpen]);
+  }, [router, pathname, redirectedFrom, isOpen, authService]);
 
   // Render form based on mode
   const renderForm = () => {

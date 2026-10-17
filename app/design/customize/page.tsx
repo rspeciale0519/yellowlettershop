@@ -2,7 +2,6 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { User } from "@supabase/supabase-js"
 import { Loader2 } from "lucide-react"
 import { CanvasArea } from "@/components/designer/canvas-area"
 import { DesignerHeader } from "@/components/designer/designer-header"
@@ -12,31 +11,38 @@ import { HelpButton } from "@/components/designer/help-button"
 import { PagesPanel } from "@/components/designer/pages-panel"
 import { PreviewModal } from "@/components/designer/preview-modal"
 import { ConfirmDialog } from "@/components/designer/ui/confirm-dialog"
-import { DESIGN_TEMPLATES, DESIGNER_STORAGE_KEY } from "@/components/designer/designer-templates"
-import { specRectsPx, withFormatId } from "@/components/designer/mail-spec"
+import { DESIGN_TEMPLATES } from "@/components/designer/designer-templates"
+import { specRectsPx } from "@/components/designer/mail-spec"
 import { createClient } from "@/utils/supabase/client"
 import { useDesignerFonts } from "@/hooks/use-designer-fonts"
 import { useDesignerImages } from "@/hooks/use-designer-images"
 import { useDesignerShortcuts } from "@/hooks/use-designer-shortcuts"
-import { useDesignerAutosave } from "@/hooks/use-designer-autosave"
+import { useDesignerSave } from "@/hooks/use-designer-save"
+import { useDesignerBootstrap } from "@/hooks/use-designer-bootstrap"
+import { DesignerTextProvider } from "@/components/designer/writing/text-layout-context"
+import { DesignerPrintGate, type PrintGateState } from "@/components/designer/writing/print-gate"
+import { DesignerOrderSummary } from "@/components/designer/workspace/order-summary"
+import { asRecord } from "@/lib/orders/quote-inputs"
+import type { SenderInput } from "@/components/designer/tokens/recipient-map"
 import { useDesignerDocument } from "@/hooks/use-designer-document"
 import { designerRootClass } from "@/components/designer/designer-type"
-import { bootstrapTemplateDocument, designerAuthenticationUrl, loadStoredDesignerState, normalizeElements, templateContextUrl } from "@/lib/designer/template-entry"
+import { templateContextUrl, templateEntryUrl } from "@/lib/designer/template-entry"
 import { TemplateEntryRecovery } from "@/components/designer/workspace/template-entry-recovery"
-import type { DesignerDocument, DesignerMode, DesignerPage, Tool, WorkspacePanel } from "@/types/designer"
+import { compatiblePaperSwitch, switchDesignerTemplate } from "@/lib/designer/template-switch"
+import { writeDraft } from "@/lib/designer/draft-context"
+import type { DesignerMode, DesignerPage, Tool, WorkspacePanel } from "@/types/designer"
 
-type StoredDesignerState = { document: DesignerDocument }
+const markDirty = () => undefined
 export default function DesignCustomizerPage() {
   return <Suspense fallback={<div>Loading designer…</div>}><DesignCustomizerContent /></Suspense>
 }
 
 function DesignCustomizerContent() {
   const searchParams = useSearchParams()
-  const requestedTemplateId = searchParams.get("templateId")
-  const [entryIssue, setEntryIssue] = useState<"unknown" | "preview-only" | null>(null)
-  const [hasDraft, setHasDraft] = useState(false)
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [actionError, setActionError] = useState<string | null>(null)
+  const [errorAction,setErrorAction]=useState<'save'|'preflight'|'dismiss'>('save')
+  const printGate = useRef<PrintGateState>({ready:false})
+  const onPrintState = useCallback((state:PrintGateState) => { printGate.current=state },[])
   const [activeTool, setActiveTool] = useState<Tool>("text")
   const [activePanel, setActivePanel] = useState<WorkspacePanel>("modules")
   const [selectedElement, setSelectedElement] = useState<string | null>(null)
@@ -49,19 +55,13 @@ function DesignCustomizerContent() {
   const [pendingDelete, setPendingDelete] = useState<string | null>(null)
   const router = useRouter()
   const fonts = useDesignerFonts()
-  const designerImages = useDesignerImages(Boolean(user))
   const supabase = useMemo(() => createClient(), [])
 
-  const saveDesignRef = useRef<() => Promise<void>>(async () => {})
-  const autosave = useDesignerAutosave({
-    enabled: Boolean(user),
-    onSave: () => saveDesignRef.current(),
-  })
   const doc = useDesignerDocument({
     activePage,
     selectedElement,
     imageReplaceTarget,
-    markDirty: autosave.setDirty,
+    markDirty,
     setSelectedElement,
     setActivePanel,
     setActiveTool,
@@ -79,94 +79,33 @@ function DesignCustomizerContent() {
   )
   const activeBackground = documentState.backgrounds?.[activePage]
 
-  useEffect(() => {
-    let cancelled = false
-    const checkAuth = async () => {
-      try {
-        const { data, error } = await supabase.auth.getUser()
-        if (cancelled) return
-        if (!data.user || error) {
-          router.replace(designerAuthenticationUrl(window.location.search))
-          return
-        }
-        const stored = loadStoredDesignerState()
-        const initial = bootstrapTemplateDocument(requestedTemplateId, stored?.document ?? null)
-        setHasDraft(Boolean(stored))
-        if (initial.status === "unavailable") {
-          setEntryIssue(initial.reason)
-          setUser(data.user)
-          return
-        }
-        setEntryIssue(null)
-        const initialDocument = withFormatId(initial.document)
-        const normalizedDocument = {
-          ...initialDocument,
-          pages: {
-            front: normalizeElements(initialDocument.pages.front),
-            back: normalizeElements(initialDocument.pages.back),
-          },
-        }
-        doc.hydrate(normalizedDocument)
-        if (initial.recovered) autosave.setRecovered(new Date(initialDocument.updatedAt).toLocaleTimeString())
-        else autosave.setIdle()
-        setUser(data.user)
-      } catch (error) {
-        if (cancelled) return
-        console.error("Error checking authentication:", error)
-        router.replace(designerAuthenticationUrl(window.location.search))
-      } finally {
-        if (!cancelled) setIsLoading(false)
-      }
-    }
-    void checkAuth()
-    return () => { cancelled = true }
-    // Bootstrap once per requested template; stable document/autosave setters
-    // intentionally do not cause a draft re-hydration on every edit.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requestedTemplateId, router, supabase])
-
+  const bootstrap = useDesignerBootstrap({supabase,query:searchParams.toString(),hydrate:doc.hydrate})
+  const currentQuery=useRef(searchParams.toString())
+  currentQuery.current=searchParams.toString()
+  const continuing=useRef(false)
+  const { user, orderId, orderState } = bootstrap
+  const designerImages = useDesignerImages(Boolean(user))
+  const saving = useDesignerSave({document:documentState,userId:user?.id,orderId,context:{designId:bootstrap.initialDesignId},enabled:Boolean(user) && !bootstrap.loading && !bootstrap.error && !bootstrap.entryIssue})
+  const saveCurrentDesign=saving.save
   const saveDesign = useCallback(async () => {
-    const nextDocument = { ...documentState, updatedAt: new Date().toISOString() }
-    const payload: StoredDesignerState = { document: nextDocument }
-    window.localStorage.setItem(DESIGNER_STORAGE_KEY, JSON.stringify(payload))
-    // localStorage (not sessionStorage) so the order tab — which the designer
-    // opens in a SEPARATE tab — can pick the design up on focus.
-    window.localStorage.setItem("yls.pendingOrderDesign", JSON.stringify(nextDocument))
-
-    try {
-      const { data: sessionData } = await supabase.auth.getSession()
-      const token = sessionData.session?.access_token
-      if (!token) {
-        autosave.setLocalOnly()
-        return
-      }
-      const response = await fetch("/api/design/save", {
-        method: nextDocument.designId ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          designId: nextDocument.designId,
-          designState: nextDocument,
-          name: nextDocument.templateName,
-          templateId: nextDocument.templateId,
-        }),
-      })
-      const result = (await response.json()) as { designId?: string; error?: string }
-      if (!response.ok) throw new Error(result.error ?? "Design save failed")
-      const savedDocument = { ...nextDocument, designId: result.designId ?? nextDocument.designId }
-      doc.setDocumentState(savedDocument)
-      window.localStorage.setItem("yls.pendingOrderDesign", JSON.stringify(savedDocument))
-      autosave.setSaved(new Date(savedDocument.updatedAt).toLocaleTimeString())
-    } catch (error) {
-      if (process.env.NODE_ENV === "development") {
-        console.info("Server save skipped:", error instanceof Error ? error.message : error)
-      }
-      autosave.setError()
-    }
-  }, [autosave, doc, documentState, supabase])
-
+    const result=await saveCurrentDesign()
+    setErrorAction('save')
+    setActionError(result.ok?null:result.message)
+    return result
+  },[saveCurrentDesign])
   useEffect(() => {
-    saveDesignRef.current = saveDesign
-  }, [saveDesign])
+    if(bootstrap.loading || bootstrap.error || !user) return
+    const timeout=window.setTimeout(()=>{void saveCurrentDesign()},3000)
+    return()=>window.clearTimeout(timeout)
+  },[documentState,bootstrap.loading,bootstrap.error,user,saveCurrentDesign])
+  useEffect(() => {
+    if(bootstrap.loading) return
+    const candidate=activeElements.find(element=>element.type==='text' && !element.continuesFrom)
+    if(candidate){setSelectedElement(candidate.id);setActivePanel("inspector")}
+    // Choose a useful initial text box once after hydration; selection edits remain manual.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[bootstrap.loading])
+  const sender=useMemo(()=>asRecord(asRecord(orderState.designAndContent).contactCard ?? orderState.contactCard).contactCardData as SenderInput | undefined ?? {},[orderState])
 
   // Guarded delete: postage (stamp/indicia) areas require explicit confirmation;
   // everything else deletes immediately. Routes every delete entry point.
@@ -193,8 +132,17 @@ function DesignCustomizerContent() {
   })
 
   const continueToOrder = async () => {
-    await saveDesign()
-    router.push("/orders/new?source=design_tool")
+    if(continuing.current || bootstrap.loading) return
+    if(!printGate.current.ready){setErrorAction('preflight');setActionError(printGate.current.error ?? "Resolve the print checks before continuing.");setActivePanel("preflight");return}
+    continuing.current=true
+    const query=currentQuery.current
+    try {
+      const result=await saveDesign()
+      if(!result.ok || currentQuery.current!==query || !printGate.current.ready) return
+      const params=new URLSearchParams({source:"design_tool",designId:result.designId,revision:result.revision})
+      if(orderId) params.set("orderId",orderId)
+      router.push(`/orders/new?${params}`)
+    } finally {continuing.current=false}
   }
 
   const handleReplaceImageRequest = (id: string) => {
@@ -212,30 +160,47 @@ function DesignCustomizerContent() {
     })
   }
 
-  if (isLoading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="mr-2 h-6 w-6 animate-spin" />Loading...</div>
+  const changeTemplate=(id:string)=>{
+    const preserved=saving.preserveBeforeReplace()
+    if(!preserved && !saving.savedReference){setErrorAction('save');setActionError('Save your current design online before changing templates.');return}
+    if(user && compatiblePaperSwitch(documentState.templateId,id)){
+      let recovered=false
+      try{recovered=writeDraft(localStorage,{userId:user.id,templateId:id,orderId},switchDesignerTemplate(documentState,id))}catch{/* Keep the current composition if recovery cannot be preserved. */}
+      if(!recovered){setErrorAction('dismiss');setActionError('Your browser could not preserve this paper change. Your current design is unchanged.');return}
+    }
+    bootstrap.setInitialDesignId(undefined)
+    doc.handleTemplateChange(id)
+    window.history.replaceState(null,"",templateEntryUrl(id,searchParams.toString()))
+  }
+
+  if (bootstrap.loading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="mr-2 h-6 w-6 animate-spin" />Loading...</div>
   if (!user) return null
-  if (entryIssue) return <TemplateEntryRecovery reason={entryIssue} context={searchParams.toString()} hasDraft={hasDraft} />
+  if (bootstrap.entryIssue) return <TemplateEntryRecovery reason={bootstrap.entryIssue} context={searchParams.toString()} hasDraft={bootstrap.hasDraft} />
+  if (bootstrap.error) return <div role="alert" className="p-8">{bootstrap.error}<button type="button" className="ml-3 underline" onClick={()=>window.location.reload()}>Retry loading</button></div>
 
   return (
+    <DesignerTextProvider document={documentState} pageId={activePage} sender={sender} onFocusIssue={(page,id)=>{setActivePage(page);setSelectedElement(id ?? null);setActivePanel("inspector")}}>
+    <DesignerPrintGate onChange={onPrintState}/>
     <div className={`relative ${designerRootClass}`}>
+      {actionError && <div role="alert" className="flex flex-wrap items-center gap-2 border-b bg-red-50 px-3 py-2 text-sm text-red-700">{actionError}<button type="button" className="underline" onClick={()=>errorAction==='save'?void saveDesign():errorAction==='preflight'?setActivePanel('preflight'):setActionError(null)}>{errorAction==='save'?'Retry saving':errorAction==='preflight'?'Show print checks':'Dismiss'}</button></div>}
       <EditorShell header={
       <DesignerHeader
         galleryHref={templateContextUrl("/templates", searchParams.toString())}
         onUndo={doc.handleUndo}
         onRedo={doc.handleRedo}
-        onSave={saveDesign}
+        onSave={()=>void saveDesign()}
         onPreview={() => setIsPreviewOpen(true)}
         onNext={continueToOrder}
         onToggleOrientation={() => doc.commitDocument({ ...documentState, orientation: documentState.orientation === "portrait" ? "landscape" : "portrait" })}
-        onTemplateChange={doc.handleTemplateChange}
-        onFormatChange={doc.setFormat}
+        onTemplateChange={changeTemplate}
+        onFormatChange={(id)=>{saving.preserveBeforeReplace();const result=doc.setFormat(id);if(result && !result.ok){setErrorAction('dismiss');setActionError(result.error)}else setActionError(null)}}
         canUndo={doc.historyIndex > 0}
         canRedo={doc.historyIndex < doc.history.length - 1}
         orientation={documentState.orientation}
         templateId={documentState.templateId}
         formatId={doc.formatId}
         templates={templateOptions}
-        savedLabel={autosave.label}
+        savedLabel={saving.message}
       />
       } content={
         <DesignerWorkspaceSidebar
@@ -297,7 +262,7 @@ function DesignCustomizerContent() {
           onReplaceImageRequest={handleReplaceImageRequest}
         />
       } pages={
-          <PagesPanel activePage={activePage} onPageChange={setActivePage} orientation={documentState.orientation} />
+          <div className="space-y-4"><DesignerOrderSummary documentState={documentState} orderState={orderState}/><PagesPanel activePage={activePage} onPageChange={setActivePage} documentState={documentState} onDocumentChange={doc.commitDocument} /></div>
       } />
       {isPreviewOpen && <PreviewModal documentState={documentState} canvasSize={canvasSize} onClose={() => setIsPreviewOpen(false)} />}
       <ConfirmDialog
@@ -314,5 +279,6 @@ function DesignCustomizerContent() {
       />
       <div className="[&>div]:bottom-20 lg:[&>div]:bottom-4"><HelpButton /></div>
     </div>
+    </DesignerTextProvider>
   )
 }

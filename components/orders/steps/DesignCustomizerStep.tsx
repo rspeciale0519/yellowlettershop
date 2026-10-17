@@ -6,6 +6,7 @@ import { createClient } from '@/utils/supabase/client'
 import { canonicalDocumentContent } from '@/lib/designer/content-revision'
 import { readOrderDraft, readOrderDesign } from '@/lib/designer/draft-context'
 import { verifySavedDesignReference } from '@/lib/designer/verified-handoff'
+import { persistOrderForDesigner } from '@/lib/designer/order-entry'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -78,15 +79,8 @@ export function DesignCustomizerStep({ orderState }: OrderStepProps) {
     const tab = window.open('', '_blank')
     if (tab) tab.opener = null
     try {
-      let orderId = orderState.orderId
-      if (!orderId) {
-        const response = await fetch('/api/orders/drafts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderState }) })
-        if (!response.ok) throw new Error('Save this order draft before opening the designer. Please retry.')
-        const saved = await response.json()
-        if (typeof saved.orderId !== 'string') throw new Error('The order draft could not be confirmed. Please retry.')
-        orderId = saved.orderId
-        updateOrderState({ orderId })
-      }
+      const orderId = await persistOrderForDesigner(orderState)
+      if (!orderState.orderId) updateOrderState({ orderId })
       const params = new URLSearchParams()
       params.set('orderId', orderId!)
       if (design?.designId) params.set('designId', design.designId)

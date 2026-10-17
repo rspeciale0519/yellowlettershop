@@ -2,6 +2,8 @@
 
 import { toCanvas } from "html-to-image"
 import type { DesignElement } from "@/types/designer"
+import { browserPrintFontCSS } from "@/hooks/use-print-fonts"
+import { printFontKey } from "@/lib/designer/text/font-manifest"
 
 // DOM → bitmap capture for the 3D preview. Wraps html-to-image with the
 // readiness gates and image-source fixes the designer's content needs.
@@ -79,12 +81,17 @@ export async function waitForPaintable(node: HTMLElement): Promise<void> {
 export async function capturePageCanvas(node: HTMLElement): Promise<HTMLCanvasElement> {
   const rect = node.getBoundingClientRect()
   const pixelRatio = Math.min(2, 2048 / Math.max(rect.width, rect.height))
+  const fonts=new Set(Array.from(node.querySelectorAll('text[font-family]'),text=>printFontKey({
+    fontSize:Number(text.getAttribute('font-size')) || 12,fontFamily:text.getAttribute('font-family') ?? undefined,
+    bold:text.getAttribute('font-weight')==='700',italic:text.getAttribute('font-style')==='italic',
+  })))
+  const fontEmbedCSS=fonts.size?await browserPrintFontCSS(fonts):''
   const options = {
     pixelRatio,
     backgroundColor: "#ffffff",
-    // Fonts are plain system CSS stacks (designer-fonts.ts) — skipping the
-    // webfont-embed pass avoids pointless CSS fetches during capture.
-    skipFonts: true,
+    // Embed only the same loaded print faces used by this page's positioned text.
+    skipFonts: fonts.size===0,
+    fontEmbedCSS,
     imagePlaceholder: IMAGE_PLACEHOLDER,
   }
   try {

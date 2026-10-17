@@ -3,9 +3,12 @@ import { DESIGNER_SHORTCUTS } from "@/components/designer/designer-shortcuts"
 
 const QUICK_START = [
   "Pick a template and mail size in the top bar.",
-  "Add modules from the left panel — click, or drag onto the page.",
-  "Select an element to edit it in the Inspector; set a page Background.",
-  "Open Preview to proof against a real recipient, then Next to order.",
+  "Select a text box and type in Your message. Use the toolbar to format it or insert a personalization field.",
+  "Turn Guided writing on to wrap within the template and align to notepad lines. Turn it off for free placement.",
+  "Use Add for text, images and other objects. Select any object to edit its appearance and position.",
+  "Open Pages to choose paper or add a printed side. Each additional letter side costs $0.10 per mail piece; the estimate updates immediately.",
+  "Use Check to resolve print issues. Preview shows all printed sides as a PDF, with example details or a selected recipient.",
+  "Choose Continue to Order to save online and carry this design into your order. If saving fails, keep this page open and retry.",
 ]
 
 const LEGEND = [

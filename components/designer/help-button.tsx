@@ -29,7 +29,7 @@ export function HelpButton() {
             <TooltipContent>Help &amp; shortcuts</TooltipContent>
           </Tooltip>
         </TooltipProvider>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-h-[90dvh] max-w-md overflow-y-auto">
           <HelpDialogBody />
         </DialogContent>
       </Dialog>

@@ -5,7 +5,7 @@ import type { MailFormatId } from "@/components/designer/mail-spec"
 // consumer, legacy tools-sidebar.tsx, is archived). Page backgrounds live in
 // the `"background"` WorkspacePanel below.
 export type Tool = "text" | "images" | "graphics" | "qr-codes" | "tables" | "postage"
-export type WorkspacePanel = "modules" | "layers" | "inspector" | "preflight" | "background"
+export type WorkspacePanel = "modules" | "layers" | "inspector" | "preflight" | "background" | "personalize"
 export type DesignerPage = "front" | "back" | `page-${string}`
 export type DesignerOrientation = "portrait" | "landscape"
 export type DesignerElementType = "text" | "image" | "graphic" | "qr" | "table" | "postage"

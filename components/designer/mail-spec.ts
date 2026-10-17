@@ -10,11 +10,11 @@
 // here; ops must validate against the current USPS DMM before production
 // print (changing them is a one-line edit).
 
-export type MailFormatId =
-  | 'postcard_4x6'
-  | 'postcard_6x9'
-  | 'postcard_6x11'
-  | 'letter_8_5x11'
+export const MAIL_FORMAT_IDS = [
+  'postcard_4x6', 'postcard_5x7', 'postcard_6x9', 'postcard_6x11',
+  'letter_8_5x11', 'letter_folded',
+] as const
+export type MailFormatId = typeof MAIL_FORMAT_IDS[number]
 
 export type MailOrientation = 'portrait' | 'landscape'
 
@@ -63,6 +63,15 @@ export const MAIL_FORMATS: Record<MailFormatId, MailFormat> = {
     safeIn: 0.125,
     isLetter: false,
   },
+  postcard_5x7: {
+    id: 'postcard_5x7',
+    label: 'Postcard 5×7',
+    widthIn: 5,
+    heightIn: 7,
+    bleedIn: 0.125,
+    safeIn: 0.125,
+    isLetter: false,
+  },
   postcard_6x9: {
     id: 'postcard_6x9',
     label: 'Postcard 6×9',
@@ -90,6 +99,16 @@ export const MAIL_FORMATS: Record<MailFormatId, MailFormat> = {
     safeIn: 0.1875,
     isLetter: true,
   },
+  // Folding is a fulfillment option; artwork uses the full flat letter sheet.
+  letter_folded: {
+    id: 'letter_folded',
+    label: 'Folded Letter 8.5×11',
+    widthIn: 8.5,
+    heightIn: 11,
+    bleedIn: 0.125,
+    safeIn: 0.1875,
+    isLetter: true,
+  },
 }
 
 export const DEFAULT_MAIL_FORMAT: MailFormatId = 'postcard_6x9'
@@ -97,7 +116,7 @@ export const DEFAULT_MAIL_FORMAT: MailFormatId = 'postcard_6x9'
 export const LEGACY_FALLBACK_FORMAT: MailFormatId = 'letter_8_5x11'
 
 export function isMailFormatId(value: unknown): value is MailFormatId {
-  return typeof value === 'string' && value in MAIL_FORMATS
+  return MAIL_FORMAT_IDS.some(id => id === value)
 }
 
 function orientedInches(

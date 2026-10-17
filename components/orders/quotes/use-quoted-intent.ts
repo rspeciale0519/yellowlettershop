@@ -21,7 +21,7 @@ export function useQuotedIntent(state: OrderState, pricing: PricingBreakdown | u
       if (!current()) return
       if (!isFinalOrderQuote(response.pricing) || response.quoteRevision !== response.pricing.quoteRevision || response.amount !== response.pricing.totalPrice) throw new Error('Payment setup did not return a matching final quote.')
       latest.current.accept(response.pricing, key)
-      if (response.quoteRevision !== revision) throw new Error('The server quote changed. Review and approve the updated order before paying.')
+      if (response.quoteRevision !== revision) throw new Error('The quote changed. Review and approve the updated order before paying.')
       const payment: PaymentData = { paymentIntentId: response.paymentIntentId, status: 'pending', amount: response.amount, currency: 'usd', quoteRevision: response.quoteRevision }
       latest.current.update({ payment }, key)
       setResult({ key, revision, payment, error: null, isLoading: false })

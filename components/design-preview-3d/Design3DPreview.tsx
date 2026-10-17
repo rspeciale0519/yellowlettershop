@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import { withFormatId } from "@/components/designer/mail-spec"
 import { useDesignerFonts } from "@/hooks/use-designer-fonts"
 import type { RecipientDTO } from "@/components/designer/preview/recipient-dto"
-import type { DesignerDocument } from "@/types/designer"
+import type { ResolvedValues } from "@/lib/designer/text/types"
+import type { DesignerDocument, DesignerPage } from "@/types/designer"
 import { LetterScene } from "./core/LetterScene"
 import type { DesignArt } from "./core/art-textures"
 import { CaptureStage } from "./capture-stage"
@@ -16,6 +17,8 @@ import { formatStock } from "./format-stocks"
 export interface Design3DPreviewProps {
   documentState: DesignerDocument
   recipient: RecipientDTO | null
+  selectedPage?: DesignerPage
+  values?: ResolvedValues
 }
 
 /**
@@ -27,6 +30,8 @@ export interface Design3DPreviewProps {
 export default function Design3DPreview({
   documentState,
   recipient,
+  selectedPage,
+  values,
 }: Design3DPreviewProps) {
   const fonts = useDesignerFonts()
   const [art, setArt] = useState<DesignArt | null>(null)
@@ -60,6 +65,8 @@ export default function Design3DPreview({
         key={epoch}
         documentState={documentState}
         recipient={recipient}
+        selectedPage={selectedPage}
+        values={values}
         fonts={fonts}
         onCaptured={handleCaptured}
         onError={handleError}

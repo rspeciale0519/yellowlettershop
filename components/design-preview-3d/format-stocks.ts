@@ -2,7 +2,7 @@ import { MAIL_FORMATS } from "@/components/designer/mail-spec"
 import type { MailFormatId, MailOrientation } from "@/components/designer/mail-spec"
 import type { PaperStock } from "./core/paper-stocks"
 
-// PaperStock literals for the designer's four mail formats. One base carries
+// PaperStock literals for the designer's mail formats. One base carries
 // the shared matte-PBR numbers (proven on the letter-inspector stocks); each
 // format overrides only its physical identity. All art stocks are unruled
 // with no address side or show-through — the captured design IS both faces.
@@ -66,9 +66,11 @@ const BOARD: Partial<PaperStock> = {
 // inspectable, tapering as the format grows — 6×11 landscape spans ~1.43u).
 const FORMAT_SCALE: Record<MailFormatId, number> = {
   postcard_4x6: 0.19,
+  postcard_5x7: 0.17,
   postcard_6x9: 0.155,
   postcard_6x11: 0.13,
   letter_8_5x11: 0.14,
+  letter_folded: 0.14,
 }
 
 /** The paper stock the 3D preview should use for a designer document. */

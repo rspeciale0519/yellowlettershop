@@ -10,7 +10,6 @@ import type { DesignElement } from "@/types/designer"
 // Render plumbing for new fields (fit/rotation/etc.) is added in Phase 3.
 export function RenderElement({
   element,
-  fonts,
   editing,
   onEdit,
   onUpdate,

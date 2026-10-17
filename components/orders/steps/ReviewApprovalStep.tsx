@@ -37,7 +37,7 @@ export function ReviewApprovalStep({ orderState }: OrderStepProps) {
         <iframe title="Order design proof" src={proof.url} className="w-full h-[32rem] border rounded-md" />
         <Button variant="outline" onClick={() => window.open(proof.url, '_blank', 'noopener,noreferrer')}>View proof</Button>
         <a href={proof.url} target="_blank" rel="noopener noreferrer" download>Download proof</a>
-      </> : <p>{proof.error ?? 'A final server quote is required before generating the proof.'}</p>}
+      </> : <p>{proof.error ?? 'A final quote is required before generating the proof.'}</p>}
       {proof.error && <Button variant="outline" onClick={quote.refresh}>Refresh quote and proof</Button>}
     </CardContent></Card>
     <Card><CardHeader><CardTitle>Final Approval</CardTitle></CardHeader><CardContent className="space-y-5">

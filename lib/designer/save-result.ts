@@ -4,7 +4,7 @@ import type { DesignerDocument } from '../../types/designer'
 
 export { canonicalDocumentContent, documentRevision } from './content-revision'
 export type SaveDesignResult = { ok: true; designId: string; revision: string } | { ok: false; recoverySaved: boolean; message: string }
-export interface SaveSnapshot { document: DesignerDocument; context: DraftContext }
+export interface SaveSnapshot { document: DesignerDocument; context: DraftContext; active?: boolean }
 export interface SaveControllerOptions {
   getCurrent(): SaveSnapshot
   storage?: DraftStorage
@@ -24,7 +24,7 @@ export function createDesignerSaveController(options: SaveControllerOptions) {
       const signature = () => `${contextIdentity(snapshot.context)}:${canonicalDocumentContent(snapshot.document)}`
       const isCurrent = () => {
         const latest = options.getCurrent()
-        return `${contextIdentity(latest.context)}:${canonicalDocumentContent(latest.document)}` === signature()
+        return latest.active !== false && `${contextIdentity(latest.context)}:${canonicalDocumentContent(latest.document)}` === signature()
       }
       const failure = (message: string): SaveDesignResult => ({ ok: false, recoverySaved, message })
       const run = async (): Promise<SaveDesignResult> => {

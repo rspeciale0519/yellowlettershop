@@ -1,6 +1,6 @@
 "use client"
 import { useEffect, useRef } from 'react'
-import { EditorContent, useEditor, type JSONContent } from '@tiptap/react'
+import { EditorContent, useEditor, useEditorState, type JSONContent } from '@tiptap/react'
 import { Node, mergeAttributes } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import TextAlign from '@tiptap/extension-text-align'
@@ -32,20 +32,21 @@ export function MessageEditor({ element,onUpdate }: { element:TextDesignElement;
       updateRef.current({richText,content:storyText(richText)})
     },
   },[element.id])
+  const formatting=useEditorState({editor,selector:({editor:current})=>current && !current.isDestroyed?{bold:current.isActive('bold'),italic:current.isActive('italic'),underline:current.isActive('underline'),align:current.getAttributes('paragraph').textAlign ?? 'left'}:null})
   useEffect(() => {
-    if (!editor || editor.isFocused) return
+    if (!editor || editor.isDestroyed || editor.isFocused) return
     const next = toEditorDocument(elementStory(element))
     if (JSON.stringify(editor.getJSON()) !== JSON.stringify(next)) editor.commands.setContent(next as JSONContent,{emitUpdate:false})
   },[editor,element])
-  useEffect(() => { editor?.setEditable(!element.locked && !element.continuesFrom) },[editor,element.locked,element.continuesFrom])
-  if (!editor) return <p className="text-sm text-muted-foreground">Loading text editor…</p>
+  useEffect(() => { if(editor && !editor.isDestroyed) editor.setEditable(!element.locked && !element.continuesFrom) },[editor,element.locked,element.continuesFrom])
+  if (!editor || editor.isDestroyed) return <p className="text-sm text-muted-foreground">Loading text editor…</p>
   const action = (label:string,active:boolean,run:()=>void) => <Button type="button" key={label} size="sm" variant={active?'secondary':'ghost'} aria-label={label} aria-pressed={active} onClick={run} disabled={Boolean(element.locked || element.continuesFrom)}>{label}</Button>
   return <div className="rounded-md border bg-background">
     <div className="flex flex-wrap gap-1 border-b p-1" role="toolbar" aria-label="Message formatting">
-      {action('Bold',editor.isActive('bold'),()=>{editor.chain().focus().toggleBold().run()})}
-      {action('Italic',editor.isActive('italic'),()=>{editor.chain().focus().toggleItalic().run()})}
-      {action('Underline',editor.isActive('underline'),()=>{editor.chain().focus().toggleUnderline().run()})}
-      {(['left','center','right'] as const).map(align=>action(`Align ${align}`,editor.isActive({textAlign:align}),()=>{editor.chain().focus().setTextAlign(align).run()}))}
+      {action('Bold',Boolean(formatting?.bold),()=>{editor.chain().focus().toggleBold().run()})}
+      {action('Italic',Boolean(formatting?.italic),()=>{editor.chain().focus().toggleItalic().run()})}
+      {action('Underline',Boolean(formatting?.underline),()=>{editor.chain().focus().toggleUnderline().run()})}
+      {(['left','center','right'] as const).map(align=>action(`Align ${align}`,formatting?.align===align,()=>{editor.chain().focus().setTextAlign(align).run()}))}
       <select aria-label="Insert personalization field" className="max-w-full rounded border bg-background p-1 text-xs" value="" disabled={Boolean(element.locked || element.continuesFrom)} onChange={event=>{if(event.target.value) editor.chain().focus().insertContent({type:'personalization',attrs:{field:event.target.value}}).run()}}>
         <option value="">Insert a field…</option>{FIELDS.map(field=><option key={field} value={field}>{field.replaceAll('_',' ')}</option>)}
       </select>

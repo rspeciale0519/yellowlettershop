@@ -49,14 +49,15 @@ function compose(story: RichTextStory, regions: Region[], values: ResolvedValues
   }
   const place = (atoms: Atom[], align: 'left' | 'center' | 'right' = 'left'): boolean => {
     if (stopped) return false
-    const styles = atoms.length ? atoms.map(atom => atom.style) : [story.style]
-    const ascent = Math.max(...styles.map(style => metrics.ascent(style)))
-    const fontSize = Math.max(...styles.map(style => style.fontSize))
+    const measured=styledRuns(atoms,metrics)
+    const ascent = Math.max(...(measured.length ? measured.map(run => metrics.ascent(run.style,run.text)) : [metrics.ascent(story.style)]))
+    const fontSize = Math.max(...(measured.length ? measured.map(run=>run.style.fontSize) : [story.style.fontSize]))
+    const descent = metrics.descent ? Math.max(0,...measured.map(run=>metrics.descent!(run.style,run.text))) : Math.max(2,fontSize-ascent)
     let region = regions[index]
     let step = region.spacing ?? fontSize * (region.element.lineHeight ?? 1.2)
     const start = () => region.firstBaseline === undefined ? region.y + ascent : region.firstBaseline + Math.max(0, Math.ceil((region.y + ascent - region.firstBaseline) / step)) * step
     baseline ??= start()
-    while (baseline + Math.max(2, fontSize - ascent) > region.y + region.height) {
+    while (baseline + descent > region.y + region.height) {
       index++
       if (index >= regions.length) { index = regions.length - 1; issue('overflow', 'Text does not fit. Shorten the message, resize its box, or add a supported page.'); stopped = true; return false }
       region = regions[index]
@@ -70,8 +71,18 @@ function compose(story: RichTextStory, regions: Region[], values: ResolvedValues
     let x = region.x + (align === 'right' ? region.width - width : align === 'center' ? (region.width - width) / 2 : 0)
     for (const group of groups) {
       if (!metrics.supports(group.text, group.style)) issue('font', 'A font or character cannot be printed. Choose a printable font or replace the highlighted text.')
-      const run: PositionedRun = { ...group, x, baseline }
-      boxes[region.key].runs.push(run)
+      if (group.style.letterSpacing) {
+        let prefix = ''
+        const style = { ...group.style, letterSpacing: 0 }
+        for (const { segment } of new Intl.Segmenter(undefined, { granularity: 'grapheme' }).segment(group.text)) {
+          const offset = metrics.measure(prefix, group.style) + (prefix ? group.style.letterSpacing : 0)
+          boxes[region.key].runs.push({ text: segment, style, width: metrics.measure(segment, style), x: x + offset, baseline })
+          prefix += segment
+        }
+      } else {
+        const run: PositionedRun = { ...group, x, baseline }
+        boxes[region.key].runs.push(run)
+      }
       x += group.width
     }
     baseline += step
@@ -112,7 +123,8 @@ export function layoutDesignerDocument(input: DesignerDocument, values: Resolved
       const guided = element.writingMode === 'guided'
       const x = guided ? Math.max(element.x, paper?.left ?? 20) : element.x + 4
       const y = guided ? element.y : element.y + 4
-      const right = guided ? Math.min(element.x + element.width, paper?.right ?? size.width - 20) : element.x + element.width - 4
+      const addressBoundary = doc.formatId?.startsWith('postcard_') && doc.pageSettings[pageId].side === 'back' ? size.width * .45 : size.width
+      const right = guided ? Math.min(element.x + element.width, paper?.right ?? size.width - 20, addressBoundary) : element.x + element.width - 4
       const bottom = guided ? Math.min(element.y + element.height, paper?.bottom ?? size.height - 20) : element.y + element.height - 4
       regions.push({ key, pageId, element, x, y, width: Math.max(1, right - x), height: Math.max(1, bottom - y), firstBaseline: guided ? paper?.firstBaseline : undefined, spacing: guided ? paper?.lineSpacing : undefined })
     }

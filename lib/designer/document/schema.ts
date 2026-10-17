@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { MAIL_FORMAT_IDS } from '../../../components/designer/mail-spec'
 
 const finite = z.number().finite()
 const element = z.object({
@@ -25,7 +26,7 @@ const background = z.object({ color: z.string().optional(), image: z.object({ sr
 export const documentSchema = z.object({
   version: z.literal(2).optional(), designId: z.string().optional(),
   templateId: z.string(), templateName: z.string(), orientation: z.enum(['portrait', 'landscape']),
-  formatId: z.enum(['letter_8_5x11', 'postcard_4x6', 'postcard_6x9', 'postcard_6x11']).optional(),
+  formatId: z.enum(MAIL_FORMAT_IDS).optional(),
   pages: z.record(z.string().regex(/^(front|back|page-[a-zA-Z0-9-]+)$/), z.array(element)),
   backgrounds: z.record(background).optional(), updatedAt: z.string(),
   pageOrder: z.array(z.string().regex(/^(front|back|page-[a-zA-Z0-9-]+)$/)).max(100).optional(),

@@ -8,6 +8,20 @@ const metrics: FontMetrics = { measure: (text, style) => Array.from(text).length
 const text: TextDesignElement = { id: 't', type: 'text', name: 'Message', content: 'One two three four five', x: 100, y: 85, width: 150, height: 160, zIndex: 1, fontSize: 20, fontWeight: 'normal', writingMode: 'guided' }
 function doc(element=text) { return normalizeDesignerDocument({ templateId: 'paper', templateName: 'Paper', orientation: 'portrait', formatId: 'letter_8_5x11', pages: { front: [element], back: [] }, pageSettings: { front: { printIncluded: true, sheetIndex: 0, side: 'front', paper: 'yellow-notepad', regions: [] } }, updatedAt: 'now' }) }
 describe('positioned text layout', () => {
+  it('shares exact glyph positions for custom letter spacing',()=>{
+    const spaced={...metrics,measure:(value:string,style:{fontSize:number;letterSpacing?:number})=>value.length*style.fontSize/2+Math.max(0,value.length-1)*(style.letterSpacing ?? 0)}
+    const result=layoutDesignerDocument(doc({...text,content:'AB',writingMode:'free',letterSpacing:3}),{},spaced)
+    const runs=result.boxes['front:t'].runs
+    assert.equal(runs.length,2)
+    assert.equal(runs[1].x-runs[0].x,13)
+  })
+  it('keeps guided postcard-back text out of the address half',()=>{
+    const input=doc({...text,x:25,width:300,content:'Word '.repeat(15)})
+    input.formatId='postcard_4x6';input.pages.back=input.pages.front;input.pages.front=[]
+    input.pageSettings.back.printIncluded=true
+    const result=layoutDesignerDocument(input,{},metrics)
+    assert.ok(result.boxes['back:t'].runs.every(run=>run.x+run.width<=180))
+  })
   it('wraps guided text on the selected paper rules', () => {
     const layout=layoutDesignerDocument(doc(), {}, metrics)
     const runs=layout.boxes['front:t'].runs

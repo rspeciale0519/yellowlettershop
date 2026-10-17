@@ -6,10 +6,10 @@ export function paperGeometry(paper: PaperType, size: CanvasSize): PaperGeometry
   if (paper === 'plain') return null
   return { color: paper === 'yellow-notepad' ? '#fff5ad' : '#fffefb', lineColor: '#9db8d4', firstBaseline: 110, lineSpacing: 30, left: 100, right: size.width - 55, bottom: size.height - 60 }
 }
-export function guidedBox(element: TextDesignElement, paper: PaperType, size: CanvasSize): TextDesignElement {
+export function guidedBox(element: TextDesignElement, paper: PaperType, size: CanvasSize, reserveAddress = false): TextDesignElement {
   const profile = paperGeometry(paper, size)
   const left = profile?.left ?? 35
-  const right = profile?.right ?? size.width - 35
+  const right = Math.min(profile?.right ?? size.width - 35, reserveAddress ? size.width * .45 : size.width)
   const top = profile ? profile.firstBaseline - 24 : 35
   const bottom = profile?.bottom ?? size.height - 35
   const x = Math.min(Math.max(element.x, left), right - 80)

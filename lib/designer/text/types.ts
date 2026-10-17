@@ -2,7 +2,8 @@ import type { DesignerPage } from '../../../types/designer'
 import type { TextStyle } from '../../../types/designer-document'
 export interface FontMetrics {
   measure(text: string, style: TextStyle): number
-  ascent(style: TextStyle): number
+  ascent(style: TextStyle, text?: string): number
+  descent?(style: TextStyle, text?: string): number
   supports(text: string, style: TextStyle): boolean
 }
 export type ResolvedValues = Record<string, string>

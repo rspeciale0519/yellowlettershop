@@ -4,7 +4,7 @@ import QRCode from "qrcode"
 import { MAIL_FORMATS, canvasSizePx, DESIGN_PPI, type MailFormatId, type MailOrientation } from "@/components/designer/mail-spec"
 import { getPrintFontBinaries } from "@/lib/designer/text/server-fonts"
 import { createFontMetrics } from "@/lib/designer/text/font-metrics"
-import { printFontKey } from "@/lib/designer/text/font-manifest"
+import { printFontKey, PRINT_FONT_FEATURES } from "@/lib/designer/text/font-manifest"
 import { layoutDesignerDocument } from "@/lib/designer/text/layout"
 import { paperGeometry } from "@/lib/designer/text/paper"
 import type { BoxLayout, FontMetrics } from "@/lib/designer/text/types"
@@ -116,7 +116,7 @@ async function drawElement(
       } else draw(run.text, 0)
       if (run.style.underline) {
         const start = anchor(geom.bleedPt + run.x * PX_TO_PT, geom.mediaH - geom.bleedPt - (run.baseline + 2) * PX_TO_PT)
-        const end = anchor(geom.bleedPt + (run.x + run.width) * PX_TO_PT, start.y)
+        const end = anchor(geom.bleedPt + (run.x + run.width) * PX_TO_PT, geom.mediaH - geom.bleedPt - (run.baseline + 2) * PX_TO_PT)
         page.drawLine({ start, end, thickness: .6, color: col(run.style.color ?? "#111827"), opacity })
       }
     }
@@ -165,7 +165,7 @@ async function drawElement(
         const cell = substitute(element.cells[r]?.[c] ?? "", ctx)
         if (cell) {
           const tp = anchor(cx + 3, cy + ch / 2 - 4)
-          page.drawText(cell, { x: tp.x, y: tp.y, size: 8, font: fonts.sans, color: rgb(0.06, 0.06, 0.06), maxWidth: cw - 6, opacity, ...rot })
+          page.drawText(cell, { x: tp.x, y: tp.y, size: 8, font: fonts['sans-regular'], color: rgb(0.06, 0.06, 0.06), maxWidth: cw - 6, opacity, ...rot })
         }
       }
     }
@@ -214,10 +214,13 @@ export async function renderDesignToPdf(
   pdf.registerFontkit(fontkit)
   const binaries = await getPrintFontBinaries()
   const metrics = createFontMetrics(binaries)
-  const fonts: FontSet = Object.fromEntries(await Promise.all(Object.entries(binaries).map(async ([key, bytes]) => [key, await pdf.embedFont(bytes, { subset: true })])))
   const layout = layoutDesignerDocument({ ...doc, formatId, orientation }, ctx.values, metrics)
   const fontIssue = layout.issues.find(issue => issue.rule === "font")
   if (fontIssue) throw new Error(fontIssue.message)
+  const usedFonts=new Set(Object.values(layout.boxes).flatMap(box=>box.runs.map(run=>printFontKey(run.style))))
+  if(getPrintedPages(doc).some(page=>page.elements.some(element=>element.type==='table' && !element.hidden))) usedFonts.add('sans-regular')
+  // fontkit's Caveat subset omits composite outlines; retain its full small font.
+  const fonts: FontSet = Object.fromEntries(await Promise.all([...usedFonts].map(async key => [key, await pdf.embedFont(binaries[key], { subset: !key.startsWith('handwriting-'), features: PRINT_FONT_FEATURES })])))
 
   for (const designPage of getPrintedPages(doc)) {
     const pageName = designPage.id

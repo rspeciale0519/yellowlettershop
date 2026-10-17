@@ -1,6 +1,7 @@
 "use client"
 
-import { AlertTriangle, Layers, PackagePlus, PaintBucket, SlidersHorizontal } from "lucide-react"
+import { AlertTriangle, UserRound, Layers, PackagePlus, PaintBucket, SlidersHorizontal } from "lucide-react"
+import { PersonalizationControls } from "@/components/designer/writing/personalization-controls"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { designerBorder, designerSurface } from "@/components/designer/ui/designer-tokens"
@@ -47,9 +48,10 @@ interface DesignerWorkspaceSidebarProps {
 }
 
 const panelOptions: { id: WorkspacePanel; label: string; icon: typeof PackagePlus }[] = [
-  { id: "modules", label: "Modules", icon: PackagePlus },
+  { id: "modules", label: "Add", icon: PackagePlus },
+  { id: "personalize", label: "Personalize", icon: UserRound },
   { id: "layers", label: "Layers", icon: Layers },
-  { id: "inspector", label: "Inspector", icon: SlidersHorizontal },
+  { id: "inspector", label: "Edit", icon: SlidersHorizontal },
   { id: "background", label: "Background", icon: PaintBucket },
   { id: "preflight", label: "Check", icon: AlertTriangle },
 ]
@@ -80,6 +82,7 @@ export function DesignerWorkspaceSidebar(props: DesignerWorkspaceSidebarProps) {
         })}
       </div>
       <div className={cn("min-h-0 min-w-0 flex-1 overflow-y-auto border-r", designerBorder.base, designerSurface.panel)}>
+        {props.activePanel === "personalize" && <PersonalizationControls />}
         {props.activePanel === "modules" && (
           <ModulesPanel
             activeTool={props.activeTool}

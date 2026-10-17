@@ -43,7 +43,7 @@ export function useDesignerSave(args: UseDesignerSaveArgs) {
   const requestId = useRef(0)
   const controller = useRef<ReturnType<typeof createDesignerSaveController> | null>(null)
   if (!controller.current) controller.current = createDesignerSaveController({
-    getCurrent: () => ({ document: latest.current.document, context: latest.current.context }),
+    getCurrent: () => ({ document: latest.current.document, context: latest.current.context, active: latest.current.enabled }),
     storage: {
       getItem: key => latest.current.storage?.getItem(key) ?? null,
       setItem: (key, value) => { if (!latest.current.storage) throw new Error('Local storage unavailable'); latest.current.storage.setItem(key, value) },

@@ -27,7 +27,7 @@ test('review waits for matching proof and shows the authoritative side fee and q
     await route.fulfill({ json: { proofUrl: '/test-proof.pdf', quoteRevision: quote.quoteRevision } })
   })
   await page.goto('/orders/new?orderId=quote-test')
-  await expect(page.getByText('250 validated pieces', { exact: false })).toBeVisible()
+  await expect(page.getByText('250 validated pieces · 2 printed sides per piece', { exact: true })).toBeVisible()
   await expect(page.getByText('Additional printed sides ($0.10 × extra sides × pieces)', { exact: true })).toBeVisible()
   await expect(page.getByText('$25.00', { exact: true })).toBeVisible()
   await expect(page.getByRole('checkbox', { name: /I approve this design/ })).toBeDisabled()

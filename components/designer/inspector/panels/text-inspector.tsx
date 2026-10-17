@@ -25,15 +25,17 @@ export function TextInspector({
   const isBold = element.fontWeight === "bold" || (typeof element.fontWeight === "number" && element.fontWeight >= 600)
   return (
     <>
-      <InspectorSection title="Typography" icon={Type}>
+      <InspectorSection title="Your message" icon={Type}>
         <div className="space-y-1">
           <Label className={labelClass}>Text</Label>
-          <MessageEditor element={element} onUpdate={onUpdate} />
+          <MessageEditor key={element.id} element={element} onUpdate={onUpdate} />
           <label className="flex items-start gap-2 pt-2 text-sm">
             <input type="checkbox" aria-label="Guided writing" checked={element.writingMode === "guided"} disabled={element.locked || Boolean(element.continuesFrom)} onChange={event => onUpdate({writingMode:event.target.checked ? "guided" : "free"})}/>
             <span>Guided writing<span className="block text-xs text-muted-foreground">Wrap within the template and align to paper lines.</span></span>
           </label>
         </div>
+      </InspectorSection>
+      <InspectorSection title="Font and appearance" icon={Type} defaultOpen={false}>
         <SelectField
           label="Font"
           value={element.fontFamily ?? "arial"}
@@ -78,7 +80,7 @@ export function TextInspector({
           onChange={(v) => onUpdate({ textDecoration: v as "none" | "underline" })}
         />
       </InspectorSection>
-      <InspectorSection title="Alignment & Spacing" icon={AlignCenter}>
+      <InspectorSection title="Alignment and spacing" icon={AlignCenter} defaultOpen={false}>
         <ToggleGroupField
           label="Align"
           value={element.textAlign ?? "left"}
