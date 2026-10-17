@@ -3,6 +3,7 @@ import type { Webhook, WebhookDelivery } from '@/types/supabase'
 import { backoffDelayMs, shouldRetry } from '@/lib/webhooks/retry'
 import { isSafeOutboundUrl } from '@/lib/security/safe-fetch-url'
 import { safeFetch } from '@/lib/security/safe-fetch'
+import { signYlsWebhook } from '@/lib/security/webhook-crypto'
 
 // Inline retry attempts are capped low so we don't hold the triggering
 // request open; exhausted deliveries land in webhook_dead_letters for replay.
@@ -218,25 +219,18 @@ async function sendWebhook(
     timestamp: new Date().toISOString()
   })
 
-  // Create signature if secret is provided
-  let signature: string | undefined
-  if (webhook.secret) {
-    const crypto = await import('crypto')
-    signature = 'sha256=' + crypto
-      .createHmac('sha256', webhook.secret)
-      .update(payload, 'utf8')
-      .digest('hex')
-  }
+  const unixSeconds = String(Math.floor(Date.now() / 1000))
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'User-Agent': 'YLS-Webhooks/1.0',
     'X-YLS-Event-Type': eventType,
-    'X-YLS-Delivery': crypto.randomUUID()
+    'X-YLS-Delivery': crypto.randomUUID(),
+    'X-YLS-Timestamp': unixSeconds,
   }
 
-  if (signature) {
-    headers['X-YLS-Signature'] = signature
+  if (webhook.secret) {
+    headers['X-YLS-Signature'] = signYlsWebhook(webhook.secret, unixSeconds, payload)
   }
 
   let status = 0

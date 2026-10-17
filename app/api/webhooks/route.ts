@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
-import { requireWebhookTimestamp, verifyHmacSha256Hex } from '@/lib/security/webhook-crypto'
+import {
+  requireWebhookTimestamp,
+  verifyHmacSha256Hex,
+  webhookSignedPayload,
+} from '@/lib/security/webhook-crypto'
 
 // Use Node.js runtime for crypto operations
 export const runtime = 'nodejs';
@@ -21,8 +25,13 @@ interface WebhookEvent {
 // Webhook Signature Verification
 // =================================================================================
 
-function verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
-  return verifyHmacSha256Hex(secret, payload, signature)
+function verifyWebhookSignature(
+  payload: string,
+  signature: string,
+  secret: string,
+  timestamp: string
+): boolean {
+  return verifyHmacSha256Hex(secret, webhookSignedPayload(timestamp, payload), signature)
 }
 
 // =================================================================================
@@ -150,18 +159,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify webhook signature
-    if (!verifyWebhookSignature(payload, signature, webhookSecret)) {
+    const timestamp = headersList.get('x-yls-timestamp')
+    const freshness = requireWebhookTimestamp(timestamp)
+    if (!freshness.ok) {
+      return NextResponse.json({ error: freshness.error }, { status: freshness.status })
+    }
+    if (!verifyWebhookSignature(payload, signature, webhookSecret, timestamp as string)) {
       console.error('Invalid webhook signature')
       return NextResponse.json(
         { error: 'Invalid signature' },
         { status: 401 }
       )
-    }
-    const timestamp = headersList.get('x-yls-timestamp')
-    const freshness = requireWebhookTimestamp(timestamp)
-    if (!freshness.ok) {
-      return NextResponse.json({ error: freshness.error }, { status: freshness.status })
     }
 
     const data = JSON.parse(payload)

@@ -8,14 +8,25 @@ export type SupabaseConnectOrigins = {
   wss: string
 }
 
+const UNSAFE_CSP_ORIGIN = /[;\s,'"]/
+
+function isSafeCspOrigin(origin: string): boolean {
+  if (!origin || origin === 'null') return false
+  return !UNSAFE_CSP_ORIGIN.test(origin)
+}
+
 export function supabaseConnectOrigins(
   supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 ): SupabaseConnectOrigins | null {
   if (!supabaseUrl) return null
   try {
     const url = new URL(supabaseUrl)
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null
+    if (!isSafeCspOrigin(url.origin)) return null
     const wsProtocol = url.protocol === 'https:' ? 'wss:' : 'ws:'
-    return { https: url.origin, wss: `${wsProtocol}//${url.host}` }
+    const wss = `${wsProtocol}//${url.host}`
+    if (!isSafeCspOrigin(wss)) return null
+    return { https: url.origin, wss }
   } catch {
     return null
   }
@@ -40,11 +51,13 @@ export function buildContentSecurityPolicy(
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' https://js.stripe.com",
     "style-src 'self' 'unsafe-inline'",
+    // img-src keeps https: for remote designer images (user assets, stock, proofs).
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
     `connect-src ${connectSrc.join(' ')}`,
     'worker-src blob:',
     'frame-src https://js.stripe.com https://hooks.stripe.com',
+    "frame-ancestors 'none'",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

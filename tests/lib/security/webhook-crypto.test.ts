@@ -4,8 +4,10 @@ import {
   hmacSha256Hex,
   isWebhookTimestampFresh,
   requireWebhookTimestamp,
+  signYlsWebhook,
   timingSafeEqualHex,
   verifyHmacSha256Hex,
+  verifyYlsWebhook,
 } from '../../../lib/security/webhook-crypto'
 
 describe('webhook crypto', () => {
@@ -38,5 +40,52 @@ describe('webhook crypto', () => {
 
     const fresh = requireWebhookTimestamp(String(now - 30), 300, now)
     assert.equal(fresh.ok, true)
+  })
+
+  it('accepts a timestamp-bound HMAC and rejects replay, stale, and missing timestamps', () => {
+    const now = 1_700_000_000
+    const body = '{"type":"campaign.created"}'
+    const capturedTs = String(now - 40)
+    const capturedSig = signYlsWebhook('secret', capturedTs, body)
+
+    const valid = verifyYlsWebhook({
+      timestamp: capturedTs,
+      body,
+      signature: capturedSig,
+      secret: 'secret',
+      nowSeconds: now,
+    })
+    assert.equal(valid.ok, true)
+
+    const swappedFresh = verifyYlsWebhook({
+      timestamp: String(now - 5),
+      body,
+      signature: capturedSig,
+      secret: 'secret',
+      nowSeconds: now,
+    })
+    assert.equal(swappedFresh.ok, false)
+    if (!swappedFresh.ok) assert.equal(swappedFresh.status, 401)
+
+    const staleTs = String(now - 301)
+    const stale = verifyYlsWebhook({
+      timestamp: staleTs,
+      body,
+      signature: signYlsWebhook('secret', staleTs, body),
+      secret: 'secret',
+      nowSeconds: now,
+    })
+    assert.equal(stale.ok, false)
+    if (!stale.ok) assert.match(stale.error, /missing or too old/)
+
+    const missing = verifyYlsWebhook({
+      timestamp: null,
+      body,
+      signature: capturedSig,
+      secret: 'secret',
+      nowSeconds: now,
+    })
+    assert.equal(missing.ok, false)
+    if (!missing.ok) assert.match(missing.error, /missing or too old/)
   })
 })

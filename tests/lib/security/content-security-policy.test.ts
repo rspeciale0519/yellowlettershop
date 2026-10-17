@@ -19,6 +19,11 @@ describe('content-security-policy', () => {
     })
   })
 
+  it('skips a %3B origin that would inject a CSP directive', () => {
+    assert.equal(supabaseConnectOrigins('https://ok.supabase.co%3Bscript-src'), null)
+    assert.equal(supabaseConnectOrigins('javascript:alert(1)'), null)
+  })
+
   it('drops unsafe-eval and https wildcards while keeping hydration unsafe-inline', () => {
     const csp = buildContentSecurityPolicy(SUPABASE)
     const directive = (name: string) =>
@@ -40,5 +45,6 @@ describe('content-security-policy', () => {
     assert.deepEqual(tokens('worker-src'), ['blob:'])
     assert.deepEqual(tokens('img-src'), ["'self'", 'data:', 'blob:', 'https:'])
     assert.deepEqual(tokens('font-src'), ["'self'", 'data:'])
+    assert.deepEqual(tokens('frame-ancestors'), ["'none'"])
   })
 })

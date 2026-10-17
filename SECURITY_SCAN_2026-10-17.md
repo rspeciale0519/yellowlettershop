@@ -107,7 +107,7 @@ Orders and estimates could show 1,000–11,000 fake records in production.
 
 - **Where:** `app/api/webhooks/route.ts:32-35` (pre-fix)
 - **Proof:** `timingSafeEqualHex` test rejects a truncated digest without throwing.
-- **Fix in this PR:** Yes. Length-safe compare. Optional `x-yls-timestamp` freshness if the caller sends it.
+- **Fix in this PR:** Yes. Length-safe compare. `x-yls-timestamp` is required, 300s window, bound into the HMAC (`${timestamp}.${body}`).
 
 **M4. Public team tags were editable by any logged-in user (app logic).**
 `canEdit` treated `visibility === 'public'` as enough. RLS would likely block the write; the API still returned success-shaped permission.
@@ -169,6 +169,7 @@ Owner should upgrade **Next.js** off 15.5.14. Advisories include unauthenticated
 5. Purge git history of the June 2026 leaked keys (already revoked).
 6. Expand edge middleware to all `/api/*` (would break signed webhooks unless you exclude them).
 7. Add policies to `mailing_list_versions` / `short_link_tracking` (that is a feature repair).
+8. Before prod: any external caller of `/api/webhooks` must send `X-YLS-Timestamp` and sign `${timestamp}.${body}`.
 
 ---
 
