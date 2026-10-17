@@ -37,7 +37,6 @@ describe('order quote state', () => {
   })
   it('preserves sibling design/contact/campaign fields during partial consolidated edits', () => {
     const state = orderFixture()
-    state.designAndContent = { design: state.design }
     const updated = applyOrderUpdate(state, { designAndContent: { contactCard: { contactCardId: 'new-card' } as NonNullable<OrderState['contactCard']> } })
     assert.equal(updated.design?.designId, 'saved')
     assert.equal(updated.designAndContent?.design?.designId, 'saved')

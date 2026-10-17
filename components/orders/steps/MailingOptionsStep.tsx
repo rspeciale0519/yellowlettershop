@@ -11,6 +11,7 @@ import { useOrderWorkflow } from '../OrderProvider'
 import { useOrderQuote } from '../quotes/use-order-quote'
 import { OrderQuoteSummary } from '../quotes/order-quote-summary'
 import { MailingFormatOptions } from './mailing/mailing-format-options'
+import { MailingServiceNotices } from './mailing/mailing-service-notices'
 import { MailingShippingAddress } from './mailing/mailing-shipping-address'
 
 const emptyAddress = { address_line_1: '', address_line_2: '', city: '', state: '', zip_code: '' }
@@ -44,6 +45,7 @@ export function MailingOptionsStep({ orderState }: OrderStepProps) {
     </CardContent></Card>}
     <OrderQuoteSummary pricing={quote.pricing} isLoading={quote.isLoading} error={quote.error} onRetry={quote.refresh} />
     {physical && <MailingShippingAddress address={shipping} contactAddress={contact?.contactCardData.address} onChange={address => update({ shippingAddress: address })} />}
+    <MailingServiceNotices service={base.serviceLevel} />
     {!canProceed && <Alert><AlertDescription>Complete the format, postage, and address fields for the selected service.</AlertDescription></Alert>}
     <div className="flex justify-between border-t pt-6"><Button variant="outline" onClick={previousStep}>Back</Button><Button onClick={nextStep} disabled={!canProceed}>Continue</Button></div>
   </div>

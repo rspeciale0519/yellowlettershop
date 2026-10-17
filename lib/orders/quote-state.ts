@@ -30,13 +30,13 @@ export function applyOrderUpdate(state: OrderState, updates: Partial<OrderState>
   if (expectedKey !== undefined && expectedKey !== orderQuoteKey(state)) return state
   const next = { ...state, ...updates, updatedAt: new Date() }
   if ('designAndContent' in updates) {
-    next.designAndContent = { ...state.designAndContent, ...updates.designAndContent }
+    next.designAndContent = { design: state.design, contactCard: state.contactCard, ...state.designAndContent, ...updates.designAndContent }
     next.design = next.designAndContent.design
     next.contactCard = next.designAndContent.contactCard
   } else if ('design' in updates || 'contactCard' in updates) next.designAndContent = { ...state.designAndContent, ...('design' in updates ? { design: updates.design } : {}), ...('contactCard' in updates ? { contactCard: updates.contactCard } : {}) }
   if ('mailingOptions' in updates || 'campaignOptions' in updates) next.campaignSettings = { ...state.campaignSettings, ...('mailingOptions' in updates ? { mailingOptions: updates.mailingOptions } : {}), ...('campaignOptions' in updates ? { campaignOptions: updates.campaignOptions } : {}) }
   else if ('campaignSettings' in updates) {
-    next.campaignSettings = { ...state.campaignSettings, ...updates.campaignSettings }
+    next.campaignSettings = { mailingOptions: state.mailingOptions, campaignOptions: state.campaignOptions, ...state.campaignSettings, ...updates.campaignSettings }
     next.mailingOptions = next.campaignSettings.mailingOptions
     next.campaignOptions = next.campaignSettings.campaignOptions
   }

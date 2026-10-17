@@ -8,7 +8,7 @@ import { isFinalOrderQuote } from '../../../lib/orders/quote-state'
 const money = (value: number) => value.toLocaleString('en-US', { style: 'currency', currency: 'USD' })
 export function OrderQuoteSummary({ pricing, isLoading, error, onRetry }: { pricing?: PricingBreakdown; isLoading: boolean; error?: string | null; onRetry?: () => void }) {
   return <Card aria-live="polite" aria-busy={isLoading}>
-    <CardHeader><CardTitle>{isFinalOrderQuote(pricing) ? 'Final server quote' : 'Provisional estimate'}</CardTitle></CardHeader>
+    <CardHeader><CardTitle><h3>{isFinalOrderQuote(pricing) ? 'Final server quote' : 'Provisional estimate'}</h3></CardTitle></CardHeader>
     <CardContent className="space-y-3">
       {isLoading ? <p role="status">Updating quote…</p> : error ? <Alert variant="destructive"><AlertDescription>{error}</AlertDescription></Alert> : pricing ? <>
         <p>{pricing.validatedQuantity ?? 0} {isFinalOrderQuote(pricing) ? 'validated pieces' : 'estimated pieces'}{pricing.printedSideCount !== undefined ? ` · ${pricing.printedSideCount} printed sides per piece` : ''}</p>
