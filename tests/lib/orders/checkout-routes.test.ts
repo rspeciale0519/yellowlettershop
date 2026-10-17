@@ -113,4 +113,14 @@ describe('checkout server quote integration', () => {
     assert.equal(stale.status, 409)
   })
 
+  it('rejects payment when larger postcard pricing has not been configured', async () => {
+    const doc = artwork(true); doc.formatId = 'postcard_6x9'
+    runtime.db = quoteDatabase(doc).db
+    const state = { ...runtime.state, mailingOptions: { ...runtime.state.mailingOptions, mailPieceFormat: 'postcard_6x9' } }
+    const response = await post(intentRoute, { orderState: state })
+    assert.equal(response.status, 422)
+    assert.match((await response.json()).error, /Pricing not configured for postcard_6x9/)
+    assert.deepEqual(runtime.created, {})
+  })
+
 })

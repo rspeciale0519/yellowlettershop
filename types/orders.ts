@@ -1,4 +1,5 @@
 // Order workflow type definitions
+import type { MailPieceFormat } from '@/lib/orders/mail-formats'
 import { ColumnMappingData } from '@/components/shared/column-mapping'
 
 export interface ListDataSelection {
@@ -97,7 +98,7 @@ export interface MailingOptionsConfig {
   serviceLevel: 'full_service' | 'ship_processed' | 'print_only'
   postageType?: 'first_class_forever' | 'first_class_discounted' | 'standard'
   includePostage: boolean
-  mailPieceFormat?: 'postcard_4x6' | 'postcard_5x7' | 'letter_8_5x11' | 'letter_folded'
+  mailPieceFormat?: MailPieceFormat
   paperStock?: 'standard_14pt' | 'premium_16pt' | 'luxury_18pt'
   finish?: 'matte' | 'gloss' | 'uv_coating'
   shippingAddress?: {

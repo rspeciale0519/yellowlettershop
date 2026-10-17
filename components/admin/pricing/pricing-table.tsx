@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
@@ -26,10 +25,8 @@ function formatPrice(item: PricingConfig): string {
   }
   if (item.unitAmount === null || item.unitAmount === undefined) return '—';
 
-  // Mail pieces use raw units (÷1000), add-ons/design use cents (÷100)
-  const isMail = ['mail_piece', 'paper_stock', 'finish', 'postage', 'shipping'].includes(item.category);
-  const dollars = isMail ? item.unitAmount / 1000 : item.unitAmount / 100;
-  return `$${dollars.toFixed(isMail ? 3 : 2)}`;
+  // All configured unit amounts use cents, matching the checkout engine.
+  return `$${(item.unitAmount / 100).toFixed(2)}`;
 }
 
 export function PricingTable({ items, onEdit, onToggleActive, onViewHistory }: PricingTableProps) {

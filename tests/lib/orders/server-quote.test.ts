@@ -75,6 +75,8 @@ describe('authoritative server quote', () => {
     assert.equal(before.amountCents, after.amountCents)
     assert.notEqual(before.pricing.quoteRevision, after.pricing.quoteRevision)
     assert.notEqual(before.pricing.quoteRevision, options.pricing.quoteRevision)
+    const legacyCampaign = await loadOrderQuote(database().db, 'owner', { ...state, campaignOptions: { isRepeating: true, repeatConfig: { repetitions: 2 } } }, DEFAULT_PRICING)
+    assert.notEqual(before.pricing.quoteRevision, legacyCampaign.pricing.quoteRevision)
   })
 
 })

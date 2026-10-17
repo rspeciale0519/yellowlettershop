@@ -5,7 +5,7 @@ import { normalizeDesignerDocument } from '../designer/document/normalize'
 import { documentRevision } from '../designer/content-revision'
 import { getProductPrintPolicy } from './additional-side-pricing'
 import { asRecord, getMailingOptions, resolveOrderQuoteInputs } from './quote-inputs'
-import { calculatePricing, type PricingConfig } from './pricing'
+import { calculatePricing, PricingNotConfiguredError, type PricingConfig } from './pricing'
 import { toPricingBreakdown } from './pricing-breakdown'
 
 export class QuoteError extends Error {
@@ -54,13 +54,18 @@ export async function loadOrderQuote(db: SupabaseClient, userId: string, state: 
   if (recipients.length !== validation.data.deliverable_count) throw new QuoteError('Validation count does not match its recipient snapshot')
   const policy = getProductPrintPolicy(design.formatId!)
   const inputs = resolveOrderQuoteInputs({ ...state, validatedQuantity: recipients.length }, design, policy)
-  const result = calculatePricing(inputs.mailingOptions, inputs.quantity, config, inputs)
+  let result: ReturnType<typeof calculatePricing>
+  try { result = calculatePricing(inputs.mailingOptions, inputs.quantity, config, inputs) }
+  catch (error) {
+    if (error instanceof PricingNotConfiguredError) throw new QuoteError(error.message, 422)
+    throw error
+  }
   const designRevision = await documentRevision(design)
   for (const candidate of [asRecord(asRecord(state.designAndContent).design), asRecord(state.design)]) {
     if ((candidate.designRevision && candidate.designRevision !== designRevision) || (candidate.designJson && await documentRevision(candidate.designJson) !== designRevision)) throw new QuoteError('The design has changed. Save the current artwork before quoting.', 409)
   }
   const contactCard = asRecord(state.designAndContent).contactCard ?? state.contactCard ?? null
-  const campaign = { ...asRecord(state.campaignSettings), mailingOptions: inputs.mailingOptions, campaignConfig: state.campaignConfig ?? asRecord(state.campaignSettings).campaignConfig }
+  const campaign = { ...asRecord(state.campaignSettings), mailingOptions: inputs.mailingOptions, campaignOptions: asRecord(state.campaignSettings).campaignOptions ?? state.campaignOptions, campaignConfig: state.campaignConfig ?? asRecord(state.campaignSettings).campaignConfig }
   const quoteRevision = createHash('sha256').update(canonical({ designId, designRevision, jobId, recipients, mailingOptions: inputs.mailingOptions, contactCard, campaign, config, policy, amount: result.total })).digest('hex')
   const pricing = { ...toPricingBreakdown(result), quoteStatus: 'final' as const, quoteRevision, designRevision, additionalPrintedSides: inputs.additionalPrintedSides }
   const designSelection = { ...asRecord(asRecord(state.designAndContent).design ?? state.design), designId, designRevision, designJson: design }

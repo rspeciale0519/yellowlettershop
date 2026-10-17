@@ -124,7 +124,7 @@ export function PricingForm({ open, onClose, onSave, existing, defaultCategory }
 
             {!showTierEditor && (
               <div className="space-y-2">
-                <Label>Unit Amount (raw units)</Label>
+                <Label>Unit Amount (cents)</Label>
                 <Input type="number" value={unitAmount} onChange={(e) => setUnitAmount(e.target.value)} placeholder="0" />
               </div>
             )}

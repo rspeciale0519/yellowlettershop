@@ -6,7 +6,7 @@ import { DEFAULT_PRICING } from '../../lib/orders/pricing'
 import { artwork, quoteDatabase, quoteState } from './quote-fixtures'
 
 export const runtime = {
-  db: quoteDatabase().db, state: quoteState,
+  config: DEFAULT_PRICING, db: quoteDatabase().db, state: quoteState,
   intent: { id: 'pi_test', amount: 1, status: 'requires_capture', currency: 'usd', capture_method: 'manual', metadata: { user_id: 'owner' } as Record<string, string>, customer: 'cus_test', client_secret: 'secret' },
   rendered: {} as Record<string, unknown>,
   created: {} as Record<string, unknown>, confirmed: 0, attached: 0, inserted: {} as Record<string, unknown>,
@@ -22,6 +22,7 @@ class FakeStripe {
   }
 }
 export function resetRuntime() {
+  runtime.config = DEFAULT_PRICING
   runtime.db = quoteDatabase(artwork(true)).db
   runtime.state = quoteState
   runtime.rendered = {}; runtime.created = {}; runtime.confirmed = 0; runtime.attached = 0; runtime.inserted = {}
@@ -44,7 +45,7 @@ export function loadRoute(path: string) {
   const mocks: Record<string, unknown> = {
     '../../lib/auth/middleware': { withAuth: (handler: unknown) => handler },
     '../../utils/supabase/service': { createClient: () => runtime.db },
-    '../../lib/orders/pricing-config': { loadPricingConfig: async () => DEFAULT_PRICING },
+    '../../lib/orders/pricing-config': { loadPricingConfig: async () => runtime.config },
     '../../lib/orders/generate-proof': { generateProofForOrder: async () => ({ ok: true }), getUserEmail: async () => 'test@example.test' },
     '../../lib/email': { trySendEmail: async () => undefined },
     '../../lib/orders/render-proof': { renderOrderStatePdf: async (state: Record<string, unknown>) => { runtime.rendered = state; return { bytes: new Uint8Array([37,80,68,70]), formatId: 'letter_8_5x11' } } },

@@ -1,3 +1,5 @@
+import type { MailPieceFormat } from './mail-formats'
+export type { MailPieceFormat } from './mail-formats'
 import { getAdditionalSideChargeCents } from './additional-side-pricing'
 
 // Pricing. ALL rate values — these defaults and pricing_config.unit_amount —
@@ -9,13 +11,12 @@ import { getAdditionalSideChargeCents } from './additional-side-pricing'
 // Admins override these defaults via the pricing_config table
 // (lib/orders/pricing-config.ts), loaded by the pricing API routes.
 
-export type MailPieceFormat = 'postcard_4x6' | 'postcard_5x7' | 'letter_8_5x11' | 'letter_folded'
 export type PaperStock = 'standard_14pt' | 'premium_16pt' | 'luxury_18pt'
 export type Finish = 'matte' | 'gloss' | 'uv_coating'
 export type PostageType = 'first_class_forever' | 'first_class_discounted' | 'standard'
 
 export interface PricingConfig {
-  printing: Record<MailPieceFormat, number>
+  printing: Record<Exclude<MailPieceFormat, 'postcard_6x9' | 'postcard_6x11'>, number> & Partial<Record<MailPieceFormat, number>>
   paperStock: Record<PaperStock, number>
   finish: Record<Finish, number>
   postage: Record<PostageType, number>
@@ -91,6 +92,8 @@ export type PricingResult = {
   }
 }
 
+export class PricingNotConfiguredError extends Error {}
+
 const UNIT = 100 // cents → dollars divisor
 const DISC = 100 // discount cents → dollars divisor
 
@@ -101,6 +104,9 @@ export function calculatePricing(
   sides?: { printedSideCount: number; includedPrintedSides: number }
 ): PricingResult {
   if (!Number.isSafeInteger(recordCount) || recordCount < 1) throw new Error('Record count must be a positive safe integer')
+  const format = opts.mailPieceFormat ?? 'postcard_4x6'
+  const formatCost = config.printing[format]
+  if (typeof formatCost !== 'number' || !Number.isSafeInteger(formatCost) || formatCost < 0) throw new PricingNotConfiguredError(`Pricing not configured for ${format}. Ask an administrator to configure its mail-piece rate in cents before checkout.`)
   const additionalSideChargeCents = sides ? getAdditionalSideChargeCents(sides.printedSideCount, sides.includedPrintedSides, recordCount) : 0
   let printingUnits = 0
   let postageUnits = 0
@@ -108,7 +114,6 @@ export function calculatePricing(
   let discountUnits = 0
 
   if (opts.serviceLevel !== 'print_only') {
-    const formatCost = config.printing[opts.mailPieceFormat ?? 'postcard_4x6']
     const paperCost = config.paperStock[opts.paperStock ?? 'standard_14pt']
     const finishCost = config.finish[opts.finish ?? 'matte']
     printingUnits = (formatCost + paperCost + finishCost) * recordCount
@@ -159,7 +164,7 @@ export function calculatePricing(
     breakdown: {
       printingDetails: {
         baseFormat: opts.mailPieceFormat,
-        baseCost: config.printing[opts.mailPieceFormat ?? 'postcard_4x6'] / UNIT,
+        baseCost: formatCost / UNIT,
         paperUpcharge: config.paperStock[opts.paperStock ?? 'standard_14pt'] / UNIT,
         finishUpcharge: config.finish[opts.finish ?? 'matte'] / UNIT,
       },

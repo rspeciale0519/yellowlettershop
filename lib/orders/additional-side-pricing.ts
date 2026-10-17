@@ -1,10 +1,11 @@
+import { MAIL_PIECE_FORMATS, type MailPieceFormat } from './mail-formats'
 export interface ProductPrintPolicy {
   includedPrintedSides: number
   allowAdditionalPages: boolean
   additionalPrintedSideCents: 10
 }
 export function getProductPrintPolicy(format: string): ProductPrintPolicy {
-  if (!['postcard_4x6', 'postcard_5x7', 'letter_8_5x11', 'letter_folded'].includes(format)) throw new Error('Unsupported print format')
+  if (!MAIL_PIECE_FORMATS.includes(format as MailPieceFormat)) throw new Error('Unsupported print format')
   const postcard = format.startsWith('postcard_')
   return { includedPrintedSides: postcard ? 2 : 1, allowAdditionalPages: !postcard, additionalPrintedSideCents: 10 }
 }

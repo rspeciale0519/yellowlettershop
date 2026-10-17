@@ -1,11 +1,12 @@
 import { z } from 'zod'
+import { MAIL_PIECE_FORMATS } from './mail-formats'
 import type { DesignerDocumentV2 } from '../../types/designer-document'
 import { getPrintedPages } from '../designer/document/pages'
 import { getAdditionalSideChargeCents, type ProductPrintPolicy } from './additional-side-pricing'
 
 export const mailingOptionsSchema = z.object({
   serviceLevel: z.enum(['full_service', 'ship_processed', 'print_only']),
-  mailPieceFormat: z.enum(['postcard_4x6', 'postcard_5x7', 'letter_8_5x11', 'letter_folded']).optional(),
+  mailPieceFormat: z.enum(MAIL_PIECE_FORMATS).optional(),
   paperStock: z.enum(['standard_14pt', 'premium_16pt', 'luxury_18pt']).optional(),
   finish: z.enum(['matte', 'gloss', 'uv_coating']).optional(),
   postageType: z.enum(['first_class_forever', 'first_class_discounted', 'standard']).optional(),
