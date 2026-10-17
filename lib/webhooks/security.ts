@@ -36,30 +36,22 @@ export function validateWebhookSecurity(
       return { valid: false, error: 'Missing signature header' }
     }
 
-    const expectedSignature = generateWebhookSignature(payload, config.secret)
+    const rawTimestamp = headers.get(config.timestampHeader ?? 'x-yls-timestamp')
+    if (!rawTimestamp || !/^\d+$/.test(rawTimestamp)) return { valid: false, error: 'Missing or invalid timestamp header' }
+    const seconds = Number(rawTimestamp)
+    const now = Math.floor(Date.now() / 1000)
+    const maxAge = Math.min(config.maxAge ?? 300, 300)
+    if (!Number.isSafeInteger(seconds) || seconds <= 0 || seconds > now || !Number.isFinite(maxAge) || maxAge < 0) {
+      return { valid: false, error: 'Invalid webhook timestamp' }
+    }
+    if (now - seconds > maxAge) return { valid: false, error: 'Webhook timestamp too old' }
+
+    const expectedSignature = generateWebhookSignature(payload, config.secret, rawTimestamp)
     if (!timingSafeEqual(signature, expectedSignature)) {
       return { valid: false, error: 'Invalid signature' }
     }
 
-    // 2. Validate timestamp if provided (prevent replay attacks)
-    if (config.timestampHeader) {
-      const timestampHeader = headers.get(config.timestampHeader)
-      if (!timestampHeader) {
-        return { valid: false, error: 'Missing timestamp header' }
-      }
-
-      const timestamp = new Date(parseInt(timestampHeader) * 1000)
-      const now = new Date()
-      const maxAge = (config.maxAge || 300) * 1000 // 5 minutes default
-
-      if (now.getTime() - timestamp.getTime() > maxAge) {
-        return { valid: false, error: 'Webhook timestamp too old' }
-      }
-
-      return { valid: true, timestamp }
-    }
-
-    return { valid: true }
+    return { valid: true, timestamp: new Date(seconds * 1000) }
   } catch (error) {
     return { 
       valid: false, 
@@ -95,11 +87,11 @@ export function validateWebhookIp(
 export function generateWebhookSignature(
   payload: string,
   secret: string,
-  prefix: string = 'sha256='
+  timestamp: string
 ): string {
   const hmac = crypto.createHmac('sha256', secret)
-  hmac.update(payload, 'utf8')
-  return prefix + hmac.digest('hex')
+  hmac.update(`${timestamp}.${payload}`, 'utf8')
+  return 'sha256=' + hmac.digest('hex')
 }
 
 /**

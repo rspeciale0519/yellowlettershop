@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { headers } from 'next/headers'
-import crypto from 'crypto'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { validateWebhookSecurity } from '@/lib/webhooks/security'
+import { createServiceClient } from '@/utils/supabase/service'
 
 // Use Node.js runtime for crypto operations
 export const runtime = 'nodejs';
@@ -20,20 +19,6 @@ interface WebhookEvent {
 // =================================================================================
 // Webhook Signature Verification
 // =================================================================================
-
-function verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
-  const expectedSignature = crypto
-    .createHmac('sha256', secret)
-    .update(payload, 'utf8')
-    .digest('hex')
-  
-  const providedSignature = signature.replace('sha256=', '')
-  
-  return crypto.timingSafeEqual(
-    Buffer.from(expectedSignature, 'hex'),
-    Buffer.from(providedSignature, 'hex')
-  )
-}
 
 // =================================================================================
 // Webhook Handlers
@@ -138,7 +123,7 @@ async function handleRecordsImported(data: any, supabase: any) {
 
 export async function POST(request: NextRequest) {
   try {
-    const headersList = await headers()
+    const headersList = request.headers
     const signature = headersList.get('x-yls-signature')
     const eventType = headersList.get('x-yls-event-type')
     
@@ -161,7 +146,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify webhook signature
-    if (!verifyWebhookSignature(payload, signature, webhookSecret)) {
+    if (!validateWebhookSecurity(payload, headersList, {
+      secret: webhookSecret, signatureHeader: 'x-yls-signature', timestampHeader: 'x-yls-timestamp',
+    }).valid) {
       console.error('Invalid webhook signature')
       return NextResponse.json(
         { error: 'Invalid signature' },
@@ -169,8 +156,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const data = JSON.parse(payload)
-    const supabase = createSupabaseServerClient()
+    const event = JSON.parse(payload)
+    if (event.type !== eventType) return NextResponse.json({ error: 'Event type mismatch' }, { status: 400 })
+    const data = event.data
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return NextResponse.json({ error: 'Invalid event data' }, { status: 400 })
+    // A verified server-to-server HMAC is the authentication boundary here.
+    // A cookie client has no session and cannot perform trusted RLS writes.
+    const supabase = createServiceClient()
 
     let result: { success: boolean; message: string }
 

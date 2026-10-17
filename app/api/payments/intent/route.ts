@@ -3,65 +3,22 @@ import { z } from 'zod'
 import { withAuth } from '@/lib/auth/middleware'
 import { createClient } from '@/utils/supabase/service'
 import Stripe from 'stripe'
+import { loadPricingConfig } from '@/lib/orders/pricing-config'
+import { loadOrderQuote, QuoteError } from '@/lib/orders/server-quote'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2025-08-27.basil'
 })
 
-const PaymentIntentSchema = z.object({
-  orderState: z.object({
-    accuzipValidation: z.object({
-      deliverableRecords: z.number()
-    }).optional(),
-    mailingOptions: z.object({
-      serviceLevel: z.string(),
-      mailPieceFormat: z.string().optional(),
-      paperStock: z.string().optional(),
-      finish: z.string().optional(),
-      postageType: z.string().optional(),
-      includePostage: z.boolean().optional()
-    }).optional()
-  }),
-  amount: z.number().optional()
-})
+const PaymentIntentSchema = z.object({ orderState: z.record(z.unknown()) })
 
 export const POST = withAuth(async (req: NextRequest, { userId }) => {
   try {
-    const body = await req.json()
-    const { orderState, amount } = PaymentIntentSchema.parse(body)
-    
+    const { orderState } = PaymentIntentSchema.parse(await req.json())
     const supabase = createClient()
-    
-    // Calculate total amount if not provided
-    let totalAmount = amount
-    
-    if (!totalAmount && orderState.mailingOptions && orderState.accuzipValidation) {
-      // Call pricing calculation
-      const pricingResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/orders/calculate-pricing`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': req.headers.get('Authorization') || ''
-        },
-        body: JSON.stringify({
-          mailingOptions: orderState.mailingOptions,
-          recordCount: orderState.accuzipValidation.deliverableRecords
-        })
-      })
-      
-      if (pricingResponse.ok) {
-        const pricing = await pricingResponse.json()
-        totalAmount = pricing.total
-      }
-    }
-    
-    if (!totalAmount || totalAmount <= 0) {
-      return NextResponse.json(
-        { error: 'Invalid order amount' },
-        { status: 400 }
-      )
-    }
-    
+    const quote = await loadOrderQuote(supabase, userId, orderState, await loadPricingConfig(supabase))
+    const totalAmount = quote.result.total
+
     // Get or create Stripe customer
     const { data: userProfile } = await supabase
       .from('user_profiles')
@@ -90,7 +47,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
     
     // Create payment intent with manual capture
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(totalAmount * 100), // Convert to cents
+      amount: quote.amountCents,
       currency: 'usd',
       customer: customerId,
       capture_method: 'manual', // This is key for authorization-only
@@ -98,10 +55,12 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
       metadata: {
         user_id: userId,
         order_type: 'direct_mail',
-        service_level: orderState.mailingOptions?.serviceLevel || 'unknown',
-        record_count: orderState.accuzipValidation?.deliverableRecords?.toString() || '0'
+        service_level: quote.snapshot.mailingOptions.serviceLevel,
+        record_count: quote.result.recordCount.toString(),
+        quote_revision: quote.pricing.quoteRevision,
+        design_revision: quote.pricing.designRevision
       },
-      description: `Direct Mail Order - ${orderState.mailingOptions?.serviceLevel?.replace('_', ' ')} service`
+      description: `Direct Mail Order - ${quote.snapshot.mailingOptions.serviceLevel.replace('_', ' ')} service`
     })
     
     // Inline-payment model: the PaymentIntent's authoritative state lives in
@@ -114,10 +73,13 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
       paymentIntentId: paymentIntent.id,
       clientSecret: paymentIntent.client_secret,
       amount: totalAmount,
+      pricing: quote.pricing,
+      quoteRevision: quote.pricing.quoteRevision,
       customerId
     })
     
   } catch (error) {
+    if (error instanceof QuoteError) return NextResponse.json({ error: error.message }, { status: error.status })
     console.error('Payment intent creation error:', error)
     
     if (error instanceof z.ZodError) {

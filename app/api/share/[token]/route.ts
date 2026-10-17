@@ -30,7 +30,7 @@ export async function GET(
     }
 
     // Stream file from storage
-    const fileResult = await shareService.streamFile(shareData.asset.file_path)
+    const fileResult = await shareService.streamFile(shareData.asset.file_path, shareData.asset.user_id)
 
     if (!fileResult) {
       return NextResponse.json(
