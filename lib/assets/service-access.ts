@@ -2,16 +2,14 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { AssetUsageStats } from './asset-service'
 import { isOwnedAssetPath } from './ownership'
 
-export async function assetStats(client: SupabaseClient, userId?: string): Promise<AssetUsageStats> {
+export async function assetStats(client: SupabaseClient, _userId?: string): Promise<AssetUsageStats> {
     const { data: { user } } = await client.auth.getUser()
     if (!user) throw new Error('User not authenticated')
-
-    const targetUserId = userId || user.id
 
     const { data, error } = await client
       .from('user_assets')
       .select('*')
-      .eq('user_id', targetUserId)
+      .eq('user_id', user.id)
 
     if (error) throw error
     const assets = data?.filter(asset => isOwnedAssetPath(asset.file_path, asset.user_id))

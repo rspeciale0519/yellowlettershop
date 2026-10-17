@@ -251,7 +251,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Upload asset error:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to upload asset' },
+      { error: 'Failed to upload asset' },
       { status: 500 }
     )
   }

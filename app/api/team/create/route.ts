@@ -24,7 +24,7 @@ export const POST = withAuth(async (request: NextRequest) => {
   } catch (error) {
     console.error('Team creation error:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to create team' },
+      { error: 'Failed to create team' },
       { status: 500 }
     )
   }

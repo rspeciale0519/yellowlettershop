@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Get asset stats error:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to get asset statistics' },
+      { error: 'Failed to get asset statistics' },
       { status: 500 }
     )
   }

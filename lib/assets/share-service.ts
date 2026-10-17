@@ -1,6 +1,6 @@
 import { createServiceClient } from '@/utils/supabase/service'
 import { isOwnedAssetPath } from './ownership'
-import { hashShareToken } from './share-token'
+import { hashShareToken, shareLinkIsExpired } from './share-token'
 
 export interface ShareLinkData {
   id: string
@@ -63,8 +63,7 @@ export class ShareService {
 
       if (!data.asset || data.created_by !== data.asset.user_id || !isOwnedAssetPath(data.asset.file_path, data.asset.user_id)) return null
 
-      // Check if expired
-      if (data.expires_at && new Date(data.expires_at) < new Date()) {
+      if (shareLinkIsExpired(data.expires_at)) {
         return null
       }
 

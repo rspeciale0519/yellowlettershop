@@ -10,7 +10,10 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   if (!team || team.role === "member") return NextResponse.json({ error: "Not authorized" }, { status: 403 })
   const supabase = await createClient()
   const { error } = await supabase.rpc("revoke_invitation", { p_invitation_id: params.id })
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  if (error) {
+    console.error('Invitation revoke failed:', error)
+    return NextResponse.json({ error: 'Failed to revoke invitation' }, { status: 400 })
+  }
   return NextResponse.json({ ok: true })
 }
 
@@ -24,7 +27,10 @@ export async function POST(_req: NextRequest, { params }: { params: { id: string
     p_invitation_id: params.id,
     p_token: token,
   })
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  if (error) {
+    console.error('Invitation resend failed:', error)
+    return NextResponse.json({ error: 'Failed to resend invitation' }, { status: 400 })
+  }
   await sendInviteEmail({ email: email as string, mode: "invited", token })
   return NextResponse.json({ ok: true })
 }

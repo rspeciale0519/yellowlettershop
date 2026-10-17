@@ -119,7 +119,12 @@ export function amountsMatchCents(piAmountCents: number, serverTotalDollars: num
   return piAmountCents === Math.round(serverTotalDollars * 100)
 }
 
-export function checkoutPaymentError(payment: { amount: number; currency: string; capture_method: string; metadata?: Record<string, string> | null }, quote: TrustedCheckoutOk, userId: string): TrustedCheckoutErr | null {
+export function checkoutPaymentError(
+  payment: { amount: number; currency: string; capture_method: string; metadata?: Record<string, string> | null },
+  quote: TrustedCheckoutOk,
+  userId: string,
+  options: { expectedOrderId?: string } = {},
+): TrustedCheckoutErr | null {
   const metadata = payment.metadata ?? {}
   try {
     assertCheckoutMetadata(metadata)
@@ -127,7 +132,13 @@ export function checkoutPaymentError(payment: { amount: number; currency: string
     return { ok: false, status: 400, error: 'Payment metadata is invalid' }
   }
   if (metadata.user_id !== userId) return { ok: false, status: 403, error: 'Payment does not belong to this account' }
-  if (metadata.order_id) return { ok: false, status: 409, error: 'This payment has already been used' }
+  if (options.expectedOrderId) {
+    if (metadata.order_id && metadata.order_id !== options.expectedOrderId) {
+      return { ok: false, status: 409, error: 'This payment has already been used' }
+    }
+  } else if (metadata.order_id) {
+    return { ok: false, status: 409, error: 'This payment has already been used' }
+  }
   if (payment.currency !== 'usd' || payment.capture_method !== 'manual' || payment.amount !== quote.amountCents) return { ok: false, status: 402, error: 'Authorized amount does not match the server quote' }
   if (metadata.quote_revision !== quote.quoteRevision) return { ok: false, status: 409, error: 'Artwork, recipients or options changed. Restart payment.' }
   return null

@@ -86,7 +86,8 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
       return NextResponse.json({ error: 'Invalid request data', details: error.errors }, { status: 400 })
     }
     if (error instanceof Stripe.errors.StripeError) {
-      return NextResponse.json({ error: `Stripe error: ${error.message}` }, { status: 400 })
+      console.error('Payment authorization Stripe error:', error)
+      return NextResponse.json({ error: 'Payment authorization failed' }, { status: 400 })
     }
     console.error('Payment authorization error:', error)
     return NextResponse.json({ error: 'Payment authorization failed' }, { status: 500 })

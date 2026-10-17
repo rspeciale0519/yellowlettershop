@@ -12,7 +12,7 @@ describe('owned asset sharing before privileged storage access', () => {
     '../../utils/supabase/service': { createServiceClient: () => client },
   })
   const service = new ShareService()
-  beforeEach(() => { signed = []; row = { id: 'share-a', created_by: 'owner', asset: { user_id: 'owner', file_path: 'owner/file.pdf' } } })
+  beforeEach(() => { signed = []; row = { id: 'share-a', created_by: 'owner', expires_at: new Date(Date.now() + 86400000).toISOString(), asset: { user_id: 'owner', file_path: 'owner/file.pdf' } } })
   it('rejects forged owned metadata pointing to a foreign storage path', async () => {
     row.asset.file_path = 'other/private.pdf'
     assert.equal(await service.validateShareToken('sample-token'), null)

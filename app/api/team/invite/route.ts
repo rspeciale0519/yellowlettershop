@@ -65,7 +65,7 @@ export const POST = withAuth(async (request: NextRequest, { userId }) => {
   } catch (error) {
     console.error('Team invitation error:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to invite team member' },
+      { error: 'Failed to invite team member' },
       { status: 500 }
     )
   }

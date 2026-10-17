@@ -11,6 +11,9 @@ export async function POST(req: NextRequest) {
   const { newOwnerId } = Body.parse(await req.json())
   const supabase = await createClient()
   const { error } = await supabase.rpc("transfer_ownership", { p_team_id: team.teamId, p_new_owner: newOwnerId })
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  if (error) {
+    console.error('Team transfer failed:', error)
+    return NextResponse.json({ error: 'Failed to transfer ownership' }, { status: 400 })
+  }
   return NextResponse.json({ ok: true })
 }

@@ -2,7 +2,7 @@ import { createClient } from '@/utils/supabase/client'
 import { Team, TeamMember, TeamInvitation } from '@/types/supabase'
 import { recordChange } from '@/lib/version-history/change-tracker'
 import { v4 as uuidv4 } from 'uuid'
-import { rpcAddTeamMember, rpcCreateTeam, rpcInviteMember, type TeamWriteClient } from './team-write-rpc'
+import { rpcAcceptInvitation, rpcAddTeamMember, rpcCreateTeam, rpcInviteMember, rpcUpdateMemberPermissions, type TeamWriteClient } from './team-write-rpc'
 
 export interface CreateTeamRequest {
   name: string
@@ -122,65 +122,14 @@ export class TeamService {
     const { data: { user } } = await this.supabase.auth.getUser()
     if (!user) throw new Error('User not authenticated')
 
-    // Get invitation
-    const { data: invitation, error: inviteError } = await this.supabase
-      .from('team_invitations')
-      .select('*')
-      .eq('id', invitationId)
-      .eq('status', 'pending')
-      .single()
-
-    if (inviteError || !invitation) {
-      throw new Error('Invalid or expired invitation')
-    }
-
-    // Check if invitation is expired
-    if (new Date(invitation.expires_at) < new Date()) {
-      throw new Error('Invitation has expired')
-    }
-
-    // Check if user email matches invitation
-    if (user.email !== invitation.email) {
-      throw new Error('Invitation email does not match user email')
-    }
-
-    // Create team member
-    const memberData = {
-      id: uuidv4(),
-      team_id: invitation.team_id,
-      user_id: user.id,
-      role: invitation.role,
-      permissions: invitation.permissions,
-      status: 'active' as const,
-      joined_at: new Date().toISOString(),
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }
-
-    const { data: member, error: memberError } = await this.supabase
+    const memberId = await rpcAcceptInvitation(this.supabase as unknown as TeamWriteClient, invitationId)
+    const { data: member, error } = await this.supabase
       .from('team_members')
-      .insert(memberData)
       .select()
+      .eq('id', memberId)
       .single()
+    if (error || !member) throw new Error('Failed to accept invitation')
 
-    if (memberError) throw memberError
-
-    // Update invitation status
-    await this.supabase
-      .from('team_invitations')
-      .update({ 
-        status: 'accepted',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', invitationId)
-
-    // Update user profile with team_id
-    await this.supabase
-      .from('user_profiles')
-      .update({ team_id: invitation.team_id })
-      .eq('id', user.id)
-
-    // Record acceptance
     await recordChange('team_member', member.id, 'create', {
       newValue: member,
       description: `${user.email} joined the team`
@@ -207,22 +156,12 @@ export class TeamService {
       throw new Error('Insufficient permissions to manage team members')
     }
 
-    const updateData: any = {
-      permissions,
-      updated_at: new Date().toISOString()
-    }
-
-    if (role) {
-      updateData.role = role
-    }
-
-    const { error } = await this.supabase
-      .from('team_members')
-      .update(updateData)
-      .eq('id', memberId)
-      .eq('team_id', teamId)
-
-    if (error) throw error
+    await rpcUpdateMemberPermissions(
+      this.supabase as unknown as TeamWriteClient,
+      teamId,
+      memberId,
+      role
+    )
 
     // Record permission update
     await recordChange('team_member', memberId, 'update', {

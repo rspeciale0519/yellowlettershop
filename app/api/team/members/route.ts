@@ -32,7 +32,7 @@ export const GET = withAuth(async (request: NextRequest, { userId }) => {
   } catch (error) {
     console.error('Get team members error:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to get team members' },
+      { error: 'Failed to get team members' },
       { status: 500 }
     )
   }
@@ -63,7 +63,7 @@ export const POST = withAuth(async (request: NextRequest, { userId }) => {
   } catch (error) {
     console.error('Add team member error:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to add team member' },
+      { error: 'Failed to add team member' },
       { status: 500 }
     )
   }
@@ -96,7 +96,7 @@ export const PATCH = withAuth(async (request: NextRequest, { userId }) => {
   } catch (error) {
     console.error('Update member permissions error:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to update member permissions' },
+      { error: 'Failed to update member permissions' },
       { status: 500 }
     )
   }
@@ -129,7 +129,7 @@ export const DELETE = withAuth(async (request: NextRequest, { userId }) => {
   } catch (error) {
     console.error('Remove team member error:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to remove team member' },
+      { error: 'Failed to remove team member' },
       { status: 500 }
     )
   }

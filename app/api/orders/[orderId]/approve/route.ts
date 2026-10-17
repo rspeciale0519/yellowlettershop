@@ -6,6 +6,8 @@ import { trySendEmail } from '@/lib/email'
 import { paymentCapturedEmail } from '@/lib/email/templates'
 import { getUserEmail } from '@/lib/orders/generate-proof'
 import { firstProofUrl } from '@/lib/orders/order-summary'
+import { loadPricingConfig } from '@/lib/orders/pricing-config'
+import { checkoutPaymentError, loadTrustedCheckout } from '@/lib/orders/trusted-checkout'
 import Stripe from 'stripe'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-08-27.basil' })
@@ -27,7 +29,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
     const supabase = createClient()
     const { data: order, error } = await supabase
       .from('orders')
-      .select('id, created_by, status, stripe_payment_intent_id, proof_urls, proof_approved_at, total_cost')
+      .select('id, created_by, status, stripe_payment_intent_id, proof_urls, proof_approved_at, total_cost, metadata')
       .eq('id', orderId)
       .eq('created_by', userId)
       .single()
@@ -85,6 +87,11 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
       // failed after Stripe captured), reconcile from the existing PI instead
       // of re-capturing — capturing a succeeded PI would error.
       const existing = await stripe.paymentIntents.retrieve(order.stripe_payment_intent_id)
+      const orderState = (order.metadata as { order_state?: Record<string, unknown> } | null)?.order_state ?? {}
+      const quote = await loadTrustedCheckout(supabase, userId, orderState, await loadPricingConfig(supabase))
+      if (!quote.ok) return NextResponse.json({ error: quote.error }, { status: quote.status })
+      const mismatch = checkoutPaymentError(existing, quote, userId, { expectedOrderId: order.id })
+      if (mismatch) return NextResponse.json({ error: mismatch.error }, { status: mismatch.status })
       const captured =
         existing.status === 'succeeded'
           ? existing

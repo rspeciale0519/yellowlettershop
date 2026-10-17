@@ -45,6 +45,8 @@ begin
 end;
 $$;
 
+revoke all on function public.security_asset_identity_immutable() from public, anon, authenticated;
+
 do $$
 begin
   if to_regclass('public.user_assets') is not null then

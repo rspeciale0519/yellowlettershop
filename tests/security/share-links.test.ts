@@ -4,7 +4,7 @@ import { PGlite } from '@electric-sql/pglite'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 import { loadWithMocks } from '../helpers/module-mocks'
-import { hashShareToken, parseShareExpiryDays, SHARE_LINK_MAX_DAYS } from '../../lib/assets/share-token'
+import { hashShareToken, parseShareExpiryDays, shareLinkIsExpired, SHARE_LINK_MAX_DAYS } from '../../lib/assets/share-token'
 
 describe('share token hashing and expiry', () => {
   it('hashes the raw token and requires a 1-30 day expiry', () => {
@@ -17,6 +17,9 @@ describe('share token hashing and expiry', () => {
     assert.equal(parseShareExpiryDays(0).ok, false)
     assert.equal(parseShareExpiryDays(31).ok, false)
     assert.equal(parseShareExpiryDays(undefined).ok, false)
+    assert.equal(shareLinkIsExpired(null), true)
+    assert.equal(shareLinkIsExpired(undefined), true)
+    assert.equal(shareLinkIsExpired(new Date(Date.now() + 60_000).toISOString()), false)
   })
 })
 
@@ -54,7 +57,7 @@ describe('share-links HTTP create/resolve/expire/revoke', () => {
         validateShareToken: async (token: string) => {
           const row = stored.find((item) => item.share_token === hashShareToken(token) && item.is_active !== false)
           if (!row) return null
-          if (row.expires_at && new Date(String(row.expires_at)) < new Date()) return null
+          if (shareLinkIsExpired(row.expires_at as string | null)) return null
           return { id: 'share', access_count: 0, asset: { user_id: 'owner', file_path: 'owner/file.png', filename: 'file.png', mime_type: 'image/png' } }
         },
         streamFile: async () => ({ fileBuffer: new Uint8Array([1, 2, 3]), fileSize: 3, mimeType: 'image/png' }),
@@ -81,6 +84,8 @@ describe('share-links HTTP create/resolve/expire/revoke', () => {
     assert.equal(resolved.status, 200)
     assert.equal(resolved.headers.get('cache-control'), 'private, no-store')
     assert.equal(resolved.headers.get('x-frame-options'), 'DENY')
+    assert.equal(resolved.headers.get('etag'), `"${hashShareToken(generated)}-0"`)
+    assert.ok(!resolved.headers.get('etag')?.includes(generated))
 
     stored[0].expires_at = new Date(Date.now() - 1000).toISOString()
     assert.equal((await shareGet.GET(new Request('http://localhost/api/share/' + generated), { params: Promise.resolve({ token: generated }) })).status, 404)
@@ -93,6 +98,10 @@ describe('share-links HTTP create/resolve/expire/revoke', () => {
     }))
     assert.equal(revoked.status, 200)
     stored[0].is_active = false
+    assert.equal((await shareGet.GET(new Request('http://localhost/api/share/' + generated), { params: Promise.resolve({ token: generated }) })).status, 404)
+
+    stored[0].is_active = true
+    stored[0].expires_at = null
     assert.equal((await shareGet.GET(new Request('http://localhost/api/share/' + generated), { params: Promise.resolve({ token: generated }) })).status, 404)
   })
 })

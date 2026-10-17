@@ -147,6 +147,7 @@ describe('Stripe checkout metadata', () => {
     }
     assert.equal(checkoutPaymentError(payment, result, owner), null)
     assert.equal(checkoutPaymentError({ ...payment, metadata: { ...payment.metadata, order_id: 'already' } }, result, owner)?.status, 409)
+    assert.equal(checkoutPaymentError({ ...payment, metadata: { ...payment.metadata, order_id: 'ord-1' } }, result, owner, { expectedOrderId: 'ord-1' }), null)
     assert.equal(checkoutPaymentError({ ...payment, metadata: { ...payment.metadata, extra: 'nope' } }, result, owner)?.status, 400)
   })
 })

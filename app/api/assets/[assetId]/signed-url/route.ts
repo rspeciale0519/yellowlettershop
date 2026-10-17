@@ -62,7 +62,7 @@ export async function GET(
   } catch (error) {
     console.error('Get signed URL error:', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to get signed URL' },
+      { error: 'Failed to get signed URL' },
       { status: 500 }
     )
   }

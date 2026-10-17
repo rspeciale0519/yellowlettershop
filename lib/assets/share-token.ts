@@ -7,6 +7,11 @@ export function hashShareToken(token: string): string {
   return createHash('sha256').update(token, 'utf8').digest('hex')
 }
 
+export function shareLinkIsExpired(expiresAt: string | null | undefined, now = new Date()): boolean {
+  if (!expiresAt) return true
+  return new Date(expiresAt) < now
+}
+
 export function parseShareExpiryDays(value: unknown): { ok: true; days: number } | { ok: false; error: string } {
   const days = typeof value === 'number' ? value : Number(value)
   if (!Number.isInteger(days) || days < 1 || days > SHARE_LINK_MAX_DAYS) {

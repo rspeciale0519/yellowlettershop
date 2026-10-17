@@ -49,7 +49,8 @@ export async function teamRpcDatabase() {
       user_id uuid not null,
       role text not null,
       status text not null default 'active',
-      invited_by uuid
+      invited_by uuid,
+      updated_at timestamptz not null default now()
     );
     create table public.team_invitations(
       id uuid primary key default gen_random_uuid(),
@@ -59,7 +60,8 @@ export async function teamRpcDatabase() {
       invited_by uuid not null,
       token text not null,
       status text not null default 'pending',
-      expires_at timestamptz not null default now() + interval '7 days'
+      expires_at timestamptz not null default now() + interval '7 days',
+      accepted_at timestamptz
     );
     create table public.team_activity_log(
       id uuid primary key default gen_random_uuid(),

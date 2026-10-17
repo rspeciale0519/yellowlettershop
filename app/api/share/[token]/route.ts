@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { shareService } from '@/lib/assets/share-service'
+import { hashShareToken } from '@/lib/assets/share-token'
 
 const INLINE_MIME_TYPES = new Set([
   'image/avif', 'image/bmp', 'image/gif', 'image/jpeg', 'image/png',
@@ -67,7 +68,7 @@ export async function GET(
     response.headers.set('X-Content-Type-Options', 'nosniff')
     response.headers.set('X-Frame-Options', 'DENY')
     response.headers.set('Cache-Control', 'private, no-store')
-    response.headers.set('ETag', `"${token}-${shareData.access_count}"`)
+    response.headers.set('ETag', `"${hashShareToken(token)}-${shareData.access_count}"`)
 
     return response
 

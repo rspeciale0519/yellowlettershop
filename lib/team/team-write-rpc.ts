@@ -57,3 +57,24 @@ export async function rpcAddTeamMember(
   if (typeof data !== 'string' || !data) throw new Error('Failed to add team member')
   return data
 }
+
+export async function rpcAcceptInvitation(supabase: TeamWriteClient, invitationId: string): Promise<string> {
+  const { data, error } = await supabase.rpc('accept_team_invitation', { p_invitation_id: invitationId })
+  if (error) throw new Error('Failed to accept invitation')
+  if (typeof data !== 'string' || !data) throw new Error('Failed to accept invitation')
+  return data
+}
+
+export async function rpcUpdateMemberPermissions(
+  supabase: TeamWriteClient,
+  teamId: string,
+  memberId: string,
+  role?: 'admin' | 'member'
+): Promise<void> {
+  const { error } = await supabase.rpc('update_team_member_permissions', {
+    p_team_id: teamId,
+    p_member_id: memberId,
+    p_role: role ?? null,
+  })
+  if (error) throw new Error('Failed to update member permissions')
+}
