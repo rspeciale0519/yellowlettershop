@@ -55,7 +55,7 @@ export function useDesignerDocument(args: UseDesignerDocumentArgs) {
 
   const formatId: MailFormatId = documentState.formatId ?? LEGACY_FALLBACK_FORMAT
   const canvasSize = canvasSizePx(formatId, documentState.orientation)
-  const activeElements = documentState.pages[activePage]
+  const activeElements = documentState.pages[activePage] ?? []
 
   const hydrate = useCallback((nextDocument: DesignerDocument) => {
     setDocumentState(nextDocument)
@@ -218,10 +218,7 @@ export function useDesignerDocument(args: UseDesignerDocumentArgs) {
     commitDocument({
       ...documentState,
       formatId: nextFormatId,
-      pages: {
-        front: remapElements([...documentState.pages.front], from, to),
-        back: remapElements([...documentState.pages.back], from, to),
-      },
+      pages: Object.fromEntries(Object.entries(documentState.pages).map(([id, elements]) => [id, remapElements(elements, from, to)])) as DesignerDocument["pages"],
       updatedAt: new Date().toISOString(),
     })
   }, [commitDocument, documentState, formatId])

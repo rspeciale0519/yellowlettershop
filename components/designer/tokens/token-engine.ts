@@ -53,9 +53,7 @@ export function substituteDocument(
 ): DesignerDocument {
   return {
     ...doc,
-    pages: {
-      front: doc.pages.front.map((el) => substituteElement(el, ctx, opts)),
-      back: doc.pages.back.map((el) => substituteElement(el, ctx, opts)),
-    },
+    pages: Object.fromEntries(Object.entries(doc.pages).map(([id, elements]) => [id, elements.map(el => substituteElement(el, ctx, opts))])) as DesignerDocument["pages"],
+
   }
 }

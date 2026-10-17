@@ -6,7 +6,8 @@ import { renderDesignToPdf } from '@/app/api/design/preview/_render/pdf-renderer
 import { buildTokenContext, type SenderInput } from '@/components/designer/tokens/recipient-map'
 import type { RecipientDTO } from '@/components/designer/preview/recipient-dto'
 import { MAIL_FORMATS, canvasSizePx, isMailFormatId, DESIGN_PPI, type MailFormatId } from '@/components/designer/mail-spec'
-import type { DesignElement, DesignerDocument } from '@/types/designer'
+import { normalizeDesignerDocument } from '@/lib/designer/document/normalize'
+import { getPrintedPages } from '@/lib/designer/document/pages'
 
 const RecipientSchema = z.object({
   id: z.string().optional(),
@@ -17,7 +18,7 @@ const RecipientSchema = z.object({
 })
 
 const PreviewRequestSchema = z.object({
-  designState: z.any(),
+  designState: z.unknown(),
   formatId: z.string().optional(),
   orientation: z.enum(['portrait', 'landscape']).optional(),
   recipient: RecipientSchema.optional(),
@@ -32,22 +33,11 @@ function emptyRecipient(): RecipientDTO {
   return { id: '', firstName: '', lastName: '', addressLine1: '', addressLine2: '', city: '', state: '', zipCode: '', company: '', email: '', phone: '' }
 }
 
-// Accept both the modern DesignerDocument and the legacy { elements } shape.
-function normalizeDoc(designState: unknown): DesignerDocument {
-  const s = (designState ?? {}) as Record<string, unknown>
-  if (s.pages) return s as unknown as DesignerDocument
-  const elements = (Array.isArray(s.elements) ? s.elements : []) as DesignElement[]
-  return {
-    templateId: 'legacy', templateName: 'Legacy', orientation: 'portrait',
-    pages: { front: elements, back: [] }, updatedAt: new Date().toISOString(),
-  } as unknown as DesignerDocument
-}
-
 export const POST = withAuth(async (req: NextRequest, { userId }) => {
   try {
     const body = await req.json()
     const data = PreviewRequestSchema.parse(body)
-    const doc = normalizeDoc(data.designState)
+    const doc = normalizeDesignerDocument(data.designState)
 
     const formatId: MailFormatId = isMailFormatId(data.formatId)
       ? data.formatId
@@ -72,15 +62,16 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
       .upload(path, Buffer.from(bytes), { contentType: 'application/pdf', upsert: true })
     if (uploadError) throw new Error(uploadError.message)
 
-    const { data: pub } = supabase.storage.from('design-previews').getPublicUrl(path)
+    const { data: signed, error: signedError } = await supabase.storage.from('design-previews').createSignedUrl(path, 600)
+    if (signedError || !signed) throw new Error('Could not create a private proof link')
 
     const trim = canvasSizePx(formatId, orientation)
     const bleedIn = MAIL_FORMATS[formatId].bleedIn
 
     return NextResponse.json({
       previewId,
-      pdfUrl: pub.publicUrl,
-      pageCount: 2,
+      pdfUrl: signed.signedUrl,
+      pageCount: getPrintedPages(doc).length,
       widthIn: trim.width / DESIGN_PPI + 2 * bleedIn,
       heightIn: trim.height / DESIGN_PPI + 2 * bleedIn,
       dpi: 300,

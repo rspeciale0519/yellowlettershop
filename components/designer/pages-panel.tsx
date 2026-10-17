@@ -1,15 +1,15 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import type { DesignerOrientation } from "@/types/designer"
+import type { DesignerOrientation, DesignerPage } from "@/types/designer"
 
 interface PagesPanelProps {
-  activePage: "front" | "back"
-  onPageChange: (page: "front" | "back") => void
+  activePage: DesignerPage
+  onPageChange: (page: DesignerPage) => void
   orientation?: DesignerOrientation
 }
 
-function PageThumbnail({ label, orientation = "portrait" }: { label: "Front" | "Back"; orientation?: DesignerOrientation }) {
+function PageThumbnail({ label, orientation = "portrait" }: { label: "Front" | "Back"; orientation?: DesignerOrientation, DesignerPage }) {
   const sizeClass = orientation === "portrait" ? "h-32 w-24" : "h-24 w-32"
 
   return (

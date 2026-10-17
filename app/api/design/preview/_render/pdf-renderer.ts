@@ -2,9 +2,10 @@ import { PDFDocument, StandardFonts, degrees, rgb, type PDFDocument as PDFDoc, t
 import fontkit from "@pdf-lib/fontkit"
 import QRCode from "qrcode"
 import { MAIL_FORMATS, canvasSizePx, DESIGN_PPI, type MailFormatId, type MailOrientation } from "@/components/designer/mail-spec"
+import { getPrintedPages } from "@/lib/designer/document/pages"
 import { substitute } from "@/components/designer/tokens/token-engine"
 import type { TokenContext } from "@/components/designer/tokens/recipient-map"
-import type { DesignElement, DesignerDocument, DesignerPage, PageBackground } from "@/types/designer"
+import type { DesignElement, DesignerDocument, PageBackground } from "@/types/designer"
 import { hexToRgb01 } from "@/app/api/design/preview/_render/colors"
 import { pdfAngleFromCss, rotateAbout, type Pt } from "@/app/api/design/preview/_render/transform"
 
@@ -224,7 +225,8 @@ export async function renderDesignToPdf(
     mono: await pdf.embedFont(StandardFonts.Courier),
   }
 
-  for (const pageName of ["front", "back"] as DesignerPage[]) {
+  for (const designPage of getPrintedPages(doc)) {
+    const pageName = designPage.id
     const page = pdf.addPage([mediaW, mediaH])
     await drawBackground(pdf, page, doc.backgrounds?.[pageName], mediaW, mediaH)
     const elements = [...doc.pages[pageName]].filter((el) => !el.hidden).sort((a, b) => a.zIndex - b.zIndex)

@@ -1,3 +1,4 @@
+import type { PageSettings, RichTextStory } from "./designer-document"
 import type { MailFormatId } from "@/components/designer/mail-spec"
 
 // Phase 12: dead `"colors" | "background"` Tool members removed (the only
@@ -5,7 +6,7 @@ import type { MailFormatId } from "@/components/designer/mail-spec"
 // the `"background"` WorkspacePanel below.
 export type Tool = "text" | "images" | "graphics" | "qr-codes" | "tables" | "postage"
 export type WorkspacePanel = "modules" | "layers" | "inspector" | "preflight" | "background"
-export type DesignerPage = "front" | "back"
+export type DesignerPage = "front" | "back" | `page-${string}`
 export type DesignerOrientation = "portrait" | "landscape"
 export type DesignerElementType = "text" | "image" | "graphic" | "qr" | "table" | "postage"
 export type DesignerMode = "select" | "pan"
@@ -31,6 +32,9 @@ interface BaseDesignElement {
 }
 
 export interface TextDesignElement extends BaseDesignElement {
+  writingMode?: "free" | "guided"
+  richText?: RichTextStory
+  continuesFrom?: string
   type: "text"
   content: string
   fontSize: number
@@ -107,6 +111,9 @@ export interface PageBackground {
 }
 
 export interface DesignerDocument {
+  version?: 2
+  pageOrder?: DesignerPage[]
+  pageSettings?: Record<string, PageSettings>
   designId?: string
   templateId: string
   templateName: string

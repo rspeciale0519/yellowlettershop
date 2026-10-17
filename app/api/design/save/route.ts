@@ -2,36 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { withAuth } from '@/lib/auth/middleware'
 import { createClient } from '@/utils/supabase/service'
+import { documentSchema } from '@/lib/designer/document/schema'
+import { normalizeDesignerDocument } from '@/lib/designer/document/normalize'
 
 const SaveDesignSchema = z.object({
-  designState: z.object({
-    designId: z.string().uuid().optional(),
-    templateId: z.string().min(1),
-    templateName: z.string().min(1),
-    orientation: z.enum(['portrait', 'landscape']),
-    formatId: z.string().optional(),
-    pages: z.record(z.enum(['front', 'back']), z.array(z.object({}).passthrough())),
-    backgrounds: z
-      .record(
-        z.enum(['front', 'back']),
-        z
-          .object({
-            color: z.string().optional(),
-            image: z
-              .object({
-                assetId: z.string().optional(),
-                src: z.string(),
-                sourceUrl: z.string().optional(),
-                fit: z.enum(['cover', 'contain']),
-                opacity: z.number().optional(),
-              })
-              .optional(),
-          })
-          .strict(),
-      )
-      .optional(),
-    updatedAt: z.string()
-  }).passthrough(),
+  designState: documentSchema.transform(normalizeDesignerDocument),
   orderId: z.string().uuid().optional(),
   templateId: z.string().optional(),
   name: z.string().optional(),
