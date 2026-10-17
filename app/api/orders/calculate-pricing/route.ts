@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { withAuth } from '@/lib/auth/middleware'
 import { createClient } from '@/utils/supabase/service'
 import { calculatePricing } from '@/lib/orders/pricing'
+import { buildPricingCatalog } from '@/lib/orders/pricing-examples'
 import { loadPricingConfig } from '@/lib/orders/pricing-config'
 import { loadTrustedCheckout } from '@/lib/orders/trusted-checkout'
 
@@ -53,31 +54,10 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
   }
 })
 
-export const GET = withAuth(async (req: NextRequest) => {
+export const GET = withAuth(async () => {
   try {
-    const url = new URL(req.url)
-    const recordCount = parseInt(url.searchParams.get('recordCount') || '100')
     const config = await loadPricingConfig(createClient())
-
-    const examples = {
-      postcard_4x6_500: calculatePricing(
-        { serviceLevel: 'full_service', mailPieceFormat: 'postcard_4x6' },
-        500,
-        config
-      ),
-      postcard_5x7_1000: calculatePricing(
-        { serviceLevel: 'full_service', mailPieceFormat: 'postcard_5x7' },
-        1000,
-        config
-      ),
-      letter_2500: calculatePricing(
-        { serviceLevel: 'full_service', mailPieceFormat: 'letter_8_5x11' },
-        2500,
-        config
-      )
-    }
-
-    return NextResponse.json({ recordCount, examples })
+    return NextResponse.json(buildPricingCatalog(config))
   } catch (error) {
     console.error('Pricing info error:', error)
     return NextResponse.json(

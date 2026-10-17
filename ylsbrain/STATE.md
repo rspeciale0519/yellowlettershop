@@ -2,13 +2,13 @@
 Updated: 2026-10-17
 
 ## Current focus
-**(2026-10-17): Owner-review fixes on draft PR #25**
-(`cursor/security-scan-2026-10-17-1cd0`). Typecheck Blob conversion; DNS-pinned
-SSRF (no redirects; private/CGNAT/mapped IPv6 blocked); public assets allowed;
-validation-job deliverable count for display/intent/submit; Stripe metadata =
-user + server pricing inputs; per-user rate limits (checkout fail-open; Stripe
-webhook unlimited); CSP Supabase origin + `worker-src blob:`. Evidence: 343
-tests, typecheck:full 0, build 0, lint 38 (no new). Detail:
+**(2026-10-17): Owner-review round 3 on draft PR #25**
+(`cursor/security-scan-2026-10-17-1cd0`). Next + eslint-config-next **15.5.28**;
+CSP drops `unsafe-eval` and `https:` script/frame/connect wildcards (kept
+`unsafe-inline` for hydration); `/api/webhooks` requires `x-yls-timestamp`;
+removed unused client-amount `createPaymentIntent`; GET calculate-pricing
+returns server catalog counts only. Evidence: 348 tests, typecheck:full 0,
+build 0, lint 38 (no new); CSP proof 0 violations. Detail:
 [[journal/2026-10-17]].
 
 ## (prior focus)

@@ -41,16 +41,6 @@ export interface PaymentMethodData {
   };
 }
 
-export interface CreatePaymentIntentParams {
-  userId: string;
-  amount: number; // Amount in cents
-  currency?: string;
-  description: string;
-  campaignId?: string;
-  metadata?: Record<string, string>;
-  automaticPaymentMethods?: boolean;
-}
-
 export interface CapturePaymentParams {
   paymentIntentId: string;
   amount?: number;

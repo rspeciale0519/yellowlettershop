@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
-import { isWebhookTimestampFresh, verifyHmacSha256Hex } from '@/lib/security/webhook-crypto'
+import { requireWebhookTimestamp, verifyHmacSha256Hex } from '@/lib/security/webhook-crypto'
 
 // Use Node.js runtime for crypto operations
 export const runtime = 'nodejs';
@@ -159,8 +159,9 @@ export async function POST(request: NextRequest) {
       )
     }
     const timestamp = headersList.get('x-yls-timestamp')
-    if (timestamp && !isWebhookTimestampFresh(timestamp)) {
-      return NextResponse.json({ error: 'Webhook timestamp too old' }, { status: 401 })
+    const freshness = requireWebhookTimestamp(timestamp)
+    if (!freshness.ok) {
+      return NextResponse.json({ error: freshness.error }, { status: freshness.status })
     }
 
     const data = JSON.parse(payload)

@@ -25,6 +25,22 @@ export function isWebhookTimestampFresh(
   return Math.abs(nowSeconds - ts) <= maxAgeSeconds
 }
 
+export type WebhookTimestampCheck =
+  | { ok: true }
+  | { ok: false; error: string; status: 401 }
+
+/** Require x-yls-timestamp and reject missing or stale values. */
+export function requireWebhookTimestamp(
+  timestamp: string | null | undefined,
+  maxAgeSeconds = WEBHOOK_MAX_AGE_SECONDS,
+  nowSeconds = Date.now() / 1000
+): WebhookTimestampCheck {
+  if (!isWebhookTimestampFresh(timestamp ?? undefined, maxAgeSeconds, nowSeconds)) {
+    return { ok: false, error: 'Webhook timestamp missing or too old', status: 401 }
+  }
+  return { ok: true }
+}
+
 export function hmacSha256Hex(secret: string, payload: string): string {
   return crypto.createHmac('sha256', secret).update(payload, 'utf8').digest('hex')
 }
