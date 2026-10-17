@@ -1,31 +1,7 @@
--- Share tokens: generate via pgcrypto, store only sha256, require expiry.
+-- Share tokens: CSPRNG from pg_catalog.gen_random_uuid only (no extension,
+-- no schema guess). Store only a sha256 hash. Require expiry.
 -- Also lock user_assets.id and grant anon only pricing display columns.
 begin;
-
-do $$
-begin
-  create extension if not exists pgcrypto with schema public;
-exception when others then
-  if to_regprocedure('public.gen_random_bytes(integer)') is null then
-    create function public.gen_random_bytes(p_length integer)
-    returns bytea
-    language plpgsql
-    as $fn$
-    declare
-      result bytea := '\x';
-      i integer;
-    begin
-      if p_length is null or p_length < 1 or p_length > 1024 then
-        raise exception 'invalid gen_random_bytes length';
-      end if;
-      for i in 1..p_length loop
-        result := result || decode(substr(md5(clock_timestamp()::text || i::text), 1, 2), 'hex');
-      end loop;
-      return result;
-    end
-    $fn$;
-  end if;
-end $$;
 
 create or replace function public.generate_share_token()
 returns text
@@ -34,7 +10,15 @@ security definer
 set search_path = ''
 as $$
 begin
-  return encode(public.gen_random_bytes(32), 'hex');
+  -- Two v4 UUIDs ≈ 244 bits from the backend CSPRNG.
+  return encode(
+    decode(
+      replace(pg_catalog.gen_random_uuid()::text, '-', '')
+      || replace(pg_catalog.gen_random_uuid()::text, '-', ''),
+      'hex'
+    ),
+    'hex'
+  );
 end;
 $$;
 

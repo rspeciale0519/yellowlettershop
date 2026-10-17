@@ -57,7 +57,7 @@ The old standalone branches are retained for history, not a second merge.
 ## Validation
 
 - `npm ci --no-audit --no-fund`: passed with lockfile integrity and TLS checks.
-- `npm test`: **432 passing**, including checkout and cross-customer negative
+- `npm test`: **433 passing**, including checkout and cross-customer negative
   tests, real PDF image embedding, alternate asset endpoints, shares and CSP/HMAC.
 - Twelve local PostgreSQL/PGlite tests cover financial/admin RLS, old column
   grants, fake validation/payment rows, self-elevation, safe profile/team edits,

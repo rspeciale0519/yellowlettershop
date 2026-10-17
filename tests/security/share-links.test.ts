@@ -99,7 +99,7 @@ describe('share-links HTTP create/resolve/expire/revoke', () => {
 
 describe('generate_share_token stores only a hash', function () {
   this.timeout(30000)
-  it('returns a random token that is not what gets persisted', async () => {
+  it('uses built-in CSPRNG only and returns unique 64-hex tokens', async () => {
     const db = new PGlite()
     await db.exec(`
       create role anon; create role authenticated; create role service_role bypassrls;
@@ -107,9 +107,21 @@ describe('generate_share_token stores only a hash', function () {
       create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     `)
     await db.exec(readFileSync(resolve(__dirname, '../../supabase/migrations/20261017120200_share_tokens_identity_pricing.sql'), 'utf8'))
-    const token = (await db.query<{ generate_share_token: string }>('select generate_share_token()')).rows[0].generate_share_token
-    assert.equal(token.length, 64)
-    assert.notEqual(hashShareToken(token), token)
+    const def = (await db.query<{ pg_get_functiondef: string }>(
+      "select pg_get_functiondef('public.generate_share_token()'::regprocedure)"
+    )).rows[0].pg_get_functiondef
+    assert.doesNotMatch(def, /md5\s*\(/i)
+    assert.doesNotMatch(def, /clock_timestamp/i)
+    assert.doesNotMatch(def, /gen_random_bytes/i)
+    assert.match(def, /pg_catalog\.gen_random_uuid/)
+
+    const tokens = (await db.query<{ generate_share_token: string }>(
+      'select generate_share_token() from generate_series(1, 1000)'
+    )).rows.map((row) => row.generate_share_token)
+    assert.equal(tokens.length, 1000)
+    assert.ok(tokens.every((token) => /^[0-9a-f]{64}$/.test(token)))
+    assert.equal(new Set(tokens).size, 1000)
+    assert.notEqual(hashShareToken(tokens[0]), tokens[0])
     await db.close()
   })
 })

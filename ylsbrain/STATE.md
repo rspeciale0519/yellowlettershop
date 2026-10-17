@@ -6,10 +6,12 @@ Updated: 2026-10-17
 PaymentIntent reuse is rejected (unique index + metadata.order_id + 409);
 team create/invite/add-member go through SECURITY DEFINER RPCs after
 authenticated writes were revoked; share tokens are hashed (30-day max)
-with revoke and private,no-store / DENY headers. Generic client errors,
+with revoke and private,no-store / DENY headers. Tokens come from two
+`pg_catalog.gen_random_uuid()` values (no md5/clock, no public pgcrypto).
+Generic client errors,
 immutable `user_assets.id`, anon pricing display columns only, owner-only
 asset stats/signed-url, team-verified upload, `verifyYlsWebhook`, and
-in-repo official braces 3.0.3. Evidence: **432 tests**, typecheck:full 0,
+in-repo official braces 3.0.3. Evidence: **433 tests**, typecheck:full 0,
 placeholder-env build 0, lint 38 (same files as main),
 `npm audit --omit=dev` 0 high/critical (3 moderate). All migrations
 applied on disposable local Postgres 16. No merge/deploy/hosted SQL.
