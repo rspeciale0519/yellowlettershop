@@ -10,6 +10,7 @@ import { MAIL_FORMATS, type MailFormatId } from "@/components/designer/mail-spec
 import type { DesignerOrientation } from "@/types/designer"
 
 interface DesignerHeaderProps {
+  galleryHref?: string
   onUndo: () => void
   onRedo: () => void
   onSave: () => void
@@ -28,6 +29,7 @@ interface DesignerHeaderProps {
 }
 
 export function DesignerHeader({
+  galleryHref = "/templates",
   onUndo,
   onRedo,
   onSave,
@@ -50,7 +52,7 @@ export function DesignerHeader({
     <TooltipProvider delayDuration={300}>
       <header className="shrink-0 border-b border-border bg-card px-3 py-2">
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
-          <Link href="/templates" className="text-sm font-semibold">My design</Link>
+          <Link href={galleryHref} className="text-sm font-semibold">My design</Link>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={onPreview}><Eye className="mr-1 h-4 w-4" />Preview</Button>
             <Button size="sm" variant="brand" onClick={onNext}>Continue to Order</Button>

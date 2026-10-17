@@ -1,7 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { User } from "@supabase/supabase-js"
 import { Loader2 } from "lucide-react"
 import { CanvasArea } from "@/components/designer/canvas-area"
@@ -12,7 +12,7 @@ import { HelpButton } from "@/components/designer/help-button"
 import { PagesPanel } from "@/components/designer/pages-panel"
 import { PreviewModal } from "@/components/designer/preview-modal"
 import { ConfirmDialog } from "@/components/designer/ui/confirm-dialog"
-import { DESIGN_TEMPLATES, DESIGNER_STORAGE_KEY, createDesignerDocument } from "@/components/designer/designer-templates"
+import { DESIGN_TEMPLATES, DESIGNER_STORAGE_KEY } from "@/components/designer/designer-templates"
 import { specRectsPx, withFormatId } from "@/components/designer/mail-spec"
 import { createClient } from "@/utils/supabase/client"
 import { useDesignerFonts } from "@/hooks/use-designer-fonts"
@@ -21,26 +21,20 @@ import { useDesignerShortcuts } from "@/hooks/use-designer-shortcuts"
 import { useDesignerAutosave } from "@/hooks/use-designer-autosave"
 import { useDesignerDocument } from "@/hooks/use-designer-document"
 import { designerRootClass } from "@/components/designer/designer-type"
-import type { DesignElement, DesignerDocument, DesignerMode, DesignerPage, Tool, WorkspacePanel } from "@/types/designer"
+import { bootstrapTemplateDocument, designerAuthenticationUrl, loadStoredDesignerState, normalizeElements, templateContextUrl } from "@/lib/designer/template-entry"
+import { TemplateEntryRecovery } from "@/components/designer/workspace/template-entry-recovery"
+import type { DesignerDocument, DesignerMode, DesignerPage, Tool, WorkspacePanel } from "@/types/designer"
 
 type StoredDesignerState = { document: DesignerDocument }
-function loadStoredDesignerState(): StoredDesignerState | null {
-  try {
-    const raw = window.localStorage.getItem(DESIGNER_STORAGE_KEY)
-    return raw ? (JSON.parse(raw) as StoredDesignerState) : null
-  } catch {
-    return null
-  }
-}
-function normalizeElements(elements: DesignElement[]) {
-  return elements.map((element, index) => ({
-    ...element,
-    name: element.name || `${element.type} ${index + 1}`,
-    zIndex: element.zIndex || index + 1,
-  })) as DesignElement[]
+export default function DesignCustomizerPage() {
+  return <Suspense fallback={<div>Loading designer…</div>}><DesignCustomizerContent /></Suspense>
 }
 
-export default function DesignCustomizerPage() {
+function DesignCustomizerContent() {
+  const searchParams = useSearchParams()
+  const requestedTemplateId = searchParams.get("templateId")
+  const [entryIssue, setEntryIssue] = useState<"unknown" | "preview-only" | null>(null)
+  const [hasDraft, setHasDraft] = useState(false)
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [activeTool, setActiveTool] = useState<Tool>("text")
@@ -86,15 +80,25 @@ export default function DesignCustomizerPage() {
   const activeBackground = documentState.backgrounds?.[activePage]
 
   useEffect(() => {
+    let cancelled = false
     const checkAuth = async () => {
       try {
         const { data, error } = await supabase.auth.getUser()
+        if (cancelled) return
         if (!data.user || error) {
-          router.replace("/?auth=login&redirectedFrom=/design/customize")
+          router.replace(designerAuthenticationUrl(window.location.search))
           return
         }
         const stored = loadStoredDesignerState()
-        const initialDocument = withFormatId(stored?.document ?? createDesignerDocument())
+        const initial = bootstrapTemplateDocument(requestedTemplateId, stored?.document ?? null)
+        setHasDraft(Boolean(stored))
+        if (initial.status === "unavailable") {
+          setEntryIssue(initial.reason)
+          setUser(data.user)
+          return
+        }
+        setEntryIssue(null)
+        const initialDocument = withFormatId(initial.document)
         const normalizedDocument = {
           ...initialDocument,
           pages: {
@@ -103,21 +107,23 @@ export default function DesignCustomizerPage() {
           },
         }
         doc.hydrate(normalizedDocument)
-        if (stored) autosave.setRecovered(new Date(initialDocument.updatedAt).toLocaleTimeString())
+        if (initial.recovered) autosave.setRecovered(new Date(initialDocument.updatedAt).toLocaleTimeString())
         else autosave.setIdle()
         setUser(data.user)
       } catch (error) {
+        if (cancelled) return
         console.error("Error checking authentication:", error)
-        router.replace("/?auth=login&redirectedFrom=/design/customize")
+        router.replace(designerAuthenticationUrl(window.location.search))
       } finally {
-        setIsLoading(false)
+        if (!cancelled) setIsLoading(false)
       }
     }
     void checkAuth()
-    // Mount-once auth bootstrap (matches prior behavior). doc.hydrate is stable;
-    // autosave setters are intentionally not deps.
+    return () => { cancelled = true }
+    // Bootstrap once per requested template; stable document/autosave setters
+    // intentionally do not cause a draft re-hydration on every edit.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router, supabase])
+  }, [requestedTemplateId, router, supabase])
 
   const saveDesign = useCallback(async () => {
     const nextDocument = { ...documentState, updatedAt: new Date().toISOString() }
@@ -208,11 +214,13 @@ export default function DesignCustomizerPage() {
 
   if (isLoading) return <div className="flex min-h-screen items-center justify-center"><Loader2 className="mr-2 h-6 w-6 animate-spin" />Loading...</div>
   if (!user) return null
+  if (entryIssue) return <TemplateEntryRecovery reason={entryIssue} context={searchParams.toString()} hasDraft={hasDraft} />
 
   return (
     <div className={`relative ${designerRootClass}`}>
       <EditorShell header={
       <DesignerHeader
+        galleryHref={templateContextUrl("/templates", searchParams.toString())}
         onUndo={doc.handleUndo}
         onRedo={doc.handleRedo}
         onSave={saveDesign}

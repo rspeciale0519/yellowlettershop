@@ -13,7 +13,11 @@ export const test = base.extend({
     // rather than treating a restored synthetic session as a fresh sign-in.
     const storedSession = { ...session, expires_at: Math.floor(Date.now() / 1000) - 1 }
     await context.addCookies([{ name: 'sb-127-auth-token', value: `base64-${encode(storedSession)}`, url: baseURL! }])
-    await context.addInitScript((value) => localStorage.setItem('sb-127-auth-token', value), JSON.stringify(storedSession))
+    await context.addInitScript(({ value, cookie }) => {
+      localStorage.setItem('sb-127-auth-token', value)
+      // Every full designer load restores through refresh, including reloads.
+      if (location.pathname === '/design/customize') document.cookie = `sb-127-auth-token=${cookie}; path=/; SameSite=Lax`
+    }, { value: JSON.stringify(storedSession), cookie: `base64-${encode(storedSession)}` })
     const pdf = await PDFDocument.create()
     pdf.addPage(); pdf.addPage()
     const proof = await pdf.save()

@@ -1,4 +1,13 @@
+import type { MailFormatId } from '@/components/designer/mail-spec'
+import type { DesignerOrientation } from '@/types/designer'
+import { designerStarterTemplates } from './designer-starter-templates'
+
+export type TemplateEditorMetadata =
+  | { readiness: 'preview-only' }
+  | { readiness: 'ready'; designerTemplateId: string; formatId: MailFormatId; orientation: DesignerOrientation }
+
 export interface Template {
+  editor: TemplateEditorMetadata
   id: string
   name: string
   description: string
@@ -31,6 +40,7 @@ export interface TemplatesData {
 
 export const templatesData: TemplatesData = {
   categories: [
+    { id: "editable-layouts", name: "Editable starter layouts", templateCount: designerStarterTemplates.length },
     {
       id: "real-estate",
       name: "Real Estate",
@@ -82,6 +92,7 @@ export const templatesData: TemplatesData = {
     },
   ],
   templates: [
+    ...designerStarterTemplates,
     // Real Estate Templates
     {
       id: "re-001",
@@ -94,6 +105,7 @@ export const templatesData: TemplatesData = {
       popularity: 95,
       createdAt: "2024-01-15",
       isPremium: false,
+      editor: { readiness: "preview-only" },
     },
     {
       id: "re-002",
@@ -106,6 +118,7 @@ export const templatesData: TemplatesData = {
       popularity: 88,
       createdAt: "2024-01-10",
       isPremium: true,
+      editor: { readiness: "preview-only" },
     },
     {
       id: "re-003",
@@ -118,6 +131,7 @@ export const templatesData: TemplatesData = {
       popularity: 92,
       createdAt: "2024-01-08",
       isPremium: false,
+      editor: { readiness: "preview-only" },
     },
     {
       id: "re-004",
@@ -130,6 +144,7 @@ export const templatesData: TemplatesData = {
       popularity: 76,
       createdAt: "2024-01-05",
       isPremium: false,
+      editor: { readiness: "preview-only" },
     },
     {
       id: "re-005",
@@ -142,6 +157,7 @@ export const templatesData: TemplatesData = {
       popularity: 84,
       createdAt: "2024-01-03",
       isPremium: false,
+      editor: { readiness: "preview-only" },
     },
 
     // Business Templates
@@ -156,6 +172,7 @@ export const templatesData: TemplatesData = {
       popularity: 89,
       createdAt: "2024-01-12",
       isPremium: false,
+      editor: { readiness: "preview-only" },
     },
     {
       id: "biz-002",
@@ -168,6 +185,7 @@ export const templatesData: TemplatesData = {
       popularity: 91,
       createdAt: "2024-01-09",
       isPremium: false,
+      editor: { readiness: "preview-only" },
     },
     {
       id: "biz-003",
@@ -180,6 +198,7 @@ export const templatesData: TemplatesData = {
       popularity: 78,
       createdAt: "2024-01-07",
       isPremium: false,
+      editor: { readiness: "preview-only" },
     },
 
     // Seasonal Templates
@@ -194,6 +213,7 @@ export const templatesData: TemplatesData = {
       popularity: 94,
       createdAt: "2023-12-01",
       isPremium: false,
+      editor: { readiness: "preview-only" },
     },
     {
       id: "sea-002",
@@ -206,6 +226,7 @@ export const templatesData: TemplatesData = {
       popularity: 72,
       createdAt: "2024-03-01",
       isPremium: false,
+      editor: { readiness: "preview-only" },
     },
 
     // Healthcare Templates
@@ -220,6 +241,7 @@ export const templatesData: TemplatesData = {
       popularity: 85,
       createdAt: "2024-01-14",
       isPremium: false,
+      editor: { readiness: "preview-only" },
     },
     {
       id: "hc-002",
@@ -232,6 +254,7 @@ export const templatesData: TemplatesData = {
       popularity: 79,
       createdAt: "2024-01-11",
       isPremium: false,
+      editor: { readiness: "preview-only" },
     },
 
     // Automotive Templates
@@ -246,6 +269,7 @@ export const templatesData: TemplatesData = {
       popularity: 81,
       createdAt: "2024-01-06",
       isPremium: false,
+      editor: { readiness: "preview-only" },
     },
     {
       id: "auto-002",
@@ -258,6 +282,7 @@ export const templatesData: TemplatesData = {
       popularity: 77,
       createdAt: "2024-01-04",
       isPremium: false,
+      editor: { readiness: "preview-only" },
     },
   ],
 }

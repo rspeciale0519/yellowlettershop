@@ -1,12 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Eye, Star, Download, Heart } from "lucide-react"
 import Image from "next/image"
+import Link from "next/link"
+import { useSearchParams } from "next/navigation"
+import { resolveTemplateEntry, templateEntryUrl } from "@/lib/designer/template-entry"
 import type { Template } from "@/data/templates-data"
 
 interface TemplateGridProps {
@@ -16,7 +19,12 @@ interface TemplateGridProps {
   isLoading: boolean
 }
 
-export function TemplateGrid({ templates, selectedCategory, searchQuery, isLoading }: TemplateGridProps) {
+export function TemplateGrid(props: TemplateGridProps) {
+  return <Suspense fallback={<p>Loading templates…</p>}><TemplateGridContent {...props} /></Suspense>
+}
+
+function TemplateGridContent({ templates, searchQuery, isLoading }: TemplateGridProps) {
+  const context = useSearchParams().toString()
   const [favorites, setFavorites] = useState<string[]>([])
 
   const toggleFavorite = (templateId: string) => {
@@ -71,6 +79,7 @@ export function TemplateGrid({ templates, selectedCategory, searchQuery, isLoadi
           <TemplateCard
             key={template.id}
             template={template}
+            context={context}
             isFavorite={favorites.includes(template.id)}
             onToggleFavorite={() => toggleFavorite(template.id)}
           />
@@ -82,11 +91,13 @@ export function TemplateGrid({ templates, selectedCategory, searchQuery, isLoadi
 
 interface TemplateCardProps {
   template: Template
+  context: string
   isFavorite: boolean
   onToggleFavorite: () => void
 }
 
-function TemplateCard({ template, isFavorite, onToggleFavorite }: TemplateCardProps) {
+function TemplateCard({ template, context, isFavorite, onToggleFavorite }: TemplateCardProps) {
+  const entry = resolveTemplateEntry(template.id)
   return (
     <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
       <div className="relative aspect-[4/3] overflow-hidden rounded-t-lg bg-gray-100 dark:bg-gray-800">
@@ -175,16 +186,15 @@ function TemplateCard({ template, isFavorite, onToggleFavorite }: TemplateCardPr
             )}
           </div>
 
-          <Button 
+          {entry?.readiness === "ready" ? <Button asChild
             size="sm" 
             className=""
             style={{ backgroundColor: '#E0B431', color: '#000' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F6CF62'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#E0B431'}
           >
-            <Download className="h-4 w-4 mr-1" />
-            Use Template
-          </Button>
+            <Link href={templateEntryUrl(entry.catalogId, context)}><Download className="h-4 w-4 mr-1" />Use Template</Link>
+          </Button> : <Badge variant="secondary">Preview only</Badge>}
         </div>
       </CardContent>
     </Card>

@@ -2,11 +2,13 @@
 Updated: 2026-10-17
 
 ## Current focus
-**(2026-10-17): Task 1 responsive designer workspace implemented in isolated worker clone.**
-Phone and desktop workspace regressions, 295 unit tests, full typecheck, and
-scoped ESLint (one existing warning) verify this UI repair. Browser APIs are
-intercepted and writes blocked; production saves/PDF/checkout are not certified.
-Template entry follows as a separate task. Detail: [[journal/2026-10-17]].
+**(2026-10-17): Tasks 1–2 implemented in isolated worker clone.**
+Responsive workspace and explicit gallery/template entry now pass 304 unit tests,
+11 browser checks, and full typecheck. Task 2 scoped ESLint is clean; Task 1 has
+one pre-existing header warning. Browser APIs are intercepted and writes blocked;
+production authentication, PDF rendering, persistence, and checkout remain
+unverified. Parent owns notepad/shared-text/page/pricing/save integration.
+Detail: [[journal/2026-10-17]].
 
 ## Prior focus
 **(2026-10-16): Proposed designer usability design and implementation plan prepared.**
