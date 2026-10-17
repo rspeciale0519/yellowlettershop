@@ -124,3 +124,7 @@ Append-only timeline. Entry format: `## [YYYY-MM-DD] <op> | <title>`.
 ## [2026-10-17] verify | Minimal AccuZip probe prepared; credential unavailable
 - Current public vendor docs confirm INFO JSON and minimal multipart/CSV request shapes. Standalone probe request-shape and missing-key checks pass; no authenticated vendor request ran.
 - Owner uses a licensed key in vendor-controlled test mode, stored on the laptop and possibly GitHub. Cloud has no secret binding; Vercel/GitHub configuration reads return 403. App code and workflows unchanged. Current account status is unverified, separate from the historical app endpoint mismatch. See journal/2026-10-17 [03:40].
+
+## [2026-10-17] publish | Designer feature branch and mobile preview
+- Owner-authorized feature push succeeded; remote d1110ed matches local. Vercel automatically built the preview and GitHub reports deployment success. The actual mobile designer link is in the verification report; anonymous access redirects to Vercel sign-in.
+- No main/develop merge or production release. App code is unchanged from the verified 6694c4c checkpoint; AccuZip test remains deferred until the cloud key is supplied. See journal/2026-10-17 [03:45].

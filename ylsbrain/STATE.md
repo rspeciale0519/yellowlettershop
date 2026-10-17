@@ -19,7 +19,10 @@ configuration. AccuZip has a historical endpoint/workflow mismatch; the owner's
 current licensed key is in vendor-controlled test mode, and its authenticated
 connection is not yet verified. A minimal direct probe is prepared outside the
 repo, but the key is only in the laptop's .env.local; cloud secrets are empty and
-Vercel/GitHub configuration reads return 403. Nothing pushed/deployed.
+Vercel/GitHub configuration reads return 403. Owner then requested publication:
+feature branch pushed, remote SHA d1110ed verified, automatic Vercel preview
+reported successful. Its mobile entry requires Vercel sign-in; see the report.
+No main/develop merge or production release occurred.
 Report: `docs/superpowers/reports/2026-10-17-designer-usability-verification.md`.
 Detail: [[journal/2026-10-17]].
 
