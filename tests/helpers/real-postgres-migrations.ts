@@ -35,10 +35,22 @@ export function applyMigrationsOnDisposablePostgres(options: DisposablePgOptions
   const run = (bin: string, args: string[]) => {
     const result = spawnSync(join(pgBin, bin), args, {
       encoding: 'utf8',
+      // A background postgres process may inherit captured pipe handles on
+      // Windows even after pg_ctl exits. Its own output already goes to pg.log.
+      stdio: bin === PG_CTL ? 'ignore' : 'pipe',
+      timeout: 60000,
       env: { ...process.env, PGHOST: '127.0.0.1', PGPORT: port, PGUSER: process.env.USER || 'postgres' },
     })
     if (result.status !== 0) {
-      throw new Error(`${bin}: ${result.error?.message || result.stderr || result.stdout}`)
+      let reason = result.error?.message || result.stderr || result.stdout || `exit ${result.status}`
+      if (bin === PG_CTL) {
+        try { reason += `\n${readFileSync(join(dataDir, 'pg.log'), 'utf8').slice(-4000)}` } catch { /* Startup may fail before a log exists. */ }
+      }
+      if (process.env.GITHUB_ACTIONS === 'true' && (bin === PG_CTL || bin === INITDB)) {
+        const message = `${bin}: ${reason}`.replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A')
+        console.log(`::error title=Native PostgreSQL setup::${message}`)
+      }
+      throw new Error(`${bin}: ${reason}`)
     }
     return result.stdout
   }
@@ -47,8 +59,8 @@ export function applyMigrationsOnDisposablePostgres(options: DisposablePgOptions
 
   run(INITDB, ['-D', dataDir, '--no-sync', '--auth=trust', '--encoding=UTF8', '--locale=C', '-U', process.env.USER || 'postgres'])
   const serverOptions = `-p ${port} -h 127.0.0.1${process.platform === 'win32' ? '' : ` -k \"${dataDir}\"`}`
-  run(PG_CTL, ['-D', dataDir, '-o', serverOptions, '-l', join(dataDir, 'pg.log'), '-w', 'start'])
   try {
+    run(PG_CTL, ['-D', dataDir, '-o', serverOptions, '-l', join(dataDir, 'pg.log'), '-w', 'start'])
     sql(bootstrapSql(options.pgcryptoSchema ?? 'public'))
     const dir = resolve(__dirname, '../../supabase/migrations')
     const files = readdirSync(dir).filter((name) => name.endsWith('.sql')).sort()
@@ -60,7 +72,7 @@ export function applyMigrationsOnDisposablePostgres(options: DisposablePgOptions
     options.afterApply?.(sql)
     return { dataDir, port, files }
   } finally {
-    spawnSync(join(pgBin, PG_CTL), ['-D', dataDir, '-m', 'fast', 'stop'], { encoding: 'utf8' })
+    spawnSync(join(pgBin, PG_CTL), ['-D', dataDir, '-m', 'fast', 'stop'], { encoding: 'utf8', stdio: 'ignore', timeout: 15000 })
   }
 }
 
