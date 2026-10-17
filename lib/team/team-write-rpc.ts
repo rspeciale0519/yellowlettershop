@@ -78,3 +78,11 @@ export async function rpcUpdateMemberPermissions(
   })
   if (error) throw new Error('Failed to update member permissions')
 }
+
+export async function rpcRemoveMember(supabase: TeamWriteClient, teamId: string, userId: string): Promise<void> {
+  const { error } = await supabase.rpc('remove_member', {
+    p_team_id: teamId,
+    p_user_id: userId,
+  })
+  if (error) throw new Error('Failed to remove team member')
+}

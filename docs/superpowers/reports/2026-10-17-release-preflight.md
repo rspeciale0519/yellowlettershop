@@ -124,7 +124,7 @@ Resolve these prerequisites before approving production SQL/app deployment:
    breaks those references unless consumers/data are migrated first. Exact hosted
    URL counts remain unverified. Signed private previews/proofs stay separate.
 7. Active custom-webhook registrations and recent callers. AccuZip/MelissaData
-   use ordinary outbound APIs in this repository; Stripe/Mailgun/Redstone have
+   use ordinary outbound APIs in this repository; Stripe/Mailgun and the print vendor have
    separate protocols. No external custom caller is certified compatible until
    its owner verifies the timestamp/raw-body signature and fresh/stale samples.
    Persistent custom-event deduplication and unchecked DB results in some

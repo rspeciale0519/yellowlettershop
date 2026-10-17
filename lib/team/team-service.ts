@@ -2,7 +2,7 @@ import { createClient } from '@/utils/supabase/client'
 import { Team, TeamMember, TeamInvitation } from '@/types/supabase'
 import { recordChange } from '@/lib/version-history/change-tracker'
 import { v4 as uuidv4 } from 'uuid'
-import { rpcAcceptInvitation, rpcAddTeamMember, rpcCreateTeam, rpcInviteMember, rpcUpdateMemberPermissions, type TeamWriteClient } from './team-write-rpc'
+import { rpcAcceptInvitation, rpcAddTeamMember, rpcCreateTeam, rpcInviteMember, rpcRemoveMember, rpcUpdateMemberPermissions, type TeamWriteClient } from './team-write-rpc'
 
 export interface CreateTeamRequest {
   name: string
@@ -196,20 +196,11 @@ export class TeamService {
       throw new Error('Team member not found')
     }
 
-    // Remove member
-    const { error } = await this.supabase
-      .from('team_members')
-      .delete()
-      .eq('id', memberId)
-      .eq('team_id', teamId)
-
-    if (error) throw error
-
-    // Update user profile to remove team_id
-    await this.supabase
-      .from('user_profiles')
-      .update({ team_id: null })
-      .eq('id', member.user_id)
+    await rpcRemoveMember(
+      this.supabase as unknown as TeamWriteClient,
+      teamId,
+      String(member.user_id)
+    )
 
     // Record removal
     await recordChange('team_member', memberId, 'delete', {

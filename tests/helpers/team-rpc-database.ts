@@ -63,6 +63,13 @@ export async function teamRpcDatabase() {
       expires_at timestamptz not null default now() + interval '7 days',
       accepted_at timestamptz
     );
+    create table public.resource_permissions(
+      id uuid primary key default gen_random_uuid(),
+      user_id uuid,
+      team_id uuid,
+      revoked_at timestamptz,
+      revoked_by uuid
+    );
     create table public.team_activity_log(
       id uuid primary key default gen_random_uuid(),
       team_id uuid,
@@ -79,5 +86,6 @@ export async function teamRpcDatabase() {
   `)
   await db.exec(readFileSync(resolve(__dirname, '../../supabase/migrations/20261017010000_harden_financial_and_asset_access.sql'), 'utf8'))
   await db.exec(readFileSync(resolve(__dirname, '../../supabase/migrations/20261017120100_team_write_rpcs.sql'), 'utf8'))
+  await db.exec(readFileSync(resolve(__dirname, '../../supabase/migrations/20261017120400_revoke_legacy_definer_execute.sql'), 'utf8'))
   return db
 }

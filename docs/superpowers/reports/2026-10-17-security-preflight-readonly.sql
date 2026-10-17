@@ -10,7 +10,7 @@ set local statement_timeout = '15s';
 select version, name
 from supabase_migrations.schema_migrations
 where version in ('20261017000000', '20261017010000', '20261017120000',
-                  '20261017120100', '20261017120200', '20261017120300');
+                  '20261017120100', '20261017120200', '20261017120300', '20261017120400');
 
 -- Payment-intent uniqueness must be reconciled before creating the index.
 select count(*) as duplicate_payment_intent_groups
