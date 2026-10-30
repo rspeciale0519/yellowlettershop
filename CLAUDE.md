@@ -1,3 +1,4 @@
+@AGENTS.md
 # Yellow Letter Shop (YLS) - Claude AI Assistant Guide
 
 ## Project Overview
