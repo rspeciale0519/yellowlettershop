@@ -29,6 +29,7 @@ import type {
   ResetState 
 } from './types';
 import { AuthService } from './auth-service';
+import { getSafeInternalPath } from '@/lib/security/safe-redirect';
 
 const AUTH_MODES: AuthMode[] = ['login', 'signup', 'forgot', 'reset', 'verify', 'change'];
 const isAuthMode = (value: any): value is AuthMode => AUTH_MODES.includes(value);
@@ -77,7 +78,7 @@ export function AuthFlowModalController({}: AuthFlowModalControllerProps) {
     showPassword: false,
   });
 
-  const redirectedFrom = searchParams.get('redirectedFrom') || undefined;
+  const redirectedFrom = getSafeInternalPath(searchParams.get('redirectedFrom'));
 
   // Modal control
   useEffect(() => {
@@ -201,7 +202,7 @@ export function AuthFlowModalController({}: AuthFlowModalControllerProps) {
         if (isOpen || isInitialLoad) {
           setIsOpen(false);
           // Always redirect to dashboard unless user was redirected from a specific page
-          const targetUrl = redirectedFrom || '/dashboard';
+          const targetUrl = getSafeInternalPath(redirectedFrom);
           // Use window.location for more reliable redirect during auth state changes
           window.location.href = targetUrl;
         }

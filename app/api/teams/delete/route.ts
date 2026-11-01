@@ -7,6 +7,9 @@ export async function POST() {
   if (!team || team.role !== "owner") return NextResponse.json({ error: "Not authorized" }, { status: 403 })
   const supabase = await createClient()
   const { error } = await supabase.rpc("delete_team", { p_team_id: team.teamId })
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 })
+  if (error) {
+    console.error('Team delete failed:', error)
+    return NextResponse.json({ error: 'Failed to delete team' }, { status: 400 })
+  }
   return NextResponse.json({ ok: true })
 }

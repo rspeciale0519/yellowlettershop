@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getListVersionHistory } from '@/lib/supabase/mailing-lists'
+import { withProtectedRoute } from '@/lib/auth/with-protected-route'
 
-export async function GET(request: NextRequest) {
+export const GET = withProtectedRoute(async (request: NextRequest) => {
   try {
     const { searchParams } = new URL(request.url)
     const listId = searchParams.get('listId')
@@ -26,4 +27,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

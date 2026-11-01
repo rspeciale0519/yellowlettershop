@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { isWebhookTimestampFresh, timingSafeEqualHex } from "@/lib/security/webhook-crypto";
 
 // Ensure Node runtime to access Node crypto
 export const runtime = "nodejs";
@@ -14,19 +15,9 @@ const UUID_CANONICAL_REGEX = /\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][
 // First capture a 36-char UUID-like token, then validate with canonical regex
 const ORDER_SUBJECT_CAPTURE = /Order\s+([0-9a-f-]{36})/i;
 
-function timingSafeEqualHex(aHex: string, bHex: string): boolean {
-  try {
-    const a = Buffer.from(aHex, "hex");
-    const b = Buffer.from(bHex, "hex");
-    if (a.length !== b.length) return false;
-    return crypto.timingSafeEqual(a, b);
-  } catch {
-    return false;
-  }
-}
-
 function verifyMailgunSignature(apiKey: string, timestamp?: string, token?: string, signature?: string): boolean {
   if (!apiKey || !timestamp || !token || !signature) return false;
+  if (!isWebhookTimestampFresh(timestamp)) return false;
   const hmac = crypto.createHmac("sha256", apiKey);
   hmac.update(timestamp);
   hmac.update(token);
@@ -66,7 +57,7 @@ export async function POST(req: NextRequest) {
 
   const isValid = verifyMailgunSignature(apiKey, timestamp, token, signature);
   if (!isValid) {
-    console.warn("Mailgun signature verification failed", { timestamp, token });
+    console.warn("Mailgun signature verification failed");
     return NextResponse.json({ error: "Invalid signature" }, { status: 403 });
   }
 

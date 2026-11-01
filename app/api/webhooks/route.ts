@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { headers } from 'next/headers'
-import crypto from 'crypto'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/utils/supabase/service'
+import { verifyYlsWebhook } from '@/lib/security/webhook-crypto'
 
 // Use Node.js runtime for crypto operations
 export const runtime = 'nodejs';
@@ -20,20 +19,6 @@ interface WebhookEvent {
 // =================================================================================
 // Webhook Signature Verification
 // =================================================================================
-
-function verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
-  const expectedSignature = crypto
-    .createHmac('sha256', secret)
-    .update(payload, 'utf8')
-    .digest('hex')
-  
-  const providedSignature = signature.replace('sha256=', '')
-  
-  return crypto.timingSafeEqual(
-    Buffer.from(expectedSignature, 'hex'),
-    Buffer.from(providedSignature, 'hex')
-  )
-}
 
 // =================================================================================
 // Webhook Handlers
@@ -138,7 +123,7 @@ async function handleRecordsImported(data: any, supabase: any) {
 
 export async function POST(request: NextRequest) {
   try {
-    const headersList = await headers()
+    const headersList = request.headers
     const signature = headersList.get('x-yls-signature')
     const eventType = headersList.get('x-yls-event-type')
     
@@ -160,17 +145,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify webhook signature
-    if (!verifyWebhookSignature(payload, signature, webhookSecret)) {
-      console.error('Invalid webhook signature')
-      return NextResponse.json(
-        { error: 'Invalid signature' },
-        { status: 401 }
-      )
+    const timestamp = headersList.get('x-yls-timestamp')
+    const verified = verifyYlsWebhook({
+      timestamp,
+      body: payload,
+      signature,
+      secret: webhookSecret,
+    })
+    if (!verified.ok) {
+      return NextResponse.json({ error: verified.error }, { status: verified.status })
     }
 
-    const data = JSON.parse(payload)
-    const supabase = createSupabaseServerClient()
+    const event = JSON.parse(payload)
+    if (!event || event.type !== eventType) return NextResponse.json({ error: 'Event type mismatch' }, { status: 400 })
+    const data = event.data
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return NextResponse.json({ error: 'Invalid event data' }, { status: 400 })
+    const supabase = createServiceClient()
 
     let result: { success: boolean; message: string }
 
@@ -218,10 +208,7 @@ export async function POST(request: NextRequest) {
     console.error('Webhook processing error:', error)
     
     return NextResponse.json(
-      { 
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      },
+      { error: 'Webhook processing failed' },
       { status: 500 }
     )
   }

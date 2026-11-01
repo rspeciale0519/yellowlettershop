@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { withAuth } from '@/lib/auth/middleware'
+import { withProtectedRoute } from '@/lib/auth/with-protected-route'
 import { createClient } from '@/utils/supabase/service'
 import { batchValidateRecords } from '@/lib/api/accuzip/validation'
 import { buildValidationResults, type AccuzipRecord } from '@/lib/orders/accuzip-processor'
 import { dbRecordToAccuzip } from '@/lib/orders/upload-list-mapper'
 
 const accuzipConfigured = (): boolean => Boolean(process.env.ACCUZIP_API_KEY)
-const devSkipAllowed = (): boolean =>
-  process.env.NODE_ENV !== 'production' || process.env.ACCUZIP_SKIP_VALIDATION === 'true'
+const devSkipAllowed = (): boolean => process.env.NODE_ENV !== 'production'
 
 const UploadRequestSchema = z.object({
   columnMapping: z.object({
@@ -31,7 +30,7 @@ const UploadRequestSchema = z.object({
   })
 })
 
-export const POST = withAuth(async (req: NextRequest, { userId }) => {
+export const POST = withProtectedRoute(async (req: NextRequest, { userId }) => {
   try {
     const body = await req.json()
     const validatedData = UploadRequestSchema.parse(body)
@@ -180,7 +179,7 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
       { status: 500 }
     )
   }
-})
+}, { rateLimit: { scope: 'accuzip-upload', max: 10, windowSeconds: 60 } })
 
 // Validate the job's records against the real AccuZip client. Without an API
 // key this only runs in dev (skip semantics live in batchValidateRecords and

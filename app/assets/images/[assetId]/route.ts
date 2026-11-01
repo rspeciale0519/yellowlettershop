@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
+import { getAuthenticatedUser } from "@/lib/auth/middleware"
+import { resolveImageAccess } from "@/lib/assets/resolve-image-access"
 import { createServiceClient } from "@/utils/supabase/service"
-import { filePathFromStorageAssetId, isMissingUserAssetsTable } from "@/lib/assets/storage-fallback"
 
 async function signedRedirect(filePath: string) {
   const supabase = createServiceClient()
@@ -11,28 +12,14 @@ async function signedRedirect(filePath: string) {
   return NextResponse.redirect(data.signedUrl, { status: 302 })
 }
 
-export async function GET(_: Request, { params }: { params: Promise<{ assetId: string }> }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ assetId: string }> }) {
+  const user = await getAuthenticatedUser(request)
+  if (!user) return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
   const { assetId } = await params
-  const storageFilePath = filePathFromStorageAssetId(assetId)
-  if (storageFilePath) return signedRedirect(storageFilePath)
-
   const supabase = createServiceClient()
-  const { data: asset, error } = await supabase
-    .from("user_assets")
-    .select("file_path, file_type")
-    .eq("id", assetId)
-    .single()
-
-  if (error) {
-    if (isMissingUserAssetsTable(error)) {
-      return NextResponse.json({ error: "Image metadata is unavailable" }, { status: 404 })
-    }
-    return NextResponse.json({ error: "Image not found" }, { status: 404 })
+  const access = await resolveImageAccess(supabase, assetId, user?.id ?? null)
+  if (!access.ok) {
+    return NextResponse.json({ error: access.error }, { status: access.status })
   }
-
-  if (!asset?.file_path || asset.file_type !== "image") {
-    return NextResponse.json({ error: "Image not found" }, { status: 404 })
-  }
-
-  return signedRedirect(asset.file_path)
+  return signedRedirect(access.filePath)
 }

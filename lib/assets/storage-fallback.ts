@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { isOwnedAssetPath } from './ownership'
 
 export type AssetRecord = {
   id: string
@@ -46,6 +47,7 @@ export function filePathFromStorageAssetId(assetId: string) {
 }
 
 export async function withSignedAssetUrl(client: SupabaseClient, bucket: string, asset: AssetRecord) {
+  if (!isOwnedAssetPath(asset.file_path, asset.user_id)) throw new Error('Invalid asset storage ownership')
   const { data } = await client.storage.from(bucket).createSignedUrl(asset.file_path, 3600)
   return { ...asset, file_url: data?.signedUrl ?? asset.file_url }
 }

@@ -27,7 +27,7 @@ export async function validateAddress(address: {
   errors?: string[];
 }> {
   if (!ACCUZIP_API_KEY) {
-    if (process.env.NODE_ENV !== 'production' || process.env.ACCUZIP_SKIP_VALIDATION === 'true') {
+    if (process.env.NODE_ENV !== 'production') {
       console.warn('AccuZIP: API key not configured; skipping validation');
       return { valid: true };
     }
@@ -76,7 +76,7 @@ export async function batchValidateRecords(
   validationType: 'address' | 'full' = 'address'
 ): Promise<Array<{ recordId: string; valid: boolean; errors?: string[] }>> {
   if (!ACCUZIP_API_KEY) {
-    if (process.env.NODE_ENV !== 'production' || process.env.ACCUZIP_SKIP_VALIDATION === 'true') {
+    if (process.env.NODE_ENV !== 'production') {
       console.warn('AccuZIP: API key not configured; skipping batch validation');
       return records.map(r => ({ recordId: String(r.id), valid: true }));
     }

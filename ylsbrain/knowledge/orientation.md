@@ -2,7 +2,7 @@
 kind: knowledge
 slug: orientation
 status: current
-updated: 2026-08-02
+updated: 2026-10-17
 layer: orientation
 sources:
   - dev-docs/PRD.md
@@ -22,7 +22,7 @@ sources:
 
 **Deploy:** one Vercel project (`yellowlettershop`) owns `app.yellowlettershop.com`; `main` is production and lags `develop` by design (`memory:project-vercel-project`). Dev runs on the local Docker Supabase stack, port 3010.
 
-**Where it's headed next:** delete the shipped test/debug endpoints (now live), wire the built-but-uncalled DB rate limiter, back both template galleries with real data, Melissa list purchase, proof annotation UI. Redstone outbound is built but blocked on them provisioning our endpoint. Reconciled list: [[knowledge/roadmap]].
+**Where it's headed next:** owner apply of the 2026-10-17 RLS lock migration (file only in PR), Supabase Auth rate limits / CAPTCHA (login is browser-direct), Next.js upgrade (npm audit), template galleries → real data, Melissa list purchase, proof annotation UI. Debug endpoints were archived 2026-08-03. Rate limiter is now wired to AccuZip / validation / list-builder / payment-intent (not login). Reconciled list: [[knowledge/roadmap]]; scan: `SECURITY_SCAN_2026-10-17.md`.
 
 ## Product
 Scope, audiences, and the (now-stale) tiered narrative are in `dev-docs/PRD.md`. Treat its revenue/role sections as superseded — defer to [[knowledge/superseded]] for what is actually true.

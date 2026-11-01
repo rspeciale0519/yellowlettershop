@@ -1,7 +1,82 @@
 # yls brain — STATE
-Updated: 2026-08-03
+Updated: 2026-10-17
 
 ## Current focus
+**(2026-10-17): Release preflight of PR #25 through head `42c8e79`.**
+GitHub access works; an earlier revision had a failed Windows test and
+40 full-audit highs. Prepared corrections: portable native PostgreSQL discovery, explicit
+private identity for the locally guarded braces fork, and forward migration
+`20261017120300_secure_share_tokens.sql` preserving the built-in UUID CSPRNG
+from `17414f3` for earlier recorded histories, plus service-only share writes. Share expiry is bounded to
+30 days from valid creation. No existing migration was rewritten.
+Evidence: **441 tests**, all **44 migrations** on disposable PG17, full
+typecheck/build and **14 HTTP checks** pass; full audit **0 high/critical**,
+26 moderate + 2 low. Independent re-review passed. Current Windows CI still
+needs a run on the corrected revision. Owner explicitly approved the PR push
+and its automatic Vercel preview only; production remains blocked.
+**Hold production rollout:** hosted access/evidence and legacy share-token raw/
+hash provenance + expiry conversion are unresolved; old share URLs otherwise
+break. Public assets stay public. Report and read-only SQL:
+`docs/superpowers/reports/2026-10-17-release-preflight.md`.
+Cloud install/start draft now includes native PostgreSQL; not published.
+No merge, deployment command, hosted SQL/storage change, live transaction or
+credential rotation. Designer `585c304` stays separate.
+
+## (prior focus)
+**(2026-10-17): Warden review of head `391f756` on draft PR #25.**
+PaymentIntent reuse is rejected (unique index + metadata.order_id + 409);
+team create/invite/add-member go through SECURITY DEFINER RPCs after
+authenticated writes were revoked; share tokens are hashed (30-day max)
+with revoke and private,no-store / DENY headers. Tokens come from two
+`pg_catalog.gen_random_uuid()` values (no md5/clock, no public pgcrypto).
+Generic client errors,
+immutable `user_assets.id`, anon pricing display columns only, owner-only
+asset stats/signed-url, team-verified upload, `verifyYlsWebhook`, and
+in-repo official braces 3.0.3. Evidence: **439 tests**, typecheck:full 0,
+placeholder-env build 0, lint 38 (same files as main),
+`npm audit --omit=dev` 0 high/critical (3 moderate). All migrations
+applied on disposable local Postgres 16. No merge/deploy/hosted SQL.
+Detail: [[journal/2026-10-17]].
+
+## (prior focus)
+**(2026-10-17): Owner-approved security consolidation into existing PR #25.**
+PR #25's `ce4d55e` is the base; selected protections from `fix/security-release`
+at `9928a56` extend its existing modules. Checkout uses canonical validated
+recipients/server prices and checks owner/amount/quote before card actions;
+all asset entry points reject foreign paths; owner-aware PDF rendering stays.
+Share HTML/SVG downloads are hardened. Next 15.5.28, strict CSP and timestamp
+HMAC remain; original RLS migration is unchanged and a unique forward migration
+`20261017010000` adds financial/admin/validation/asset guards (FILE ONLY).
+Evidence: **419 tests**, full typecheck, production build and **14 local HTTP
+checks** pass; full audit **0 high/critical**, 26 moderate + 2 low remain.
+Independent review findings resolved. See
+`docs/superpowers/reports/2026-10-17-security-consolidation.md` for exact SQL
+checksums, rollout/rollback and approvals. **Public assets remain public;
+hosted schema/URL and external custom-webhook inventory still need evidence.**
+No merge/deploy/hosted SQL/storage changes, live transactions or key rotations.
+Designer branch `585c304` and standalone security branch `9928a56` stay separate.
+
+## (prior focus)
+**(2026-10-17): Owner-review round 4 on draft PR #25**
+(`cursor/security-scan-2026-10-17-1cd0`). `/api/webhooks` HMAC is now
+`${timestamp}.${body}` after a required 300s timestamp; CSP skips `;` /
+non-http origins and adds `frame-ancestors 'none'`; `@playwright/mcp` moved
+to devDependencies. Evidence: 350 tests, typecheck:full 0, build 0, lint 38
+(no new); CSP proof 0 violations. Detail: [[journal/2026-10-17]].
+
+## (prior focus)
+**(2026-10-17): Owner-approved security scan + C/H/M fixes on
+`cursor/security-scan-2026-10-17-1cd0`.** Report: `SECURITY_SCAN_2026-10-17.md`.
+Critical: checkout trusted client price (now `computeServerOrderTotal`);
+`/assets/images` service-role IDOR (now session + `{userId}/{file}`). High:
+wrapped AccuZip/validation/list-builder/parse; open-redirect sanitizer; SSRF
+URL allowlist; Mailgun timestamp window; RLS lock **migration file only**;
+rate limiter wired to those APIs (login still owner/Supabase). AccuZip count
+fail-closed. Evidence: 307 tests. No prod DBs/cards/emails touched. Owner:
+apply migration, Auth rate limits, Next.js upgrade. Detail:
+[[journal/2026-10-17]].
+
+## (prior focus)
 **(2026-08-02, 23:20): PRODUCTION RELEASE — vendor fulfillment loop is LIVE.**
 `develop` merged to `main` (1cbc0ee, --no-ff) and pushed; the three pending
 migrations (orders_refund_columns, order_dispatches,

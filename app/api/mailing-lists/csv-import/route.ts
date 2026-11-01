@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { bulkImportRecords } from '@/lib/supabase/mailing-lists-extended/csv';
+import { withProtectedRoute } from '@/lib/auth/with-protected-route';
 
-export async function POST(request: NextRequest) {
+export const POST = withProtectedRoute(async (request: NextRequest) => {
   try {
     const contentType = request.headers.get('content-type') ?? '';
     if (!contentType.includes('application/json')) {
@@ -57,4 +58,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
+}, { rateLimit: { scope: 'mailing-lists-csv-import', max: 20, windowSeconds: 60 } });

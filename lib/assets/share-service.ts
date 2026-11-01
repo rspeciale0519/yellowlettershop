@@ -1,12 +1,16 @@
 import { createServiceClient } from '@/utils/supabase/service'
+import { isOwnedAssetPath } from './ownership'
+import { hashShareToken, SHARE_LINK_MAX_DAYS, shareLinkIsExpired } from './share-token'
 
 export interface ShareLinkData {
   id: string
   asset_id: string
   share_token: string
   expires_at: string | null
+  created_at: string
   access_count: number
   asset: {
+    user_id: string
     filename: string
     file_size: number
     file_type: string
@@ -41,6 +45,7 @@ export class ShareService {
         .select(`
           *,
           asset:user_assets (
+            user_id,
             filename,
             file_size,
             file_type,
@@ -49,7 +54,7 @@ export class ShareService {
             created_at
           )
         `)
-        .eq('share_token', token)
+        .eq('share_token', hashShareToken(token))
         .eq('is_active', true)
         .single()
 
@@ -57,8 +62,12 @@ export class ShareService {
         return null
       }
 
-      // Check if expired
-      if (data.expires_at && new Date(data.expires_at) < new Date()) {
+      if (!data.asset || data.created_by !== data.asset.user_id || !isOwnedAssetPath(data.asset.file_path, data.asset.user_id)) return null
+
+      const expiry = data.expires_at ? new Date(data.expires_at).getTime() : NaN
+      const created = data.created_at ? new Date(data.created_at).getTime() : NaN
+      const now = Date.now()
+      if (!Number.isFinite(created) || created > now || shareLinkIsExpired(data.expires_at) || expiry > created + SHARE_LINK_MAX_DAYS * 86400000) {
         return null
       }
 
@@ -87,7 +96,8 @@ export class ShareService {
   /**
    * Streams file data from storage without exposing signed URL
    */
-  async streamFile(filePath: string): Promise<StreamFileResult | null> {
+  async streamFile(filePath: string, ownerId: string): Promise<StreamFileResult | null> {
+    if (!isOwnedAssetPath(filePath, ownerId)) return null
     try {
       // Get signed URL from storage
       const { data: signedUrlData, error: urlError } = await this.supabase.storage

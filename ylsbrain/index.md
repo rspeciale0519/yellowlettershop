@@ -14,6 +14,8 @@ Catalog of the yls brain. SessionStart reads this.
 - [[knowledge/roadmap]] — reconciled unbuilt-feature roadmap.
 
 ## Recent journal
+- [[journal/2026-10-17]] — owner-approved security scan + C/H/M fixes.
+- [[journal/2026-08-03]] — debug endpoints archived; print vendor callback shipped.
 - [[journal/2026-06-12]] — features.md Design rows reconciled + consolidation (post-release).
 - [[journal/2026-05-21]] — release develop → main (`91fcb60`) [01:30].
 - [[journal/2026-05-19]] — artwork-designer overhaul 15-phase impl [03:10] · MCP npx fix [00:22] · Rule 11 [23:41] · F1–F5 confirmed [21:26].

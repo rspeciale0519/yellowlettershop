@@ -7,6 +7,7 @@ import type { TokenContext } from "@/components/designer/tokens/recipient-map"
 import type { DesignElement, DesignerDocument, DesignerPage, PageBackground } from "@/types/designer"
 import { hexToRgb01 } from "@/app/api/design/preview/_render/colors"
 import { pdfAngleFromCss, rotateAbout, type Pt } from "@/app/api/design/preview/_render/transform"
+import { fetchImageBytes } from "@/lib/designer/fetch-image-bytes"
 
 const PT_PER_IN = 72
 const PX_TO_PT = PT_PER_IN / DESIGN_PPI
@@ -32,26 +33,8 @@ function pickFont(fonts: FontSet, family: string | undefined, bold: boolean, ita
   return bold ? fonts.sansBold : fonts.sans
 }
 
-async function fetchImageBytes(src: string): Promise<{ bytes: Uint8Array; kind: "png" | "jpg" } | null> {
-  try {
-    if (src.startsWith("placeholder:")) return null
-    if (src.startsWith("data:")) {
-      const [meta, b64] = src.split(",")
-      const bytes = Uint8Array.from(Buffer.from(b64, "base64"))
-      return { bytes, kind: meta.includes("jpeg") || meta.includes("jpg") ? "jpg" : "png" }
-    }
-    const res = await fetch(src)
-    if (!res.ok) return null
-    const buf = new Uint8Array(await res.arrayBuffer())
-    const isJpg = buf[0] === 0xff && buf[1] === 0xd8
-    return { bytes: buf, kind: isJpg ? "jpg" : "png" }
-  } catch {
-    return null
-  }
-}
-
-async function embedImage(pdf: PDFDoc, src: string) {
-  const img = await fetchImageBytes(src)
+async function embedImage(pdf: PDFDoc, src: string, ownerUserId?: string) {
+  const img = await fetchImageBytes(src, ownerUserId)
   if (!img) return null
   try {
     return img.kind === "jpg" ? await pdf.embedJpg(img.bytes) : await pdf.embedPng(img.bytes)
@@ -67,6 +50,7 @@ async function drawElement(
   ctx: TokenContext,
   geom: { bleedPt: number; mediaH: number },
   fonts: FontSet,
+  ownerUserId?: string,
 ) {
   const x = geom.bleedPt + element.x * PX_TO_PT
   const w = element.width * PX_TO_PT
@@ -128,7 +112,7 @@ async function drawElement(
   }
 
   if (element.type === "image") {
-    const embedded = await embedImage(pdf, element.src)
+    const embedded = await embedImage(pdf, element.src, ownerUserId)
     if (embedded) {
       const p = anchor(x, yBottom)
       page.drawImage(embedded, { x: p.x, y: p.y, width: w, height: h, opacity, ...rot })
@@ -192,11 +176,11 @@ function drawCropMarks(page: PDFPage, mediaW: number, mediaH: number, bleedPt: n
   }
 }
 
-async function drawBackground(pdf: PDFDoc, page: PDFPage, bg: PageBackground | undefined, mediaW: number, mediaH: number) {
+async function drawBackground(pdf: PDFDoc, page: PDFPage, bg: PageBackground | undefined, mediaW: number, mediaH: number, ownerUserId?: string) {
   if (!bg) return
   if (bg.color) page.drawRectangle({ x: 0, y: 0, width: mediaW, height: mediaH, color: col(bg.color) })
   if (bg.image && !bg.image.src.startsWith("placeholder:")) {
-    const embedded = await embedImage(pdf, bg.image.src)
+    const embedded = await embedImage(pdf, bg.image.src, ownerUserId)
     if (embedded) page.drawImage(embedded, { x: 0, y: 0, width: mediaW, height: mediaH, opacity: bg.image.opacity ?? 1 })
   }
 }
@@ -206,7 +190,7 @@ export async function renderDesignToPdf(
   ctx: TokenContext,
   formatId: MailFormatId,
   orientation: MailOrientation,
-  opts?: { addCropMarks?: boolean },
+  opts?: { addCropMarks?: boolean; ownerUserId?: string },
 ): Promise<Uint8Array> {
   const trim = canvasSizePx(formatId, orientation)
   const bleedIn = MAIL_FORMATS[formatId].bleedIn
@@ -226,10 +210,10 @@ export async function renderDesignToPdf(
 
   for (const pageName of ["front", "back"] as DesignerPage[]) {
     const page = pdf.addPage([mediaW, mediaH])
-    await drawBackground(pdf, page, doc.backgrounds?.[pageName], mediaW, mediaH)
+    await drawBackground(pdf, page, doc.backgrounds?.[pageName], mediaW, mediaH, opts?.ownerUserId)
     const elements = [...doc.pages[pageName]].filter((el) => !el.hidden).sort((a, b) => a.zIndex - b.zIndex)
     for (const element of elements) {
-      await drawElement(pdf, page, element, ctx, { bleedPt, mediaH }, fonts)
+      await drawElement(pdf, page, element, ctx, { bleedPt, mediaH }, fonts, opts?.ownerUserId)
     }
     if (opts?.addCropMarks !== false) drawCropMarks(page, mediaW, mediaH, bleedPt)
   }

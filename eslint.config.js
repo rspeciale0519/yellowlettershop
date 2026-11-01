@@ -12,6 +12,7 @@ module.exports = [
     ignores: [
       '.next/**',
       'node_modules/**',
+      'vendor/**',
       'out/**',
       'public/**',
       'dist/**',

@@ -108,7 +108,9 @@ export function MailingOptionsStep({ orderState }: OrderStepProps) {
   }
 
   const calculatePricing = async () => {
-    if (!orderState.accuzipValidation?.deliverableRecords) return
+    const validationJobId =
+      orderState.accuzipValidation?.jobId ?? orderState.accuzipValidation?.orderId
+    if (!validationJobId) return
     
     setIsCalculatingPricing(true)
     try {
@@ -117,7 +119,7 @@ export function MailingOptionsStep({ orderState }: OrderStepProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mailingOptions: orderState.mailingOptions,
-          recordCount: orderState.accuzipValidation.deliverableRecords
+          validationJobId,
         })
       })
       
@@ -134,10 +136,11 @@ export function MailingOptionsStep({ orderState }: OrderStepProps) {
 
   // Calculate pricing when component mounts or key options change
   useEffect(() => {
-    if (orderState.mailingOptions && orderState.accuzipValidation?.deliverableRecords) {
+    const jobId = orderState.accuzipValidation?.jobId ?? orderState.accuzipValidation?.orderId
+    if (orderState.mailingOptions && jobId) {
       calculatePricing()
     }
-  }, [orderState.mailingOptions?.serviceLevel, orderState.accuzipValidation?.deliverableRecords])
+  }, [orderState.mailingOptions?.serviceLevel, orderState.accuzipValidation?.jobId, orderState.accuzipValidation?.orderId])
 
   const handleIncludePostageChange = (includePostage: boolean) => {
     updateOrderState({

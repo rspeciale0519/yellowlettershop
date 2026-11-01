@@ -18,7 +18,6 @@ import { createClient } from '@/utils/supabase/service'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
   validateWebhookIp,
-  checkWebhookRateLimit,
   logWebhookSecurity,
 } from '@/lib/webhooks/security'
 
@@ -43,30 +42,10 @@ if (!webhookSecret) {
 export const runtime = 'nodejs'
 
 export async function POST(request: NextRequest) {
-  const clientIp =
-    request.headers.get('x-forwarded-for')?.split(',')[0] ||
-    request.headers.get('x-real-ip') ||
-    'unknown'
-
   try {
     if (process.env.NODE_ENV === 'production' && !validateWebhookIp(request, stripeWebhookIps)) {
       logWebhookSecurity(request, '/api/payments/webhooks/stripe', { valid: false, error: 'IP not in allowlist' })
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const rateLimitResult = checkWebhookRateLimit(clientIp, 60, 60000)
-    if (!rateLimitResult.allowed) {
-      logWebhookSecurity(request, '/api/payments/webhooks/stripe', { valid: false, error: 'Rate limit exceeded' })
-      return NextResponse.json(
-        { error: 'Rate limit exceeded' },
-        {
-          status: 429,
-          headers: {
-            'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
-            'X-RateLimit-Reset': new Date(rateLimitResult.resetTime).toISOString(),
-          },
-        }
-      )
     }
 
     if (!stripe) {

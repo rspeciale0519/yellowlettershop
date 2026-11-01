@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { ListCriteria } from '@/lib/supabase/mailing-lists';
 import { fetchRecords } from '@/lib/api/accuzip';
-import { withAuth } from '@/lib/auth/middleware';
+import { withProtectedRoute } from '@/lib/auth/with-protected-route';
 
-export const POST = withAuth(async (req: NextRequest, { userId }) => {
+export const POST = withProtectedRoute(async (req: NextRequest, { userId }) => {
   try {
     let body: unknown;
     try {
@@ -56,4 +56,4 @@ export const POST = withAuth(async (req: NextRequest, { userId }) => {
       { status: 500 }
     );
   }
-})
+}, { rateLimit: { scope: 'accuzip-search', max: 20, windowSeconds: 60 } })

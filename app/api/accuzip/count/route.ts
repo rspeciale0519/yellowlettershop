@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import type { ListCriteria } from '@/lib/supabase/mailing-lists'
 import { estimateRecordCount } from '@/lib/api/accuzip'
+import { withProtectedRoute } from '@/lib/auth/with-protected-route'
 
-export async function POST(req: Request) {
+export const POST = withProtectedRoute(async (req: NextRequest) => {
   try {
     const body = await req.json()
     const criteria: ListCriteria | undefined = body?.criteria
@@ -20,4 +21,4 @@ export async function POST(req: Request) {
       { status: 500 }
     )
   }
-}
+}, { rateLimit: { scope: 'accuzip-count', max: 20, windowSeconds: 60 } })

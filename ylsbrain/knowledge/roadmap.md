@@ -2,7 +2,7 @@
 kind: knowledge
 slug: roadmap
 status: current
-updated: 2026-08-02
+updated: 2026-10-17
 layer: roadmap
 sources:
   - dev-docs/implementation-status.md
@@ -47,14 +47,18 @@ removed — see [[knowledge/features]]. Killed strategy in
   `payment_status` **and cancelling the order**, race 500→409, jsonb package
   overwrite, and a 426→264-line split of `dispatch-service.ts`. None had
   shipped, so nothing was ever customer-exposed. `implementation-status.md` §3b.
-- **Wire the DB-backed rate limiter** (built, zero callers) into login/sensitive
-  routes; retire the in-memory Map.
-- **Middleware/auth hardening** — extend matcher beyond `/dashboard/*`; wrap the
-  remaining bare handlers (`payments/create-payment-intent`, `mailing-lists/*`,
-  `/api/teams/*`); fix `analytics/performance` IDOR; **delete the shipped
-  test/debug endpoints** (`api/test-db`, `api/test-db-verification`,
-  `api/test-auth-state`, `/test-types`) — these are now live in production,
-  which moves this up the list.
+- ~~**Wire the DB-backed rate limiter**~~ **PARTIAL 2026-10-17** — AccuZip,
+  validation, list-builder, parse, payment-intent now call `checkRateLimit` via
+  `withProtectedRoute`. Login/OTP still hit Supabase Auth in the browser
+  (owner: dashboard rate limits / CAPTCHA). In-memory Map unused. Scan:
+  `SECURITY_SCAN_2026-10-17.md` H6.
+- ~~**Middleware/auth hardening (API wrap + IDOR + debug endpoints)**~~
+  **PARTIAL 2026-10-17** — debug endpoints archived 2026-08-03; this scan
+  wrapped AccuZip / validation / mailing-lists parse+csv / campaign execute,
+  closed `analytics/performance` userId override, server-priced checkout,
+  asset IDOR, open-redirect, SSRF. Matcher still `/dashboard/*` only (owner
+  choice — expanding it would 401 signed webhooks). `/api/teams/*` still
+  per-handler.
 - **Template gallery → DB-backed** (both galleries mock; `mail_templates`
   unmigrated).
 - **Post-release smoke against production** — the whole fulfillment path has

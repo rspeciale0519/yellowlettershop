@@ -4,7 +4,7 @@
  * Enhanced security validation and verification for webhook endpoints
  */
 
-import crypto from 'crypto'
+import { signYlsWebhook, verifyYlsWebhook } from '@/lib/security/webhook-crypto'
 import { NextRequest } from 'next/server'
 
 export interface WebhookSecurityConfig {
@@ -29,43 +29,13 @@ export function validateWebhookSecurity(
   headers: Headers,
   config: WebhookSecurityConfig
 ): WebhookValidationResult {
-  try {
-    // 1. Validate signature
-    const signature = headers.get(config.signatureHeader)
-    if (!signature) {
-      return { valid: false, error: 'Missing signature header' }
-    }
-
-    const expectedSignature = generateWebhookSignature(payload, config.secret)
-    if (!timingSafeEqual(signature, expectedSignature)) {
-      return { valid: false, error: 'Invalid signature' }
-    }
-
-    // 2. Validate timestamp if provided (prevent replay attacks)
-    if (config.timestampHeader) {
-      const timestampHeader = headers.get(config.timestampHeader)
-      if (!timestampHeader) {
-        return { valid: false, error: 'Missing timestamp header' }
-      }
-
-      const timestamp = new Date(parseInt(timestampHeader) * 1000)
-      const now = new Date()
-      const maxAge = (config.maxAge || 300) * 1000 // 5 minutes default
-
-      if (now.getTime() - timestamp.getTime() > maxAge) {
-        return { valid: false, error: 'Webhook timestamp too old' }
-      }
-
-      return { valid: true, timestamp }
-    }
-
-    return { valid: true }
-  } catch (error) {
-    return { 
-      valid: false, 
-      error: error instanceof Error ? error.message : 'Security validation failed' 
-    }
-  }
+  const timestamp = headers.get(config.timestampHeader ?? 'x-yls-timestamp')
+  const result = verifyYlsWebhook({
+    body: payload, secret: config.secret, timestamp,
+    signature: headers.get(config.signatureHeader) ?? undefined,
+    maxAgeSeconds: config.maxAge,
+  })
+  return result.ok ? { valid: true, timestamp: new Date(Number(timestamp) * 1000) } : { valid: false, error: result.error }
 }
 
 /**
@@ -92,26 +62,8 @@ export function validateWebhookIp(
 /**
  * Generates HMAC-SHA256 signature for webhook payload
  */
-export function generateWebhookSignature(
-  payload: string,
-  secret: string,
-  prefix: string = 'sha256='
-): string {
-  const hmac = crypto.createHmac('sha256', secret)
-  hmac.update(payload, 'utf8')
-  return prefix + hmac.digest('hex')
-}
-
-/**
- * Timing-safe string comparison to prevent timing attacks
- */
-function timingSafeEqual(a: string, b: string): boolean {
-  if (a.length !== b.length) return false
-  
-  const bufferA = Buffer.from(a)
-  const bufferB = Buffer.from(b)
-  
-  return crypto.timingSafeEqual(bufferA, bufferB)
+export function generateWebhookSignature(payload: string, secret: string, timestamp: string): string {
+  return signYlsWebhook(secret, timestamp, payload)
 }
 
 /**

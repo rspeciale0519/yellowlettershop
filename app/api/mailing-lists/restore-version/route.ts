@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { restoreListVersion } from '@/lib/supabase/mailing-lists-extended'
+import { withProtectedRoute } from '@/lib/auth/with-protected-route'
 
 const RestoreVersionSchema = z.object({
   listId: z.string().min(1, 'listId is required'),
   versionId: z.coerce.number().int().positive('versionId must be a positive version number')
 })
 
-export async function POST(request: NextRequest) {
+export const POST = withProtectedRoute(async (request: NextRequest) => {
   try {
     // Check Content-Type
     const contentType = request.headers.get('content-type') ?? ''
@@ -53,4 +54,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+})

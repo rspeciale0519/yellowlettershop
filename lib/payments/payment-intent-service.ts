@@ -4,13 +4,11 @@
  */
 
 import Stripe from 'stripe';
-import { requireStripe, STRIPE_CONFIG } from './stripe-config';
+import { requireStripe } from './stripe-config';
 import { createServiceClient } from '@/utils/supabase/service';
-import { CustomerService } from './customer-service';
 import {
   PaymentServiceError,
   PaymentIntent,
-  CreatePaymentIntentParams,
   CapturePaymentParams,
   RefundPaymentParams,
   RefundOutcome
@@ -20,69 +18,6 @@ import type { PaymentStatus } from '@/types/supabase';
 
 export class PaymentIntentService {
   private supabase = createServiceClient();
-  private customerService = new CustomerService();
-
-  /**
-   * Create payment intent for order authorization
-   */
-  async createPaymentIntent(params: CreatePaymentIntentParams): Promise<PaymentIntent> {
-    const stripe = requireStripe();
-
-    const {
-      userId,
-      amount,
-      currency = STRIPE_CONFIG.currency,
-      description,
-      campaignId,
-      metadata = {},
-      automaticPaymentMethods = true,
-    } = params;
-
-    // Ensure customer exists
-    const customerId = await this.customerService.ensureCustomer(userId);
-
-    try {
-      // Create payment intent
-      const paymentIntent = await stripe.paymentIntents.create({
-        amount,
-        currency,
-        customer: customerId,
-        description,
-        capture_method: STRIPE_CONFIG.captureMethod,
-        automatic_payment_methods: automaticPaymentMethods
-          ? { enabled: true }
-          : undefined,
-        metadata: {
-          userId,
-          campaignId: campaignId || '',
-          ...metadata,
-        },
-      });
-
-      // No DB write here by design: the intent is created BEFORE the order row
-      // exists (the wizard authorizes, then submits). The PaymentIntent id is
-      // recorded on the order at submit time (lib/orders/order-insert.ts), which
-      // is what capture/refund below key off.
-
-      return {
-        id: paymentIntent.id,
-        clientSecret: paymentIntent.client_secret!,
-        amount: paymentIntent.amount,
-        status: this.mapStripeStatus(paymentIntent.status),
-        customerId,
-      };
-    } catch (error) {
-      if (error instanceof Stripe.errors.StripeError) {
-        throw new PaymentServiceError(
-          'Failed to create payment intent',
-          'STRIPE_PAYMENT_INTENT_ERROR',
-          400,
-          error
-        );
-      }
-      throw error;
-    }
-  }
 
   /**
    * Capture payment intent (complete the payment)

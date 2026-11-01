@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { parse } from 'csv-parse/sync'
+import { withProtectedRoute } from '@/lib/auth/with-protected-route'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,7 +11,7 @@ interface ParsedData {
   fileType: string
 }
 
-export async function POST(request: NextRequest) {
+export const POST = withProtectedRoute(async (request: NextRequest) => {
   try {
     const formData = await request.formData()
     const file = formData.get('file') as File
@@ -98,7 +99,7 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     )
   }
-}
+}, { rateLimit: { scope: 'mailing-lists-parse', max: 10, windowSeconds: 60 } })
 
 function getFileType(fileName: string): string | null {
   if (fileName.endsWith('.csv')) return 'csv'
