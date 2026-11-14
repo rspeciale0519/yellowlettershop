@@ -1,129 +1,53 @@
 ---
 name: create-api-route
-description: Scaffold a new Next.js API route under app/api with the project's auth wrappers, Zod (or unknown-narrowing) validation, and Supabase data access following existing patterns.
+description: Create Yellow Letter Shop API routes with existing auth wrappers, Zod validation, and Supabase data access.
 disable-model-invocation: true
 ---
 
 # Create API Route
 
-Scaffold a new API route following the project's established patterns. The user provides the route path and HTTP methods needed.
+Use this skill when the user requests a route under `app/api/`.
+Implement the requested methods and behavior.
+Follow the repository's [instructions](../../../AGENTS.md) for approvals and required checks.
 
-## Usage
+## Route and authentication
 
-The user invokes this with: `/create-api-route <path> [methods]`
+Inspect the nearest relevant route and its callers.
+Use `app/api/<path>/route.ts`, with services under `lib/<feature>/` when needed.
 
-Examples:
+- User routes use `withAuth` from `@/lib/auth/middleware`.
+- Its handler receives the request, `{ user, userId }`, and the route context.
+- Platform admin routes use `withAdmin` from `@/lib/admin/require-admin`.
+- Use `withSuperAdmin` when the operation requires that role.
+- Dynamic admin routes can call `requireAdmin(request)` directly.
+- Return its result immediately when it is an instance of `NextResponse`.
+- Await dynamic `params` as required by the installed Next.js version.
+- Public routes and webhooks need their own access or signature checks.
 
-- `/create-api-route campaigns` — Creates GET and POST handlers
-- `/create-api-route campaigns/[id] GET PATCH DELETE` — Creates specific methods
-- `/create-api-route admin/reports` — Creates an admin route gated by `withAdmin`
+Authentication does not establish resource ownership or team authority.
+Check the caller's access to the requested resource before data access.
+Do not infer authorization from the route path alone.
 
-## Steps
+## Request and data handling
 
-### 1. Determine Route Type
+Validate changed request contracts with Zod, including relevant path and query values.
+Return 400 for malformed JSON and invalid input.
+Preserve existing response contracts unless the requested change requires otherwise.
 
-Check if the path starts with `admin/`:
+Use existing Supabase services where they fit the request.
+For cookie sessions, `await createClient()` from `@/utils/supabase/server` carries the session for RLS.
+Do not assume that a cookie client carries a bearer token.
+Check the authentication modes supported by the route.
 
-- **Admin route**: wrap with `withAdmin` from `@/lib/admin/require-admin`
-- **User route**: wrap with `withAuth` from `@/lib/auth/middleware`
+The client from `@/utils/supabase/service` bypasses RLS.
+Use it only for justified server operations with explicit authorization and resource scope.
+Never accept an unchecked user or team identifier as authority.
+Check returned Supabase errors before returning success.
+Return stable errors without provider details, credentials, or personal data.
 
-### 2. Examine Existing Patterns
+## Verification
 
-Before writing any code, read 2-3 existing routes near the target path to match conventions:
-
-```bash
-# User routes
-cat app/api/accuzip/search/route.ts
-cat app/api/mailing-lists/route.ts
-
-# Admin routes
-cat app/api/admin/users/route.ts
-```
-
-### 3. Create the Route File
-
-Create `app/api/<path>/route.ts`. Routes live in `app/api`, not `src/app/api`.
-
-**User route pattern** (`withAuth` injects an auth context — destructure `userId`; the full shape is `{ user, userId }`):
-
-```typescript
-import { NextRequest, NextResponse } from 'next/server';
-import { withAuth } from '@/lib/auth/middleware';
-
-export const GET = withAuth(async (req: NextRequest, { userId }) => {
-  try {
-    // ... query scoped to userId
-    return NextResponse.json({ data: [] });
-  } catch {
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-});
-```
-
-To restrict a user route by role, pass options: `withAuth(handler, { allowedRoles: ['admin'] })`.
-
-**Admin route pattern** (`withAdmin` injects the resolved `AdminUser`; it returns 401/403 itself):
-
-```typescript
-import { NextRequest, NextResponse } from 'next/server';
-import { withAdmin } from '@/lib/admin/require-admin';
-import type { AdminUser } from '@/lib/admin/types';
-
-export const GET = withAdmin(async (req: NextRequest, admin: AdminUser) => {
-  // admin.userId, admin.role, admin.email available
-  return NextResponse.json({ data: [] });
-});
-```
-
-### 4. Validate request bodies (POST/PATCH)
-
-Parse the body as `unknown` inside a try/catch and reject malformed JSON with 400 before touching it. Then validate with either a Zod schema (preferred — ~45 routes already do) or explicit `unknown`-narrowing (see `app/api/accuzip/search/route.ts`):
-
-```typescript
-import { z } from 'zod';
-
-const createResourceSchema = z.object({
-  name: z.string().min(1).max(255),
-  // ... fields
-});
-
-let body: unknown;
-try {
-  body = await req.json();
-} catch {
-  return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-}
-
-const parsed = createResourceSchema.safeParse(body);
-if (!parsed.success) {
-  return NextResponse.json({ error: 'Invalid request body' }, { status: 400 });
-}
-```
-
-### 5. Data access (Supabase, not Prisma)
-
-This project has **no Prisma**. Use the Supabase clients:
-
-- Server helpers under `@/lib/supabase/server-*` (e.g. `server-mailing-lists`)
-- Service-role client `createServiceClient` from `@/utils/supabase/service` for trusted server work
-
-For non-trivial logic, extract to a service under `lib/<resource>/` rather than fattening the route. Always scope queries to the caller (`userId` / their organization) so a request can't read another tenant's rows.
-
-### 6. Verify
-
-```bash
-npm run typecheck:ui
-npm run lint
-```
-
-## Key Rules
-
-- Never use `any` — use `unknown` with type narrowing
-- Always parse/validate request bodies at the boundary; reject bad JSON with 400
-- Data access is Supabase (`@/lib/supabase/*`, `@/utils/supabase/*`) — there is no `@/lib/prisma`
-- Keep route files **≤350 LOC** — extract to a `lib/<resource>/` service if needed
-- Scope every query to the authenticated user/org to prevent cross-tenant (IDOR) reads
-- Parse search params with explicit defaults, not implicit coercion (see `app/api/admin/users/route.ts`)
+Use Mocha tests under the matching `tests/<area>/` directory for meaningful route or service behavior.
+Cover denied access, invalid input, missing resources, and provider failures when relevant.
+Follow the application checks in `AGENTS.md`, including `npm run typecheck:full`.
+Do not return a placeholder success response for unfinished behavior.

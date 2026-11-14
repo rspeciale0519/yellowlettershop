@@ -1,100 +1,73 @@
 ---
 name: db-migration
-description: Author a Supabase SQL migration in supabase/migrations, with scoped RLS policies, then regenerate types and verify. For this project's Supabase/Postgres schema changes (there is no Prisma).
+description: Create and verify Yellow Letter Shop Supabase SQL migrations, RLS policies, assertions, and generated types.
 disable-model-invocation: true
 ---
 
 # Database Migration
 
-Create a SQL migration for the Supabase Postgres database. This project applies schema changes as **hand-written SQL files in `supabase/migrations/`** — there is no Prisma, no `schema.prisma`, and no `prisma migrate`.
+Use this skill for requested schema, policy, grant, index, or database function changes.
+Follow the repository's [instructions](../../../AGENTS.md) for database safety and approval boundaries.
+A migration request does not authorize production access.
 
-## Usage
+## Evidence and design
 
-The user invokes this with: `/db-migration <description>`
+Read the relevant migrations, SQL assertions, and application consumers.
+Use `types/supabase.ts` as generated reference material.
+Verify its claims against migrations and the local schema when needed.
 
-Examples:
+State the data risks and recovery path before making changes.
+Preserve tenant isolation and compatibility with the deployed application.
+Use staged additions and removals when a single deployment cannot remain compatible.
+Do not edit an applied migration to change its historical meaning.
 
-- `/db-migration add webhook_events table`
-- `/db-migration add status column to campaigns`
-- `/db-migration scope RLS on contacts to owner+team`
+## Migration file
 
-## Steps
+Check command support with the installed Supabase CLI's `--help`.
+Create the file with `npx supabase migration new <name>`.
+Confirm its timestamp sorts after the migrations it requires.
 
-### 1. Understand the current schema
+Write SQL in the generated file under `supabase/migrations/`.
+Include the required indexes, grants, and RLS policies.
+Enable RLS for tables in exposed schemas.
+Match policies to actual ownership, team membership, and roles.
+Check both existing rows and proposed row values for updates.
+Review execution grants and authorization for privileged database functions.
 
-The generated types are the fastest source of truth for existing tables/columns:
+Add relevant SQL assertions under `supabase/tests/`.
+Test permitted access and denied access across users and teams.
+Use disposable fixtures with cleanup or rollback.
 
-```bash
-sed -n '1,80p' types/supabase.ts
-```
+## Local application and checks
 
-Read 1-2 recent migrations to match style and RLS conventions:
+Confirm the target is the local project defined in `supabase/config.toml`.
+Inspect pending migrations before applying them.
+Apply only authorized changes with `npx supabase migration up --local`.
+This command applies all pending migrations, so review unrelated pending files first.
+Do not reset a database or remove data without explicit approval.
 
-```bash
-ls supabase/migrations/ | tail -5
-cat supabase/migrations/20260613010000_fix_rls_pii.sql
-```
+Run each relevant assertion with:
+`npx supabase db query --local -f supabase/tests/<file>.sql`
 
-### 2. Create the migration file
+For schema changes, generate types with:
+`npx supabase gen types --local --lang typescript --schema public`
 
-Name it `supabase/migrations/<YYYYMMDDHHMMSS>_<snake_case_description>.sql` — a 14-digit UTC timestamp prefix that sorts after the latest existing file. Wrap the whole thing in a transaction and comment **why**, not just what (the existing migrations are heavily commented — match that):
+Capture generated output before replacing `types/supabase.ts`.
+Confirm command success and valid TypeScript output first.
+Preserve any additional schemas required by existing consumers.
+Never hand-edit the generated file.
+Run the relevant application checks from `AGENTS.md`.
 
-```sql
--- Why this change is needed (one or two lines of intent).
-begin;
+If local services are unavailable, retain the migration and report the unverified checks.
+Do not switch to a hosted database as a fallback.
 
-create table if not exists public.webhook_events (
-  id uuid primary key default gen_random_uuid(),
-  created_at timestamptz not null default now(),
-  -- ...
-);
+## Production and recovery
 
-commit;
-```
+Hosted commands, `--linked`, and production migration actions require explicit approval.
+Do not use `supabase db push` against production.
+Production migrations use `scripts/apply-prod-migrations.mjs` through `.github/workflows/db-migrate-prod.yml`.
+Merging migration files into `main` can trigger that workflow.
 
-Conventions from existing migrations:
-
-- Table/column names: `snake_case`; tables under `public.`
-- Always include `id` (`uuid default gen_random_uuid()`) and `created_at timestamptz default now()` on new tables
-- Add indexes for columns that will be filtered/joined frequently
-- Use `if exists` / `if not exists` so re-runs are safe
-
-### 3. RLS is mandatory for any table holding user or PII data
-
-This is the project's sharpest hazard — a prior migration (`fix_rls_pii.sql`) existed specifically to remove over-broad `using(true)` policies that leaked homeowner PII to anonymous callers. So:
-
-- `alter table public.<t> enable row level security;`
-- Add **owner-scoped** and, where relevant, **team-scoped** policies. Never ship a `using (true)` SELECT on a table with user data.
-- Scope by the authenticated user (`auth.uid()`) and/or team membership, mirroring existing policy names on sibling tables.
-
-### 4. Apply the migration
-
-Application targets the live Supabase project and in this repo is **owner/environment-gated** (the app's real DB ref is `lmtpfgfulkynrktdkgpu`; the locally-named dashboard project differs — confirm before applying). Options:
-
-- **Supabase MCP**: `apply_migration` (and `list_migrations` to confirm what's already applied) — preferred for the remote project
-- **Supabase CLI**: `supabase db push` against the linked project
-
-If you cannot confirm the target/credentials, **stop and hand off** — leave the SQL file authored and unapplied rather than guessing the environment.
-
-### 5. Regenerate types (if tables/columns changed)
-
-Keep `types/supabase.ts` in sync so the app compiles against the new schema:
-
-- Supabase MCP: `generate_typescript_types`, write the result to `types/supabase.ts`
-- or CLI: `supabase gen types typescript --linked > types/supabase.ts`
-
-### 6. Verify
-
-```bash
-npm run typecheck:ui
-npm test
-```
-
-## Critical Rules
-
-- Migrations are SQL files in `supabase/migrations/` — **not** Prisma; do not create `schema.prisma` or run `prisma migrate`
-- Every table with user/PII data needs RLS enabled with owner/team-scoped policies — never `using (true)`
-- **NEVER** drop or rename a column in production without a data-migration plan
-- Wrap each migration in `begin; … commit;` and keep changes idempotent (`if [not] exists`)
-- Confirm the apply target/credentials before applying; otherwise author-and-hand-off
-- Regenerate `types/supabase.ts` after any schema shape change
+Describe recovery for the actual change.
+Prefer a corrective migration when rollback would lose data.
+Identify backup or restore requirements before any irreversible operation.

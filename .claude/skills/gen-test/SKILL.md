@@ -22,10 +22,10 @@ Examples:
 
 Tests run under **Mocha + `ts-node` in `transpileOnly` mode** (`tests/setup/register.js`). So:
 
-- Cover **pure logic only** — exported functions you call with inputs and assert on outputs. No React rendering, no network, no database, no real timers. Component behavior is verified with chrome-devtools, and type safety via `npm run typecheck:ui` — not here.
+- Cover **pure logic only** — exported functions you call with inputs and assert on outputs. No React rendering, no network, no database, no real timers. Verify component behavior in the browser, not here. Check type safety via `npm run typecheck:full` — not here.
 - Transpile-only means you can import the specific function under test even if the wider repo has type errors. Import the function directly, not a barrel that pulls in Supabase clients.
 
-If the target file is mostly I/O glue with no extractable pure logic, stop and tell the user — recommend exposing the logic via a small refactor, or chrome-devtools verification. Don't scaffold shallow tests that can't fail.
+If the target file is mostly I/O glue with no extractable pure logic, stop and tell the user — recommend exposing the logic via a small refactor, or browser verification through the available tools. Don't scaffold shallow tests that can't fail.
 
 ## Steps
 
@@ -52,7 +52,7 @@ Conventions, non-negotiable for consistency:
 
 ### 3. Write the spec
 
-Create `tests/<mirrored-path>/<name>.test.ts`. Cover the edges, not just the happy path: boundaries, zero/empty/negative inputs, ceilings/floors, every enum branch, error paths. Keep the file ≤350 LOC — split by `describe` into multiple files if needed.
+Create `tests/<mirrored-path>/<name>.test.ts`. Cover the edges, not just the happy path: boundaries, zero/empty/negative inputs, ceilings/floors, every enum branch, error paths. Prefer files near 350 lines. Split by responsibility when practical.
 
 Every assertion must fail if the behavior regresses. If flipping the implementation wouldn't break a test, delete that test.
 
@@ -75,5 +75,5 @@ Report the actual output. If a test fails because the **code** looks wrong (not 
 - Pure logic only — no DB, network, React, or real timers
 - Node `assert` (`strict`), never chai
 - Mirror the source path under `tests/`; do not co-locate
-- Type-check is `npm run typecheck:ui`; the test runner is `npm test`
-- Tests obey the ≤350 LOC limit
+- Type-check is `npm run typecheck:full`; the test runner is `npm test`
+- Prefer cohesive test files near 350 lines

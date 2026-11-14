@@ -1,98 +1,73 @@
 ---
 name: db-migration
-description: Create and apply Prisma schema changes with proper pooler configuration, client generation, and verification for the WSL2/Supabase environment.
+description: Create and verify Yellow Letter Shop Supabase SQL migrations, RLS policies, assertions, and generated types.
 disable-model-invocation: true
 ---
 
 # Database Migration
 
-Safely modify the Prisma schema and apply changes to the Supabase database. Handles the specific pooler configuration required by this project's WSL2 environment.
+Use this skill for requested schema, policy, grant, index, or database function changes.
+Follow the repository's [instructions](../../../AGENTS.md) for database safety and approval boundaries.
+A migration request does not authorize production access.
 
-## Usage
+## Evidence and design
 
-The user invokes this with: `/db-migration <description>`
+Read the relevant migrations, SQL assertions, and application consumers.
+Use `types/supabase.ts` as generated reference material.
+Verify its claims against migrations and the local schema when needed.
 
-Examples:
+State the data risks and recovery path before making changes.
+Preserve tenant isolation and compatibility with the deployed application.
+Use staged additions and removals when a single deployment cannot remain compatible.
+Do not edit an applied migration to change its historical meaning.
 
-- `/db-migration add webhook events table`
-- `/db-migration add status field to campaigns`
-- `/db-migration add index on contacts email`
+## Migration file
 
-## Steps
+Check command support with the installed Supabase CLI's `--help`.
+Create the file with `npx supabase migration new <name>`.
+Confirm its timestamp sorts after the migrations it requires.
 
-### 1. Read Current Schema
+Write SQL in the generated file under `supabase/migrations/`.
+Include the required indexes, grants, and RLS policies.
+Enable RLS for tables in exposed schemas.
+Match policies to actual ownership, team membership, and roles.
+Check both existing rows and proposed row values for updates.
+Review execution grants and authorization for privileged database functions.
 
-```bash
-cat prisma/schema.prisma
-```
+Add relevant SQL assertions under `supabase/tests/`.
+Test permitted access and denied access across users and teams.
+Use disposable fixtures with cleanup or rollback.
 
-Understand existing models, relations, and naming conventions before making changes.
+## Local application and checks
 
-### 2. Verify Database Connectivity
+Confirm the target is the local project defined in `supabase/config.toml`.
+Inspect pending migrations before applying them.
+Apply only authorized changes with `npx supabase migration up --local`.
+This command applies all pending migrations, so review unrelated pending files first.
+Do not reset a database or remove data without explicit approval.
 
-Confirm pooler connection is working:
+Run each relevant assertion with:
+`npx supabase db query --local -f supabase/tests/<file>.sql`
 
-```bash
-npx prisma db pull --print 2>&1 | head -5
-```
+For schema changes, generate types with:
+`npx supabase gen types --local --lang typescript --schema public`
 
-If this fails with ENETUNREACH, the `.env.local` is using direct connection instead of pooler. Check CLAUDE.md Rule 8.
+Capture generated output before replacing `types/supabase.ts`.
+Confirm command success and valid TypeScript output first.
+Preserve any additional schemas required by existing consumers.
+Never hand-edit the generated file.
+Run the relevant application checks from `AGENTS.md`.
 
-### 3. Make Schema Changes
+If local services are unavailable, retain the migration and report the unverified checks.
+Do not switch to a hosted database as a fallback.
 
-Edit `prisma/schema.prisma` with the requested changes. Follow existing conventions:
+## Production and recovery
 
-- Model names: PascalCase (e.g., `WebhookEvent`)
-- Field names: camelCase (e.g., `createdAt`)
-- Always include `id`, `createdAt`, `updatedAt` on new models
-- Use `@default(uuid())` for id fields
-- Use `@relation` with explicit foreign key fields
-- Add `@@index` for fields that will be queried frequently
+Hosted commands, `--linked`, and production migration actions require explicit approval.
+Do not use `supabase db push` against production.
+Production migrations use `scripts/apply-prod-migrations.mjs` through `.github/workflows/db-migrate-prod.yml`.
+Merging migration files into `main` can trigger that workflow.
 
-### 4. Generate Client
-
-```bash
-npx prisma generate
-```
-
-This updates the Prisma client types. Must succeed before proceeding.
-
-### 5. Apply to Database
-
-For development (creates migration file):
-
-```bash
-npx prisma migrate dev --name <descriptive-name>
-```
-
-If migrate dev hangs or fails, fall back to:
-
-```bash
-npx prisma db push
-```
-
-**Important**: `db push` does NOT create migration files. Use `migrate dev` when possible for production-track changes.
-
-### 6. Verify
-
-Run these checks after applying:
-
-```bash
-# Type-check passes with new schema
-npm run type-check
-
-# Client is correctly generated
-npx prisma generate --no-hints
-```
-
-### 7. Update Seed Script (if new model)
-
-If a new model was added, update `prisma/seed.ts` or `tests/e2e/fixtures/seed-e2e.ts` to include seed data for the new model. Remember: this project uses JWT-based auth without persistent token storage (no `sessions`, `refresh_tokens`, or `verification_tokens` tables).
-
-## Critical Rules
-
-- **NEVER** use direct database host (`db.xrixrioaarbnpzjqzfsl.supabase.co`) - always use pooler
-- **NEVER** remove or rename columns in production without a migration plan
-- Always back up data considerations before destructive schema changes
-- Connection config lives in `prisma.config.ts`, NOT in `schema.prisma`
-- Transaction pooler (port 6543) for app queries, session pooler (port 5432) for migrations
+Describe recovery for the actual change.
+Prefer a corrective migration when rollback would lose data.
+Identify backup or restore requirements before any irreversible operation.

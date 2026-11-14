@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "yls-redesign",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "../yls-redesign", "run", "dev", "--", "-p", "3020"],
+      "port": 3020
+    }
+  ]
+}

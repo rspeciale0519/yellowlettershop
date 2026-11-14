@@ -20,6 +20,15 @@
       "env": {
         "SUPABASE_ACCESS_TOKEN": "${SUPABASE_ACCESS_TOKEN}"
       }
+    },
+    "quickbooks": {
+      "command": "node",
+      "args": [
+        "C:/Users/rob/mcp-servers/quickbooks-online/dist/index.js"
+      ],
+      "env": {
+        "QUICKBOOKS_DISABLE_DELETE": "true"
+      }
     }
   }
 }
