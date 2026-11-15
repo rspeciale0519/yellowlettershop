@@ -1,134 +1,53 @@
 ---
 name: create-api-route
-description: Scaffold a new Next.js API route with auth middleware, Zod validation, and Prisma queries following existing project patterns.
+description: Create Yellow Letter Shop API routes with existing auth wrappers, Zod validation, and Supabase data access.
 disable-model-invocation: true
 ---
 
 # Create API Route
 
-Scaffold a new API route following the project's established patterns. The user provides the route path and HTTP methods needed.
+Use this skill when the user requests a route under `app/api/`.
+Implement the requested methods and behavior.
+Follow the repository's [instructions](../../../AGENTS.md) for approvals and required checks.
 
-## Usage
+## Route and authentication
 
-The user invokes this with: `/create-api-route <path> [methods]`
+Inspect the nearest relevant route and its callers.
+Use `app/api/<path>/route.ts`, with services under `lib/<feature>/` when needed.
 
-Examples:
+- User routes use `withAuth` from `@/lib/auth/middleware`.
+- Its handler receives the request, `{ user, userId }`, and the route context.
+- Platform admin routes use `withAdmin` from `@/lib/admin/require-admin`.
+- Use `withSuperAdmin` when the operation requires that role.
+- Dynamic admin routes can call `requireAdmin(request)` directly.
+- Return its result immediately when it is an instance of `NextResponse`.
+- Await dynamic `params` as required by the installed Next.js version.
+- Public routes and webhooks need their own access or signature checks.
 
-- `/create-api-route webhooks` - Creates GET and POST handlers
-- `/create-api-route webhooks/[id] GET PATCH DELETE` - Creates specific methods
-- `/create-api-route admin/reports` - Creates an admin route with `requireAdmin()`
+Authentication does not establish resource ownership or team authority.
+Check the caller's access to the requested resource before data access.
+Do not infer authorization from the route path alone.
 
-## Steps
+## Request and data handling
 
-### 1. Determine Route Type
+Validate changed request contracts with Zod, including relevant path and query values.
+Return 400 for malformed JSON and invalid input.
+Preserve existing response contracts unless the requested change requires otherwise.
 
-Check if the path starts with `admin/`:
+Use existing Supabase services where they fit the request.
+For cookie sessions, `await createClient()` from `@/utils/supabase/server` carries the session for RLS.
+Do not assume that a cookie client carries a bearer token.
+Check the authentication modes supported by the route.
 
-- **Admin route**: Use `requireAdmin()` from `@/lib/admin/middleware`
-- **User route**: Use `getAuthContext()` from `@/lib/auth/middleware`
+The client from `@/utils/supabase/service` bypasses RLS.
+Use it only for justified server operations with explicit authorization and resource scope.
+Never accept an unchecked user or team identifier as authority.
+Check returned Supabase errors before returning success.
+Return stable errors without provider details, credentials, or personal data.
 
-### 2. Examine Existing Patterns
+## Verification
 
-Before writing any code, read 2-3 existing routes near the target path to match patterns:
-
-```bash
-# For user routes
-cat src/app/api/contacts/route.ts
-cat src/app/api/lists/route.ts
-
-# For admin routes
-cat src/app/api/admin/users/route.ts
-cat src/app/api/admin/plans/route.ts
-```
-
-### 3. Create the Route File
-
-Create `src/app/api/<path>/route.ts` following this structure:
-
-**User route pattern:**
-
-```typescript
-import { NextRequest, NextResponse } from "next/server";
-import { getAuthContext } from "@/lib/auth/middleware";
-
-export async function GET(request: NextRequest) {
-  try {
-    const auth = await getAuthContext(request);
-    if (!auth) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    if (!auth.organizationId) {
-      return NextResponse.json(
-        { error: "No organization associated with user" },
-        { status: 403 }
-      );
-    }
-
-    // TODO: Implement
-    return NextResponse.json({ data: [] });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch resource" },
-      { status: 500 }
-    );
-  }
-}
-```
-
-**Admin route pattern:**
-
-```typescript
-import { NextRequest, NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin/middleware";
-
-export async function GET(req: NextRequest) {
-  const auth = await requireAdmin(req);
-  if (auth.error) return auth.error;
-
-  try {
-    // TODO: Implement
-    return NextResponse.json({ data: [] });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
-  }
-}
-```
-
-### 4. Create Validation Schema (if POST/PATCH)
-
-If the route accepts request bodies, create a Zod schema in the appropriate service's `validation.ts` file or a co-located file:
-
-```typescript
-import { z } from "zod";
-
-export const createResourceSchema = z.object({
-  name: z.string().min(1).max(255),
-  // ... fields
-});
-```
-
-### 5. Create Service Layer (if complex logic)
-
-For routes with non-trivial business logic, create or extend a service file under `src/lib/<resource>/service.ts` or `src/services/`.
-
-### 6. Verify
-
-After creation, run:
-
-```bash
-npm run type-check
-npm run lint
-```
-
-## Key Rules
-
-- Never use `any` types - use `unknown` with type narrowing
-- Always validate request bodies with Zod at API boundaries
-- Use `prisma` from `@/lib/prisma` for database operations
-- Keep route files under 450 lines - extract to service layer if needed
-- Use `Promise.all()` for parallel independent queries (see admin/users pattern)
-- Parse search params with explicit defaults, not implicit coercion
+Use Mocha tests under the matching `tests/<area>/` directory for meaningful route or service behavior.
+Cover denied access, invalid input, missing resources, and provider failures when relevant.
+Follow the application checks in `AGENTS.md`, including `npm run typecheck:full`.
+Do not return a placeholder success response for unfinished behavior.

@@ -110,3 +110,6 @@ supabase/.temp
 supabase/.branches
 
 .superpowers/
+
+# Private manual-backup connection
+/.env.backup.local

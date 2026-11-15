@@ -1,7 +1,51 @@
 # yls brain — STATE
-Updated: 2026-08-03
+Updated: 2026-11-10
 
 ## Current focus
+**(2026-11-10, 19:00): Website redesign, round 3 concepts sent, awaiting owner pick.**
+The owner leaned toward round-2 concepts 1, 3, and 4 and asked for five better ones.
+Concepts 6 to 10 are in ../yls-redesign/tools/concepts/out/ (Dear ____, The Map Table,
+Turn the Page, Hands On, The One They Open). Renders only, not site pages. Concepts
+7, 8, and 9 share one desk and can be one design. Next: build the selected one as
+design 6. Nothing committed. See journal/2026-11-10.
+
+**(2026-11-09, 18:55): Website redesign, round 2 concepts sent, awaiting owner pick.**
+Five concept stills for a sixth direction are in `../yls-redesign/tools/concepts/out/`
+(The Pad, The Sorting Case, Around the Block, Signed You, The Yellow Room). They are
+renders only, not site pages. Next: build the selected one as design 6. Nothing
+committed. See journal/2026-11-09.
+
+**(2026-10-21, 16:16): Website redesign — all five directions built, awaiting owner review.**
+Sibling project `../yls-redesign` (Next 16 + three.js, review gallery ported from
+ToddSpeciale4) holds Press Run, First Class, Personally Yours, Special Delivery and
+Cutting Mat, 5 pages each, with real YLS prices and content. First Class uses a
+9.9 s film from real Pexels footage plus rendered companion envelopes
+(tools/film/ rebuilds it). Typecheck, lint and build pass. Commits on main:
+9ac6aa0 (initial) and 706ffba (Personally Yours letter sequence fix, 2026-10-27).
+Not done: remote/push, Neon DATABASE_URL for feedback, Vercel project. Dev server: `.claude/launch.json`
+"yls-redesign" on port 3020. See journal/2026-10-21.
+
+**(2026-10-19, 23:40): Website redesign — Design System artifact done.**
+"Yellow Letter Shop" Design System built from the code (tokens, type, logo,
+handwriting stroke fonts, cover) at
+https://claude.ai/artifact/Y7UWBRZ8hmJFU7aiwkQdjy (private). v6 adds Button,
+Badge, Card, Input as static renditions (token-only bundle.css). Next: design gallery like ToddSpeciale.com's (needs
+permission to read that project), then five new full-site designs using
+three.js/WebGL. No app code changed.
+
+**(2026-08-14, 10:48): QuickBooks MCP server installed, awaiting owner OAuth.**
+Intuit's official `quickbooks-online-mcp-server` is built at
+`C:/Users/rob/mcp-servers/quickbooks-online` and registered repo-scoped in
+`.mcp.json` (no secrets there; credentials live in the server's gitignored
+`.env`). Verified by stdio smoke test: 122 tools, 0 `delete_*`,
+`create_credit_memo` + `create_refund_receipt` present. Inert until the owner
+creates a **production** Intuit Developer app and runs `npm run auth` behind an
+ngrok HTTPS callback. Driver: order **555207** (The CS Organization) was
+refunded in the Merchant Portal and is **still unrecorded in the books** — the
+old `claude_ai_Intuit_QuickBooks` connector is scope-limited AND has no
+refund/credit-memo tool. This is a bookkeeping thread, not app code; the
+release state below is unchanged.
+
 **(2026-08-02, 23:20): PRODUCTION RELEASE — vendor fulfillment loop is LIVE.**
 `develop` merged to `main` (1cbc0ee, --no-ff) and pushed; the three pending
 migrations (orders_refund_columns, order_dispatches,
