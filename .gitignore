@@ -113,3 +113,6 @@ supabase/.branches
 
 # Private manual-backup connection
 /.env.backup.local
+
+# verify-yls skill evidence (keep locally; never commit secrets or dumps)
+.verify-artifacts/
