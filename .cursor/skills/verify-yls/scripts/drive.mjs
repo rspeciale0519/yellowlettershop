@@ -14,6 +14,7 @@ import { constants as fsConstants, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { driveAuthLive, driveMailingListLive, localGoTrueUp } from './drive-live.mjs';
+import { assertLoopbackBaseUrl, assertServedClientIsLocal } from './guards.mjs';
 
 const FEATURES = ['home', 'auth', 'templates', 'campaign-order', 'mailing-lists'];
 const HOME_HEADING = 'Streamline Your Direct Mail Campaigns';
@@ -42,6 +43,7 @@ function parseArgs(argv) {
   if (!FEATURES.includes(out.feature)) {
     throw new Error(`Unknown --feature ${out.feature}. Use: ${FEATURES.join(', ')}`);
   }
+  assertLoopbackBaseUrl(out.baseUrl);
   return out;
 }
 
@@ -244,6 +246,7 @@ async function driveAuth({ baseUrl, outDir, chrome }) {
   }
 
   if (chrome) {
+    await assertServedClientIsLocal(baseUrl);
     const live = await driveAuthLive({ baseUrl, outDir, chromePath: chrome });
     const loginDom = await readFile(path.join(outDir, 'auth-login.dom.html'), 'utf8');
     mustInclude(
@@ -392,6 +395,7 @@ async function driveMailingLists({ baseUrl, outDir, chrome }) {
   // Skip the anonymous --screenshot dump when we will drive a live session.
   // The dump uses a wrapper Chrome on a shared debug port and races the CDP session.
   if (chrome && gotrue) {
+    await assertServedClientIsLocal(baseUrl);
     const live = await driveMailingListLive({ baseUrl, outDir, chromePath: chrome });
     return {
       route: live.route,

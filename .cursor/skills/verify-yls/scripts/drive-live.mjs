@@ -4,13 +4,24 @@
  * Add List in the manager is a mock (no INSERT). Real list create is the
  * order-wizard CSV persist at POST /api/orders/upload-list.
  */
+import { randomBytes } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { createPage, launchChromeSession } from './chrome-session.mjs';
+import { assertLoopbackBaseUrl, assertServedClientIsLocal } from './guards.mjs';
 
 const GOTRUE_HEALTH = 'http://127.0.0.1:62440/auth/v1/health';
 const LIST_NAME_PREFIX = 'Order upload';
+
+function randomVerifyPassword() {
+  return `Vy!${randomBytes(18).toString('base64url')}`;
+}
+
+async function writeUserFile(filePath, creds) {
+  await writeFile(filePath, `${JSON.stringify(creds, null, 2)}\n`, { mode: 0o600 });
+  await chmod(filePath, 0o600);
+}
 
 export async function localGoTrueUp() {
   try {
@@ -134,12 +145,14 @@ async function signUpOrSignIn(page, baseUrl, creds, { preferSignup = false } = {
 }
 
 export async function driveAuthLive({ baseUrl, outDir, chromePath }) {
+  assertLoopbackBaseUrl(baseUrl);
+  await assertServedClientIsLocal(baseUrl);
   const creds = {
     email: `verify-yls-${Date.now()}@example.com`,
-    password: 'VerifyYls!2026',
+    password: randomVerifyPassword(),
   };
   await mkdir(outDir, { recursive: true });
-  await writeFile(path.join(outDir, 'verify-user.json'), `${JSON.stringify(creds, null, 2)}\n`);
+  await writeUserFile(path.join(outDir, 'verify-user.json'), creds);
   const gotrue = await localGoTrueUp();
   const userDataDir = path.join(outDir, 'chrome-profile-auth');
   await rm(userDataDir, { recursive: true, force: true });
@@ -257,6 +270,8 @@ async function screenshotTextOnPage(page, title, text, destPng) {
 
 
 export async function driveMailingListLive({ baseUrl, outDir, chromePath }) {
+  assertLoopbackBaseUrl(baseUrl);
+  await assertServedClientIsLocal(baseUrl);
   const credsPath = path.join(outDir, 'verify-user.json');
   let creds;
   try {
@@ -265,9 +280,9 @@ export async function driveMailingListLive({ baseUrl, outDir, chromePath }) {
   } catch {
     creds = {
       email: `verify-yls-${Date.now()}@example.com`,
-      password: 'VerifyYls!2026',
+      password: randomVerifyPassword(),
     };
-    await writeFile(credsPath, `${JSON.stringify(creds, null, 2)}\n`);
+    await writeUserFile(credsPath, creds);
   }
 
   await writeSampleCsv(outDir);

@@ -42,7 +42,7 @@ Do not run hosted migrations (`scripts/apply-prod-migrations.mjs`, `--linked`, `
 
 Verification server is **port 3010**. `package.json` `dev` is `next dev -p 3010`. `npm start` has no port flag (defaults to 3000) — do not use it.
 
-`./scripts/launch.sh` runs **`npx next start -p 3010`** after `npm run build`. Chrome 157 on this VM throws `SyntaxError: Invalid or unexpected token` on webpack-eval client chunks from `next dev`, so the auth modal never hydrates. Production bundles do. Set `VERIFY_NEXT_DEV=1` only for SSR-only checks. Rebuild after changing `NEXT_PUBLIC_*` in `.env.local`.
+`./scripts/launch.sh` binds **`npx next start -H 127.0.0.1 -p 3010`** after `npm run build`. It reads `.env.local` (key names and hosts only, never values) and **refuses** unless `NEXT_PUBLIC_SUPABASE_URL` is loopback (`127.0.0.1` / `localhost` / `::1`). It refuses any `sk_live_` / `rk_live_` / `pk_live_` value, blanks outbound email/webhook/paid-API keys, and exports `STRIPE_SECRET_KEY=sk_test_verify_yls_stub`. Chrome 157 on this VM throws `SyntaxError: Invalid or unexpected token` on webpack-eval client chunks from `next dev`, so the auth modal never hydrates. Production bundles do. Set `VERIFY_NEXT_DEV=1` only for SSR-only checks (`npx next dev -H 127.0.0.1 -p 3010`). `NEXT_PUBLIC_*` is baked in at build time; launch stamps `.verify-artifacts/verify-build.json` and refuses to reuse a `.next/BUILD_ID` it did not stamp for that loopback host.
 
 ```bash
 # Env: copy names from .env.example into gitignored .env.local.
@@ -51,8 +51,9 @@ Verification server is **port 3010**. `package.json` `dev` is `next dev -p 3010`
 # supabase/config.toml API = 62440, db = 62441, Studio = 62444.
 # Stripe keys must start with sk_test_ / pk_test_ only.
 
-npm run dev
-# → next dev -p 3010
+# Skill launch binds loopback only (do not use package.json `dev` / `start`):
+# npx next start -H 127.0.0.1 -p 3010
+# VERIFY_NEXT_DEV=1 → npx next dev -H 127.0.0.1 -p 3010
 ```
 
 Required env var **names** (values live in `.env.example`; never commit secrets):
@@ -81,9 +82,9 @@ Helper (records PID, waits until the homepage is actually usable):
 ./.cursor/skills/verify-yls/scripts/local-supabase.sh
 ```
 
-That is `npx supabase start` after fixing nested-Docker ICC (`bridge-nf-call-iptables=0`, `iptables-legacy FORWARD ACCEPT`). Without the ICC fix, GoTrue/storage/realtime TCP to `supabase_db_yls:5432` times out even though the host can reach `:62441`. Never `--linked`. Never a hosted project.
+That is `npx supabase start` after a **nested/throwaway-VM-only** ICC tweak (`VERIFY_YLS_NESTED_VM=1` required; refuses otherwise). It snapshots bridge-nf sysctl and the iptables FORWARD policy, sets `bridge-nf-call-iptables=0`, and inserts a scoped `FORWARD -s <supabase docker subnet> -d <subnet> -j ACCEPT` (comment `verify-yls-icc`). `cleanup.sh` deletes that rule and restores the snapshot. **Never set `VERIFY_YLS_NESTED_VM=1` on WSL, a shared box, or a VPS.** Without the ICC fix on nested Docker, GoTrue/storage/realtime TCP to `supabase_db_yls:5432` times out even though the host can reach `:62441`. Never `--linked`. Never a hosted project.
 
-Local API is `http://127.0.0.1:62440`. Seed: `supabase/seed.sql` via `config.toml` `[db.seed]` (currently comments only). Point `.env.local` at `npx supabase status -o env` (`ANON_KEY` / `SERVICE_ROLE_KEY` / `API_URL`). Restart `npm run dev` after changing keys.
+Local API is `http://127.0.0.1:62440`. Seed: `supabase/seed.sql` via `config.toml` `[db.seed]` (currently comments only). Point `.env.local` at `npx supabase status -o env` (`ANON_KEY` / `SERVICE_ROLE_KEY` / `API_URL`). Rerun `./scripts/launch.sh` after changing keys (NEXT_PUBLIC_* is baked at build).
 
 SQL assertions:
 
@@ -99,9 +100,9 @@ SQL assertions:
 - `/dashboard/*` is middleware-protected (`middleware.ts` matcher) and will redirect to `/?auth=login`.
 - `/orders/new` is **not** in that matcher; the stepper UI renders without a session. APIs, AccuZip, Stripe, and list pickers will fail. Drive the UI and stop before payment.
 
-**Two instances:** `npm run dev` is hardcoded to 3010. A second process on the same checkout will collide on port and `.next`. Use another port (`npx next dev -p 3011`) in a **separate git worktree**, not a second process in the same tree.
+**Two instances:** skill launch is hardcoded to `127.0.0.1:3010`. A second process on the same checkout will collide on port and `.next`. Use another port (`npx next dev -H 127.0.0.1 -p 3011`) in a **separate git worktree**, not a second process in the same tree.
 
-**Teardown:** `./.cursor/skills/verify-yls/scripts/cleanup.sh` (PID only; keeps `.verify-artifacts/`).
+**Teardown:** `./.cursor/skills/verify-yls/scripts/cleanup.sh` restores the ICC snapshot, then stops **only** the PID in `.verify-artifacts/dev.pid` if `/proc/<pid>/cmdline` matches next/npm/node. Process-group kill (`kill -- -PID`) runs only when `pgid == pid`. Keeps `.verify-artifacts/`.
 
 ## Doctor
 
@@ -165,7 +166,7 @@ Proof rules:
 ./.cursor/skills/verify-yls/scripts/cleanup.sh
 ```
 
-Kills **only** the PID/PGID in `.verify-artifacts/dev.pid` (and its children). Never `pkill node` / `pkill next`. Leaves screenshots, logs, and JSON in place. Confirm after cleanup:
+Restores the nested-VM ICC snapshot (sysctl + scoped FORWARD rule). Then kills **only** the PID/PGID in `.verify-artifacts/dev.pid` after checking `/proc/<pid>/cmdline` matches next/npm/node and `pgid == pid` for group kill. Never `pkill node` / `pkill next`. Leaves screenshots, logs, and JSON in place. Confirm after cleanup:
 
 ```bash
 test -d .verify-artifacts && ls -la .verify-artifacts
@@ -187,4 +188,4 @@ node .cursor/skills/verify-yls/scripts/drive.mjs --feature mailing-lists
 ./.cursor/skills/verify-yls/scripts/cleanup.sh
 ```
 
-`drive.mjs` flags: `--feature <home|auth|templates|campaign-order|mailing-lists>`, `--base-url http://127.0.0.1:3010`, `--out .verify-artifacts`.
+`drive.mjs` flags: `--feature <home|auth|templates|campaign-order|mailing-lists>`, `--base-url http://127.0.0.1:3010`, `--out .verify-artifacts`. `--base-url` / `VERIFY_BASE_URL` must be loopback. Before signup or a list write, the harness checks the served client bundle points at `127.0.0.1:62440` and aborts otherwise. Test passwords are random per run; `.verify-artifacts/verify-user.json` is mode `600`.

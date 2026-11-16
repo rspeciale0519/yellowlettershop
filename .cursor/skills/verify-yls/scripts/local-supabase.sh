@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 # Start LOCAL Supabase only. Never --linked, never a hosted project.
 #
-# Nested Docker on this VM: iptables-legacy FORWARD POLICY DROP plus
-# net.bridge.bridge-nf-call-iptables=1 blocks container-to-container traffic
-# (GoTrue/storage/realtime time out reaching Postgres). Host port publish still
-# works. Disable bridge netfilter, then `npx supabase start`.
+# Nested-Docker ICC: bridge-nf plus a scoped FORWARD accept for the supabase
+# compose subnet. Requires VERIFY_YLS_NESTED_VM=1. For nested or throwaway VMs
+# only — never WSL, a shared box, or a VPS. cleanup.sh restores the snapshot.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -12,6 +11,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib.sh"
 ROOT="$(verify_yls_repo_root)"
 cd "$ROOT"
+
+if [[ "${VERIFY_YLS_NESTED_VM:-}" != "1" ]]; then
+  echo "verify-yls: local-supabase.sh refuses to change firewall/sysctl unless VERIFY_YLS_NESTED_VM=1." >&2
+  echo "That flag is for nested or throwaway VMs only. Never set it on WSL, a shared box, or a VPS." >&2
+  echo "On a normal machine run: npx supabase start" >&2
+  exit 1
+fi
 
 if ! command -v docker >/dev/null 2>&1; then
   echo "verify-yls: docker is not installed. Install docker.io / Docker Engine, then retry." >&2
@@ -23,13 +29,9 @@ if ! docker info >/dev/null 2>&1; then
   exit 1
 fi
 
-if [[ -w /proc/sys/net/bridge/bridge-nf-call-iptables ]] || sudo -n true 2>/dev/null; then
-  echo 0 | sudo tee /proc/sys/net/bridge/bridge-nf-call-iptables >/dev/null
-  echo 0 | sudo tee /proc/sys/net/bridge/bridge-nf-call-ip6tables >/dev/null || true
-  sudo iptables-legacy -P FORWARD ACCEPT 2>/dev/null || true
-else
-  echo "verify-yls: cannot write bridge-nf sysctl; container-to-container DB traffic may time out." >&2
-fi
+verify_yls_apply_icc "$ROOT"
 
 npx supabase start
+# Network exists now — ensure the rule matches the real subnet.
+verify_yls_apply_icc "$ROOT"
 npx supabase status

@@ -6,6 +6,7 @@
  */
 import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
+import net from 'node:net';
 import path from 'node:path';
 
 function sleep(ms) {
@@ -64,12 +65,28 @@ class Cdp {
   }
 }
 
+function allocateLoopbackPort() {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', () => {
+      const addr = server.address();
+      const chosen = typeof addr === 'object' && addr ? addr.port : 0;
+      server.close((err) => (err ? reject(err) : resolve(chosen)));
+    });
+  });
+}
+
 export async function launchChromeSession({
   chromePath,
   userDataDir,
   port = 0,
 } = {}) {
   await mkdir(userDataDir, { recursive: true });
+  if (!port) {
+    port = await allocateLoopbackPort();
+  }
+  const allowOrigin = `http://127.0.0.1:${port}`;
   let stderr = '';
   const child = spawn(
     chromePath,
@@ -84,7 +101,7 @@ export async function launchChromeSession({
       '--window-size=1280,1400',
       `--remote-debugging-port=${port}`,
       `--user-data-dir=${userDataDir}`,
-      '--remote-allow-origins=*',
+      `--remote-allow-origins=${allowOrigin}`,
       'about:blank',
     ],
     { stdio: ['ignore', 'pipe', 'pipe'], detached: true },

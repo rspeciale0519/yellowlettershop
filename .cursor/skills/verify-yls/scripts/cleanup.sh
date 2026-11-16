@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Stop only the verify-yls launch PID/process group. Keep evidence.
+# Stop only the verify-yls launch PID/process group. Restore ICC snapshot.
+# Keep evidence. Never pkill by name.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -9,6 +10,8 @@ source "$SCRIPT_DIR/lib.sh"
 ROOT="$(verify_yls_repo_root)"
 ARTIFACTS="$ROOT/.verify-artifacts"
 PID_FILE="$ARTIFACTS/dev.pid"
+
+verify_yls_restore_icc "$ROOT"
 
 if [[ ! -f "$PID_FILE" ]]; then
   echo "verify-yls cleanup: no pid file at $PID_FILE — nothing this run started. Evidence kept."
@@ -29,18 +32,31 @@ if ! kill -0 "$dev_pid" 2>/dev/null; then
   exit 0
 fi
 
-echo "verify-yls cleanup: stopping pid $dev_pid (process group if setsid)"
+if [[ ! -r "/proc/${dev_pid}/cmdline" ]]; then
+  echo "verify-yls cleanup: refuse — cannot read /proc/${dev_pid}/cmdline" >&2
+  exit 1
+fi
+cmdline="$(tr '\0' ' ' <"/proc/${dev_pid}/cmdline")"
+echo "verify-yls cleanup: pid ${dev_pid} cmdline=${cmdline}"
+if ! grep -Eiq '(^|[[:space:]/])(next|npm|node)([[:space:]]|$)' <<<"$cmdline"; then
+  echo "verify-yls cleanup: refuse — pid ${dev_pid} cmdline does not match next/npm/node" >&2
+  exit 1
+fi
 
-# Launch used setsid, so PGID == PID. Fall back to the single PID.
-if kill -TERM -- "-$dev_pid" 2>/dev/null; then
-  :
+pgid="$(ps -o pgid= -p "$dev_pid" 2>/dev/null | tr -d ' ')"
+echo "verify-yls cleanup: pid=${dev_pid} pgid=${pgid:-none}"
+
+echo "verify-yls cleanup: stopping pid $dev_pid"
+
+if [[ -n "$pgid" && "$pgid" == "$dev_pid" ]]; then
+  if kill -TERM -- "-$dev_pid" 2>/dev/null; then
+    :
+  else
+    kill -TERM "$dev_pid" 2>/dev/null || true
+  fi
 else
+  echo "verify-yls cleanup: refuse process-group kill (pgid ${pgid:-unset} != pid ${dev_pid}); sending TERM to pid only"
   kill -TERM "$dev_pid" 2>/dev/null || true
-  # Children of npm (the actual next-server) if group kill failed.
-  children="$(ps -o pid= --ppid "$dev_pid" 2>/dev/null || true)"
-  for child in $children; do
-    kill -TERM "$child" 2>/dev/null || true
-  done
 fi
 
 for _ in $(seq 1 20); do
@@ -52,7 +68,11 @@ done
 
 if kill -0 "$dev_pid" 2>/dev/null; then
   echo "verify-yls cleanup: pid $dev_pid still alive, sending KILL"
-  kill -KILL -- "-$dev_pid" 2>/dev/null || kill -KILL "$dev_pid" 2>/dev/null || true
+  if [[ -n "$pgid" && "$pgid" == "$dev_pid" ]]; then
+    kill -KILL -- "-$dev_pid" 2>/dev/null || kill -KILL "$dev_pid" 2>/dev/null || true
+  else
+    kill -KILL "$dev_pid" 2>/dev/null || true
+  fi
 fi
 
 rm -f "$PID_FILE"
