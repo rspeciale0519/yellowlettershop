@@ -9,10 +9,11 @@
  */
 
 import { spawn } from 'node:child_process';
-import { mkdir, writeFile, access, unlink } from 'node:fs/promises';
+import { mkdir, writeFile, readFile, access, unlink } from 'node:fs/promises';
 import { constants as fsConstants, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { driveAuthLive, driveMailingListLive, localGoTrueUp } from './drive-live.mjs';
 
 const FEATURES = ['home', 'auth', 'templates', 'campaign-order', 'mailing-lists'];
 const HOME_HEADING = 'Streamline Your Direct Mail Campaigns';
@@ -52,8 +53,12 @@ function repoRootFromScript() {
 async function findChrome() {
   const candidates = [
     process.env.CHROME_PATH,
-    '/usr/local/bin/google-chrome',
+    // Prefer the real binary. /usr/local/bin/google-chrome on this VM is a
+    // wrapper that forces --remote-debugging-port=9399 and a shared profile.
+    '/opt/google/chrome/chrome',
+    '/usr/bin/google-chrome-stable',
     '/usr/bin/google-chrome',
+    '/usr/local/bin/google-chrome',
     '/usr/bin/chromium',
     '/usr/bin/chromium-browser',
   ].filter(Boolean);
@@ -238,16 +243,11 @@ async function driveAuth({ baseUrl, outDir, chrome }) {
     throw new Error(`GET /?auth=login HTTP ${http.status}`);
   }
 
-  let dom = http.body;
   if (chrome) {
-    dom = await chromeDump(
-      chrome,
-      loginUrl,
-      path.join(outDir, 'auth-login.png'),
-      path.join(outDir, 'auth-login.dom.html'),
-    );
+    const live = await driveAuthLive({ baseUrl, outDir, chromePath: chrome });
+    const loginDom = await readFile(path.join(outDir, 'auth-login.dom.html'), 'utf8');
     mustInclude(
-      dom,
+      loginDom,
       [
         'Welcome back',
         'Sign in to your account to continue',
@@ -260,32 +260,26 @@ async function driveAuth({ baseUrl, outDir, chrome }) {
       ],
       'login modal',
     );
-
-    const signupDom = await chromeDump(
-      chrome,
-      `${baseUrl}/?auth=signup`,
-      path.join(outDir, 'auth-signup.png'),
-      path.join(outDir, 'auth-signup.dom.html'),
-    );
-    mustInclude(
-      signupDom,
-      ['Create your account', 'id="signup-email"', 'id="signup-password"', 'id="agree"', 'Create Account', 'Back to sign in'],
-      'signup modal',
-    );
-  } else {
-    skipped.push('headless Chrome not found — auth modal is client-only (?auth= query); SSR will not contain Welcome back');
+    return {
+      route: live.route || '/?auth=login',
+      httpStatus: http.status,
+      skipped: live.skipped || [],
+      observed: live.observed || [],
+      endState: live.endState,
+    };
   }
 
-  skipped.push('Actual email/password sign-in not attempted: needs local Supabase (GoTrue on :62440). Do not use hosted projects.');
+  skipped.push('headless Chrome not found — auth modal is client-only (?auth= query); SSR will not contain Welcome back');
   skipped.push('Google OAuth not attempted.');
+  skipped.push(
+    'Actual email/password sign-in not attempted: needs Chrome + local GoTrue on :62440. Do not use hosted projects.',
+  );
 
   return {
     route: '/?auth=login',
     httpStatus: http.status,
     skipped,
-    observed: chrome
-      ? ['Login dialog Welcome back + #login-email/#login-password', 'Signup dialog Create your account + #signup-email']
-      : ['SSR homepage only; modal unverified without Chrome'],
+    observed: ['SSR homepage only; modal unverified without Chrome'],
     endState:
       'Auth modal chrome is on the real /?auth= path. A session (header avatar, /dashboard Total Orders) is NOT proven without local Supabase.',
   };
@@ -391,6 +385,24 @@ async function driveMailingLists({ baseUrl, outDir, chrome }) {
     'Unauthenticated users are redirected to /?auth=login (FeatureAuthGuard redirectToAuth). Authenticated manager UI was not reached.';
   const observed = [];
 
+  skipped.push('Landing page MailingListManagerLanding is currently unreachable because redirectToAuth={true}.');
+  skipped.push('Add List modal submit is a mock (no INSERT). Real save is authenticated POST /api/orders/upload-list.');
+
+  const gotrue = await localGoTrueUp();
+  // Skip the anonymous --screenshot dump when we will drive a live session.
+  // The dump uses a wrapper Chrome on a shared debug port and races the CDP session.
+  if (chrome && gotrue) {
+    const live = await driveMailingListLive({ baseUrl, outDir, chromePath: chrome });
+    return {
+      route: live.route,
+      httpStatus: http.status,
+      skipped: [...skipped, ...(live.skipped || [])],
+      observed: [...observed, ...(live.observed || [])],
+      endState: live.endState,
+      db: live.db,
+    };
+  }
+
   if (chrome) {
     const dom = await chromeDump(
       chrome,
@@ -412,7 +424,6 @@ async function driveMailingLists({ baseUrl, outDir, chrome }) {
   }
 
   skipped.push('Creating a list requires a signed-in user and local Postgres. Seed: supabase/seed.sql after `npx supabase start`.');
-  skipped.push('Landing page MailingListManagerLanding is currently unreachable because redirectToAuth={true}.');
 
   return {
     route: '/mailing-services/mailing-list-manager',

@@ -30,10 +30,10 @@ Assertions (Chrome hydrated DOM):
 
 A passing modal chrome check is **not** a signed-in session. To prove login with local Supabase:
 
-1. `npx supabase start` (Docker). API `http://127.0.0.1:62440`.
-2. Create a user in Studio (`http://127.0.0.1:62444`) or signup with email confirm disabled locally.
-3. Fill `#login-email` / `#login-password`, submit **Sign In**.
-4. End state below.
+1. `./.cursor/skills/verify-yls/scripts/local-supabase.sh` (Docker + ICC fix). API `http://127.0.0.1:62440`.
+2. Point `.env.local` at `npx supabase status -o env` and restart the Next process.
+3. `node .cursor/skills/verify-yls/scripts/drive.mjs --feature auth` fills `#signup-email` / `#signup-password` / `#agree` and submits **Create Account** (`enable_confirmations=false` locally).
+4. End state below. Screenshot: `dashboard.png`.
 
 Do not use production Auth or live Google client IDs.
 

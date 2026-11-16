@@ -40,7 +40,9 @@ Do not run hosted migrations (`scripts/apply-prod-migrations.mjs`, `--linked`, `
 
 ## Launch
 
-Verification server is the Next.js dev app, **not** `next start` (that script has no port flag and defaults to 3000).
+Verification server is **port 3010**. `package.json` `dev` is `next dev -p 3010`. `npm start` has no port flag (defaults to 3000) — do not use it.
+
+`./scripts/launch.sh` runs **`npx next start -p 3010`** after `npm run build`. Chrome 157 on this VM throws `SyntaxError: Invalid or unexpected token` on webpack-eval client chunks from `next dev`, so the auth modal never hydrates. Production bundles do. Set `VERIFY_NEXT_DEV=1` only for SSR-only checks. Rebuild after changing `NEXT_PUBLIC_*` in `.env.local`.
 
 ```bash
 # Env: copy names from .env.example into gitignored .env.local.
@@ -73,7 +75,22 @@ Helper (records PID, waits until the homepage is actually usable):
 2. `GET /` returns HTTP 200.
 3. The HTML includes `Streamline Your Direct Mail Campaigns` (the home `<h1>` in `app/page.tsx`). A TCP accept or a compile overlay is not ready.
 
-**Supabase locally:** `npx supabase start` (CLI + Docker). Local API is `http://127.0.0.1:62440`. Seed: `supabase/seed.sql` via `config.toml` `[db.seed]`.
+**Supabase locally:**
+
+```bash
+./.cursor/skills/verify-yls/scripts/local-supabase.sh
+```
+
+That is `npx supabase start` after fixing nested-Docker ICC (`bridge-nf-call-iptables=0`, `iptables-legacy FORWARD ACCEPT`). Without the ICC fix, GoTrue/storage/realtime TCP to `supabase_db_yls:5432` times out even though the host can reach `:62441`. Never `--linked`. Never a hosted project.
+
+Local API is `http://127.0.0.1:62440`. Seed: `supabase/seed.sql` via `config.toml` `[db.seed]` (currently comments only). Point `.env.local` at `npx supabase status -o env` (`ANON_KEY` / `SERVICE_ROLE_KEY` / `API_URL`). Restart `npm run dev` after changing keys.
+
+SQL assertions:
+
+```bash
+./.cursor/skills/verify-yls/scripts/sql-tests.sh
+# equivalent: npx supabase db query --local --agent=no -o table -f supabase/tests/<file>.sql
+```
 
 **When Docker/Supabase is not available:** do not start a hosted project and do not run migrations. Put placeholder local URL/anon values in `.env.local` so the Next process can boot. Then:
 
@@ -98,7 +115,7 @@ Pass: PID file process is alive (if this run started it), port 3010 belongs to t
 
 ## Drive
 
-No repo Playwright/Cypress runner. This skill ships a Node harness that uses `fetch` plus headless Chrome (`google-chrome` / `chromium`) for hydrated DOM and screenshots. Chrome often hangs after writing the file (dbus); `drive.mjs` stops **that Chrome PID/group** once the screenshot/DOM is ready. `@playwright/mcp` in `package.json` is an editor MCP, not a test suite.
+No repo Playwright/Cypress runner. This skill ships a Node harness that uses `fetch` plus headless Chrome (`/opt/google/chrome/chrome` or `google-chrome-stable`, not a wrapper that pins `--remote-debugging-port`) for hydrated DOM and screenshots. One-shot `--screenshot` / `--dump-dom` is used for public pages. Signed-in journeys use Chrome DevTools (CDP) in `chrome-session.mjs` so the harness can type, click, and upload files, then **Browser.close**. Chrome often hangs on dbus if left running; never leave a stray Chrome after a drive. `@playwright/mcp` in `package.json` is an editor MCP, not a test suite. Prefer the real Chrome binary: `/usr/local/bin/google-chrome` on this VM is a wrapper that forces port 9399 and a shared profile.
 
 ```bash
 # Drive one mapped feature (required on every verification)
@@ -114,10 +131,10 @@ Stable selectors (from current source — no `data-testid` on these public flows
 | Surface | Route | Drive with |
 |---|---|---|
 | Home | `GET /` | Role/heading `Streamline Your Direct Mail Campaigns`; links **Start a New Design** → `/design/customize`, **Get Some Inspiration** → `/templates`; **New Campaign**; `#pricing` **Transparent Pricing**. Header **Sign In** only after `getSession()` (needs local Supabase). |
-| Auth | `/?auth=login` or `/?auth=signup` | Dialog title `Welcome back` / `Create your account`; `#login-email` labelled **Email Address**; `#login-password` labelled **Password**; submit **Sign In**; Google `aria-label="Sign in with Google"`; signup `#signup-email`, `#signup-password`, `#agree`, submit **Create Account** |
+| Auth | `/?auth=login` or `/?auth=signup` | Dialog title `Welcome back` / `Create your account`; `#login-email` labelled **Email Address**; `#login-password` labelled **Password**; submit **Sign In**; Google `aria-label="Sign in with Google"`; signup `#signup-email`, `#signup-password`, `#agree`, submit **Create Account**. With local GoTrue, `drive.mjs --feature auth` also signs up and screenshots `/dashboard` (`Total Orders` / `Recent Orders` → `dashboard.png`). |
 | Templates | `/templates` | After ~1s spinner `Loading templates...`, heading **Template Gallery**; search `aria-label="Search templates"` |
 | Campaign / order | Header **New Campaign** → `/new-campaign` (auth) or `/orders/new?source=dashboard_create_new` | **Create New Campaign** / **Create New Order**; step 1 heading **Data & Mapping**; buttons **Upload File**, **Existing List**, **Manual Entry**; tabs `1. Select Data Source`, `2. Map Columns`; continue **Continue to Address Validation** |
-| Mailing lists | `/mailing-services/mailing-list-manager` | Authenticated: `h1` **Mailing List Manager**, `data-testid="add-button"`, `data-testid="upload-button"`, `data-testid="view-mode-toggle"`. Unauthenticated: `FeatureAuthGuard` with `redirectToAuth` sends `/?auth=login&redirectedFrom=/mailing-services/mailing-list-manager` |
+| Mailing lists | `/mailing-services/mailing-list-manager` | Authenticated: `h1` **Mailing List Manager**, `data-testid="add-button"`, `data-testid="upload-button"`, `data-testid="view-mode-toggle"`. Unauthenticated: `FeatureAuthGuard` with `redirectToAuth` sends `/?auth=login&redirectedFrom=/mailing-services/mailing-list-manager`. **Add List is a mock** (no INSERT). Real save: signed-in `POST /api/orders/upload-list` (same JSON the order wizard sends). Dashboard `<Link>` / `Page.navigate` to `/orders/new` is unreliable here — the harness persists from `/dashboard` then opens the manager in a new Chrome target. Proof: `mailing-list-manager.png` + local `mailing_lists` row (`mailing-list-db.txt` / `.png`). |
 
 Cover, as far as test mode allows: homepage loads → open sign-in/sign-up → campaign/order through Data & Mapping. **Do not** submit Stripe payment. **Do not** dispatch to a print vendor.
 
@@ -133,7 +150,8 @@ Capture:
 - HTTP: status + response snippet (`home.html`, `drive-<feature>.json`)
 - Screenshots: `home.png`, `auth-login.png`, … (Chrome headless)
 - DOM dumps: `home.dom.html` for selector proof after hydration
-- Side effects when the journey reaches them: new `orders` / `mailing_lists` rows on **local** Postgres only (`127.0.0.1:62441`). Never query hosted Supabase.
+- Side effects when the journey reaches them: new `mailing_lists` rows on **local** Postgres only (`127.0.0.1:62441`, `docker exec supabase_db_yls psql`). Never query hosted Supabase.
+- SQL assertions: `sql-tests.log` plus `sql-tests.png` (screenshot of that log).
 
 Proof rules:
 
@@ -159,9 +177,13 @@ kill -0 "$(cat .verify-artifacts/dev.pid)" 2>/dev/null && echo STILL_RUNNING || 
 All scripts are executable. Run from repo root.
 
 ```bash
+./.cursor/skills/verify-yls/scripts/local-supabase.sh
 ./.cursor/skills/verify-yls/scripts/launch.sh
 ./.cursor/skills/verify-yls/scripts/doctor.sh
+./.cursor/skills/verify-yls/scripts/sql-tests.sh
 node .cursor/skills/verify-yls/scripts/drive.mjs --feature home
+node .cursor/skills/verify-yls/scripts/drive.mjs --feature auth
+node .cursor/skills/verify-yls/scripts/drive.mjs --feature mailing-lists
 ./.cursor/skills/verify-yls/scripts/cleanup.sh
 ```
 

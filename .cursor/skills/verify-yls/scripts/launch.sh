@@ -51,8 +51,23 @@ if [[ ! -f "$ROOT/.env.local" && ! -f "$ROOT/.env" ]]; then
   exit 1
 fi
 
+# Chrome 157 on this VM throws `SyntaxError: Invalid or unexpected token` while
+# evaluating webpack `eval` client chunks from `next dev`, so the auth modal
+# never hydrates. Production `next start -p 3010` serves real files. Set
+# VERIFY_NEXT_DEV=1 to force the compile server (SSR-only checks).
+if [[ "${VERIFY_NEXT_DEV:-0}" == "1" ]]; then
+  launch_cmd="npm run dev"
+else
+  if [[ ! -f "$ROOT/.next/BUILD_ID" ]]; then
+    echo "verify-yls launch: no production build; running npm run build (NEXT_PUBLIC_* baked in from .env.local)"
+    npm run build >"$ARTIFACTS/build.log" 2>&1
+  fi
+  launch_cmd="npx next start -p ${VERIFY_PORT}"
+fi
+
 # New session so cleanup can kill the whole group by PGID == PID.
-setsid npm run dev >"$LOG_FILE" 2>&1 < /dev/null &
+# shellcheck disable=SC2086
+setsid $launch_cmd >"$LOG_FILE" 2>&1 < /dev/null &
 dev_pid=$!
 echo "$dev_pid" >"$PID_FILE"
 
@@ -63,7 +78,7 @@ cat >"$META_FILE" <<EOF
   "baseUrl": "$VERIFY_BASE_URL",
   "log": "$LOG_FILE",
   "startedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-  "command": "npm run dev"
+  "command": "$launch_cmd"
 }
 EOF
 
